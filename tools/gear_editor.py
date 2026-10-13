@@ -647,6 +647,7 @@ class GearEditor(object):
         self.spawn_cap_var = tk.StringVar(value=str(
             game_settings.BALANCE_DEFAULTS['spawn_cap']))
         self._hotkey_stop = False
+        self._hotkey_thread = None
         self._hotkey_down = {}
         self._hotkey_events = queue.Queue()
 
@@ -1698,11 +1699,17 @@ class GearEditor(object):
                 time.sleep(0.04)
         thread = threading.Thread(target=worker)
         thread.daemon = True
+        self._hotkey_thread = thread
         thread.start()
         self._log('hotkey listener started: ~ (0xC0) / F8 (0x77)')
 
-    def close(self):
+    def _stop_hotkey(self):
         self._hotkey_stop = True
+        if self._hotkey_thread and self._hotkey_thread is not threading.current_thread():
+            self._hotkey_thread.join(timeout=0.5)
+
+    def close(self):
+        self._stop_hotkey()
         self._log('closing')
         self.root.quit()
         self.root.destroy()
@@ -1762,7 +1769,7 @@ def main(argv=None):
     try:
         root.mainloop()
     finally:
-        editor._hotkey_stop = True
+        editor._stop_hotkey()
         if kernel32:kernel32.CloseHandle(mutex)
     return 0
 

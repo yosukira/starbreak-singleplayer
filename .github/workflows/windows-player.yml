@@ -42,6 +42,7 @@ jobs:
           if (-not (Select-String -Path missing-runtime.txt -SimpleMatch 'Python runtime missing')) {
             throw 'Missing runtime did not show an actionable error'
           }
+          $global:LASTEXITCODE = 0
       - uses: actions/upload-artifact@v4
         with:
           name: windows-player

@@ -42,6 +42,8 @@ class EditorWindowTests(unittest.TestCase):
                 self.assertEqual(editor.projectile_speed_rows[0][1].get(), '601')
                 self.assertEqual(editor._current_boosts(), [{'stat_': 23, 'val_': 777}])
                 editor.close()
+                if editor._hotkey_thread is not None:
+                    self.assertFalse(editor._hotkey_thread.is_alive())
         finally:
             try:root.destroy()
             except tk.TclError:pass
