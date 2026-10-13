@@ -85,23 +85,6 @@ STATS_ZH = {
     52:'反射',53:'移动时间（毫秒）',54:'物品护甲',55:'速射/动画速度',
     56:'护盾',57:'冷却',
 }
-MAPS_ZH = {
-    'egy_hulk':'精英墓地尾王','home':'家园','lobby':'Eschaton 大厅',
-    'cave_boss':'精英蘑菇洞穴尾王','city_boss':'精英废墟尾王','city_mid':'精英废墟中王',
-    'dumb_boss':'精英地下基地尾王','dumb_mid':'精英地下基地中王',
-    'dumb_normal_wave':'精英地下基地波次','dumb_wave':'精英地下基地无限波次',
-    'efb_run':'精英冰原整关','eff_run':'精英火焰森林整关','egy_run':'精英墓地整关',
-    'est_run':'精英丛林整关','etl_run':'精英失落神庙整关','eub_run':'精英地下基地整关',
-    'forest_boss':'精英火焰森林尾王','forest_mid':'精英火焰森林中王',
-    'hulk_mid':'精英墓地中王','hulk_normal':'普通墓地尾王',
-    'ice_boss':'精英冰原尾王','ice_mid':'精英冰原中王',
-    'jungle_boss':'精英丛林尾王','jungle_mid':'精英丛林中王',
-    'lab_hard':'精英失落神庙尾王','lab_mid':'精英失落神庙中王',
-    'sc_bonesaw':'星之大教堂 Bonesaw','sc_boss':'星之大教堂尾王',
-    'sc_boss_elite':'精英星之大教堂尾王','sc_hive':'星之大教堂 Hive',
-    'sc_patriarch':'星之大教堂 Patriarch',
-}
-
 def system_language():
     """Use the Windows UI language, then locale settings; default to English."""
     if os.name == 'nt':
@@ -140,7 +123,5 @@ def translate(text,language):
     return EN.get(text,text)
 
 def map_title(map_id,title,language):
-    if language=='zh':return MAPS_ZH.get(map_id,title)
-    return {'efb_run':'Elite Frozen Blight · Full Run','eff_run':'Elite Fire Forest · Full Run',
-            'est_run':'Elite Strands · Full Run','etl_run':'Elite Temple of the Lost · Full Run',
-            'eub_run':'Elite Underground Base · Full Run'}.get(map_id,title)
+    """Keep the map's original display name in every interface language."""
+    return title

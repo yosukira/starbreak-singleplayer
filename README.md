@@ -58,7 +58,7 @@ SBPE/
 ### 使用装备编辑器
 
 1. 选择地图、职业、MK 和植入体槽数。
-2. 在左侧选择槽位，在右侧选择物品并编辑词缀。物品名称保留原版英文；界面、地图和属性标签随语言切换。
+2. 在左侧选择槽位，在右侧选择物品并编辑词缀。物品和关卡名称保留原来的名字；界面和属性标签随语言切换。
 3. 点击 **应用/保存**。服务器检测到配装变化后会重开当前局。地图、掉落率等设置通过 **保存设置** 保存。
 4. 右上角选择 **System / 跟随系统**、**简体中文** 或 **English**。首次默认跟随系统：Windows 中文界面使用中文，其他语言使用英文；选择会在本机保存。
 5. **导出 / 导入** 用于分享 JSON 配装；导入后点击应用/保存才会写入配装。
@@ -127,7 +127,7 @@ If the game path cannot be detected from SBPE configuration:
 ### Gear editor
 
 1. Select a map, shell, MK and implant slot count.
-2. Select an equipment slot on the left, then choose an item and edit its modifiers on the right. Item names retain their original English names; UI labels, map names and stat labels follow the selected language.
+2. Select an equipment slot on the left, then choose an item and edit its modifiers on the right. Item and map names retain their original names; UI labels and stat labels follow the selected language.
 3. Click **Apply / Save**. The server restarts the current run when it detects the new loadout. Use **Save settings** for map selection, drop rates and other map settings.
 4. Select a language in the top-right corner. The first launch follows your system language: Chinese Windows UI locales use Chinese; other locales use English. Your selection is saved locally.
 5. **Export / Import** shares JSON loadouts. After importing, click Apply / Save to write the equipment changes.

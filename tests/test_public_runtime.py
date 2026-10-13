@@ -190,9 +190,9 @@ class LanguageTests(unittest.TestCase):
         self.assertEqual(set(STAT_NAMES), set(i18n.STATS_ZH))
         english = dict(editor_map_choices('en'))
         chinese = dict(editor_map_choices('zh'))
-        self.assertEqual(set(english), set(chinese))
-        self.assertNotEqual(english['hulk_mid'], chinese['hulk_mid'])
-        self.assertEqual(english['efb_run'], 'Elite Frozen Blight · Full Run')
+        self.assertEqual(english, chinese)
+        for map_id, title in english.items():
+            self.assertEqual(title, game_settings.map_info(map_id)['title'])
 
 
 if __name__ == '__main__':
