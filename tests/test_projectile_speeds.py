@@ -28,7 +28,7 @@ class SpeedTests(unittest.TestCase):
     def setUpClass(cls):
         cls.layouts = default_layouts()
         cls.payloads = {}
-        for line in Path(ge.CATALOGUE).read_text().splitlines():
+        for line in Path(ge.CATALOGUE).read_text(encoding='utf8').splitlines():
             row = json.loads(line)
             blob = base64.b64decode(row['payloadBase64'])
             desc = cls.layouts.decode('ItemDescription', blob)
@@ -128,7 +128,7 @@ class SpeedTests(unittest.TestCase):
                     root.update_idletasks()
                     editor.projectile_speed_rows[0][1].set('600')
                     editor.apply()
-                    saved = json.loads(Path(copies['OVERRIDES']).read_text())
+                    saved = json.loads(Path(copies['OVERRIDES']).read_text(encoding='utf8'))
                     self.assertEqual(saved[ps.KEY]['31']['0'], 600)
                     self.assertEqual(editor._export_document()[ps.KEY]['31']['0'], 600)
                     self.assertIn('重新启动', editor.status.cget('text'))
@@ -142,7 +142,7 @@ class SpeedTests(unittest.TestCase):
                     row = editor.projectile_frame.winfo_children()[0]
                     row.winfo_children()[-1].invoke()
                     editor.apply()
-                    saved = json.loads(Path(copies['OVERRIDES']).read_text())
+                    saved = json.loads(Path(copies['OVERRIDES']).read_text(encoding='utf8'))
                     self.assertNotIn('31', saved[ps.KEY])
                     self.assertIn('重新启动', editor.status.cget('text'))
                     root.update_idletasks()

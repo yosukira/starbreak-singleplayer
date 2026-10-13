@@ -57,7 +57,7 @@ class PublicRuntimeTests(unittest.TestCase):
         for folder in ('maps', 'data'):
             for p in (ROOT / folder).rglob('*.hex'):
                 with self.subTest(file=str(p.relative_to(ROOT))):
-                    blob = bytes.fromhex(p.read_text().strip())
+                    blob = bytes.fromhex(p.read_text(encoding='utf8').strip())
                     doc = pb_layout.default_layouts().decode('CreateWorld', unwrap_decompress(blob))
                     self.assertNotIn('clientworld_', doc.get('worldstate_', {}))
 
@@ -69,11 +69,11 @@ class PublicRuntimeTests(unittest.TestCase):
                 settings = user / 'game_settings.json'
                 settings.write_text('{"map":"hulk_mid"}')
                 paths.ensure_user_data()
-                self.assertEqual(json.loads(settings.read_text())['map'], 'hulk_mid')
+                self.assertEqual(json.loads(settings.read_text(encoding='utf8'))['map'], 'hulk_mid')
                 self.assertTrue((user / 'class_loadouts.json').exists())
 
     def test_starter_loadouts_are_clean_and_usable(self):
-        rows = json.loads((ROOT / 'data/defaults/class_loadouts.json').read_text())
+        rows = json.loads((ROOT / 'data/defaults/class_loadouts.json').read_text(encoding='utf8'))
         for key in ('1', '2', '3', '5'):
             self.assertEqual(rows[key]['type_'], int(key))
             self.assertEqual(len(rows[key]['items_']), 6)
@@ -167,7 +167,7 @@ class LanguageTests(unittest.TestCase):
 
     def test_english_ui_translation_coverage(self):
         import re
-        tree = ast.parse((ROOT / 'tools/gear_editor.py').read_text())
+        tree = ast.parse((ROOT / 'tools/gear_editor.py').read_text(encoding='utf8'))
         cls = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'GearEditor')
         for node in ast.walk(cls):
             if isinstance(node, ast.Constant) and isinstance(node.value, str) and re.search('[\u4e00-\u9fff]', node.value):

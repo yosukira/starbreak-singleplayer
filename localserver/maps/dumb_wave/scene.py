@@ -11,7 +11,7 @@ class DumbWavePack:
         self.root=Path(root or ROOT)
         for name in ('map','scene','templates','waves','species','archetypes','effects'):
             setattr(self,name,json.loads((self.root/(name+'.json')).read_text(encoding='utf8')))
-        self.animations=json.loads((self.root/'animation-points.json').read_text())['vids']
+        self.animations=json.loads((self.root/'animation-points.json').read_text(encoding='utf8'))['vids']
         self.createworld_hex=str(self.root/'createworld.hex')
 
     def wire_props(self,props):return normalize('Properties',copy.deepcopy(props))
