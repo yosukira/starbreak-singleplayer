@@ -12,15 +12,15 @@ StarBreak 的本地单人战斗模拟器 / A local singleplayer battle simulator
 - 四职业切换、MK、装备、词缀、植入体槽、补给掉率，以及部分地图的炮台和数值设置。
 - 装备编辑器支持简体中文、English 和跟随系统；切换语言会保留当前未保存的编辑。
 - **运行游戏需要 Windows、StarBreak Windows 客户端和兼容的 [SBPE](https://github.com/atomizer/sbpe) 安装。** 客户端补丁针对 StarBreak 1.14.6 的 Windows 二进制；其他版本可能不兼容。
-- 本地服和编辑器使用 Python 3.10 或以上，编辑器需要 `tkinter`。Windows 官方 Python 安装器通常包含 Tk。游戏内注入仍使用 SBPE 自带的 32 位 PyPy。
+- **Windows 玩家 Release 已自带 Python 和 Tk，无需另外安装 Python 或配置 PATH。** 游戏内注入仍使用 SBPE 自带的 32 位 PyPy。GitHub 的 Source code / Download ZIP 是源码包，不包含这套运行环境。
 - Mac 可以独立预览装备编辑器，不能用这份启动脚本运行游戏。
 
 ### 安装与启动
 
 1. 先安装并配置好 SBPE，确认 SBPE 能正常启动你的 StarBreak。SBPE 的 `config.ini` 应指向自己的游戏客户端。
-2. 下载本仓库，**将整个项目文件夹放进 SBPE 安装目录**。项目文件夹可以重命名，但内部结构须保留。
-3. 安装 Python 3.10+，勾选安装器的 PATH 选项，并确认 `py -3 -m tkinter` 能打开测试窗口；也可以使用 SBPE 目录内已有的 `python/python.exe`（须为兼容的 CPython，含 Tk）。
-4. 双击项目文件夹里的 **`start.cmd`**。装备编辑器和游戏会分别打开；关闭游戏后本场本地服退出。
+2. 从 [Releases](https://github.com/yosukira/starbreak-singleplayer/releases/latest) 下载 **`starbreak-singleplayer-windows-*.zip` 玩家包**，不要选 Source code。
+3. 完整解压，**将整个 `starbreak-singleplayer` 文件夹放进 SBPE 安装目录**，保留内含的 `python` 文件夹。项目文件夹可以重命名，但内部结构须保留。
+4. 双击项目文件夹里的 **`start.cmd`**。装备编辑器和游戏会分别打开；关闭游戏后本场本地服退出。无需安装 Python。
 
 目录应类似：
 
@@ -34,6 +34,7 @@ SBPE/
 ├── plugins/
 └── starbreak-singleplayer/
     ├── start.cmd
+    ├── python/            # 玩家包自带的运行环境 / bundled player runtime
     ├── tools/
     ├── localserver/
     ├── maps/
@@ -45,13 +46,13 @@ SBPE/
 也可以在 Windows 终端手动启动：
 
 ```powershell
-py -3 tools/play_hulk.py --sbpe ".." --sbpe-direct
+.\python\python.exe tools/play_hulk.py --sbpe ".." --sbpe-direct
 ```
 
 如果游戏路径没有从 SBPE 配置识别出来，可显式添加：
 
 ```powershell
-py -3 tools/play_hulk.py --sbpe ".." --sbpe-direct --game "C:\Games\StarBreak"
+.\python\python.exe tools/play_hulk.py --sbpe ".." --sbpe-direct --game "C:\Games\StarBreak"
 ```
 
 ### 使用装备编辑器
@@ -79,13 +80,15 @@ Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 
 - 首次启动自动创建 `userdata/`，保存自己的配装、语言偏好和日志；删除此目录可恢复默认设置。它不会进入 Git 版本控制。
 - 不需要原服账号登录。本地玩家采用固定的虚拟身份，原服账号进度与背包不会导入。
 - 提示缺少 `remote.bin`、`symbols.json` 或 `pypy3.exe`：检查项目是否放在完整的 SBPE 安装目录下。
-- 编辑器没有打开：确认运行 Python 带有 `tkinter`，并查看 `userdata/logs/` 中的日志。
+- 提示 Python 未找到或运行环境检查失败：重新完整解压 Windows 玩家包，确认 `start.cmd` 旁有 `python/python.exe`。SBPE 的旧版 PyPy 不能代替本地服和编辑器所需的 Python。
+- 编辑器没有打开：确认玩家包的 `python/tcl`、`python/tkinter` 也已解压，并查看 `userdata/logs/` 中的日志。
+- 只下载源码或在 Mac 预览：自行准备带 Tk 的 Python 3.10+；Windows 源码启动器也可识别系统 Python 或 SBPE 目录下的 `python/python.exe`。
 - 补丁提示版本或字节不匹配：当前客户端二进制不符合补丁预期，不要用不匹配的补丁强行覆盖。
 - 地图和机制为模拟实现，部分行为及数值可能与原服不同。整关试玩不代表全部原版生成规则已经恢复。
 
 ### 许可
 
-模拟器代码采用 [MIT](LICENSE)。StarBreak 游戏客户端、美术、音频及 SBPE 不包含在本仓库中，其权利与许可由各自所有者决定；运行时需要用户自己的客户端及 SBPE 安装。
+模拟器代码采用 [MIT](LICENSE)。Windows 玩家包附带的 Python 和 Tcl/Tk 保留各自许可，见 `python/LICENSE.txt`、`python/TCL-LICENSE.txt` 和 `python/TK-LICENSE.txt`。StarBreak 游戏客户端、美术、音频及 SBPE 不包含在本仓库中，其权利与许可由各自所有者决定；运行时需要用户自己的客户端及 SBPE 安装。
 
 ## English usage
 
@@ -95,28 +98,28 @@ Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 
 - Switch between all four shells; edit MK, equipment, modifiers, implant slots and supply drop rates. Some maps also expose turret and balance settings.
 - The separate gear editor supports **English**, **简体中文** and **System / 跟随系统**, preserving unsaved edits when switching languages.
 - **Playing the game requires Windows, the Windows StarBreak client and a compatible [SBPE](https://github.com/atomizer/sbpe) installation.** Client patches target the StarBreak 1.14.6 Windows binary. Other versions may be incompatible.
-- The server and editor require Python 3.10+; the editor needs `tkinter`. The official Windows Python installer normally includes Tk. SBPE's own 32-bit PyPy remains necessary for injection.
+- **The Windows player Release includes Python and Tk. No separate Python installation or PATH setup is needed.** SBPE's own 32-bit PyPy remains necessary for injection. GitHub's Source code / Download ZIP contains source only, without this runtime.
 - macOS can preview the gear editor independently. This package does not provide a macOS game launcher or native injection backend.
 
 ### Install and launch
 
 1. Install and configure SBPE first. Make sure it can launch your StarBreak client. Its `config.ini` should point to your own game installation.
-2. Download this repository and **place the entire project folder inside your SBPE installation directory**, as shown in the directory layout above. You may rename the project folder while preserving its contents.
-3. Install Python 3.10+, enable the installer's PATH option and check that `py -3 -m tkinter` opens a test window. Alternatively, a compatible CPython with Tk may be provided at `SBPE/python/python.exe`.
-4. Double-click **`start.cmd` inside the project folder**. The editor and game open separately. Closing the game stops that session's local server.
+2. Download the **`starbreak-singleplayer-windows-*.zip` player package** from [Releases](https://github.com/yosukira/starbreak-singleplayer/releases/latest). Do not choose Source code.
+3. Extract the complete archive and **place the entire `starbreak-singleplayer` folder inside your SBPE installation directory**, as shown above. Keep the included `python` folder. You may rename the project folder while preserving its contents.
+4. Double-click **`start.cmd` inside the project folder**. The editor and game open separately. Closing the game stops that session's local server. You do not need to install Python.
 
 The launcher creates a separate client copy for local connections and retains the original client file. It uses the parent SBPE directory's plugins and configuration, installs the simulator's runtime plugins and restores SBPE configuration on normal exit. Close other game processes using the same SBPE installation before launching.
 
 From a Windows terminal in the project folder:
 
 ```powershell
-py -3 tools/play_hulk.py --sbpe ".." --sbpe-direct
+.\python\python.exe tools/play_hulk.py --sbpe ".." --sbpe-direct
 ```
 
 If the game path cannot be detected from SBPE configuration:
 
 ```powershell
-py -3 tools/play_hulk.py --sbpe ".." --sbpe-direct --game "C:\Games\StarBreak"
+.\python\python.exe tools/play_hulk.py --sbpe ".." --sbpe-direct --game "C:\Games\StarBreak"
 ```
 
 ### Gear editor
@@ -144,10 +147,12 @@ To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 to
 - First launch creates `userdata/` for your own loadouts, language preference and logs. Delete that folder to restore defaults. It is excluded from Git.
 - No original-server account login is required. A synthetic local player is used; online account progress and inventory are not imported.
 - Missing `remote.bin`, `symbols.json` or `pypy3.exe`: check the project folder is inside a complete SBPE installation.
-- No editor window: check that your Python includes `tkinter`, then inspect `userdata/logs/`.
+- Python missing or runtime check failed: re-extract the complete Windows player ZIP and make sure `python/python.exe` is next to `start.cmd`. SBPE's old PyPy cannot replace the Python runtime needed by the server and editor.
+- No editor window: check that `python/tcl` and `python/tkinter` were also extracted, then inspect `userdata/logs/`.
+- Source-only users and macOS editor previews need their own Python 3.10+ with Tk. The Windows source launcher can also use an installed Python or `SBPE/python/python.exe`.
 - A patch reports an unexpected version or byte sequence: the client binary does not match this patch. Do not overwrite it with a mismatched patch.
 - These are simulated encounters. Some behaviors and values differ from the original server; full-run simulations do not reproduce every original generation rule.
 
 ### License
 
-Simulator code is licensed under [MIT](LICENSE). The StarBreak client, artwork, audio and SBPE are not included; their ownership and licenses remain with their respective owners. You must supply your own client and SBPE installation.
+Simulator code is licensed under [MIT](LICENSE). The Windows player runtime retains its Python and Tcl/Tk licenses in `python/LICENSE.txt`, `python/TCL-LICENSE.txt` and `python/TK-LICENSE.txt`. The StarBreak client, artwork, audio and SBPE are not included; their ownership and licenses remain with their respective owners. You must supply your own client and SBPE installation.

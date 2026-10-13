@@ -222,6 +222,7 @@ def _python_kind(path):
     if not os.path.isfile(str(path)):
         return None
     script = ('import sys\n'
+              'if sys.version_info < (3, 10): sys.exit(1)\n'
               'print(sys.implementation.name + " " + sys.version.split()[0])\n')
     try:
         result = subprocess.run([str(path), '-c', script],
@@ -237,16 +238,10 @@ def _python_kind(path):
     return parts[0], parts[1]
 
 def bundled_tk_environment():
-    """Point Tcl/Tk at the shipped ``python/tcl`` tree when present.
-
-    The package bundles tkinter plus both Tcl script libraries, but an
-    embeddable interpreter does not find them on its own; setting the two
-    variables makes the bundled python a normal Tk editor host, so a machine
-    without any installed Python still gets the ~/F8 gear overlay.
-    """
+    """Locate the player package's Tcl/Tk libraries for embedded Python."""
     if os.environ.get('TCL_LIBRARY') and os.environ.get('TK_LIBRARY'):
         return None
-    for base in (LAB.parent / 'python', LAB / 'python'):
+    for base in (LAB / 'python', LAB.parent / 'python'):
         tcl = base / 'tcl' / 'tcl8.6'
         tk = base / 'tcl' / 'tk8.6'
         if tcl.is_dir() and tk.is_dir():
@@ -290,23 +285,19 @@ def choose_editor_python():
     return None
 
 def choose_server_python(explicit=None):
-    """Pick the interpreter for the 60 Hz server loop.
+    """Prefer bundled CPython 3.10+ for the 60 Hz server loop.
 
-    The loop steps a fixed 1/60 s per iteration, so a slow interpreter makes
-    the whole fight run slow instead of dropping frames.  The embedded PyPy
-    3.5 loses about 2 % (4 % while it warms up) on a busy machine while any
-    CPython sustains 60.0 Hz, so prefer the bundled ``python/`` folder, then
-    any CPython on this machine, and keep PyPy only as the last resort.
+    SBPE's old 32-bit PyPy is reserved for injection and cannot host this server.
     """
     forced = explicit or os.environ.get('HULK_SERVER_PYTHON')
     if forced:
         kind = _python_kind(forced)
         if kind is None:
-            raise SystemExit('Cannot run the server with: ' + str(forced))
+            raise SystemExit('Cannot run the server with Python 3.10+: ' + str(forced))
         return str(forced), kind[0], kind[1]
     candidates = []
-    for bundled in (LAB.parent / 'python' / 'python.exe',
-                    LAB / 'python' / 'python.exe'):
+    for bundled in (LAB / 'python' / 'python.exe',
+                    LAB.parent / 'python' / 'python.exe'):
         if bundled.is_file():
             candidates.append(str(bundled))
     if getattr(sys.implementation, 'name', '') == 'cpython':
@@ -332,7 +323,7 @@ def choose_server_python(explicit=None):
             return str(candidate), kind[0], kind[1]
     if fallback is not None:
         return fallback
-    return sys.executable, getattr(sys.implementation, 'name', 'python'), ''
+    raise SystemExit('No Python 3.10+ runtime found. Use the Windows player ZIP.')
 
 def default_runtime_dir(sbpe, profile):
     """Return an isolated runtime outside the installed SBPE directory."""
@@ -815,9 +806,8 @@ def main():
     parser.add_argument('--no-gear-editor', action='store_true',
                         help='do not start the ~ / F8 overlay editor')
     parser.add_argument('--server-python', type=Path,
-                        help='interpreter for the 60 Hz server loop (default: '
-                             'the bundled python/, then any CPython, then '
-                             'HULK_SERVER_PYTHON); PyPy 3.5 runs ~2%% slow')
+                        help='Python 3.10+ for the 60 Hz server loop; explicit '
+                             'path or HULK_SERVER_PYTHON overrides the bundled CPython')
     parser.add_argument('--map', default=None,
                         help='map pack from maps/ (default: the map saved in '
                              'game_settings.json, else egy_hulk)')

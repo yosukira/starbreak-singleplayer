@@ -1715,8 +1715,8 @@ def _ensure_bundled_tcl():
     """
     if os.environ.get('TCL_LIBRARY') and os.environ.get('TK_LIBRARY'):
         return False
-    for base in (os.path.join(os.path.dirname(LAB), 'python'),
-                 os.path.join(LAB, 'python')):
+    for base in (os.path.join(LAB, 'python'),
+                 os.path.join(os.path.dirname(LAB), 'python')):
         tcl = os.path.join(base, 'tcl', 'tcl8.6')
         tk = os.path.join(base, 'tcl', 'tk8.6')
         if os.path.isdir(tcl) and os.path.isdir(tk):

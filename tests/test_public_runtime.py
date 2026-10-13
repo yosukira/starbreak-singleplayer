@@ -31,7 +31,7 @@ class PublicRuntimeTests(unittest.TestCase):
                     self.assertTrue(callable(getattr(importlib.import_module(module), info['session_class'])))
 
     def test_no_research_or_account_dumps(self):
-        for name in ('captures', 'docs', 'anim', 'python', 'pypy'):
+        for name in ('captures', 'docs', 'anim', 'pypy'):
             self.assertFalse((ROOT / name).exists(), name)
         for p in (ROOT / 'maps').rglob('*'):
             self.assertNotIn(p.name, ('evidence', 'player-track.json', 'damage-ledger.json'))

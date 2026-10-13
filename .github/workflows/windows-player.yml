@@ -1,0 +1,48 @@
+name: Windows player package
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.10'
+          architecture: 'x64'
+      - name: Build portable player package
+        run: python packaging/build_windows_release.py --output dist/starbreak-singleplayer-windows.zip
+      - name: Verify extracted ZIP without system Python on PATH
+        shell: pwsh
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP 'player package with spaces'
+          Expand-Archive dist/starbreak-singleplayer-windows.zip $destination
+          $project = Join-Path $destination 'starbreak-singleplayer'
+          Copy-Item tests (Join-Path $project 'tests') -Recurse
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+          $env:PYTHONHOME = 'Z:\unavailable-python'
+          $env:PYTHONPATH = 'Z:\unavailable-python'
+          $env:STARBREAK_UI_TESTS = '1'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          Set-Location $project
+          cmd.exe /d /c 'start.cmd --check-runtime'
+          if ($LASTEXITCODE -ne 0) { throw 'Portable launcher preflight failed' }
+          & .\python\python.exe tools/gear_editor.py --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Portable editor launch failed' }
+          $env:TCL_LIBRARY = Join-Path $project 'python\tcl\tcl8.6'
+          $env:TK_LIBRARY = Join-Path $project 'python\tcl\tk8.6'
+          & .\python\python.exe -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { throw 'Portable runtime tests failed' }
+          Rename-Item python python-unavailable
+          cmd.exe /d /c 'start.cmd --check-runtime' > missing-runtime.txt 2>&1
+          if ($LASTEXITCODE -eq 0) { throw 'Missing runtime was incorrectly accepted' }
+          if (-not (Select-String -Path missing-runtime.txt -SimpleMatch 'Python runtime missing')) {
+            throw 'Missing runtime did not show an actionable error'
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-player
+          path: dist/starbreak-singleplayer-windows.zip
