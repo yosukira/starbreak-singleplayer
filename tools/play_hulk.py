@@ -817,6 +817,8 @@ def main():
     args = parser.parse_args()
     if os.name != 'nt':
         raise SystemExit('The simulator requires Windows and the Windows StarBreak client.')
+    from localserver.runtime_content import require_runtime_content
+    require_runtime_content(LAB)
     configured_game = game_from_sbpe_config(args.sbpe)
     game_dir = args.game or (configured_game.parent if configured_game else GAME)
     client = game_dir / 'mvmmoclient_local2.exe'
@@ -846,7 +848,9 @@ def main():
                 create_world,
                 LAB / 'data/catalogue/characters.json',
                 LAB / 'data/catalogue/item_descriptions.jsonl',
-                LAB / 'userdata/practice_loadout.json']
+                LAB / 'userdata/practice_loadout.json',
+                LAB / 'userdata/class_loadouts.json',
+                LAB / 'data/catalogue/class_players.json']
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
         raise SystemExit('Missing required files:\n' + '\n'.join(missing))
@@ -991,6 +995,8 @@ def main():
                 '--characters', str(required[4]), '--items', str(required[5]),
                 '--data-version', str(game_dir / 'data' / 'texture' / 'dataVersion.bpb'),
                 '--loadout', str(required[6]),
+                '--class-loadouts', str(required[7]),
+                '--player-payloads', str(required[8]),
                 '--no-time-echo']
             if args.terrain_variant:
                 command.extend(['--terrain-variant',args.terrain_variant])

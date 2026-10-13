@@ -219,9 +219,10 @@ def build_affix_priority(catalogue, path=AFFIX_GUIDE):
 def affix_default_value(priority, item_type, stat):
     """Value for a newly selected modifier; never rewrite loaded instances."""
     stat = int(stat)
-    if stat in AFFIX_DEFAULTS:
-        return AFFIX_DEFAULTS[stat]
-    return priority.get('defaults', {}).get(item_type, {}).get(stat, 0)
+    defaults = priority.get('defaults', {}).get(item_type, {})
+    if stat in defaults:
+        return defaults[stat]
+    return AFFIX_DEFAULTS.get(stat, 0)
 
 def _dpi_scale(root):
     """Best-effort Windows DPI awareness and Tk point scaling."""
@@ -961,13 +962,40 @@ class GearEditor(object):
         if not text:
             return
         try:
-            self.item_type = int(text.split(' ', 1)[0])
+            selected_type = int(text.split(' ', 1)[0])
         except (ValueError, IndexError):
             return
+        previous_type = self.item_type
+        boosts = None
+        if previous_type is not None and selected_type != previous_type:
+            current = self._current_boosts()
+            drafts = getattr(self, '_item_affix_drafts', {})
+            self._item_affix_drafts = drafts
+            drafts[(self.char_type, self.slotpos, previous_type)] = current
+            selected_key = (self.char_type, self.slotpos, selected_type)
+            saved = (self.overrides.get(str(self.char_type)) or {}).get(str(self.slotpos)) or {}
+            if selected_key in drafts:
+                boosts = drafts[selected_key]
+            elif saved.get('type_') == selected_type:
+                boosts = saved.get('statboosts_') or []
+            else:
+                boosts = []
+                known = self.affix_priority.get('defaults', {}).get(selected_type, {})
+                for row in current:
+                    boost = dict(row)
+                    stat = boost['stat_']
+                    old_default = affix_default_value(self.affix_priority, previous_type, stat)
+                    if (boost.get('val_', 0) == old_default
+                            and (stat in known or stat in AFFIX_DEFAULTS)):
+                        boost['val_'] = affix_default_value(self.affix_priority, selected_type, stat)
+                    boosts.append(boost)
+        self.item_type = selected_type
         item = self.catalogue.get(self.item_type)
         self.base_label.configure(text=self.tr('基础属性：{0}').format(
             self._format_boosts(item.get('base') if item else [])))
         self._refresh_affix_options()
+        if boosts is not None:
+            self._set_affixes(boosts)
         self._load_projectile_speeds()
 
 
@@ -1454,10 +1482,11 @@ class GearEditor(object):
         if item and self.item_type in self.affix_priority.get('exact', {}):
             pool = self.affix_priority['exact'][self.item_type]
             names = ', '.join(
-                '{0}({1})'.format(self.stat_names.get(stat, '?'), stat)
+                '{0}({1})={2}'.format(self.stat_names.get(stat, '?'), stat,
+                                     affix_default_value(self.affix_priority, self.item_type, stat))
                 for stat in pool)
             self.affix_hint.configure(
-                text=self.tr('优先显示本物品词缀（Wiki / CHM）：{0}').format(names))
+                text=self.tr('本物品词缀默认值：{0}').format(names))
         else:
             self.affix_hint.configure(
                 text=self.tr('本物品暂无 Wiki / CHM 词缀池；词缀按 ID 或首字母排序。'))
@@ -1615,6 +1644,8 @@ class GearEditor(object):
 
     def reload(self):
         self.catalogue = load_catalogue()
+        self.affix_priority = build_affix_priority(self.catalogue)
+        self._item_affix_drafts = {}
         self.overrides = load_overrides()
         self.game_settings = game_settings.load()
         self._refresh_map_choices()

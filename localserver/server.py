@@ -33,6 +33,9 @@ DEFAULT_CHARACTERS = os.path.join(
 DEFAULT_CLASS_LOADOUTS = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'userdata', 'class_loadouts.json')
+DEFAULT_PLAYER_PAYLOADS = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'data', 'catalogue', 'class_players.json')
 DEFAULT_CHARACTER_DESCRIPTIONS = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'data', 'catalogue', 'character_descriptions.jsonl')
@@ -350,6 +353,54 @@ class LocalServer(object):
             class_count, path))
         return True
 
+    def _load_player_payloads(self, options):
+        """Load anonymous class templates with the native character shape."""
+        if getattr(options, 'no_player_payloads', False):
+            return {}
+        path = getattr(options, 'player_payloads', DEFAULT_PLAYER_PAYLOADS)
+        if not path or not os.path.isfile(path):
+            return {}
+        document, _ = jsonio.load_json(path)
+        payloads = {}
+        for key, value in document.items():
+            if key not in ('1', '2', '3', '5') or not isinstance(value, dict):
+                continue
+            char_type = int(key)
+            character = value.get('charprops') or {}
+            if int(_item_field(character, 'type', 0)) != char_type:
+                raise ValueError('Class template does not match character ' + key)
+            payloads[char_type] = value
+        log('loaded {0} anonymous character templates'.format(len(payloads)))
+        return payloads
+
+    def _build_recorded_player_blob(self, options, template, player_type,
+                                    position, loadout=None):
+        """Keep native class fields and apply the editable starting loadout."""
+        message = copy.deepcopy(template)
+        message['accountid'] = 'local-account-0001'
+        message['username'] = 'Localplayer'
+        message.pop('factionname', None)
+        message['charprops']['charid'] = player_type
+        if loadout:
+            self._apply_recorded_loadout(message, loadout, player_type)
+        self._scrub_recorded_progress(message)
+        message.pop('pos', None)
+        message.pop('pos_', None)
+        if position is not None:
+            message['pos'] = dict(zip(('xmp', 'ymp', 'wmp', 'hmp'),
+                                      map(int, position)))
+        for slot in message.get('slottedcharprops') or []:
+            slot_type = int(_item_field(slot, 'type', 0))
+            preset = (self.class_loadouts.get(slot_type) or {}).get('items_')
+            if preset:
+                slot['items'] = preset
+        dropped = self._drop_unknown_items(message)
+        self._fill_loadout_vitals(message, loadout, player_type)
+        blob = self.layouts.encode('Delta', {'createplayer_': _label_only_item_affixes(message)})
+        log('built class template type={0} items={1} dropped={2} ({3} bytes)'.format(
+            player_type, len(message['charprops'].get('items') or []), dropped, len(blob)))
+        return blob
+
     LOADOUT_STAT_FIELDS = (
         'hitpoints_', 'maxhitpoints_', 'ammo_', 'maxammo_', 'damagebonus_',
         'armor_', 'walkspeed_', 'jumpspeed_', 'critchance_', 'critmult_',
@@ -481,7 +532,7 @@ class LocalServer(object):
         return dropped
 
     def _load_player_delta(self, options):
-        self.player_payloads = {}
+        self.player_payloads = self._load_player_payloads(options)
         return self._build_player_delta_blob(options)
 
     def _build_player_delta_blob(self, options, player_type=None,
@@ -522,6 +573,10 @@ class LocalServer(object):
                     '{1}; keeping class loadout'.format(
                         explicit.get('type_'), player_type))
 
+        template = self.player_payloads.get(player_type)
+        if template is not None:
+            return self._build_recorded_player_blob(
+                options, template, player_type, position, loadout=loadout)
         slotted = []
         for char_type in sorted(self.character_library):
             class_loadout = self.class_loadouts.get(char_type) or {}
@@ -1017,7 +1072,7 @@ class LocalServer(object):
         if not self._ground_ack_ready(session.bridge):return
         self.reload_class_loadouts_if_changed()
         requested_type = int(player_type)
-        current_type = int(getattr(self.options, 'player_type', 1) or 1)
+        current_type = int(getattr(session, 'player_type', self.options.player_type) or 1)
         if requested_type != current_type:
             has_payload = requested_type in (self.player_payloads or {})
             if not self.supports_class_switch and not has_payload:
@@ -1471,6 +1526,7 @@ class LocalServer(object):
         requested_type = self._restart_player_type
         if requested_type is not None:
             session.player_type = int(requested_type)
+            self.options.player_type = int(requested_type)
         self.live_session = session
         self._restart_in_progress = False
         self._restart_player_type = None
@@ -1731,6 +1787,10 @@ def parse_args(argv=None):
     parser.add_argument('--class-loadouts', default=DEFAULT_CLASS_LOADOUTS,
                         help='per-character-type loadout JSON '
                              '(R restart / 7-8-9-0 class switch)')
+    parser.add_argument('--player-payloads', default=DEFAULT_PLAYER_PAYLOADS,
+                        help='anonymous native character templates by class')
+    parser.add_argument('--no-player-payloads', action='store_true',
+                        help='build characters from descriptions and loadouts only')
     parser.add_argument('--characters', default=DEFAULT_CHARACTERS,
                         help='JSON catalog of recorded CharacterDescription '
                              'messages (tools/'

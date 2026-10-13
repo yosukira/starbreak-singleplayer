@@ -78,6 +78,8 @@ Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 
 ### 本地数据与常见问题
 
 - 首次启动自动创建 `userdata/`，保存自己的配装、语言偏好和日志；删除此目录可恢复默认设置。它不会进入 Git 版本控制。
+- 初始四职业配装恢复为本地练习版的完整预设，包含自定义词缀和数值。这些数值用于练习，不是原服推荐配装或原服词缀范围说明。
+- 从旧版更新时，仅自动替换仍与旧版错误占位预设完全一致的职业配装，并补齐缺失职业；已经修改的职业配装保留。被替换的文件先备份为 `userdata/*.before-preset-repair.json`。仅当四职业都未改动且词缀覆盖文件仍为空时，才自动恢复整份默认词缀覆盖。
 - 不需要原服账号登录。本地玩家采用固定的虚拟身份，原服账号进度与背包不会导入。
 - 提示缺少 `remote.bin`、`symbols.json` 或 `pypy3.exe`：检查项目是否放在完整的 SBPE 安装目录下。
 - 提示 Python 未找到或运行环境检查失败：重新完整解压 Windows 玩家包，确认 `start.cmd` 旁有 `python/python.exe`。SBPE 的旧版 PyPy 不能代替本地服和编辑器所需的 Python。
@@ -145,6 +147,8 @@ To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 to
 ### Local files and troubleshooting
 
 - First launch creates `userdata/` for your own loadouts, language preference and logs. Delete that folder to restore defaults. It is excluded from Git.
+- The initial loadouts for all four shells restore the complete local practice presets, including custom modifiers and values. These are practice settings, not recommended retail loadouts or a specification of retail modifier ranges.
+- When updating, automatic repair replaces only shell loadouts that still exactly match the old incorrect placeholder and fills missing shells. Edited shell loadouts are retained. Replaced files are backed up as `userdata/*.before-preset-repair.json`. The default modifier overrides are restored automatically only when all four shells are unchanged and the override file is still empty.
 - No original-server account login is required. A synthetic local player is used; online account progress and inventory are not imported.
 - Missing `remote.bin`, `symbols.json` or `pypy3.exe`: check the project folder is inside a complete SBPE installation.
 - Python missing or runtime check failed: re-extract the complete Windows player ZIP and make sure `python/python.exe` is next to `start.cmd`. SBPE's old PyPy cannot replace the Python runtime needed by the server and editor.

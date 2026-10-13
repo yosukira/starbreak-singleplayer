@@ -1,0 +1,3823 @@
+{
+  "1": {
+    "accountid": "local-account-0001",
+    "accountprops": {
+      "ec": 0,
+      "progress": {}
+    },
+    "playertype": {
+      "name": "CHARACTER_WILDFIRE",
+      "value": 1
+    },
+    "username": "Localplayer",
+    "charprops": {
+      "ammo": 12,
+      "armor": 20,
+      "charid": 1,
+      "critchance": 500,
+      "critmult": 340,
+      "damagebonus": 50,
+      "hitpoints": 150,
+      "impslots": 1,
+      "invslots": 8,
+      "items": [
+        {
+          "slotpos": 3841,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 4
+            },
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITCHANCE",
+                "value": 23
+              },
+              "val": 100
+            }
+          ],
+          "type": 249
+        },
+        {
+          "slotpos": 3840,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_PENETRATING",
+                "value": 32
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_BOUNCE",
+                "value": 33
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 1
+            }
+          ],
+          "type": 207
+        },
+        {
+          "slotpos": 1024,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 20
+            }
+          ],
+          "type": 256
+        },
+        {
+          "slotpos": 256,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_RANGE",
+                "value": 13
+              },
+              "val": 125
+            },
+            {
+              "stat": {
+                "name": "STAT_PENETRATING",
+                "value": 32
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_EXPLOSIVE",
+                "value": 34
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 1
+            }
+          ],
+          "type": 108
+        },
+        {
+          "slotpos": 768,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 2
+            },
+            {
+              "stat": {
+                "name": "STAT_MAXAIRDASH",
+                "value": 21
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_TRISECTED",
+                "value": 48
+              }
+            }
+          ],
+          "type": 71
+        },
+        {
+          "slotpos": 1536,
+          "type": 309
+        },
+        {
+          "slotpos": 512,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_MAXAMMO",
+                "value": 4
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_INCENDIARY",
+                "value": 35
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_TRISECTED",
+                "value": 48
+              }
+            }
+          ],
+          "type": 210
+        },
+        {
+          "slotpos": 1280,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 10
+            },
+            {
+              "stat": {
+                "name": "STAT_JUMPSPEED",
+                "value": 12
+              },
+              "val": 10
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITMULT",
+                "value": 20
+              },
+              "val": 50
+            }
+          ],
+          "type": 266
+        }
+      ],
+      "jumpspeed": 197,
+      "mainslots": 1,
+      "maxammo": 9,
+      "maxhitpoints": 130,
+      "secslots": 1,
+      "type": 1,
+      "walkspeed": 97
+    },
+    "slottedcharprops": [
+      {
+        "ammo": 5,
+        "armor": 3,
+        "charid": 100,
+        "charslotid": 3,
+        "critchance": 175,
+        "critmult": 280,
+        "damagebonus": 18,
+        "hitpoints": 68,
+        "impslots": 0,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 512,
+            "type": 1
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 165
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          }
+        ],
+        "jumpspeed": 199,
+        "mainslots": 1,
+        "maxammo": 5,
+        "maxhitpoints": 68,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 87
+      },
+      {
+        "ammo": 7,
+        "armor": 15,
+        "charid": 101,
+        "charslotid": 0,
+        "critchance": 625,
+        "critmult": 440,
+        "damagebonus": 50,
+        "hitpoints": 110,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 2000
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMARMOR",
+                  "value": 54
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ANIMSPEED",
+                  "value": 55
+                },
+                "val": 40
+              }
+            ],
+            "type": 67
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              }
+            ],
+            "type": 114
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              }
+            ],
+            "type": 229
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 257
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_SHIELDED",
+                  "value": 56
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 1000
+              }
+            ],
+            "type": 234
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 255
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 4
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 273
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMARMOR",
+                  "value": 54
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ANIMSPEED",
+                  "value": 55
+                },
+                "val": 30
+              }
+            ],
+            "type": 233
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 5
+              }
+            ],
+            "type": 274
+          }
+        ],
+        "jumpspeed": 205,
+        "mainslots": 1,
+        "maxammo": 7,
+        "maxhitpoints": 110,
+        "secslots": 1,
+        "type": 5,
+        "walkspeed": 98
+      },
+      {
+        "ammo": 9,
+        "armor": 30,
+        "charid": 102,
+        "charslotid": 2,
+        "critchance": 375,
+        "critmult": 340,
+        "damagebonus": 50,
+        "hitpoints": 150,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 5
+              }
+            ],
+            "type": 274
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 4
+              }
+            ],
+            "type": 270
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 223
+          },
+          {
+            "slotpos": 3844,
+            "type": 77
+          },
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              }
+            ],
+            "type": 246
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_KNOCKBACKRESIST",
+                  "value": 22
+                },
+                "val": 50
+              }
+            ],
+            "type": 224
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MAXAMMO",
+                  "value": 4
+                },
+                "val": 1
+              }
+            ],
+            "type": 189
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_KNOCKBACKRESIST",
+                  "value": 22
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ACCEL",
+                  "value": 42
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_REFLECT",
+                  "value": 52
+                }
+              }
+            ],
+            "type": 228
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 227
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          }
+        ],
+        "jumpspeed": 190,
+        "mainslots": 1,
+        "maxammo": 9,
+        "maxhitpoints": 150,
+        "secslots": 1,
+        "type": 3,
+        "walkspeed": 86
+      },
+      {
+        "ammo": 8,
+        "armor": 10,
+        "charid": 103,
+        "charslotid": 1,
+        "critchance": 750,
+        "critmult": 540,
+        "damagebonus": 50,
+        "hitpoints": 100,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 116
+          },
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_RANGE",
+                  "value": 13
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_BOUNCE",
+                  "value": 33
+                },
+                "val": 1
+              }
+            ],
+            "type": 144
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 216
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 222
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              }
+            ],
+            "type": 219
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          }
+        ],
+        "jumpspeed": 215,
+        "mainslots": 1,
+        "maxammo": 8,
+        "maxhitpoints": 100,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 105
+      }
+    ]
+  },
+  "2": {
+    "accountid": "local-account-0001",
+    "accountprops": {
+      "ec": 0,
+      "progress": {}
+    },
+    "playertype": {
+      "name": "CHARACTER_WILDFIRE",
+      "value": 1
+    },
+    "username": "Localplayer",
+    "charprops": {
+      "ammo": 4,
+      "armor": 7,
+      "charid": 2,
+      "critchance": 675,
+      "critmult": 540,
+      "damagebonus": 36,
+      "hitpoints": 138,
+      "impslots": 1,
+      "invslots": 8,
+      "items": [
+        {
+          "slotpos": 3847,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_KNOCKBACKRESIST",
+                "value": 22
+              },
+              "val": 50
+            },
+            {
+              "stat": {
+                "name": "STAT_ACCEL",
+                "value": 42
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_REFLECT",
+                "value": 52
+              }
+            }
+          ],
+          "type": 228
+        },
+        {
+          "slotpos": 3846,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_REFLECT",
+                "value": 52
+              }
+            }
+          ],
+          "type": 228
+        },
+        {
+          "slotpos": 3844,
+          "type": 212
+        },
+        {
+          "slotpos": 3843,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 80
+            },
+            {
+              "stat": {
+                "name": "STAT_MAXAMMO",
+                "value": 4
+              },
+              "val": 2
+            }
+          ],
+          "type": 218
+        },
+        {
+          "slotpos": 3842,
+          "type": 233
+        },
+        {
+          "slotpos": 3840,
+          "type": 270
+        },
+        {
+          "slotpos": 3841,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 20
+            }
+          ],
+          "type": 256
+        },
+        {
+          "slotpos": 1024,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_CRITCHANCE",
+                "value": 23
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITMULT",
+                "value": 20
+              },
+              "val": 25
+            }
+          ],
+          "type": 252
+        },
+        {
+          "slotpos": 3845,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ITEMARMOR",
+                "value": 54
+              },
+              "val": 50
+            },
+            {
+              "stat": {
+                "name": "STAT_COOLDOWN",
+                "value": 57
+              },
+              "val": -250
+            }
+          ],
+          "type": 233
+        },
+        {
+          "slotpos": 256,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_LEECH",
+                "value": 50
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_MOVETIME",
+                "value": 53
+              },
+              "val": 200
+            }
+          ],
+          "type": 159
+        },
+        {
+          "slotpos": 768,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_LIFETIME",
+                "value": 38
+              },
+              "val": 150
+            },
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 80
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITMULT",
+                "value": 25
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_MAXAIRDASH",
+                "value": 21
+              },
+              "val": 1
+            }
+          ],
+          "type": 165
+        },
+        {
+          "slotpos": 1536,
+          "type": 77
+        },
+        {
+          "slotpos": 1280,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 10
+            }
+          ],
+          "type": 266
+        },
+        {
+          "slotpos": 512,
+          "type": 219
+        }
+      ],
+      "jumpspeed": 207,
+      "mainslots": 1,
+      "maxammo": 6,
+      "maxhitpoints": 100,
+      "secslots": 1,
+      "type": 2,
+      "walkspeed": 102
+    }
+  },
+  "3": {
+    "accountid": "local-account-0001",
+    "accountprops": {
+      "ec": 0,
+      "progress": {}
+    },
+    "playertype": {
+      "name": "CHARACTER_WILDFIRE",
+      "value": 1
+    },
+    "username": "Localplayer",
+    "charprops": {
+      "ammo": 0,
+      "armor": 30,
+      "charid": 3,
+      "critchance": 375,
+      "critmult": 340,
+      "damagebonus": 50,
+      "hitpoints": 146,
+      "imagemap": "xmas",
+      "impslots": 1,
+      "invslots": 8,
+      "items": [
+        {
+          "slotpos": 3843,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_JUMPSPEED",
+                "value": 12
+              },
+              "val": 5
+            }
+          ],
+          "type": 274
+        },
+        {
+          "slotpos": 1024,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 20
+            }
+          ],
+          "type": 256
+        },
+        {
+          "slotpos": 3844,
+          "type": 77
+        },
+        {
+          "slotpos": 3840,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 20
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITMULT",
+                "value": 25
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_EXTRAHIT",
+                "value": 51
+              },
+              "val": 1
+            }
+          ],
+          "type": 223
+        },
+        {
+          "slotpos": 3842,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 5
+            }
+          ],
+          "type": 246
+        },
+        {
+          "slotpos": 256,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 20
+            },
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 2
+            },
+            {
+              "stat": {
+                "name": "STAT_EXTRAHIT",
+                "value": 51
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_KNOCKBACKRESIST",
+                "value": 22
+              },
+              "val": 50
+            }
+          ],
+          "type": 224
+        },
+        {
+          "slotpos": 3841,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_MAXAMMO",
+                "value": 4
+              },
+              "val": 1
+            }
+          ],
+          "type": 189
+        },
+        {
+          "slotpos": 768,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_KNOCKBACKRESIST",
+                "value": 22
+              },
+              "val": 50
+            },
+            {
+              "stat": {
+                "name": "STAT_ACCEL",
+                "value": 42
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_SPEED",
+                "value": 37
+              },
+              "val": 40
+            },
+            {
+              "stat": {
+                "name": "STAT_REFLECT",
+                "value": 52
+              }
+            }
+          ],
+          "type": 228
+        },
+        {
+          "slotpos": 1536,
+          "type": 309
+        },
+        {
+          "slotpos": 512,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 2
+            },
+            {
+              "stat": {
+                "name": "STAT_TRISECTED",
+                "value": 48
+              }
+            }
+          ],
+          "type": 227
+        },
+        {
+          "slotpos": 1280,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_DAMAGEBONUS",
+                "value": 18
+              },
+              "val": 20
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 4
+            }
+          ],
+          "type": 270
+        }
+      ],
+      "jumpspeed": 190,
+      "mainslots": 1,
+      "maxammo": 9,
+      "maxhitpoints": 150,
+      "secslots": 1,
+      "type": 3,
+      "walkspeed": 86
+    },
+    "slottedcharprops": [
+      {
+        "ammo": 7,
+        "armor": 10,
+        "charid": 100,
+        "charslotid": 0,
+        "critchance": 750,
+        "critmult": 540,
+        "damagebonus": 50,
+        "hitpoints": 140,
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 1536,
+            "type": 77
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 165
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              }
+            ],
+            "type": 219
+          }
+        ],
+        "jumpspeed": 214,
+        "mainslots": 1,
+        "maxammo": 7,
+        "maxhitpoints": 100,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 105
+      },
+      {
+        "ammo": 10,
+        "armor": 20,
+        "charid": 101,
+        "charslotid": 1,
+        "critchance": 500,
+        "critmult": 340,
+        "damagebonus": 50,
+        "hitpoints": 130,
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_BOUNCE",
+                  "value": 33
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 207
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 4
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 100
+              }
+            ],
+            "type": 249
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 71
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_RANGE",
+                  "value": 13
+                },
+                "val": 125
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXPLOSIVE",
+                  "value": 34
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 108
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MAXAMMO",
+                  "value": 4
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_INCENDIARY",
+                  "value": 35
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 210
+          }
+        ],
+        "jumpspeed": 197,
+        "mainslots": 1,
+        "maxammo": 9,
+        "maxhitpoints": 130,
+        "secslots": 1,
+        "type": 1,
+        "walkspeed": 97
+      },
+      {
+        "ammo": 7,
+        "armor": 15,
+        "charid": 102,
+        "charslotid": 2,
+        "critchance": 625,
+        "critmult": 440,
+        "damagebonus": 50,
+        "hitpoints": 110,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              }
+            ],
+            "type": 114
+          },
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 2000
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMARMOR",
+                  "value": 54
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ANIMSPEED",
+                  "value": 55
+                },
+                "val": 40
+              }
+            ],
+            "type": 67
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              },
+              {
+                "stat": {
+                  "name": "STAT_COOLDOWN",
+                  "value": 57
+                },
+                "val": -50
+              }
+            ],
+            "type": 229
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 257
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_SHIELDED",
+                  "value": 56
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 1000
+              }
+            ],
+            "type": 234
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 4
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 273
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 5
+              }
+            ],
+            "type": 274
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 255
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMARMOR",
+                  "value": 54
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ANIMSPEED",
+                  "value": 55
+                },
+                "val": 30
+              }
+            ],
+            "type": 233
+          }
+        ],
+        "jumpspeed": 205,
+        "mainslots": 1,
+        "maxammo": 7,
+        "maxhitpoints": 110,
+        "secslots": 1,
+        "type": 5,
+        "walkspeed": 98
+      },
+      {
+        "ammo": 8,
+        "armor": 10,
+        "charid": 103,
+        "charslotid": 3,
+        "critchance": 750,
+        "critmult": 540,
+        "damagebonus": 50,
+        "hitpoints": 100,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_RANGE",
+                  "value": 13
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_BOUNCE",
+                  "value": 33
+                },
+                "val": 1
+              }
+            ],
+            "type": 144
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 116
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 222
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 216
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              }
+            ],
+            "type": 219
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 266
+          }
+        ],
+        "jumpspeed": 215,
+        "mainslots": 1,
+        "maxammo": 8,
+        "maxhitpoints": 100,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 105
+      }
+    ]
+  },
+  "5": {
+    "accountid": "local-account-0001",
+    "accountprops": {
+      "ec": 0,
+      "progress": {}
+    },
+    "playertype": {
+      "name": "CHARACTER_WILDFIRE",
+      "value": 1
+    },
+    "username": "Localplayer",
+    "charprops": {
+      "ammo": 9,
+      "armor": 15,
+      "charid": 5,
+      "critchance": 625,
+      "critmult": 440,
+      "damagebonus": 50,
+      "hitpoints": 130,
+      "imagemap": "xmas",
+      "impslots": 1,
+      "invslots": 8,
+      "items": [
+        {
+          "slotpos": 1536,
+          "type": 309
+        },
+        {
+          "slotpos": 256,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITCHANCE",
+                "value": 24
+              },
+              "val": 500
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITMULT",
+                "value": 25
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_COOLDOWN",
+                "value": 57
+              },
+              "val": -50
+            },
+            {
+              "stat": {
+                "name": "STAT_COOLDOWN",
+                "value": 57
+              },
+              "val": -50
+            }
+          ],
+          "type": 114
+        },
+        {
+          "slotpos": 3842,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_LIFETIME",
+                "value": 38
+              },
+              "val": 2000
+            },
+            {
+              "stat": {
+                "name": "STAT_PENETRATING",
+                "value": 32
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMARMOR",
+                "value": 54
+              },
+              "val": 50
+            },
+            {
+              "stat": {
+                "name": "STAT_ANIMSPEED",
+                "value": 55
+              },
+              "val": 40
+            }
+          ],
+          "type": 67
+        },
+        {
+          "slotpos": 3840,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITCHANCE",
+                "value": 24
+              },
+              "val": 500
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMCRITMULT",
+                "value": 25
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_COOLDOWN",
+                "value": 57
+              },
+              "val": -50
+            },
+            {
+              "stat": {
+                "name": "STAT_COOLDOWN",
+                "value": 57
+              },
+              "val": -50
+            }
+          ],
+          "type": 229
+        },
+        {
+          "slotpos": 3841,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_NUMSUBS",
+                "value": 36
+              },
+              "val": 1
+            }
+          ],
+          "type": 257
+        },
+        {
+          "slotpos": 768,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_SIMULTANEOUS",
+                "value": 45
+              },
+              "val": 1
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMORPIERCE",
+                "value": 43
+              },
+              "val": 100
+            },
+            {
+              "stat": {
+                "name": "STAT_SHIELDED",
+                "value": 56
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_LIFETIME",
+                "value": 38
+              },
+              "val": 1000
+            }
+          ],
+          "type": 234
+        },
+        {
+          "slotpos": 1024,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_CRITCHANCE",
+                "value": 23
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITMULT",
+                "value": 20
+              },
+              "val": 25
+            }
+          ],
+          "type": 255
+        },
+        {
+          "slotpos": 3843,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 4
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITCHANCE",
+                "value": 23
+              },
+              "val": 200
+            },
+            {
+              "stat": {
+                "name": "STAT_CRITMULT",
+                "value": 20
+              },
+              "val": 50
+            }
+          ],
+          "type": 273
+        },
+        {
+          "slotpos": 512,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_PENETRATING",
+                "value": 32
+              }
+            },
+            {
+              "stat": {
+                "name": "STAT_ITEMARMOR",
+                "value": 54
+              },
+              "val": 50
+            },
+            {
+              "stat": {
+                "name": "STAT_ANIMSPEED",
+                "value": 55
+              },
+              "val": 30
+            }
+          ],
+          "type": 233
+        },
+        {
+          "slotpos": 1280,
+          "statboosts": [
+            {
+              "stat": {
+                "name": "STAT_WALKSPEED",
+                "value": 11
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_ARMOR",
+                "value": 10
+              },
+              "val": 5
+            },
+            {
+              "stat": {
+                "name": "STAT_JUMPSPEED",
+                "value": 12
+              },
+              "val": 5
+            }
+          ],
+          "type": 274
+        }
+      ],
+      "jumpspeed": 205,
+      "mainslots": 1,
+      "maxammo": 7,
+      "maxhitpoints": 110,
+      "secslots": 1,
+      "type": 5,
+      "walkspeed": 98
+    },
+    "slottedcharprops": [
+      {
+        "ammo": 5,
+        "armor": 3,
+        "charid": 100,
+        "charslotid": 2,
+        "critchance": 175,
+        "critmult": 280,
+        "damagebonus": 18,
+        "hitpoints": 68,
+        "impslots": 0,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 165
+          },
+          {
+            "slotpos": 512,
+            "type": 219
+          }
+        ],
+        "jumpspeed": 199,
+        "mainslots": 1,
+        "maxammo": 5,
+        "maxhitpoints": 68,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 87
+      },
+      {
+        "ammo": 10,
+        "armor": 20,
+        "charid": 101,
+        "charslotid": 1,
+        "critchance": 500,
+        "critmult": 340,
+        "damagebonus": 50,
+        "hitpoints": 130,
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 4
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 100
+              }
+            ],
+            "type": 249
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_BOUNCE",
+                  "value": 33
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 207
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_RANGE",
+                  "value": 13
+                },
+                "val": 125
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXPLOSIVE",
+                  "value": 34
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 1
+              }
+            ],
+            "type": 108
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 71
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MAXAMMO",
+                  "value": 4
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_INCENDIARY",
+                  "value": 35
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 210
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          }
+        ],
+        "jumpspeed": 197,
+        "mainslots": 1,
+        "maxammo": 9,
+        "maxhitpoints": 130,
+        "secslots": 1,
+        "type": 1,
+        "walkspeed": 97
+      },
+      {
+        "ammo": 8,
+        "armor": 10,
+        "charid": 102,
+        "charslotid": 0,
+        "critchance": 750,
+        "critmult": 540,
+        "damagebonus": 50,
+        "hitpoints": 100,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_LEECH",
+                  "value": 50
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 159
+          },
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITCHANCE",
+                  "value": 24
+                },
+                "val": 500
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 116
+          },
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_RANGE",
+                  "value": 13
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_PENETRATING",
+                  "value": 32
+                }
+              },
+              {
+                "stat": {
+                  "name": "STAT_BOUNCE",
+                  "value": 33
+                },
+                "val": 1
+              }
+            ],
+            "type": 144
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MOVETIME",
+                  "value": 53
+                },
+                "val": 200
+              }
+            ],
+            "type": 216
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITCHANCE",
+                  "value": 23
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 25
+              }
+            ],
+            "type": 252
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_LIFETIME",
+                  "value": 38
+                },
+                "val": 150
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 80
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_MAXAIRDASH",
+                  "value": 21
+                },
+                "val": 1
+              }
+            ],
+            "type": 222
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 10
+              },
+              {
+                "stat": {
+                  "name": "STAT_CRITMULT",
+                  "value": 20
+                },
+                "val": 50
+              }
+            ],
+            "type": 266
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_SIMULTANEOUS",
+                  "value": 45
+                },
+                "val": 1
+              }
+            ],
+            "type": 219
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          }
+        ],
+        "jumpspeed": 215,
+        "mainslots": 1,
+        "maxammo": 8,
+        "maxhitpoints": 100,
+        "secslots": 1,
+        "type": 2,
+        "walkspeed": 105
+      },
+      {
+        "ammo": 9,
+        "armor": 30,
+        "charid": 103,
+        "charslotid": 3,
+        "critchance": 375,
+        "critmult": 340,
+        "damagebonus": 50,
+        "hitpoints": 150,
+        "imagemap": "xmas",
+        "impslots": 1,
+        "invslots": 8,
+        "items": [
+          {
+            "slotpos": 256,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              },
+              {
+                "stat": {
+                  "name": "STAT_KNOCKBACKRESIST",
+                  "value": 22
+                },
+                "val": 50
+              }
+            ],
+            "type": 224
+          },
+          {
+            "slotpos": 1280,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_JUMPSPEED",
+                  "value": 12
+                },
+                "val": 5
+              }
+            ],
+            "type": 274
+          },
+          {
+            "slotpos": 3843,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 4
+              }
+            ],
+            "type": 270
+          },
+          {
+            "slotpos": 3840,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 20
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_ITEMCRITMULT",
+                  "value": 25
+                },
+                "val": 200
+              },
+              {
+                "stat": {
+                  "name": "STAT_EXTRAHIT",
+                  "value": 51
+                },
+                "val": 1
+              }
+            ],
+            "type": 223
+          },
+          {
+            "slotpos": 1024,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_ARMOR",
+                  "value": 10
+                },
+                "val": 20
+              }
+            ],
+            "type": 256
+          },
+          {
+            "slotpos": 3844,
+            "type": 77
+          },
+          {
+            "slotpos": 3842,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_WALKSPEED",
+                  "value": 11
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              },
+              {
+                "stat": {
+                  "name": "STAT_DAMAGEBONUS",
+                  "value": 18
+                },
+                "val": 5
+              }
+            ],
+            "type": 246
+          },
+          {
+            "slotpos": 3841,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_MAXAMMO",
+                  "value": 4
+                },
+                "val": 1
+              }
+            ],
+            "type": 189
+          },
+          {
+            "slotpos": 768,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_KNOCKBACKRESIST",
+                  "value": 22
+                },
+                "val": 50
+              },
+              {
+                "stat": {
+                  "name": "STAT_ACCEL",
+                  "value": 42
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_SPEED",
+                  "value": 37
+                },
+                "val": 40
+              },
+              {
+                "stat": {
+                  "name": "STAT_REFLECT",
+                  "value": 52
+                }
+              }
+            ],
+            "type": 228
+          },
+          {
+            "slotpos": 512,
+            "statboosts": [
+              {
+                "stat": {
+                  "name": "STAT_ARMORPIERCE",
+                  "value": 43
+                },
+                "val": 100
+              },
+              {
+                "stat": {
+                  "name": "STAT_NUMSUBS",
+                  "value": 36
+                },
+                "val": 2
+              },
+              {
+                "stat": {
+                  "name": "STAT_TRISECTED",
+                  "value": 48
+                }
+              }
+            ],
+            "type": 227
+          }
+        ],
+        "jumpspeed": 190,
+        "mainslots": 1,
+        "maxammo": 9,
+        "maxhitpoints": 150,
+        "secslots": 1,
+        "type": 3,
+        "walkspeed": 86
+      }
+    ]
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "schema": 2,
+  "units": "256 mp = 1 px",
+  "regions": {
+    "left_mid": {
+      "weights": {
+        "trooper": 0.5128,
+        "rocketeer": 0.3077,
+        "erocketeer": 0.1795
+      }
+    },
+    "left_low": {
+      "weights": {
+        "trooper": 1.0
+      }
+    },
+    "left_upper": {
+      "weights": {
+        "trooper": 0.5588,
+        "sniper": 0.4412
+      }
+    },
+    "right_upper": {
+      "weights": {
+        "trooper": 0.6364,
+        "sniper": 0.3636
+      }
+    },
+    "right_mid": {
+      "weights": {
+        "trooper": 0.4857,
+        "rocketeer": 0.4286,
+        "erocketeer": 0.0857
+      }
+    },
+    "right_low": {
+      "weights": {
+        "trooper": 1.0
+      }
+    },
+    "ground": {
+      "weights": {
+        "trooper": 0.3725,
+        "rocketeer": 0.2745,
+        "erocketeer": 0.0392,
+        "light": 0.2451,
+        "elight": 0.0686
+      }
+    },
+    "left_high": {
+      "weights": {
+        "sniper": 1.0
+      }
+    },
+    "right_high": {
+      "weights": {
+        "sniper": 1.0
+      }
+    },
+    "center_heavy": {
+      "weights": {
+        "heavy": 0.3846
+      }
+    }
+  },
+  "wave": {
+    "spawns_per_region": {
+      "right_upper": 2.75,
+      "center_heavy": 4.33,
+      "left_low": 2.42,
+      "right_high": 1.58,
+      "left_mid": 3.25,
+      "right_low": 2.83,
+      "left_high": 1.67,
+      "ground": 8.5,
+      "left_upper": 2.83,
+      "right_mid": 2.92
+    }
+  },
+  "boss": {
+    "stages": [
+      {
+        "index": 1,
+        "gate": 15000,
+        "armor": true
+      },
+      {
+        "index": 2,
+        "gate": 15000,
+        "armor": true
+      },
+      {
+        "index": 3,
+        "gate": 20000,
+        "armor": false
+      },
+      {
+        "index": 4,
+        "gate": 20000,
+        "armor": false
+      },
+      {
+        "index": 5,
+        "gate": 20000,
+        "armor": false
+      }
+    ],
+    "wave_spawns_by_stage": [
+      33,
+      35,
+      24,
+      38
+    ],
+    "descend_s": 6.553,
+    "ascend_s": 6.553,
+    "grid": {
+      "points": [
+        [
+          8192,
+          32768
+        ],
+        [
+          8192,
+          106496
+        ],
+        [
+          8192,
+          180224
+        ],
+        [
+          143360,
+          32768
+        ],
+        [
+          143360,
+          106496
+        ],
+        [
+          143360,
+          180224
+        ],
+        [
+          278528,
+          32768
+        ],
+        [
+          278528,
+          106496
+        ],
+        [
+          278528,
+          180224
+        ]
+      ]
+    }
+  }
+}

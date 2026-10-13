@@ -35,23 +35,34 @@ class PublicRuntimeTests(unittest.TestCase):
             self.assertFalse((ROOT / name).exists(), name)
         for p in (ROOT / 'maps').rglob('*'):
             self.assertNotIn(p.name, ('evidence', 'player-track.json', 'damage-ledger.json'))
-        self.assertFalse((ROOT / 'data/catalogue/class_players.json').exists())
+        templates = json.loads((ROOT / 'data/catalogue/class_players.json').read_text(encoding='utf8'))
+        self.assertEqual(set(templates), {'1', '2', '3', '5'})
+        for char_type, player in templates.items():
+            self.assertEqual(player['accountid'], 'local-account-0001')
+            self.assertEqual(player['username'], 'Localplayer')
+            self.assertEqual(player['accountprops'], {'ec': 0, 'progress': {}})
+            self.assertEqual(player['charprops']['charid'], int(char_type))
 
     def test_no_personal_fields_in_public_catalogues(self):
         forbidden = {'accountid', 'account_id', 'username', 'factionname', 'email',
                      'password', 'access_token', 'refresh_token', 'slottedcharprops'}
-        def walk(value):
+        def walk(value, anonymous_template=False):
             if isinstance(value, dict):
                 for key, child in value.items():
-                    self.assertNotIn(key.rstrip('_'), forbidden)
-                    walk(child)
+                    name = key.rstrip('_')
+                    if anonymous_template and name in ('accountid', 'username'):
+                        self.assertEqual(child, 'local-account-0001' if name == 'accountid' else 'Localplayer')
+                    elif not (anonymous_template and name == 'slottedcharprops'):
+                        self.assertNotIn(name, forbidden)
+                    walk(child, anonymous_template)
             elif isinstance(value, list):
                 for child in value:
-                    walk(child)
+                    walk(child, anonymous_template)
         for folder in ('data', 'maps', 'localserver/data'):
             for p in (ROOT / folder).rglob('*.json'):
                 with self.subTest(file=str(p.relative_to(ROOT))):
-                    walk(json.loads(p.read_text(encoding='utf8')))
+                    walk(json.loads(p.read_text(encoding='utf8')),
+                         p == ROOT / 'data/catalogue/class_players.json')
 
     def test_compressed_worlds_do_not_include_player_layers(self):
         for folder in ('maps', 'data'):
@@ -76,10 +87,11 @@ class PublicRuntimeTests(unittest.TestCase):
         rows = json.loads((ROOT / 'data/defaults/class_loadouts.json').read_text(encoding='utf8'))
         for key in ('1', '2', '3', '5'):
             self.assertEqual(rows[key]['type_'], int(key))
-            self.assertEqual(len(rows[key]['items_']), 6)
-            self.assertTrue(all(item['statboosts_'] == [] for item in rows[key]['items_']))
+            self.assertEqual(len(rows[key]['items_']), 14)
+            self.assertEqual(rows[key]['items_'][0]['type_'], {'1': 108, '2': 216, '3': 223, '5': 230}[key])
+            self.assertTrue(any(item.get('statboosts_') for item in rows[key]['items_']))
 
-    def test_synthetic_players_for_every_class(self):
+    def test_anonymous_players_for_every_class(self):
         from localserver.server import LocalServer, parse_args
         options = parse_args(['--mode', 'hulk', '--map', 'hulk_mid',
                               '--create-world-hex', str(ROOT / 'maps/hulk_mid/createworld.hex'),
@@ -91,7 +103,7 @@ class PublicRuntimeTests(unittest.TestCase):
             self.assertEqual(player['username_'], 'Localplayer')
             self.assertEqual(player['charprops_']['charid_'], char_type)
             self.assertEqual(player['charprops_']['type_'], char_type)
-            self.assertEqual(len(player['charprops_']['items_']), 6)
+            self.assertEqual(len(player['charprops_']['items_']), 14)
 
     def test_native_death_policy_remains_valid(self):
         self.assertGreater(len(_POLICY), 50)

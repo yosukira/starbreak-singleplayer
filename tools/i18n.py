@@ -31,6 +31,7 @@ EN = {
     '词缀顺序：本武器实测优先；其余按 ID 或首字母排序':
         'Item-specific modifiers first; sort others by ID or name.',
     '优先显示本物品词缀（Wiki / CHM）：{0}': 'Suggested modifiers: {0}',
+    '本物品词缀默认值：{0}': 'Modifier defaults for this item: {0}',
     '本物品暂无 Wiki / CHM 词缀池；词缀按 ID 或首字母排序。':
         'No suggested modifier pool for this item; sort by ID or name.',
     '应用/保存': 'Apply / Save', '导出': 'Export', '导入': 'Import',

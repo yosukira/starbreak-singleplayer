@@ -2,6 +2,14 @@
 from pathlib import Path
 
 RUNTIME_FILES=(
+    'data/catalogue/class_players.json',
+    'data/catalogue/character_descriptions.jsonl',
+    'data/catalogue/characters.json',
+    'data/catalogue/item_descriptions.jsonl',
+    'data/defaults/class_loadouts.json',
+    'data/defaults/practice_loadout.json',
+    'data/defaults/class_loadout_overrides.json',
+    'data/mechanics/item-affix-guide.json',
     'data/mechanics/enemy-cards.json',
     'data/mechanics/animation-catalogue.jsonl',
     'data/mechanics/enemy-triggers.json',

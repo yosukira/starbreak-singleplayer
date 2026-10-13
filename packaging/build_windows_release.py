@@ -1,7 +1,8 @@
 """Build a player ZIP with a portable Windows Python/Tk runtime.
 
-Run with the matching full CPython installation on Windows. No installed
-packages, machine configuration, user profiles or personal paths are copied.
+Run with the matching full CPython installation on Windows, or reuse a
+portable CPython 3.12/Tk distribution with --runtime-from. The source tree is
+always taken from Git HEAD, excluding untracked settings and development files.
 """
 import argparse
 import hashlib
@@ -31,7 +32,12 @@ def download(url, digest=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--runtime-from', type=Path,
+                        help='Reuse a portable CPython 3.12/Tk runtime without launching a GUI.')
     args = parser.parse_args()
+    if args.runtime_from:
+        build_with_runtime(args.runtime_from.resolve(), args.output.resolve())
+        return
     if os.name != 'nt' or sys.version.split()[0] != VERSION:
         raise SystemExit('Build using Windows x64 CPython ' + VERSION + ' with Tk.')
     import tkinter as tk
@@ -74,6 +80,47 @@ def main():
             + 'Licenses: LICENSE.txt, TCL-LICENSE.txt, TK-LICENSE.txt.\n'
             + 'python312._pth is configured for this portable player package.\n', encoding='utf8')
         with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+            for path in sorted(project.rglob('*')):
+                if path.is_file():
+                    archive.write(path, path.relative_to(staging))
+    print(output)
+    print('SHA256: ' + hashlib.sha256(output.read_bytes()).hexdigest())
+
+
+def build_with_runtime(source, output):
+    required = ('python.exe', 'pythonw.exe', 'python312.dll', 'python312.zip',
+                '_tkinter.pyd', 'tcl86t.dll', 'tk86t.dll', 'zlib1.dll',
+                'LICENSE.txt', 'tkinter', 'tcl/tcl8.6', 'tcl/tk8.6')
+    missing = [name for name in required if not (source / name).exists()]
+    if missing:
+        raise SystemExit('Portable runtime missing: ' + ', '.join(missing))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as directory:
+        staging = Path(directory)
+        source_zip = staging / 'source.zip'
+        subprocess.run(['git', 'archive', '--format=zip', '--prefix=starbreak-singleplayer/',
+                        '-o', str(source_zip), 'HEAD'], cwd=ROOT, check=True)
+        with zipfile.ZipFile(source_zip) as archive:
+            archive.extractall(staging)
+        project = staging / 'starbreak-singleplayer'
+        runtime = project / 'python'
+        shutil.copytree(source, runtime,
+                        ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.log'))
+        (runtime / 'python312._pth').write_text(
+            'python312.zip\n.\n..\n../tools\n', encoding='utf8')
+        if not (runtime / 'SOURCE.txt').exists():
+            (runtime / 'SOURCE.txt').write_text(
+                'Portable CPython 3.12 with matching Tkinter and Tcl/Tk.\n'
+                'Runtime retained from the local singleplayer distribution.\n'
+                'python312._pth is configured for this portable player package.\n', encoding='utf8')
+        for name in ('tcl', 'tk'):
+            license_file = runtime / (name.upper() + '-LICENSE.txt')
+            if not license_file.exists():
+                candidates = list((runtime / 'tcl').glob(name + '*/license.terms'))
+                if not candidates:
+                    raise SystemExit('Supply the runtime ' + name.upper() + '-LICENSE.txt before packaging.')
+                shutil.copy2(candidates[0], license_file)
+        with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
             for path in sorted(project.rglob('*')):
                 if path.is_file():
                     archive.write(path, path.relative_to(staging))

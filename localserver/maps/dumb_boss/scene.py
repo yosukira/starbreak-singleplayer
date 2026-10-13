@@ -15,7 +15,7 @@ class DumbBossPack:
             setattr(self, name, json.loads((self.root / (name + '.json')).read_text(encoding='utf8')))
         self.createworld_hex = str(self.root / 'createworld.hex')
         self.boss_id = int(self.scene['boss_id'])
-        behaviour = self.root / 'evidence/behaviour.json'
+        behaviour = self.root / 'rules/behaviour.json'
         self.behaviour = (json.loads(behaviour.read_text(encoding='utf8'))
                           if behaviour.exists() else {})
         self._species = {}
@@ -27,7 +27,7 @@ class DumbBossPack:
                            if points.exists() else {})
 
         self.anim_points = dict(self.animations)
-        timing=self.root/'evidence/wave-timing.json'
+        timing=self.root/'rules/wave-timing.json'
         self.wave_timing=json.loads(timing.read_text(encoding='utf8'))if timing.exists()else {}
 
     def wire_props(self, props):
