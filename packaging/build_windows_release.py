@@ -59,7 +59,7 @@ def main():
         ignore = shutil.ignore_patterns('__pycache__', '*.pyc', 'test', 'tests', 'demos')
         shutil.copytree(installed / 'Lib/tkinter', runtime / 'tkinter', ignore=ignore)
         shutil.copytree(installed / 'tcl', runtime / 'tcl', ignore=ignore)
-        for name in ('_tkinter.pyd', 'tcl86t.dll', 'tk86t.dll'):
+        for name in ('_tkinter.pyd', 'tcl86t.dll', 'tk86t.dll', 'zlib1.dll'):
             shutil.copy2(installed / 'DLLs' / name, runtime / name)
         for name, version in (('tcl', tcl_version), ('tk', tk_version)):
             tag = 'core-' + version.replace('.', '-')
