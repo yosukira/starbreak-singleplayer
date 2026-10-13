@@ -1,0 +1,1 @@
+"""Elite Fire Forest mid."""

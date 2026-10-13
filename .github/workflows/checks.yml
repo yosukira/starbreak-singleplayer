@@ -1,0 +1,27 @@
+name: Simulator checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Tk on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - name: Check anonymous runtime and language tables
+        run: python -m unittest discover -s tests -v
+      - name: Build both editor languages
+        if: runner.os == 'Windows'
+        env:
+          STARBREAK_UI_TESTS: '1'
+        run: python -m unittest discover -s tests -p test_editor_ui.py -v

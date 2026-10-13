@@ -1,0 +1,1 @@
+{"id":"sc_boss","zone":"sc_boss","bounds":{"x":-512.0,"y":32.0,"w":4128.0,"h":3936.0},"worldid":1,"gdv":0,"head_id":6,"body_id":7,"eyes":[8,9,10,11],"initial_platform_id":12,"spawn_id":12,"split_s":31.873,"shatter_s":47.521,"music":"sc_boss","gravity":100,"geometry_source":"pattern-eb5514ffd49eda09","final_platform_source":"pattern-4b60bb9a663a7c5b"}

@@ -1,0 +1,1 @@
+{"id":"jungle_boss","title":"Elite Strands Boss","pvid":"jungle","zone":"jungle_boss","gdv":1,"preload_pvids":["jungle"],"session_module":"localserver.maps.jungle_boss.session","session_class":"JungleBossLiveSession"}

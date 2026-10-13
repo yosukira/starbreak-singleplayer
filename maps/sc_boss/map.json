@@ -1,0 +1,1 @@
+{"id":"sc_boss","title":"Star Cathedral Boss","pvid":"scboss","zone":"sc_boss","gdv":0,"preload_pvids":["sc"],"session_module":"localserver.maps.sc_boss.session","session_class":"ScBossLiveSession"}

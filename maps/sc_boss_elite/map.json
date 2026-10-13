@@ -1,0 +1,1 @@
+{"id":"sc_boss_elite","title":"Elite Star Cathedral Boss","pvid":"scboss","zone":"sc_boss","gdv":0,"preload_pvids":["sc"],"session_module":"localserver.maps.sc_boss_elite.session","session_class":"EliteScBossLiveSession","base_map":"sc_boss"}
