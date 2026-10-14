@@ -92,6 +92,9 @@ Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 
 - 补丁提示版本或字节不匹配：当前客户端二进制不符合补丁预期，不要用不匹配的补丁强行覆盖。
 - 地图和机制为模拟实现，部分行为及数值可能与原服不同。整关试玩不代表全部原版生成规则已经恢复。
 
+### Discord channel
+https://discord.gg/J9YvUCuGmv
+
 ### 许可
 
 模拟器代码采用 [MIT](LICENSE)。Windows 玩家包附带的 Python 和 Tcl/Tk 保留各自许可，见 `python/LICENSE.txt`、`python/TCL-LICENSE.txt` 和 `python/TK-LICENSE.txt`。StarBreak 游戏客户端、美术、音频及 SBPE 不包含在本仓库中，其权利与许可由各自所有者决定；运行时需要用户自己的客户端及 SBPE 安装。
@@ -164,6 +167,9 @@ To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 to
 - Source-only users and macOS editor previews need their own Python 3.10+ with Tk. The Windows source launcher can also use an installed Python or `SBPE/python/python.exe`.
 - A patch reports an unexpected version or byte sequence: the client binary does not match this patch. Do not overwrite it with a mismatched patch.
 - These are simulated encounters. Some behaviors and values differ from the original server; full-run simulations do not reproduce every original generation rule.
+
+### Discord channel
+https://discord.gg/J9YvUCuGmv
 
 ### License
 
