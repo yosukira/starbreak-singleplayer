@@ -63,6 +63,10 @@ SBPE/
 4. 右上角选择 **System / 跟随系统**、**简体中文** 或 **English**。首次默认跟随系统：Windows 中文界面使用中文，其他语言使用英文；选择会在本机保存。
 5. **导出 / 导入** 用于分享 JSON 配装；导入后点击应用/保存才会写入配装。
 
+编辑器适配 1366×768 等低分辨率屏幕：内容区支持滚动，底部操作按钮固定显示；按住 Shift 滚动可左右查看较宽的控件。
+
+点击右上角 **按键设置**，可以修改编辑器显示/隐藏、重开、四职业切换的快捷键和长按时间。互动键默认为 **Auto**，跟随游戏当前绑定；识别异常时，手动选择与游戏设置相同的键。移动和攻击等操作在游戏内设置。快捷键保存后生效，并保存在本机 `userdata/keybindings.json`。
+
 选择有明确弹速参数的武器后，可在 **子弹基础速度** 中修改每种弹体的基础速度（整数 `0–1000000`）。同一物品的全部实例共用此设置；原有速度词缀继续保留，存活时间不变，因此射程也可能改变。数值沿用原版武器参数，不统一标作 px/s；`0` 是零基础速度，不是恢复默认。点 **恢复原值** 可还原。
 
 **修改弹速后点击应用/保存，再退出游戏并重新运行 `start.cmd`；长按 R 不会重新加载基础弹速。** 弹速设置会随配装导入/导出，不会改写原始物品目录。
@@ -131,6 +135,10 @@ If the game path cannot be detected from SBPE configuration:
 3. Click **Apply / Save**. The server restarts the current run when it detects the new loadout. Use **Save settings** for map selection, drop rates and other map settings.
 4. Select a language in the top-right corner. The first launch follows your system language: Chinese Windows UI locales use Chinese; other locales use English. Your selection is saved locally.
 5. **Export / Import** shares JSON loadouts. After importing, click Apply / Save to write the equipment changes.
+
+The editor fits low-resolution screens such as 1366×768. Its contents scroll while the bottom action buttons remain visible; hold Shift while scrolling to view wide controls horizontally.
+
+Use **Keyboard settings** in the top-right corner to change editor shortcuts, restart and class-switch keys, and hold duration. Interaction defaults to **Auto**, following the game's current binding. If detection fails, select the same key as in the game settings. Movement and attack bindings use the game settings. Shortcut changes apply after saving and are stored locally in `userdata/keybindings.json`.
 
 Weapons with an explicit speed parameter expose **Base projectile speed** for each projectile. Enter an integer from `0` to `1000000`. The setting applies to every instance of that item; existing speed modifiers remain, and lifetime is unchanged, so range may change. Values use the original weapon parameters and are not universally pixels per second. `0` means zero base speed, not the default. Use **Reset to default** to restore the original value.
 

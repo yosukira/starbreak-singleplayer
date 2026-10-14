@@ -48,13 +48,21 @@ def in_live_session(environ=None):
 
 class Plugin(PluginBase):
     def onInit(self):
+        try:
+            from . import _practice_keybindings as keybindings
+        except (ImportError, ValueError, SystemError):
+            import _practice_keybindings as keybindings
+        self.keybindings = keybindings
+        self.key_reader = keybindings.Reader()
+        self.key_reader.refresh()
+        self._pending_interact_edge = False
         self.config.option('enabled', True, 'bool')
         self.config.option('toggle_key', F6, 'int')
         self.config.option('host', '127.0.0.1', 'str')
         self.config.option('port', 21550, 'int')
         self.config.option('telemetry_hz', 60.0, 'float')
         self.config.option('diagnostics_file', '', 'str')
-        self.config.option('interact_scancode', 15, 'int')
+        self.config.option('interact_scancode', 0, 'int')
 
         self.config.option('teleport_test_at', '', 'str')
 
@@ -99,6 +107,11 @@ class Plugin(PluginBase):
 
     def _enable(self):
         try:
+            self._pending_interact_edge = False
+            self.bridge._old_interact = True
+            self.bridge._interaction_held_blocked = True
+            self.bridge._hold_since.clear()
+            self.bridge._hold_fired.clear()
             self.bridge.enable()
             self.active = True
             self.status = 'bridge: link...'
@@ -112,6 +125,7 @@ class Plugin(PluginBase):
             LOG.error('live bridge enable failed: %s', self.bridge_error)
 
     def _disable(self):
+        self._pending_interact_edge = False
         self.bridge.disable()
         self.active = False
         self.status = 'bridge: off (F6)'
@@ -145,9 +159,26 @@ class Plugin(PluginBase):
             if self.bridge.ground_restore_attached():
                 self.bridge._drain_ack()
                 self.bridge.send_ground_restore(time.time())
-            self.bridge.sample_interaction_context()
+            if self.key_reader.refresh():
+                self.bridge._hold_since.clear()
+                self.bridge._hold_fired.clear()
+                self._pending_interact_edge = False
+                self.bridge._old_interact = True
+                self.bridge._interaction_held_blocked = True
+            keyboard = self.key_reader.document
+            interact_code = self.keybindings.scancode(keyboard, 'interact')
+            if interact_code:
+                interact_code = (self.bridge._keyboard_scancode(self.keybindings.keycode(keyboard['interact']))
+                                 or interact_code)
+            self.bridge.sample_interaction_context(interact_code)
+            down, edge = self.bridge.interact_edge(interact_code)
+            if self.bridge.interaction_blocked():
+                self._pending_interact_edge = False
+            else:
+                self._pending_interact_edge = self._pending_interact_edge or edge
 
-            self.bridge.reapply_room_input()
+            if self.bridge.reapply_room_input():
+                self._pending_interact_edge = False
             now = time.time()
             if now < self.next_send:
                 return
@@ -157,8 +188,7 @@ class Plugin(PluginBase):
                 self.next_send = now+self.interval
             else:
                 self.next_send += self.interval
-            down, interact_edge = self.bridge.interact_edge(
-                int(self.config.interact_scancode))
+            interact_edge = self._pending_interact_edge
             fixture_edge = self._teleport_test_due(now)
             if fixture_edge:
                 interact_edge = True
@@ -173,12 +203,19 @@ class Plugin(PluginBase):
                     jumps.append(jump)
             if not down and not fixture_edge:
                 self._teleport_latched = False
-            holds = self.bridge.character_holds(
-                float(self.config.hold_seconds))
+            shortcuts = []
+            for scan, name, char_type, kind in self.keybindings.shortcuts(keyboard):
+                if not name.startswith('Num'):
+                    scan = self.bridge._keyboard_scancode(self.keybindings.keycode(name)) or scan
+                shortcuts.append((scan, name, char_type, kind))
+            holds = self.bridge.character_holds(float(keyboard['hold_seconds']), shortcuts)
             document = self.bridge.build_datagram(down, interact_edge,
                                                   holds + jumps)
             self.bridge.seq = document['seq']
+            sent_before = self.bridge.sent
             self.bridge.send(document)
+            if self.bridge.sent > sent_before:
+                self._pending_interact_edge = False
             self.bridge.send_ground_egress(now)
             diagnostics = (str(self.config.diagnostics_file)
                            or os.environ.get('HARDLAB_LIVE_DIAGNOSTICS', ''))

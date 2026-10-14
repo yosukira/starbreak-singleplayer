@@ -39,6 +39,8 @@ if LAB not in sys.path:
 
 from localserver import game_settings, jsonio, projectile_speeds
 from tools import i18n
+from tools.editor_widgets import ScrollFrame, fit_window, key_dialog, work_area
+from plugins import _practice_keybindings as keybindings
 from localserver.live.turrets import (normalize_missile_counts,
                                       normalize_turret_counts)
 
@@ -53,6 +55,7 @@ CLASS_LOADOUTS = os.path.join(LAB, 'userdata',
 PRACTICE_LOADOUT = os.path.join(LAB, 'userdata',
                                 'practice_loadout.json')
 VK_OEM_3 = 0xC0
+KEYBINDINGS = os.path.join(LAB, 'userdata', 'keybindings.json')
 WINDOW_TITLE = 'StarBreak Gear Editor - ' + hashlib.sha1(LAB.encode('utf8')).hexdigest()[:8]
 
 MUTEX_NAME = 'StarBreakGearEditor-' + hashlib.sha1(
@@ -264,8 +267,8 @@ def _ui_font(root, scale):
     for name in ('Microsoft YaHei UI', 'Microsoft YaHei', 'Segoe UI',
                  'Tahoma', 'Arial'):
         if not families or name in families:
-            return name, max(11, int(round(11 * scale)))
-    return 'TkDefaultFont', max(11, int(round(11 * scale)))
+            return name, 11
+    return 'TkDefaultFont', 11
 
 def _parse_stat_id(text):
     match = re.match(r'^\s*(\d+)', str(text or ''))
@@ -604,6 +607,7 @@ class GearEditor(object):
         self.root = root
         self.language_preference = i18n.load_preference()
         self.language = i18n.resolve_language(self.language_preference)
+        self.keybindings = keybindings.load(KEYBINDINGS)
         self.stat_names = i18n.STATS_ZH if self.language == 'zh' else STAT_NAMES
         self.owner_pid = int(owner_pid) if owner_pid else None
         self.catalogue = load_catalogue()
@@ -676,6 +680,10 @@ class GearEditor(object):
     def _build(self):
         self.ui_scale = _dpi_scale(self.root)
         self.ui_font = _ui_font(self.root, self.ui_scale)
+        left, top, right, bottom = work_area(self.root)
+        self.compact = (bottom - top) / self.ui_scale < 820
+        if self.compact:
+            self.ui_font = (self.ui_font[0], 9)
         ui_size = self.ui_font[1]
 
         style = ttk.Style(self.root)
@@ -685,7 +693,7 @@ class GearEditor(object):
             pass
         style.configure('.', font=self.ui_font)
         style.configure('TLabel', font=self.ui_font)
-        style.configure('TButton', font=self.ui_font, padding=(10, 6))
+        style.configure('TButton', font=self.ui_font, padding=(6, 3) if self.compact else (10, 6))
         style.configure('TCombobox', font=self.ui_font, padding=(4, 4))
         style.configure('TEntry', font=self.ui_font, padding=(4, 4))
         style.configure('Title.TLabel', font=(self.ui_font[0], ui_size + 4, 'bold'))
@@ -698,14 +706,7 @@ class GearEditor(object):
         self.root.title(WINDOW_TITLE)
         self.root.attributes('-topmost', True)
         self.root.attributes('-alpha', 0.97)
-        screen_w = self.root.winfo_screenwidth()
-        screen_h = self.root.winfo_screenheight()
-        width = min(max(int(1180 * self.ui_scale), 1080), max(900, screen_w - 70))
-        height = min(max(int(790 * self.ui_scale), 740), max(650, screen_h - 80))
-        x = max(0, (screen_w - width) // 2)
-        y = max(0, (screen_h - height) // 3)
-        self.root.geometry('{0}x{1}+{2}+{3}'.format(width, height, x, y))
-        self.root.minsize(min(width, 980), min(height, 680))
+        fit_window(self.root, int(1180 * self.ui_scale), int(790 * self.ui_scale))
         self.root.resizable(True, True)
         self.root.protocol('WM_DELETE_WINDOW', self.hide)
 
@@ -715,8 +716,9 @@ class GearEditor(object):
                   style='Title.TLabel').pack(side='left')
         hotkeys = ttk.Frame(self.root, padding=(12, 0, 12, 4))
         hotkeys.pack(fill='x')
-        ttk.Label(hotkeys, text=self.tr('  ` / F8 显示/隐藏    |    长按 R 重开当前局，长按 7/8/9/0 换角色（WF/DW/FAB/IC）'),
-                  style='Hint.TLabel').pack(side='left', padx=(12, 0))
+        self.key_hint = ttk.Label(hotkeys, style='Hint.TLabel',
+                                 wraplength=max(300, right - left - 60))
+        self.key_hint.pack(side='left')
 
         self.language_var = tk.StringVar(value=i18n.LANGUAGES[self.language_preference])
         ttk.Label(header, text=self.tr('语言')).pack(side='right', padx=(8, 4))
@@ -725,8 +727,19 @@ class GearEditor(object):
                                    values=tuple(i18n.LANGUAGES.values()))
         language_box.pack(side='right')
         language_box.bind('<<ComboboxSelected>>', self._change_language)
+        ttk.Button(header, text=self.tr('按键设置'),
+                   command=lambda: key_dialog(self, KEYBINDINGS)).pack(side='right', padx=6)
 
-        top = ttk.Frame(self.root, padding=(12, 4, 12, 8))
+        self.status = ttk.Label(self.root, padding=(12, 4),
+                                wraplength=max(300, right - left - 60))
+        self.status.pack(fill='x', side='bottom')
+        actions = ttk.Frame(self.root, padding=(8, 4))
+        actions.pack(side='bottom', fill='x')
+        self.viewport = ScrollFrame(self.root)
+        self.viewport.pack(fill='both', expand=True)
+        content = self.viewport.content
+
+        top = ttk.Frame(content, padding=(12, 4, 12, 8))
         top.pack(fill='x')
         ttk.Label(top, text=self.tr('职业')).pack(side='left', padx=(0, 8))
         self.class_buttons = {}
@@ -747,7 +760,7 @@ class GearEditor(object):
                                         font=self.ui_font)
         self.implant_box.pack(side='left')
 
-        settings_row = ttk.Frame(self.root, padding=(12, 0, 12, 8))
+        settings_row = ttk.Frame(content, padding=(12, 0, 12, 8))
         settings_row.pack(fill='x')
         ttk.Label(settings_row, text=self.tr('地图')).pack(side='left', padx=(0, 6))
         self.map_box = ttk.Combobox(
@@ -778,7 +791,7 @@ class GearEditor(object):
                   text=self.tr('（当前地图，各自保存）'),
                   style='Hint.TLabel').pack(side='left', padx=(10, 0))
 
-        self.balance_row = ttk.Frame(self.root, padding=(12, 0, 12, 8))
+        self.balance_row = ttk.Frame(content, padding=(12, 0, 12, 8))
         self.balance_row.pack(fill='x')
         balance = ttk.Frame(self.balance_row)
         balance.pack(fill='x')
@@ -797,7 +810,7 @@ class GearEditor(object):
                   text=self.tr('（0.1×–100×，可直接输入；1×=原版；数值对新刷出的怪/弹生效，上限=房间同时存活地面怪，飞机不计）'),
                   style='Hint.TLabel').pack(side='left', padx=(14, 0))
 
-        self.turret_row = ttk.Frame(self.root, padding=(12, 0, 12, 8))
+        self.turret_row = ttk.Frame(content, padding=(12, 0, 12, 8))
         self.turret_row.pack(fill='x')
         turrets = self.turret_row
         ttk.Label(turrets, text=self.tr('炮台数量')).pack(side='left', padx=(0, 8))
@@ -825,7 +838,7 @@ class GearEditor(object):
         self.turret_scope = ttk.Label(turrets, text='', style='Hint.TLabel')
         self.turret_scope.pack(side='left', padx=(12, 0))
 
-        body = ttk.Frame(self.root, padding=(12, 4, 12, 8))
+        body = ttk.Frame(content, padding=(12, 4, 12, 8))
         body.pack(fill='both', expand=True)
         self.body_frame = body
         left = ttk.Frame(body)
@@ -850,7 +863,7 @@ class GearEditor(object):
 
         self.base_label = ttk.Label(
             right, text=self.tr('基础属性：—'), justify='left',
-            wraplength=max(700, int(850 * self.ui_scale)))
+            wraplength=500 if self.compact else 750)
         self.base_label.pack(anchor='w', pady=(10, 8))
 
         self.projectile_frame = ttk.LabelFrame(right, text=self.tr('子弹基础速度'), padding=6)
@@ -860,31 +873,37 @@ class GearEditor(object):
         self.affix_hint = ttk.Label(
             right, text=self.tr('词缀顺序：本武器实测优先；其余按 ID 或首字母排序'),
             style='Hint.TLabel', justify='left',
-            wraplength=max(700, int(900 * self.ui_scale)))
+            wraplength=500 if self.compact else 750)
         self.affix_hint.pack(anchor='w', pady=(3, 6))
 
         self.affix_frame = ttk.Frame(right)
         self.affix_frame.pack(fill='both', expand=True, pady=(0, 6))
 
-        actions = ttk.Frame(right)
-        actions.pack(side='bottom', fill='x', pady=(12, 4))
-        ttk.Button(actions, text=self.tr('应用/保存'), command=self.apply).pack(side='left')
-        ttk.Button(actions, text=self.tr('导出'), command=self.export).pack(side='left', padx=6)
-        ttk.Button(actions, text=self.tr('导入'), command=self.import_file).pack(side='left', padx=6)
-        ttk.Button(actions, text=self.tr('重新载入'), command=self.reload).pack(side='left', padx=6)
+        primary_actions = ttk.Frame(actions) if self.compact else actions
+        secondary_actions = ttk.Frame(actions) if self.compact else actions
+        if self.compact:
+            primary_actions.pack(fill='x', pady=(0, 3))
+            secondary_actions.pack(fill='x')
+        ttk.Button(primary_actions, text=self.tr('应用/保存'), command=self.apply).pack(side='left')
+        ttk.Button(primary_actions, text=self.tr('导出'), command=self.export).pack(side='left', padx=6)
+        ttk.Button(primary_actions, text=self.tr('导入'), command=self.import_file).pack(side='left', padx=6)
+        ttk.Button(primary_actions, text=self.tr('重新载入'), command=self.reload).pack(side='left', padx=6)
         self.affix_sort_button = ttk.Button(
-            actions, text=self.tr('词缀排序：ID'), command=self.toggle_affix_sort)
+            secondary_actions, text=self.tr('词缀排序：ID'), command=self.toggle_affix_sort)
         self.affix_sort_button.pack(side='left', padx=6)
-        ttk.Button(actions, text=self.tr('退出'), command=self.close).pack(side='right')
-        ttk.Button(actions, text=self.tr('隐藏 (~/F8)'), command=self.hide).pack(
+        ttk.Button(secondary_actions, text=self.tr('退出'), command=self.close).pack(side='right')
+        ttk.Button(secondary_actions, text=self.tr('隐藏'), command=self.hide).pack(
             side='right', padx=6)
-        ttk.Button(right, text=self.tr('+ 添加词缀'), command=self.add_affix).pack(
-            side='bottom', anchor='w', pady=(2, 0))
-
-        self.status = ttk.Label(
-            self.root, text=self.tr('保存后自动重开应用；长按 R=重开，长按 7/8/9/0=WF/DW/FAB/IC'), padding=(12, 8))
-        self.status.pack(fill='x', side='bottom')
+        ttk.Button(secondary_actions, text=self.tr('+ 添加词缀'), command=self.add_affix).pack(side='left', padx=4)
+        self._update_key_labels()
+        self.status.configure(text=self.tr('保存后自动重开应用。内容可滚动，Shift + 滚轮可左右滚动。'))
         self._on_map_select()
+
+    def _update_key_labels(self):
+        document = self.keybindings
+        self.key_hint.configure(text=self.tr('显示/隐藏：{0} / {1}；长按 {2} 秒：重开 {3}，WF {4}，DW {5}，FAB {6}，IC {7}').format(
+            document['editor_toggle'], document['editor_toggle_alt'], document['hold_seconds'],
+            document['restart'], document['wf'], document['dw'], document['fab'], document['ic']))
 
     def tr(self, text):
         return i18n.translate(text, self.language)
@@ -1643,6 +1662,8 @@ class GearEditor(object):
 
 
     def reload(self):
+        self.keybindings = keybindings.load(KEYBINDINGS)
+        self._update_key_labels()
         self.catalogue = load_catalogue()
         self.affix_priority = build_affix_priority(self.catalogue)
         self._item_affix_drafts = {}
@@ -1668,6 +1689,9 @@ class GearEditor(object):
 
     def show(self):
         self._refresh_map_choices()
+        self.keybindings = keybindings.load(KEYBINDINGS)
+        self._update_key_labels()
+        fit_window(self.root)
         self.visible = True
         self.root.deiconify()
         self.root.lift()
@@ -1707,19 +1731,17 @@ class GearEditor(object):
                 changed = True
             except queue.Empty:
                 break
-        if changed:
+        if changed and self.root.grab_current() is None:
             self.toggle()
         if not self._hotkey_stop:
             self.root.after(50, self._poll_hotkey)
 
     def _start_hotkey(self):
 
-        keys = (VK_OEM_3, 0x77)
-
         def worker():
             user32 = ctypes.windll.user32
             while not self._hotkey_stop:
-                for code in keys:
+                for code in keybindings.editor_keys(self.keybindings):
                     down = bool(user32.GetAsyncKeyState(code) & 0x8000)
                     was = self._hotkey_down.get(code, False)
                     if down and not was:
@@ -1732,7 +1754,8 @@ class GearEditor(object):
         thread.daemon = True
         self._hotkey_thread = thread
         thread.start()
-        self._log('hotkey listener started: ~ (0xC0) / F8 (0x77)')
+        self._log('editor hotkeys: {0} / {1}'.format(
+            self.keybindings['editor_toggle'], self.keybindings['editor_toggle_alt']))
 
     def _stop_hotkey(self):
         self._hotkey_stop = True

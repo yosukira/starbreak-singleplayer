@@ -2,6 +2,8 @@
 from pathlib import Path
 
 RUNTIME_FILES=(
+    'data/defaults/keybindings.json',
+    'plugins/_practice_keybindings.py',
     'data/catalogue/class_players.json',
     'data/catalogue/character_descriptions.jsonl',
     'data/catalogue/characters.json',

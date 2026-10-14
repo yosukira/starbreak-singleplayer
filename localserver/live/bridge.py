@@ -55,6 +55,8 @@ class PlayerBridge(object):
         self.state = None
         self.events = []
         self.keys = {}
+        self._interactions = []
+        self._interaction_seq = -1
         self.datagrams = 0
         self.last_error = None
         self.native_context = None
@@ -217,7 +219,17 @@ class PlayerBridge(object):
         events = document.get('events') or []
         with self._lock:
             self.state = state
-            self.keys = document.get('keys') or {}
+            keys = document.get('keys') or {}
+            edge = bool(keys.get('interact_edge')) or (bool(keys.get('interact'))
+                   and not self.keys.get('interact'))
+            seq = document.get('seq')
+            if type(seq) is int:
+                edge = edge and seq > self._interaction_seq
+                self._interaction_seq = max(self._interaction_seq, seq)
+            if edge and state is not None and not keys.get('interaction_blocked'):
+                self._interactions.append(state)
+                self._interactions = self._interactions[-64:]
+            self.keys = keys
             for event in events:
                 if isinstance(event, dict):
                     if scoped and event.get('kind') in ('damage','destroy') and event.get('native_seed') != context['room_seed']:
@@ -273,6 +285,12 @@ class PlayerBridge(object):
     def snapshot(self):
         with self._lock:
             return self.state, dict(self.keys)
+
+    def consume_interactions(self):
+        """Keep fast presses until the next simulation tick, once per edge."""
+        with self._lock:
+            players, self._interactions = self._interactions, []
+        return tuple(player for player in players if player.age() <= .5)
 
     def connected(self, max_age=2.0):
         state = self.snapshot()[0]

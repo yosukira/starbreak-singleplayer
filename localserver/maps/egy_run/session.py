@@ -311,6 +311,8 @@ class EgyRunLiveSession:
         if not math.isfinite(dt) or not 0 <= dt <= 1:
             raise ValueError('Invalid EGY tick duration')
         state, keys = self.bridge.snapshot()
+        consume = getattr(self.bridge, 'consume_interactions', None)
+        pressed = tuple(consume()) if callable(consume) else None
         if not self._ready:
             spawn = self.run.destination_spawn(self.run.current, self.run.entry)
             if state is not None and state.received_at >= self._ready_after and\
@@ -326,7 +328,10 @@ class EgyRunLiveSession:
         edge = False
         if state is not None and state.received_at >= self._ready_after and state.age() <= .5:
             down = bool(keys.get('interact'))
-            edge = down and not self._interact_down
+            if pressed is None:
+                edge = down and not self._interact_down
+            else:
+                edge = any(p.received_at >= self._ready_after for p in pressed)
             self._interact_down = down
             if keys.get('interaction_blocked'):edge=False
         if edge and state is not None:

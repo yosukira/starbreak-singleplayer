@@ -26,7 +26,7 @@ from localserver import game_settings
 OFFLINE_DISABLED_PLUGINS=('combat_recorder','design_recorder','map_export',
     'sb_hardlab_probe','hardlab_delta','hardlab_server','hardlab_spawn')
 
-RUNTIME_PLUGIN_FILES = ('hardlab_live.py', '_hardlab_livebridge.py', '_full_run_inventory.py',
+RUNTIME_PLUGIN_FILES = ('hardlab_live.py', '_hardlab_livebridge.py', '_practice_keybindings.py', '_full_run_inventory.py',
                         '_full_run_ground.py', '_full_run_egress.py', '_full_run_egress_transport.py',
                         '_full_run_ground_restore.py', '_full_run_ground_restore_transport.py',
                         '_dumb_boss_teleports.py','_dumb_wave_teleports.py',
@@ -451,9 +451,7 @@ class InstalledSbpeRuntime(object):
         text = decode_config(self.original)[0]
         text = ini_set(text, 'plugin_hardlab_live', 'enabled', 'yes')
         text = ini_set(text, 'plugin_hardlab_live', 'port', str(self.bridge_port))
-        if not ini_has(text, 'plugin_hardlab_live', 'interact_scancode'):
-            text = ini_set(text, 'plugin_hardlab_live', 'interact_scancode',
-                           str(detect_interact_scancode(self.game_dir)))
+        text = ini_set(text, 'plugin_hardlab_live', 'interact_scancode', '0')
 
         squid_plugin = self.root / 'plugins' / 'squid_prediction3.py'
         self.squid_option_patched = False
@@ -551,8 +549,7 @@ def prepare_runtime(sbpe, diagnostics=False, runtime=None, bridge_port=21550,
     config['plugin_hardlab_live']['enabled']='yes'
     config['plugin_hardlab_live'].setdefault('hud_visible','yes')
     config['plugin_hardlab_live']['port'] = str(bridge_port)
-    config['plugin_hardlab_live']['interact_scancode'] = str(
-        detect_interact_scancode(game_dir))
+    config['plugin_hardlab_live']['interact_scancode'] = '0'
     if diagnostics:
         config['plugin_hardlab_live']['diagnostics_file'] = str(runtime / 'native-state.jsonl')
     else:
@@ -1018,6 +1015,7 @@ def main():
             print('Practice server ready. Close the game to stop. Logs: ' + str(logs), flush=True)
 
             client_env = dict(os.environ)
+            client_env['HARDLAB_KEYBINDINGS'] = str(LAB / 'userdata' / 'keybindings.json')
             client_env['PYTHONIOENCODING'] = 'cp936:replace'
             client_env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
             client_log = logs / 'client-launch.log'

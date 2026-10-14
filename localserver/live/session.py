@@ -1876,6 +1876,8 @@ class LiveSession(object):
             self.event('death-sequence-finished')
 
     def _sync_player(self):
+        consume = getattr(self.bridge, 'consume_interactions', None)
+        self._frame_interactions = tuple(consume()) if callable(consume) else None
         if getattr(self.options, 'live_force_demo', False):
 
             if self.fallback_player is None:
@@ -1965,6 +1967,10 @@ class LiveSession(object):
 
     def interacting_players(self):
         from ..interactions import can_interact
+        current = getattr(self, '_frame_interactions', None)
+        if current is not None:
+            self._frame_interactions = ()
+            return tuple(p for p in current if can_interact(p))
         consume = getattr(self.bridge, 'consume_interactions', None)
         if callable(consume):
             return tuple(p for p in consume() if can_interact(p))

@@ -440,15 +440,18 @@ class LiveBridge(object):
                                 count[0])
         return self._key_states
 
-    def interact_edge(self, scancode=15):
-        if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home'):
+    def interact_down(self, scancode=0):
+        """Use current native bindings on every map; an explicit key is a fallback override."""
+        if not scancode:
+            try:
+                return bool(self.physical_input_mask() & (1 << INTERACT_INPUT))
+            except (AttributeError, RuntimeError, OSError):
+                scancode = 15
+        states, count = self.key_states()
+        return states != self.ffi.NULL and 0 < scancode < count and bool(states[scancode])
 
-            down = bool(self.physical_input_mask() & (1 << INTERACT_INPUT))
-        else:
-            states, count = self.key_states()
-            if states == self.ffi.NULL or not 0 <= scancode < count:
-                return False, False
-            down = bool(states[scancode])
+    def interact_edge(self, scancode=0):
+        down = self.interact_down(scancode)
         edge = down and not self._old_interact
         self._old_interact = down
         return down, edge
@@ -471,10 +474,10 @@ class LiveBridge(object):
             return client is not None and client!=self.ffi.NULL and client.overlay!=self.ffi.NULL
         except (AttributeError,TypeError):return False
 
-    def sample_interaction_context(self):
+    def sample_interaction_context(self, scancode=0):
         """Latch UI/action-consumed presses on every frame, including UDP skips."""
         blocked=self._overlay_open() or bool(self.player_action_type())
-        down=bool(self.physical_input_mask() & (1<<INTERACT_INPUT))
+        down=self.interact_down(scancode)
         if not down:self._interaction_held_blocked=False
         elif (blocked or getattr(self,'_interaction_was_blocked',False) or
                 getattr(self,'_interaction_pre_local',False)):self._interaction_held_blocked=True
@@ -505,8 +508,11 @@ class LiveBridge(object):
         return False
 
     def sample_interaction_target(self):
-
-        self._interaction_pre_local=self.local_interaction_selected()
+        # Native-only objects consume interaction in full rooms. Boss panels
+        # are handled by the local server and must retain their keyboard edge.
+        self._interaction_pre_local=(self.input_context.get('map') in
+            ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home')
+            and self.local_interaction_selected())
 
     def interaction_blocked(self):
         return self._overlay_open() or bool(self.player_action_type()) or getattr(self,'_interaction_held_blocked',False)
@@ -600,6 +606,7 @@ class LiveBridge(object):
 
         if total & (1 << INTERACT_INPUT):
             self._old_interact = True
+            self._interaction_held_blocked = True
         mask = total & ~(1 << INTERACT_INPUT)
         before = int(cw.total)
         self._native_set_input(mask)
@@ -613,7 +620,7 @@ class LiveBridge(object):
             inputBuffer=int(cw.inputBuffer))
         return True
 
-    def character_holds(self, hold_seconds=2.0):
+    def character_holds(self, hold_seconds=2.0, shortcuts=None):
         """Return long-press restart/class-switch events.
 
         Hold R=2s to restart as the current class.  Hold 7/8/9/0 for
@@ -626,7 +633,8 @@ class LiveBridge(object):
             return []
         now = time.time()
         events = []
-        shortcuts = (
+        if shortcuts is None:
+            shortcuts = (
             (21, 'R', None, 'restart'),
             (36, '7', 1, 'switch_character'),
             (37, '8', 2, 'switch_character'),
@@ -637,7 +645,7 @@ class LiveBridge(object):
             (96, 'Num8', 2, 'switch_character'),
             (97, 'Num9', 5, 'switch_character'),
             (98, 'Num0', 3, 'switch_character'),
-        )
+            )
         for scancode, label, char_type, kind in shortcuts:
             down = scancode < count and bool(states[scancode])
             if not down:

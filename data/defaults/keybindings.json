@@ -1,0 +1,11 @@
+{
+  "interact": "Auto",
+  "editor_toggle": "Backtick",
+  "editor_toggle_alt": "F8",
+  "restart": "R",
+  "wf": "7",
+  "dw": "8",
+  "fab": "9",
+  "ic": "0",
+  "hold_seconds": 2.0
+}

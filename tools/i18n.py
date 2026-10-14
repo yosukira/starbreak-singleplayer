@@ -9,6 +9,23 @@ PREFERENCE = Path(__file__).resolve().parents[1] / 'userdata' / 'ui.json'
 LANGUAGES = {'auto': 'System / 跟随系统', 'zh': '简体中文', 'en': 'English'}
 
 EN = {
+    '按键设置': 'Keyboard settings', '互动键': 'Interaction key',
+    '显示/隐藏编辑器': 'Show / hide editor', '备用编辑器快捷键': 'Alternate editor shortcut',
+    '重开当前局': 'Restart current run', '切换 WF': 'Switch to WF', '切换 DW': 'Switch to DW',
+    '切换 FAB': 'Switch to FAB', '切换 IC': 'Switch to IC',
+    '长按时间（秒）': 'Hold duration (seconds)', '恢复默认按键': 'Reset keys', '关闭': 'Close',
+    '互动键默认跟随游戏绑定；识别不正确时，选择与游戏设置相同的键。':
+        'Interaction follows the game binding. If detection fails, select the same key as in the game settings.',
+    'Auto = 跟随游戏；None = 关闭快捷键。移动和攻击等操作使用游戏内的按键设置。':
+        'Auto = follow game; None = disable shortcut. Movement and attack bindings use the game settings.',
+    '按键不能重复；保留至少一个编辑器快捷键，长按时间为 0.5–5 秒。':
+        'Use distinct keys, keep at least one editor shortcut, and set hold duration to 0.5–5 seconds.',
+    '按键已保存，立即生效。': 'Keyboard settings saved and applied.', '隐藏': 'Hide',
+    '编辑器快捷键为全局按键，建议使用 F 键。': 'Editor shortcuts are global; function keys are recommended.',
+    '保存后自动重开应用。内容可滚动，Shift + 滚轮可左右滚动。':
+        'Saving restarts the run. Scroll for more controls; Shift + wheel scrolls horizontally.',
+    '显示/隐藏：{0} / {1}；长按 {2} 秒：重开 {3}，WF {4}，DW {5}，FAB {6}，IC {7}':
+        'Show/hide: {0} / {1}; hold {2}s: restart {3}, WF {4}, DW {5}, FAB {6}, IC {7}',
     'StarBreak 装备编辑': 'StarBreak Gear Editor',
     '  ` / F8 显示/隐藏    |    长按 R 重开当前局，长按 7/8/9/0 换角色（WF/DW/FAB/IC）':
         '` / F8: show/hide  |  Hold R: restart  |  Hold 7/8/9/0: WF/DW/FAB/IC',
