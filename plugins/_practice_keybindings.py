@@ -18,7 +18,7 @@ DEFAULTS = {'interact': 'Auto', 'editor_toggle': 'Backtick',
             'wf': '7', 'dw': '8', 'fab': '9', 'ic': '0', 'hold_seconds': 2.0}
 ACTIONS = ('interact', 'editor_toggle', 'editor_toggle_alt', 'restart', 'wf', 'dw', 'fab', 'ic')
 CHOICES = tuple('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + tuple('0123456789') + tuple(
-    'F' + str(index + 1) for index in range(12)) + ('Backtick', 'Space', 'Enter', 'Tab')
+    'F' + str(index + 1) for index in range(12) if index != 5) + ('Backtick', 'Space', 'Enter', 'Tab')
 
 
 def normalize(document):
@@ -28,7 +28,7 @@ def normalize(document):
     used = set()
     for action in ACTIONS:
         name = document.get(action, DEFAULTS[action])
-        if name not in KEYS or (name == 'Auto' and action != 'interact'):
+        if name not in KEYS or name == 'F6' or (name == 'Auto' and action != 'interact'):
             raise ValueError('Invalid key: ' + str(name))
         if action == 'interact' and name == 'None':
             raise ValueError('Interaction cannot be disabled')
