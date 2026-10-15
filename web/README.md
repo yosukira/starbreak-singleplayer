@@ -17,7 +17,8 @@ python3 tools/web_app.py
 Open <http://127.0.0.1:8765>, select a shell and weapon, then enter the arena.
 The launcher downloads the pinned original browser client from `starbreak.com`
 on first use, verifies its SHA256 and caches it under `userdata/web/`.
-Textures are downloaded on demand and cached locally. An existing client can
+Textures are downloaded on demand and cached locally. The first load may take
+a few minutes, depending on the connection to the official asset server. An existing client can
 instead be supplied with `--client /path/to/VR1574197275.mvmmoclient.js`.
 The original client and assets are not included in this source repository.
 
