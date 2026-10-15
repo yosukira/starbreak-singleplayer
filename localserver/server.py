@@ -210,6 +210,12 @@ class LocalServer(object):
     def __init__(self, options):
         self.options = options
         self.layouts = pb_layout.default_layouts()
+        if getattr(options, 'web_client', False):
+            # The pinned browser Hello parser (Nja) requires field 1 as
+            # fixed32. Keep its override private to this server instance.
+            wire = dict(self.layouts.wire_overrides)
+            wire[('Hello', 'hid_')] = 5
+            self.layouts = pb_layout.Layouts(wire_overrides=wire)
         self.data_version = load_data_version(options.data_version)
         self.create_world_blob = self._load_create_world(options)
         self.bootstrap_delta_blob = self._load_bootstrap_delta(options)
@@ -1722,6 +1728,8 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=2048)
+    parser.add_argument('--web-client', action='store_true',
+                        help='use the 1.14.6 browser Hello wire format')
     parser.add_argument('--mode',
                         choices=('hulk',),
                         default='hulk')

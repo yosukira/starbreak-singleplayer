@@ -4,6 +4,10 @@
 
 StarBreak 的本地单人战斗模拟器 / A local singleplayer battle simulator for StarBreak.
 
+**网页试玩原型 / Browser prototype:** [使用说明 / Instructions](web/README.md).
+目前可在 Mac 的浏览器中运行 Hulk Mid 战斗，需启动本地 Python 服务；尚未作为正式 Release 发布。
+The browser prototype runs Hulk Mid with a local Python service, including on Mac. It is not part of the Windows player Release yet.
+
 ## 中文使用说明
 
 ### 功能与运行环境
