@@ -6,6 +6,7 @@ Requires websockets; serves only the prototype UI and whitelisted game assets.
 import argparse
 import contextlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.client import HTTPException
 import json
 import mimetypes
 import re
@@ -13,9 +14,11 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from urllib.parse import unquote, urlsplit
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,10 +139,26 @@ class Prototype:
         # Do not expose arbitrary downloads which happen to have an audio suffix.
         if re.fullmatch(r'[A-Za-z0-9_-]+\.(?:d|[0-9]+)\.[A-Za-z0-9_-]{22}\.(?:png|bpb)', candidate.name) and candidate.is_file():
             return candidate.read_bytes()
-        with urlopen('https://www.starbreak.com' + path, timeout=30) as response:
-            data = response.read()
+        for attempt in range(3):
+            try:
+                with urlopen('https://www.starbreak.com' + path, timeout=60) as response:
+                    data = response.read()
+                break
+            except HTTPError as error:
+                if error.code < 500 or attempt == 2:
+                    raise
+            except (OSError, HTTPException):
+                if attempt == 2:
+                    raise
         cached.parent.mkdir(parents=True, exist_ok=True)
-        cached.write_bytes(data)
+        # Readers must never see a partially written texture during a restart.
+        with tempfile.NamedTemporaryFile(dir=cached.parent, delete=False) as output:
+            temporary = Path(output.name)
+            output.write(data)
+        try:
+            temporary.replace(cached)
+        finally:
+            temporary.unlink(missing_ok=True)
         return data
 
     def websocket(self, ws):

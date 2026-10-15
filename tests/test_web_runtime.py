@@ -49,6 +49,18 @@ class WebRuntimeTests(unittest.TestCase):
                 self.assertEqual(app.asset('/texture/base.0.test.png'), b'cached')
                 network.assert_not_called()
 
+    def test_temporary_asset_failure_retries_before_caching(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = Prototype.__new__(Prototype)
+            app.cache = Path(directory)
+            app.options = SimpleNamespace(client=Path(directory) / 'client.js')
+            response = mock.MagicMock()
+            response.__enter__.return_value.read.return_value = b'complete asset'
+            with mock.patch('tools.web_app.urlopen', side_effect=[TimeoutError('slow network'), response]) as network:
+                self.assertEqual(app.asset('/texture/base.test.png'), b'complete asset')
+                self.assertEqual(network.call_count, 2)
+                self.assertEqual((app.cache / 'texture/base.test.png').read_bytes(), b'complete asset')
+
     def test_invalid_selection_cannot_stop_or_start_a_server(self):
         app = Prototype.__new__(Prototype)
         app.lock = threading.Lock()
