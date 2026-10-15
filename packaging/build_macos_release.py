@@ -3,6 +3,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 from pathlib import Path
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -50,6 +51,17 @@ def main():
         with tarfile.open(runtime) as archive:
             archive.extractall(project, filter='data')
         python = project / 'python'
+        # Keep the executable runtime, not SDK headers or package-development tools.
+        for path in (python / 'include', python / 'share', python / 'lib/pkgconfig',
+                     python / 'lib/python3.12/ensurepip', python / 'lib/python3.12/site-packages/pip'):
+            if path.exists():
+                shutil.rmtree(path)
+        for pattern in ('lib/*.a', 'lib/python3.12/config-*', 'lib/python3.12/site-packages/pip-*.dist-info'):
+            for path in python.glob(pattern):
+                shutil.rmtree(path) if path.is_dir() else path.unlink()
+        for path in (python / 'bin').iterdir():
+            if path.name not in ('python', 'python3', 'python3.12'):
+                path.unlink()
         licenses = python / 'licenses'
         licenses.mkdir()
         def license_file(name):
