@@ -5,6 +5,7 @@ Requires websockets; serves only the prototype UI and whitelisted game assets.
 """
 import argparse
 import contextlib
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.client import HTTPException
 import json
@@ -53,6 +54,14 @@ class Prototype:
         self.version_file.write_bytes(bytes(json.loads(manifest.group(1))))
         self.cache = self.directory / 'assets'
         self.cache.mkdir(exist_ok=True)
+        version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
+        self.asset_paths = []
+        for pack in version.get('pvid_', []):
+            name = pack['name_']
+            if name in ('ui', 'title', 'base', 'hulk'):
+                self.asset_paths.append('/texture/' + name + '.' + pack['descid_'] + '.bpb')
+                self.asset_paths.extend('/texture/' + name + '.' + image + '.png' for image in pack['imageids_'])
+        self.preparing, self.asset_error = False, ''
         self.items = {}
         import base64
         for line in (ROOT / 'data/catalogue/item_descriptions.jsonl').read_text().splitlines():
@@ -61,13 +70,35 @@ class Prototype:
             self.items[int(item['type_'])] = item
 
     def info(self):
+        assets = getattr(self, 'asset_paths', [])
+        cached = sum((self.cache / path.lstrip('/')).is_file() or
+                     (self.options.client.parent / Path(path).name).is_file() for path in assets)
         return dict(map=self.map, shell=self.shell, running=bool(self.process and self.process.poll() is None),
+                    assets_ready=cached == len(assets), assets_cached=cached, assets_total=len(assets),
+                    asset_error=getattr(self, 'asset_error', ''),
                     ws_port=self.options.ws_port, feedback=self.feedback, damage=self.damage,
                     received_damage=self.received_damage,
                     player=self.latest_player,
                     maps=[dict(id='hulk_mid', title=game_settings.map_info('hulk_mid')['title'])],
                     items=[dict(id=k, name=v['name_'], slot=v.get('slot_'), usableby=v.get('usableby_', []))
                            for k, v in self.items.items() if v.get('slot_') == 256])
+
+    def prepare(self):
+        # Fetch before creating the game iframe: the original image loader has
+        # a shorter timeout than some first-time official asset downloads.
+        with self.lock:
+            if not self.preparing:
+                self.preparing, self.asset_error = True, ''
+                def work():
+                    try:
+                        with ThreadPoolExecutor(max_workers=4) as pool:
+                            list(pool.map(self.asset, self.asset_paths))
+                    except Exception as error:
+                        self.asset_error = 'Game asset download failed: ' + str(error)
+                    finally:
+                        self.preparing = False
+                threading.Thread(target=work, daemon=True).start()
+        return self.info()
 
     def stop(self):
         if self.process and self.process.poll() is None:
@@ -232,8 +263,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
-        self.end_headers()
-        self.wfile.write(data)
+        with contextlib.suppress(BrokenPipeError, ConnectionResetError):
+            self.end_headers()
+            self.wfile.write(data)
 
     def do_GET(self):
         if not self.local_host():
@@ -258,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path != '/api/start':
+        if self.path not in ('/api/start', '/api/prepare'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -271,7 +303,7 @@ class Handler(BaseHTTPRequestHandler):
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
-            self.send(self.server.prototype.start(document))
+            self.send(self.server.prototype.prepare() if self.path == '/api/prepare' else self.server.prototype.start(document))
         except Exception as error:
             self.send(dict(error=str(error)), status=400)
 

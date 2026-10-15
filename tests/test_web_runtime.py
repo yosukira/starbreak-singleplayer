@@ -61,6 +61,31 @@ class WebRuntimeTests(unittest.TestCase):
                 self.assertEqual(network.call_count, 2)
                 self.assertEqual((app.cache / 'texture/base.test.png').read_bytes(), b'complete asset')
 
+    def test_preparation_reports_progress_without_blocking_the_browser(self):
+        with tempfile.TemporaryDirectory() as directory:
+            app = Prototype.__new__(Prototype)
+            app.cache = Path(directory)
+            app.options = SimpleNamespace(client=app.cache / 'client.js', ws_port=8766)
+            app.asset_paths = ['/texture/one.png']
+            app.map, app.shell, app.process = 'hulk_mid', 1, None
+            app.feedback = app.damage = app.received_damage = 0
+            app.latest_player, app.items = {}, {}
+            app.lock, app.preparing, app.asset_error = threading.Lock(), False, ''
+            release, complete = threading.Event(), threading.Event()
+            def download(path):
+                release.wait(3)
+                target = app.cache / path.lstrip('/')
+                target.parent.mkdir()
+                target.write_bytes(b'finished')
+                complete.set()
+            with mock.patch.object(app, 'asset', side_effect=download):
+                state = app.prepare()
+                self.assertFalse(state['assets_ready'])
+                self.assertEqual(state['assets_cached'], 0)
+                release.set()
+                self.assertTrue(complete.wait(2))
+                self.assertTrue(app.info()['assets_ready'])
+
     def test_invalid_selection_cannot_stop_or_start_a_server(self):
         app = Prototype.__new__(Prototype)
         app.lock = threading.Lock()
@@ -103,6 +128,7 @@ class WebRuntimeTests(unittest.TestCase):
         app = mock.Mock()
         app.options = SimpleNamespace(ws_port=19999)
         app.start.return_value = dict(running=True)
+        app.prepare.return_value = dict(assets_ready=True)
         app.info.return_value = dict(running=False)
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
         server.prototype = app
@@ -132,6 +158,10 @@ class WebRuntimeTests(unittest.TestCase):
             self.assertEqual(code, 200)
             self.assertTrue(json.loads(data)['running'])
             app.start.assert_called_once_with({'shell': 1})
+            code, data = request('POST', '/api/prepare', '{}')
+            self.assertEqual(code, 200)
+            self.assertTrue(json.loads(data)['assets_ready'])
+            app.prepare.assert_called_once_with()
         finally:
             server.shutdown()
             server.server_close()

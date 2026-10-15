@@ -11,6 +11,14 @@
     $('stage').replaceChildren();
     $('telemetry').textContent=language==='zh'?'等待新一局…':'Waiting for a new attempt…';
     try{
+      const preparation=await fetch('/api/prepare',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      let assets=await preparation.json();if(!preparation.ok)throw new Error(assets.error);
+      while(!assets.assets_ready){
+        if(assets.asset_error)throw new Error(assets.asset_error);
+        $('status').textContent=(language==='zh'?'准备游戏资源 ':'Preparing assets ')+`${assets.assets_cached}/${assets.assets_total}`;
+        await new Promise(resolve=>setTimeout(resolve,750));
+        assets=await(await fetch('/api/info')).json();
+      }
       const response=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shell,map:$('map').value,weapon:+$('weapon').value})});
       const data=await response.json();if(!response.ok)throw new Error(data.error);
       const frame=document.createElement('iframe');frame.src='/game.html?attempt='+Date.now();frame.title='StarBreak battle';frame.allow='autoplay; fullscreen';$('stage').replaceChildren(frame);
