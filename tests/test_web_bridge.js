@@ -5,8 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const heap = new ArrayBuffer(32768), i32 = new Int32Array(heap), u8 = new Uint8Array(heap);
 const sent = [], messages = [];
-let now = 0;
+let now = 0, currentSocket;
+const listeners={};
 class Socket {
+  constructor(){currentSocket=this;}
   static OPEN = 1;
   readyState = 1;
   bufferedAmount = 0;
@@ -18,7 +20,7 @@ const context = {
   Module: {HEAP32: i32, HEAPU8: u8},
   performance: {now: () => now += 20}, Date,
   parent: {postMessage: value => messages.push(value)},
-  addEventListener() {}, document: {getElementById: () => ({focus() {}, hidden: false})},
+  addEventListener(name, callback) {listeners[name]=callback;}, document: {getElementById: () => ({focus() {}, hidden: false})},
   console: {error: error => { throw error; }},
 };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../web/bridge.js'), 'utf8'), context);
@@ -51,4 +53,15 @@ set(world, 672, 0);
 context.Module.webFrame(world);
 assert.equal(sent[4].player.hp, 0);
 assert.equal(sent[4].player.alive, false, 'Player destruction ends the attempt');
-console.log('Browser ABI: player state, damage ownership, event drain and death passed.');
+// Original game totalInput owns interaction, independently of the physical key.
+set(world,672,player);set(world,668,128);context.Module.webFrame(world);
+assert.equal(sent.at(-1).keys.interact,true);assert.equal(sent.at(-1).keys.interact_edge,true);
+context.Module.webFrame(world);assert.equal(sent.at(-1).keys.interact_edge,false);
+set(world,668,0);listeners.keydown({code:'KeyL',preventDefault(){}});context.Module.webFrame(world);
+assert.equal(sent.at(-1).keys.interact,false,'Hard-coded L cannot override original bindings');
+// A new room cannot inherit a destroyed previous player or old damage events.
+set(world,200,0xf1234567);set(world,672,0);const oldCount=sent.length;context.Module.webFrame(world);
+assert.equal(sent.length,oldCount,'Do not report previous-room death before new player arrives');
+set(world,672,player);set(damage,36,1);context.Module.webUpdates(world,update);context.Module.webFrame(world);
+assert.equal(sent.at(-1).events[0].native_seed,0xf1234567);
+console.log('Browser ABI: state, damage ownership, unsigned seed, death, room reset and player bindings passed.');

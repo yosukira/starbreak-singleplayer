@@ -67,6 +67,8 @@ class WebRuntimeTests(unittest.TestCase):
             app.cache = Path(directory)
             app.options = SimpleNamespace(client=app.cache / 'client.js', ws_port=8766)
             app.asset_paths = ['/texture/one.png']
+            app.required_assets = mock.Mock(return_value=app.asset_paths)
+            app.prepared_map = 'hulk_mid'
             app.map, app.shell, app.process = 'hulk_mid', 1, None
             app.feedback = app.damage = app.received_damage = 0
             app.latest_player, app.items = {}, {}
@@ -109,6 +111,8 @@ class WebRuntimeTests(unittest.TestCase):
             app.options = SimpleNamespace(game_port=20480, bridge_port=21551, ws_port=8766)
             app.lock, app.process, app.log = threading.Lock(), None, None
             app.items = {100: dict(slot_=256, usableby_=[1], name_='Test weapon')}
+            app.workspace = mock.Mock()
+            app.workspace.materialize.side_effect = lambda map_id: (app.directory / 'class_loadouts.json').write_bytes(original)
             process = mock.Mock()
             process.poll.return_value = None
             def launch(*args, **kwargs):
@@ -161,7 +165,7 @@ class WebRuntimeTests(unittest.TestCase):
             code, data = request('POST', '/api/prepare', '{}')
             self.assertEqual(code, 200)
             self.assertTrue(json.loads(data)['assets_ready'])
-            app.prepare.assert_called_once_with()
+            app.prepare.assert_called_once_with({})
         finally:
             server.shutdown()
             server.server_close()

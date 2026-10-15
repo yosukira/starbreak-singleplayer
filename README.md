@@ -4,9 +4,10 @@
 
 StarBreak 的本地单人战斗模拟器 / A local singleplayer battle simulator for StarBreak.
 
-**网页试玩原型 / Browser prototype:** [使用说明 / Instructions](web/README.md).
-目前可在 Mac 的浏览器中运行 Hulk Mid 战斗，需启动本地 Python 服务；尚未作为正式 Release 发布。
-The browser prototype runs Hulk Mid with a local Python service, including on Mac. It is not part of the Windows player Release yet.
+**网页版 / Browser edition:** [使用说明 / Instructions](web/README.md).
+Windows 和 Mac 可以运行本地浏览器战斗；玩家包自带 Python，无需 SBPE 或另装运行环境。
+Windows and Mac browser player packages include Python and run locally without SBPE.
+首次需联网下载原版资源 / Internet access is needed for the initial original-game assets.
 
 ## 中文使用说明
 
@@ -17,7 +18,7 @@ The browser prototype runs Hulk Mid with a local Python service, including on Ma
 - 装备编辑器支持简体中文、English 和跟随系统；切换语言会保留当前未保存的编辑。
 - **运行游戏需要 Windows、StarBreak Windows 客户端和兼容的 [SBPE](https://github.com/atomizer/sbpe) 安装。** 客户端补丁针对 StarBreak 1.14.6 的 Windows 二进制；其他版本可能不兼容。
 - **Windows 玩家 Release 已自带 Python 和 Tk，无需另外安装 Python 或配置 PATH。** 游戏内注入仍使用 SBPE 自带的 32 位 PyPy。GitHub 的 Source code / Download ZIP 是源码包，不包含这套运行环境。
-- Mac 可以独立预览装备编辑器，不能用这份启动脚本运行游戏。
+- Mac 可使用[浏览器战斗版](web/README.md)。下文 `start.cmd` 专用于 Windows 原生版。
 
 ### 安装与启动
 
@@ -66,6 +67,7 @@ SBPE/
 3. 点击 **应用/保存**。服务器检测到配装变化后会重开当前局。地图、掉落率等设置通过 **保存设置** 保存。
 4. 右上角选择 **System / 跟随系统**、**简体中文** 或 **English**。首次默认跟随系统：Windows 中文界面使用中文，其他语言使用英文；选择会在本机保存。
 5. **导出 / 导入** 用于分享 JSON 配装；导入后点击应用/保存才会写入配装。
+6. **恢复默认配置** 立即重置四职业配装、弹速与战斗设置，原配置先备份到 `userdata/before-restore-defaults-*`；语言与按键不变。
 
 编辑器适配 1366×768 等低分辨率屏幕：内容区支持滚动，底部操作按钮固定显示；按住 Shift 滚动可左右查看较宽的控件。
 
@@ -85,9 +87,9 @@ Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 
 
 ### 本地数据与常见问题
 
-- 首次启动自动创建 `userdata/`，保存自己的配装、语言偏好和日志；删除此目录可恢复默认设置。它不会进入 Git 版本控制。
+- 首次启动自动创建 `userdata/`，保存自己的配装、语言偏好和日志；可在编辑器点击“恢复默认配置”。它不会进入 Git 版本控制。
 - 初始四职业配装恢复为本地练习版的完整预设，包含自定义词缀和数值。这些数值用于练习，不是原服推荐配装或原服词缀范围说明。
-- 从旧版更新时，仅自动替换仍与旧版错误占位预设完全一致的职业配装，并补齐缺失职业；已经修改的职业配装保留。被替换的文件先备份为 `userdata/*.before-preset-repair.json`。仅当四职业都未改动且词缀覆盖文件仍为空时，才自动恢复整份默认词缀覆盖。
+- 从旧版更新时，仅自动替换仍与旧版错误占位预设完全一致的职业配装，并补齐缺失职业；已经修改的职业配装保留。被替换的文件先备份为 `userdata/*.before-preset-repair.json`。WF Aeonic 默认爆伤已修正为 0.5×；IC Corrupt Sledge 默认 Speed% 为 20，去掉原先三条额外伤害/物品暴击词缀。仅自动升级仍完全匹配旧默认的物品，自定义词缀保留并可用“恢复默认配置”主动重置。仅当四职业都未改动且词缀覆盖文件仍为空时，才自动恢复整份默认词缀覆盖。
 - 不需要原服账号登录。本地玩家采用固定的虚拟身份，原服账号进度与背包不会导入。
 - 提示缺少 `remote.bin`、`symbols.json` 或 `pypy3.exe`：检查项目是否放在完整的 SBPE 安装目录下。
 - 提示 Python 未找到或运行环境检查失败：重新完整解压 Windows 玩家包，确认 `start.cmd` 旁有 `python/python.exe`。SBPE 的旧版 PyPy 不能代替本地服和编辑器所需的 Python。
@@ -159,11 +161,13 @@ Weapons with an explicit speed parameter expose **Base projectile speed** for ea
 
 To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 tools/gear_editor.py --show` from the project folder, or run `preview-editor.command`. Saving in this preview writes local settings; Windows global hotkeys and in-game effects cannot be verified there.
 
+**Restore defaults** immediately resets all four class loadouts, projectile speeds and encounter settings to the shipped presets. Previous files are backed up under `userdata/before-restore-defaults-*`; language and key bindings are retained.
+
 ### Local files and troubleshooting
 
-- First launch creates `userdata/` for your own loadouts, language preference and logs. Delete that folder to restore defaults. It is excluded from Git.
+- First launch creates `userdata/` for your own loadouts, language preference and logs. Use **Restore defaults** in the editor to reset equipment and encounter settings while keeping a backup. It is excluded from Git.
 - The initial loadouts for all four shells restore the complete local practice presets, including custom modifiers and values. These are practice settings, not recommended retail loadouts or a specification of retail modifier ranges.
-- When updating, automatic repair replaces only shell loadouts that still exactly match the old incorrect placeholder and fills missing shells. Edited shell loadouts are retained. Replaced files are backed up as `userdata/*.before-preset-repair.json`. The default modifier overrides are restored automatically only when all four shells are unchanged and the override file is still empty.
+- When updating, automatic repair replaces only shell loadouts that still exactly match the old incorrect placeholder and fills missing shells. Edited shell loadouts are retained. Replaced files are backed up as `userdata/*.before-preset-repair.json`. The default modifier overrides are restored automatically only when all four shells are unchanged and the override file is still empty. WF Aeonic default crit damage is now 0.5×; IC Corrupt Sledge defaults to Speed% 20 without the old flat damage/item crit damage/item crit chance extras. Automatic upgrades touch only exact old item presets; edited modifiers are preserved.
 - No original-server account login is required. A synthetic local player is used; online account progress and inventory are not imported.
 - Missing `remote.bin`, `symbols.json` or `pypy3.exe`: check the project folder is inside a complete SBPE installation.
 - Python missing or runtime check failed: re-extract the complete Windows player ZIP and make sure `python/python.exe` is next to `start.cmd`. SBPE's old PyPy cannot replace the Python runtime needed by the server and editor.
@@ -177,4 +181,4 @@ https://discord.gg/J9YvUCuGmv
 
 ### License
 
-Simulator code is licensed under [MIT](LICENSE). The Windows player runtime retains its Python and Tcl/Tk licenses in `python/LICENSE.txt`, `python/TCL-LICENSE.txt` and `python/TK-LICENSE.txt`. The StarBreak client, artwork, audio and SBPE are not included; their ownership and licenses remain with their respective owners. You must supply your own client and SBPE installation.
+Simulator code is licensed under [MIT](LICENSE). The Windows player runtime retains its Python and Tcl/Tk licenses in `python/LICENSE.txt`, `python/TCL-LICENSE.txt` and `python/TK-LICENSE.txt`. Browser packages additionally retain the standalone Python dependency licenses under `python/licenses/` and the WebSockets license inside its `.dist-info/licenses/` directory. The browser launcher downloads the original game assets separately. The StarBreak client, artwork, audio and SBPE are not included; their ownership and licenses remain with their respective owners. The native Windows edition requires your own game client and SBPE installation.

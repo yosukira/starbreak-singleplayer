@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.client import HTTPException
 import json
 import mimetypes
+import os
 import re
 from pathlib import Path
 import socket
@@ -26,6 +27,22 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from localserver import game_settings, paths, pb_layout
 from tools.web_client import patch_client
+from tools.web_workspace import Workspace, atomic_json
+from tools.web_text import map_names
+
+# These encounters need inventory/ground handoff adapters before being enabled.
+PENDING_MAPS = {'eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run'}
+
+
+def maps():
+    return [dict(id=map_id, title=game_settings.map_info(map_id)['title'], names=map_names(map_id, game_settings.map_info(map_id)['title']), ready=map_id not in PENDING_MAPS)
+            for map_id in game_settings.ordered_maps()]
+
+
+def checked_map(map_id):
+    if map_id not in game_settings.available_maps() or map_id in PENDING_MAPS:
+        raise ValueError('This map is not available in the browser yet')
+    return map_id
 
 
 class Prototype:
@@ -39,10 +56,12 @@ class Prototype:
         self.shell = 1
         self.started = 0
         self.latest_player = {}
+        self.latest_inventory = None
+        self.inventory_error = None
         self.feedback = 0
         self.damage = 0
         self.received_damage = 0
-        self.directory = ROOT / 'userdata' / 'web'
+        self.directory = getattr(options, 'data_dir', None) or ROOT / 'userdata' / 'web'
         self.directory.mkdir(parents=True, exist_ok=True)
         # Use this client's own embedded version manifest for required HELLO
         # fields and texture identifiers, rather than a missing native install.
@@ -54,13 +73,10 @@ class Prototype:
         self.version_file.write_bytes(bytes(json.loads(manifest.group(1))))
         self.cache = self.directory / 'assets'
         self.cache.mkdir(exist_ok=True)
-        version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
-        self.asset_paths = []
-        for pack in version.get('pvid_', []):
-            name = pack['name_']
-            if name in ('ui', 'title', 'base', 'hulk'):
-                self.asset_paths.append('/texture/' + name + '.' + pack['descid_'] + '.bpb')
-                self.asset_paths.extend('/texture/' + name + '.' + image + '.png' for image in pack['imageids_'])
+        self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
+        self.workspace = Workspace(self.directory)
+        self.prepared_map = 'hulk_mid'
+        self.asset_paths = self.required_assets(self.prepared_map)
         self.preparing, self.asset_error = False, ''
         self.items = {}
         import base64
@@ -68,6 +84,20 @@ class Prototype:
             row = json.loads(line)
             item = pb_layout.default_layouts().decode('ItemDescription', base64.b64decode(row['payloadBase64']))
             self.items[int(item['type_'])] = item
+
+    def required_assets(self, map_id):
+        info = game_settings.map_info(map_id)
+        needed = {'ui', 'title', 'base', game_settings.map_info('home')['pvid'], info['pvid'], *info.get('preload_pvids', [])}
+        assets = []
+        available = {pack['name_'] for pack in self.version.get('pvid_', [])}
+        if not needed <= available:
+            raise ValueError('Missing texture manifest for ' + ', '.join(sorted(needed-available)))
+        for pack in self.version.get('pvid_', []):
+            name = pack['name_']
+            if name in needed:
+                assets.append('/texture/' + name + '.' + pack['descid_'] + '.bpb')
+                assets.extend('/texture/' + name + '.' + image + '.png' for image in pack['imageids_'])
+        return assets
 
     def info(self):
         assets = getattr(self, 'asset_paths', [])
@@ -79,14 +109,18 @@ class Prototype:
                     ws_port=self.options.ws_port, feedback=self.feedback, damage=self.damage,
                     received_damage=self.received_damage,
                     player=self.latest_player,
-                    maps=[dict(id='hulk_mid', title=game_settings.map_info('hulk_mid')['title'])],
+                    maps=maps(),
                     items=[dict(id=k, name=v['name_'], slot=v.get('slot_'), usableby=v.get('usableby_', []))
                            for k, v in self.items.items() if v.get('slot_') == 256])
 
-    def prepare(self):
+    def prepare(self, document=None):
         # Fetch before creating the game iframe: the original image loader has
         # a shorter timeout than some first-time official asset downloads.
         with self.lock:
+            map_id = checked_map((document or {}).get('map', 'hulk_mid'))
+            if self.preparing and map_id != self.prepared_map:
+                raise ValueError('Wait for the current resource preparation to finish')
+            self.prepared_map, self.asset_paths = map_id, self.required_assets(map_id)
             if not self.preparing:
                 self.preparing, self.asset_error = True, ''
                 def work():
@@ -116,8 +150,9 @@ class Prototype:
     def start(self, document):
         with self.lock:
             shell = int(document.get('shell', 1))
-            if shell not in (1, 2, 3, 5) or document.get('map', 'hulk_mid') != 'hulk_mid':
-                raise ValueError('This prototype currently supports Hulk Mid and the four shells.')
+            map_id = checked_map(document.get('map', 'hulk_mid'))
+            if shell not in (1, 2, 3, 5):
+                raise ValueError('Unknown shell')
             weapon = document.get('weapon')
             if weapon is not None:
                 weapon = int(weapon)
@@ -125,32 +160,40 @@ class Prototype:
                 if item is None or item.get('slot_') != 256 or shell not in item.get('usableby_', []):
                     raise ValueError('Weapon is not compatible with this shell.')
             self.stop()
-            self.map, self.shell = 'hulk_mid', shell
-            loadouts = json.loads((paths.USERDATA / 'class_loadouts.json').read_text(encoding='utf8'))
+            self.map, self.shell = map_id, shell
+            self.workspace.materialize(map_id)
+            loadout_path = self.directory / 'class_loadouts.json'
+            loadouts = json.loads(loadout_path.read_text(encoding='utf8'))
             if weapon is not None:
                 row = loadouts[str(shell)]
-                row['items_'] = [v for v in row['items_'] if v.get('slotpos_') != 256]
-                row['items_'].insert(0, dict(type_=weapon, slotpos_=256, statboosts_=[]))
-            loadout_path = self.directory / 'class_loadouts.json'
-            loadout_path.write_text(json.dumps(loadouts), encoding='utf8')
+                current = next((v for v in row['items_'] if v.get('slotpos_') == 256), {})
+                if current.get('type_') != weapon:
+                    row['items_'] = [v for v in row['items_'] if v.get('slotpos_') != 256]
+                    row['items_'].insert(0, dict(type_=weapon, slotpos_=256, statboosts_=[]))
+            atomic_json(loadout_path, loadouts)
             self.log = (self.directory / 'server.log').open('w', encoding='utf8')
             info = game_settings.map_info(self.map)
             command = [sys.executable, '-u', '-m', 'localserver.server', '--web-client', '--mode', 'hulk', '--live',
                        '--map', self.map, '--pvid', info['pvid'], '--zone', info['zone'],
                        '--gdv', str(info.get('gdv', 1)), '--host', '127.0.0.1',
                        '--port', str(self.options.game_port), '--bridge-port', str(self.options.bridge_port),
-                       '--player-type', str(shell), '--create-world-hex', str(ROOT / 'maps' / self.map / 'createworld.hex'),
+                       '--player-type', str(shell), '--create-world-hex', str(
+                           ROOT / 'data/catalogue/real_hulkboss_createworld_flags.hex' if self.map == game_settings.ORIGINAL_MAP
+                           else ROOT / 'maps' / self.map / 'createworld.hex'),
                        '--characters', str(ROOT / 'data/catalogue/characters.json'),
                        '--items', str(ROOT / 'data/catalogue/item_descriptions.jsonl'),
                        '--data-version', str(self.version_file),
                        '--class-loadouts', str(loadout_path),
+                       '--projectile-overrides', str(self.directory / 'class_loadout_overrides.json'),
                        '--player-payloads', str(ROOT / 'data/catalogue/class_players.json'), '--no-time-echo']
-            self.process = subprocess.Popen(command, cwd=ROOT, stdout=self.log, stderr=subprocess.STDOUT)
+            environment = dict(os.environ, SB_GAME_SETTINGS_PATH=str(self.directory / 'game_settings.json'))
+            self.process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=self.log, stderr=subprocess.STDOUT)
             for _ in range(100):
                 if self.process.poll() is not None:
                     raise RuntimeError((self.directory / 'server.log').read_text(encoding='utf8')[-2000:])
                 if 'listening' in (self.directory / 'server.log').read_text(encoding='utf8'):
                     self.latest_player, self.feedback, self.damage, self.received_damage = {}, 0, 0, 0
+                    self.latest_inventory = self.inventory_error = None
                     self.started = time.time()
                     return self.info()
                 time.sleep(.05)
@@ -231,6 +274,11 @@ class Prototype:
                         break
                     document = json.loads(message)
                     self.latest_player = document.get('player') or {}
+                    if self.latest_player.get('inventory_preview'):
+                        self.latest_inventory = self.latest_player['inventory_preview']
+                        self.inventory_error = None
+                    if self.latest_player.get('inventory_error'):
+                        self.inventory_error = self.latest_player['inventory_error']
                     self.feedback += 1
                     for event in document.get('events', []):
                         if event.get('kind') == 'damage':
@@ -274,12 +322,16 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ('/api/info', '/api/status'):
                 return self.send(self.server.prototype.info())
+            if path == '/api/editor':
+                return self.send(self.server.prototype.workspace.editor())
+            if path == '/api/inventory':
+                return self.send(dict(inventory=self.server.prototype.latest_inventory, error=self.server.prototype.inventory_error))
             if path == '/client.js':
                 return self.send(self.server.prototype.client, 'text/javascript')
             if path == '/runtime.js':
                 data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=self.server.prototype.options.ws_port)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/bridge.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/inventory.js', '/bridge.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
                 return self.send((ROOT / 'web' / filename).read_bytes(), mimetypes.guess_type(filename)[0] or 'text/plain')
             data = self.server.prototype.asset(path)
@@ -290,7 +342,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -298,12 +350,18 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(dict(error='Origin rejected'), status=403)
         try:
             length = int(self.headers.get('Content-Length', 0))
-            if not 0 < length <= 4096:
+            if not 0 < length <= (512*1024 if self.path in ('/api/editor', '/api/validate') else 4096):
                 raise ValueError('Invalid request size')
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
-            self.send(self.server.prototype.prepare() if self.path == '/api/prepare' else self.server.prototype.start(document))
+            if self.path == '/api/editor':
+                return self.send(self.server.prototype.workspace.save(document))
+            if self.path == '/api/validate':
+                return self.send(self.server.prototype.workspace.validate(document))
+            if self.path == '/api/reset':
+                return self.send(self.server.prototype.workspace.restore_defaults(document.get('revision')))
+            self.send(self.server.prototype.prepare(document) if self.path == '/api/prepare' else self.server.prototype.start(document))
         except Exception as error:
             self.send(dict(error=str(error)), status=400)
 
@@ -321,7 +379,14 @@ def main():
     parser.add_argument('--ws-port', type=int, default=8766)
     parser.add_argument('--game-port', type=int, default=20480)
     parser.add_argument('--bridge-port', type=int, default=21551)
+    parser.add_argument('--data-dir', type=Path, help='Separate browser profile and asset cache directory')
+    parser.add_argument('--no-browser', action='store_true', help='Print the address without opening a browser')
+    parser.add_argument('--check-runtime', action='store_true', help='Verify the bundled browser runtime and exit')
     options = parser.parse_args()
+    from websockets.sync.server import serve
+    if options.check_runtime:
+        print('Browser runtime OK: Python ' + sys.version.split()[0] + ', WebSockets available')
+        return
     if options.client is None:
         options.client = ROOT / 'userdata/web/VR1574197275.mvmmoclient.js'
         if not options.client.is_file():
@@ -331,7 +396,6 @@ def main():
             patch_client(data)  # Check exact supported version before caching.
             options.client.parent.mkdir(parents=True, exist_ok=True)
             options.client.write_bytes(data)
-    from websockets.sync.server import serve
     paths.ensure_user_data()
     prototype = Prototype(options)
     http = ThreadingHTTPServer(('127.0.0.1', options.port), Handler)
@@ -342,6 +406,9 @@ def main():
         threading.Thread(target=websocket.serve_forever, daemon=True).start()
         print('Browser prototype: http://127.0.0.1:' + str(options.port), flush=True)
         try:
+            if not options.no_browser:
+                import webbrowser
+                threading.Thread(target=webbrowser.open, args=('http://127.0.0.1:' + str(options.port),), daemon=True).start()
             http.serve_forever()
         except KeyboardInterrupt:
             pass

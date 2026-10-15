@@ -37,7 +37,9 @@ LAB = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if LAB not in sys.path:
     sys.path.insert(0, LAB)
 
-from localserver import game_settings, jsonio, projectile_speeds
+from localserver import game_settings, jsonio, projectile_speeds, presets
+from localserver.equipment import (SLOTS, STAT_NAMES, CANDIDATE_CACHE, AFFIX_DEFAULTS,
+    num, load_catalogue, candidate_items, build_affix_priority, affix_default_value)
 from tools import i18n
 from tools.editor_widgets import ScrollFrame, fit_window, key_dialog, work_area
 from plugins import _practice_keybindings as keybindings
@@ -107,28 +109,8 @@ BALANCE_MULT_MIN_LOG = -1.0
 BALANCE_MULT_MAX_LOG = 2.0
 SPAWN_CAP_MIN = 1
 SPAWN_CAP_MAX = 1000
-SLOTS = (
-    (256, '主武器'), (512, '副武器'), (768, '特殊武器'),
-    (1024, '衣服'), (1280, '机动/鞋'), (1536, '植入体'),
-) + tuple((3840 + index, '背包 {0}'.format(index + 1)) for index in range(8))
 
-STAT_NAMES = {
-    1: 'HP', 2: 'Max HP', 3: 'Ammo', 4: 'Max Ammo', 8: 'Air Jumps',
-    9: 'Damage(flat)', 10: 'Armor', 11: 'Movement Speed', 12: 'Jump Height',
-    13: 'Range', 14: 'Precise', 17: 'Implant Slot', 18: 'Damage%',
-    19: 'Base Crit Chance', 20: 'Crit Damage', 21: 'Air Dashes',
-    22: 'Knockback Resist', 23: 'Crit Chance', 24: 'Item Crit Chance',
-    25: 'Item Crit Damage', 27: 'Ammo Multiplier', 32: 'Penetrating',
-    33: 'Bounce', 34: 'Explosive Ammo', 35: 'Incendiary', 36: 'Subobjects/Shots',
-    37: 'Speed%', 38: 'Lifetime(ms)', 39: 'Seeking', 41: 'Radius',
-    42: 'Acceleration', 43: 'Armor Pierce', 45: 'Simultaneous',
-    46: 'Secondary Subobjects', 47: 'Barbed', 48: 'Trisected', 49: 'Gravity%',
-    50: 'Leech', 51: 'Extra Hit', 52: 'Reflect', 53: 'Move Time(ms)',
-    54: 'Item Armor', 55: 'Quick Shot/AnimSpeed', 56: 'Shielded', 57: 'Cooldown',
-}
 
-CANDIDATE_CACHE = {}
-AFFIX_DEFAULTS = {14: 100, 23: 500, 24: 500, 43: 100, 55: 20}
 
 def editor_map_choices(language='en'):
     """Ordered (stable map id, display title) rows for the map picker."""
@@ -144,88 +126,11 @@ def editor_map_choices(language='en'):
              if titles.count(title) > 1 else title)
             for map_id, title in rows]
 
-def num(value):
-    return value.get('value') if isinstance(value, dict) else value
-
-def load_catalogue(path=CATALOGUE):
-    from localserver.pb_layout import default_layouts
-    layouts = default_layouts()
-    items = {}
-    for line in jsonio.read_text(path)[0].splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            row = json.loads(line)
-            message = layouts.decode(
-                'ItemDescription', base64.b64decode(row['payloadBase64']))
-        except Exception:
-            continue
-        item_type = num(message.get('type_'))
-        if item_type is None:
-            continue
-        items[int(item_type)] = {
-            'type': int(item_type),
-            'name': message.get('name_') or str(item_type),
-            'slot': num(message.get('slot_')),
-            'itemclass': num(message.get('itemclass_')),
-            'usableby': [num(value) for value in
-                         (message.get('usableby_') or [])],
-            'base': [
-                {'stat_': num(boost.get('stat_')),
-                 'val_': int(boost.get('val_') or 0)}
-                for boost in (message.get('statboosts_') or [])
-                if num(boost.get('stat_')) is not None],
-            'projectiles': [
-                {'index': index, 'vid': obj['vid_'], 'speed': int(obj['speed_'])}
-                for index, obj in enumerate(message.get('obj_') or [])
-                if 'speed_' in obj and obj.get('vid_')],
-        }
-    return items
 
 
-def candidate_items(catalogue, char_type, slotpos):
-    key = (id(catalogue), int(char_type), int(slotpos))
-    cached = CANDIDATE_CACHE.get(key)
-    if cached is not None:
-        return cached
-    result = []
-    for item in catalogue.values():
-        if int(slotpos) < 3840 and item.get('slot') != int(slotpos):
-            continue
-        result.append(item)
-    def priority(item):
-        usable = item.get('usableby') or []
-        compatible = (int(char_type) in usable or
-                      (not usable and item.get('slot') in (256, 512, 768, 1024, 1280, 1536)))
-        return (0 if compatible else 1, int(item['type']))
-    result.sort(key=priority)
-    CANDIDATE_CACHE[key] = result
-    return result
 
-def build_affix_priority(catalogue, path=AFFIX_GUIDE):
-    'Load CHM/wiki item pools, independently of the available runtime rolls.'
-    document = {}
-    if os.path.exists(path):
-        try:
-            document = jsonio.load_json(path)[0]
-        except (IOError, OSError, ValueError, TypeError, UnicodeError):
-            document = {}
-    items = {int(key): value for key, value in (document.get('items') or {}).items()
-             if int(key) in catalogue}
-    return dict(exact={key: [int(row['stat']) for row in item['pool']]
-                       for key, item in items.items()},
-                defaults={key: {int(row['stat']): int(row['defaultValue'])
-                                 for row in item['pool']} for key, item in items.items()},
-                sources=items)
 
-def affix_default_value(priority, item_type, stat):
-    """Value for a newly selected modifier; never rewrite loaded instances."""
-    stat = int(stat)
-    defaults = priority.get('defaults', {}).get(item_type, {})
-    if stat in defaults:
-        return defaults[stat]
-    return AFFIX_DEFAULTS.get(stat, 0)
+
 
 def _dpi_scale(root):
     """Best-effort Windows DPI awareness and Tk point scaling."""
@@ -888,6 +793,7 @@ class GearEditor(object):
         ttk.Button(primary_actions, text=self.tr('导出'), command=self.export).pack(side='left', padx=6)
         ttk.Button(primary_actions, text=self.tr('导入'), command=self.import_file).pack(side='left', padx=6)
         ttk.Button(primary_actions, text=self.tr('重新载入'), command=self.reload).pack(side='left', padx=6)
+        ttk.Button(primary_actions, text=self.tr('恢复默认配置'), command=self.restore_defaults).pack(side='left', padx=6)
         self.affix_sort_button = ttk.Button(
             secondary_actions, text=self.tr('词缀排序：ID'), command=self.toggle_affix_sort)
         self.affix_sort_button.pack(side='left', padx=6)
@@ -1660,6 +1566,19 @@ class GearEditor(object):
         self._load_slot()
         self.status.configure(text=self.tr('已导入；点“应用/保存”写装备与设置'))
 
+
+    def restore_defaults(self):
+        try:
+            backup = presets.restore({
+                'class_loadouts.json': CLASS_LOADOUTS,
+                'practice_loadout.json': PRACTICE_LOADOUT,
+                'class_loadout_overrides.json': OVERRIDES,
+                'game_settings.json': game_settings.PATH,
+            })
+            self.reload()
+            self.status.configure(text=self.tr('全部配装与战斗设置已恢复默认；原配置已备份：') + str(backup))
+        except (OSError, ValueError) as error:
+            messagebox.showerror(self.tr('Gear Editor'), str(error))
 
     def reload(self):
         self.keybindings = keybindings.load(KEYBINDINGS)

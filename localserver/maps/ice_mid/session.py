@@ -52,7 +52,11 @@ class IceMidLiveSession(IceBossLiveSession):
                 self.retired.add(39)
         elif kind == 'victory':
             self.phase = 'done'
+            self.log('ice_mid: boss defeated; exit opened')
             self.batch.props(37, dict(VID='ice.nextDoor', INTERACT=255), offset=off)
+        elif kind == 'refill':
+            self.log('ice_mid: phase ' + str(event['phase']))
+            return super()._action(event)
         else:
             return super()._action(event)
         self.record(kind, **{k: v for k, v in event.items() if k not in ('kind', 'at')})

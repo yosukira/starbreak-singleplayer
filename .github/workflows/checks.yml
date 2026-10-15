@@ -21,6 +21,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y python3-tk
       - name: Check anonymous runtime and language tables
         run: python -m unittest discover -s tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser feedback and inventory ABI
+        run: |
+          node tests/test_web_bridge.js
+          node tests/test_web_inventory.js
       - name: Build both editor languages
         if: runner.os == 'Windows'
         env:

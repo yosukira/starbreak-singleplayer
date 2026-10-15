@@ -3,20 +3,22 @@
   'use strict';
   const socket = new WebSocket('ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/telemetry', 'binary');
   const keys = new Set();
-  let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null;
+  let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '';
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   socket.onmessage = e => {
-    try { const ack = JSON.parse(e.data); parent.postMessage({type:'bridge-ack',ack}, location.origin); }
+    try { const ack = JSON.parse(e.data); if(ack.map)context=ack; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
   };
   Module.webFrame = world => {
     try {
       frame++;
       const pointer = read(world, 672), subworld = read(world, 664);
+      const key=world+'/'+(read(world,200)>>>0);
+      if(key!==worldKey){worldKey=key;lastPlayer=null;events=[];}
       const now = performance.now();
       if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 60000) return;
       last = now;
@@ -26,9 +28,23 @@
         hp:read(pointer,64),maxhp:read(pointer,68),facing:read(pointer,40),
         alive:read(pointer,64)>0,vid:'browser-player',ammo:read(pointer,540),input:read(pointer,520)} : {...lastPlayer,hp:0,alive:false};
       lastPlayer = player;
-      const interact = keys.has('KeyL');
+      // ClientWorld.totalInput already reflects the player's own game bindings.
+      const interact = !!(read(world,668)&128);
+      const documentState={};
+      if(context.map){
+        documentState.room_context={map:context.map,room_token:context.room_token,room_seed:read(world,200)>>>0};
+        player.inventory_protocol='full-run-inventory-v1';
+        if(player.alive && seq%120===0){
+          try{player.inventory_preview=StarBreakInventory.snapshot(world,pointer,context);}
+          catch(error){player.inventory_error=error.message;}
+        }
+        if(context.inventory_request && player.alive){
+          try{const inventory=StarBreakInventory.refresh(world,pointer,context,context.inventory_request);if(inventory)player.inventory=inventory;}
+          catch(error){player.inventory_error=error.message;}
+        }
+      }
       socket.send(JSON.stringify({seq:++seq,t:Date.now()/1000,player,
-        keys:{interact,interact_edge:interact&&!wasInteract,interaction_blocked:false,attack:keys.has('KeyD')},events}));
+        keys:{interact,interact_edge:interact&&!wasInteract,interaction_blocked:false,attack:keys.has('KeyD')},events,...documentState}));
       wasInteract = interact; events = [];
       document.getElementById('loading').hidden = true;
       if (seq % 30 === 0) parent.postMessage({type:'player-state',player,frame,world,pointer},location.origin);
@@ -37,7 +53,7 @@
   Module.webUpdates = (world, update) => {
     try {
         if(!valid(update) || events.length>=256) return;
-        const flags=read(update,52),seed=read(world,200);
+        const flags=read(update,52),seed=read(world,200)>>>0;
         if(flags&16) {
           const destroy=read(update,20);
           if(valid(destroy)) events.push({kind:'destroy',victim:read(destroy,8),ownerid:read(destroy,4),

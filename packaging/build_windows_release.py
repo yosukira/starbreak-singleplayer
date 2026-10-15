@@ -15,6 +15,8 @@ import tempfile
 from urllib.request import urlopen
 import zipfile
 
+from runtime_dependencies import install
+
 VERSION = '3.12.10'
 EMBED_URL = 'https://www.python.org/ftp/python/' + VERSION + '/python-' + VERSION + '-embed-amd64.zip'
 EMBED_SHA256 = '4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3'
@@ -71,6 +73,7 @@ def main():
             tag = 'core-' + version.replace('.', '-')
             url = 'https://raw.githubusercontent.com/tcltk/' + name + '/' + tag + '/license.terms'
             (runtime / (name.upper() + '-LICENSE.txt')).write_bytes(download(url))
+        install(runtime)
         (runtime / 'python312._pth').write_text('python312.zip\n.\n..\n../tools\n', encoding='utf8')
         (runtime / 'SOURCE.txt').write_text(
             'CPython ' + VERSION + ' Windows x64 embeddable distribution\n'
@@ -106,6 +109,7 @@ def build_with_runtime(source, output):
         runtime = project / 'python'
         shutil.copytree(source, runtime,
                         ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.log'))
+        install(runtime)
         (runtime / 'python312._pth').write_text(
             'python312.zip\n.\n..\n../tools\n', encoding='utf8')
         if not (runtime / 'SOURCE.txt').exists():

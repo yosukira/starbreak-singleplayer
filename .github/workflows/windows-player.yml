@@ -30,6 +30,8 @@ jobs:
           Set-Location $project
           cmd.exe /d /c 'start.cmd --check-runtime'
           if ($LASTEXITCODE -ne 0) { throw 'Portable launcher preflight failed' }
+          cmd.exe /d /c 'start-web.cmd --check-runtime'
+          if ($LASTEXITCODE -ne 0) { throw 'Portable browser launcher preflight failed' }
           & .\python\python.exe tools/gear_editor.py --self-test
           if ($LASTEXITCODE -ne 0) { throw 'Portable editor launch failed' }
           $env:TCL_LIBRARY = Join-Path $project 'python\tcl\tcl8.6'

@@ -45,7 +45,7 @@ def validate_items(snapshot,layouts=None,max_items=256,max_total_boosts=2048):
         raise ValueError('incomplete native item count')
     if len(json.dumps(dict(items=rows,slots=audit),ensure_ascii=False,separators=(',',':')).encode('utf8'))>48000:
         raise ValueError('native item payload exceeds transport bound')
-    if quality.get('stable') is not True or quality.get('slot_source')!='Item.slotPos' or quality.get('abi',{}).get('name')!='win32-gcc48-items-v1' or type(quality.get('declared_count')) is not int or type(quality.get('traversed_count')) is not int or quality.get('declared_count')!=count or quality.get('traversed_count')!=count:
+    if quality.get('stable') is not True or quality.get('slot_source')!='Item.slotPos' or quality.get('abi',{}).get('name') not in ('win32-gcc48-items-v1','web-1.14.6-items-v1') or type(quality.get('declared_count')) is not int or type(quality.get('traversed_count')) is not int or quality.get('declared_count')!=count or quality.get('traversed_count')!=count:
         raise ValueError('native map/slot read is not complete and stable')
     if not isinstance(audit,list) or len(audit)!=count:raise ValueError('missing native slot observations')
     slots=set();keys=set();result=[];boosts=0

@@ -1,0 +1,32 @@
+// Exercise the original browser client's libc++ inventory layout and transition gates.
+const assert=require('node:assert/strict'), vm=require('node:vm'), fs=require('node:fs');
+const buffer=new ArrayBuffer(32768),heap=new Int32Array(buffer),bytes=new Uint8Array(buffer);
+const environment={Module:{HEAP32:heap,HEAPU8:bytes},TextDecoder,Date};
+vm.runInNewContext(fs.readFileSync('web/inventory.js','utf8')+';this.inventory=StarBreakInventory;',environment);
+const api=environment.inventory,set=(ptr,off,val)=>heap[(ptr+off)>>2]=val;
+const world=1024,player=4096,subworld=8192,server=9216,desc=10000,node=11000,item=12000,list=13000,boost=14000;
+set(world,664,subworld);set(world,628,server);set(world,200,0xf1234567);
+set(subworld,4,2);set(subworld,8,999999);set(server,8,250);
+set(player,8,1);set(player,468,1);set(player,472,desc);set(desc,4,3);set(player,380,42);
+set(player,652,15000);set(player,656,8);set(player,660,node);set(player,664,1);
+set(node,8,256);set(node,12,item);set(item,4,player);set(item,64,256);
+set(item+12,4,223);set(item+12,8,123);set(item+12,32,3);
+set(item+12,12,list);set(item+12,16,2);set(list,0,boost);set(list,4,boost); // duplicate affixes must survive
+set(boost,32,63);set(boost,4,37);set(boost,8,20);set(boost,12,2);bytes[boost+16]=1;set(boost,24,9);set(boost,20,16000);
+bytes.set(new TextEncoder().encode('abc'),16000);bytes[16011]=3;
+const context={map:'egy_run',room_token:4,room_ready:true};
+let snapshot=api.snapshot(world,player,context);
+assert.equal(snapshot.scope.room_seed,0xf1234567);assert.equal(snapshot.ec,42);assert.equal(snapshot.count,1);
+assert.equal(snapshot.items[0].slotpos,256);assert.equal(snapshot.slots[0].serialized_slotpos,123);
+assert.equal(snapshot.items[0].statboosts.length,2);
+assert.deepEqual(JSON.parse(JSON.stringify(snapshot.items[0].statboosts[0])),{stat:37,val:20,level:2,increment:true,subtype:9,subtypestr:'abc'});
+const control={id:'transition',attempt:1,scope:snapshot.scope,expires_at:Date.now()/1000+10,native_t_min:251};
+assert.equal(api.refresh(world,player,context,control),null,'server clock gates fresh handoff, not predicted clock');
+set(server,8,252);snapshot=api.refresh(world,player,context,control);assert.equal(snapshot.request_id,'transition');assert.equal(snapshot.native_server_t,252);
+assert.throws(()=>api.refresh(world,player,context,{...control,scope:{...control.scope,room_token:5}}),/scope mismatch/);
+assert.equal(api.refresh(world,player,{...context,room_ready:false},control),null);
+set(item,4,player+4);assert.throws(()=>api.snapshot(world,player,context),/owner mismatch/);set(item,4,player);
+set(node,0,node);assert.throws(()=>api.snapshot(world,player,context),/cycle|count mismatch/);set(node,0,0);
+set(item+12,16,65);assert.throws(()=>api.snapshot(world,player,context),/bound exceeded/);set(item+12,16,2);
+set(node,12,buffer.byteLength);assert.throws(()=>api.snapshot(world,player,context),/outside client heap/);
+console.log('Browser inventory: original ABI, duplicate full modifiers, scope, fresh clock, owner and bounds passed.');
