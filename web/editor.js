@@ -115,6 +115,13 @@ class WebEquipment {
     const balance=this.profile.settings.balance[this.map]||meta.balance_defaults;
     for(const [key,limits]of Object.entries(meta.balance_limits))field(this.t(...(labels[key]||[key,key])),balance[key]??meta.balance_defaults[key],...limits,value=>{this.profile.settings.balance[this.map]={...balance,...this.profile.settings.balance[this.map],[key]:Number(value)};},key==='spawn_cap'?'1':'any');
     if(['egy_hulk','hulk_normal'].includes(this.map)){
+      const toggle=document.createElement('label'),check=document.createElement('input'),caption=document.createElement('span');
+      toggle.className='checkbox';check.type='checkbox';check.id='skip-intro';
+      check.checked=this.profile.settings.skip_intro?.[this.map]===true;
+      caption.textContent=this.t('跳过开局','Skip opening');
+      check.onchange=()=>{const rows=this.profile.settings.skip_intro||={};rows[this.map]=check.checked;this.touch();};
+      toggle.append(check,caption);container.append(toggle);
+      const hint=document.createElement('p');hint.className='hint';hint.textContent=this.t('新一局生效；直接从首领飞船停稳后开始','Applies to the next attempt; start with the boss ship in position');container.append(hint);
       const rows={front:['前面炮台','Front turrets'],upper:['上面炮台','Upper turrets'],lower:['下面炮台','Lower turrets']};
       for(const [key,names]of Object.entries(rows))field(this.t(...names),this.profile.turrets[key],0,key==='front'?10:20,value=>this.profile.turrets[key]=value===''?null:Number(value),'1');
       for(const key of ['upper','lower'])field(this.t(key==='upper'?'上方追踪炮台':'下方追踪炮台',key==='upper'?'Upper seeking turrets':'Lower seeking turrets'),this.profile.missiles[key],0,20,value=>this.profile.missiles[key]=value===''?null:Number(value),'1');

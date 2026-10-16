@@ -62,6 +62,12 @@ DEFAULT_COMMENT = ('装备面板（~ / F8）→“保存设置”写入：地图
 
 DEFAULT_DROPS = {'health': 5.0, 'ammo': 5.0, 'ec': 5.0}
 HULK_DROP_MAPS = frozenset((ORIGINAL_MAP, 'hulk_normal', 'hulk_mid', 'egy_run'))
+SKIP_INTRO_MAPS = frozenset((ORIGINAL_MAP, 'hulk_normal'))
+
+def skip_intro(map_id, document=None):
+    data = document if isinstance(document, dict) else load()
+    rows = data.get('skip_intro')
+    return map_id in SKIP_INTRO_MAPS and isinstance(rows, dict) and rows.get(map_id) is True
 
 ELITE_SUPPLY_MAPS = frozenset((
     ORIGINAL_MAP, 'hulk_mid', 'cave_boss', 'dumb_boss', 'jungle_mid',
@@ -211,6 +217,9 @@ def normalize(document):
     for key, old_key in zip(DROP_FIELDS, LEGACY_DROP_FIELDS):
         result[old_key] = selected[key]
     result['balance'] = normalize_balance(result.get('balance'))
+    choices = result.get('skip_intro')
+    result['skip_intro'] = {key: choices[key] is True for key in sorted(SKIP_INTRO_MAPS)
+                            if isinstance(choices, dict) and key in choices}
     result.setdefault('_comment', DEFAULT_COMMENT)
     return result
 

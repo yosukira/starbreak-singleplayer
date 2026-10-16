@@ -238,6 +238,9 @@ def apply_import_document(document, overrides, settings):
                     if isinstance(map_id, str) and isinstance(entry, dict):
                         merged[map_id] = dict(entry)
                 settings['balance'] = merged
+        elif name == '_skip_intro':
+            if isinstance(rows, dict):
+                settings['skip_intro'] = game_settings.normalize({'skip_intro': rows})['skip_intro']
         elif name.startswith('_'):
             continue
         elif isinstance(rows, dict):
@@ -535,6 +538,8 @@ class GearEditor(object):
         self.turret_counts = normalize_turret_counts(
             (self.overrides or {}).get('_turret_counts'))
         self.game_settings = game_settings.load()
+        self.skip_intro_var = tk.BooleanVar(value=game_settings.skip_intro(
+            self.game_settings.get('map'), self.game_settings))
         self.map_var = tk.StringVar(
             value=self.game_settings.get('map') or game_settings.ORIGINAL_MAP)
         self.map_display_var = tk.StringVar()
@@ -743,6 +748,13 @@ class GearEditor(object):
         self.turret_scope = ttk.Label(turrets, text='', style='Hint.TLabel')
         self.turret_scope.pack(side='left', padx=(12, 0))
 
+        self.intro_row = ttk.Frame(content, padding=(12, 0, 12, 8))
+        self.intro_row.pack(fill='x')
+        ttk.Checkbutton(self.intro_row, text=self.tr('跳过开局'), variable=self.skip_intro_var,
+                        command=self._store_intro_choice).pack(side='left')
+        ttk.Label(self.intro_row, text=self.tr('新一局生效；直接从首领飞船停稳后开始'),
+                  style='Hint.TLabel').pack(side='left', padx=(12, 0))
+
         body = ttk.Frame(content, padding=(12, 4, 12, 8))
         body.pack(fill='both', expand=True)
         self.body_frame = body
@@ -830,6 +842,7 @@ class GearEditor(object):
         values = {name: getattr(self, name).get() for name in (
             'mk_var', 'implant_var', 'map_var', 'drop_health_var',
             'drop_ammo_var', 'drop_ec_var', 'spawn_cap_var')}
+        values['skip_intro_var'] = self.skip_intro_var.get()
         multipliers = {key: var.get() for key, var in self.balance_entry_vars.items()}
         turret_values = {key: var.get() for key, var in self.turret_vars.items()}
         missile_values = {key: var.get() for key, var in self.turret_missile_vars.items()}
@@ -1061,6 +1074,13 @@ class GearEditor(object):
         if display is not None:
             display.set(self._map_choice_titles.get(
                 self.map_var.get(), self.map_var.get()))
+        self.skip_intro_var.set(game_settings.skip_intro(self.map_var.get(), self.game_settings))
+        intro = self.intro_row
+        if self.map_var.get() in game_settings.SKIP_INTRO_MAPS:
+            if not intro.winfo_manager():
+                intro.pack(fill='x', before=self.body_frame)
+        elif intro.winfo_manager():
+            intro.pack_forget()
         supported = self.map_var.get() in TURRET_MAPS
         row = getattr(self, 'turret_row', None)
         if row is not None:
@@ -1196,8 +1216,16 @@ class GearEditor(object):
         elif row.winfo_manager():
             row.pack_forget()
 
+    def _store_intro_choice(self):
+        map_id = self.map_var.get()
+        if map_id in game_settings.SKIP_INTRO_MAPS:
+            rows = dict(self.game_settings.get('skip_intro') or {})
+            rows[map_id] = self.skip_intro_var.get()
+            self.game_settings['skip_intro'] = rows
+
     def _persist_game_settings(self):
         """Write map + drop rates + the current map's balance row."""
+        self._store_intro_choice()
         document = dict(self.game_settings)
         document['map'] = self.map_var.get()
         try:
@@ -1249,6 +1277,10 @@ class GearEditor(object):
         """
         document = dict(self.overrides or {})
         document['_map'] = self.map_var.get()
+        rows = dict(self.game_settings.get('skip_intro') or {})
+        if self.map_var.get() in game_settings.SKIP_INTRO_MAPS:
+            rows[self.map_var.get()] = self.skip_intro_var.get()
+        document['_skip_intro'] = rows
         document['_drop_health_percent'] = self._percent_var_value(
             self.drop_health_var, game_settings.DEFAULTS['drop_health_percent'])
         document['_drop_ammo_percent'] = self._percent_var_value(

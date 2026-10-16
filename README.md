@@ -71,6 +71,8 @@ SBPE/
 
 编辑器适配 1366×768 等低分辨率屏幕：内容区支持滚动，底部操作按钮固定显示；按住 Shift 滚动可左右查看较宽的控件。
 
+GY（Graveyard Boss）与 EGY（Elite Graveyard Boss）的 **跳过开局** 开关默认关闭，两图分别保存。开启并保存后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人与飞船进场。恢复默认配置会关闭此开关。
+
 点击右上角 **按键设置**，可以修改编辑器显示/隐藏、重开、四职业切换的快捷键和长按时间。互动键默认为 **Auto**，跟随游戏当前绑定；识别异常时，手动选择与游戏设置相同的键。移动和攻击等操作在游戏内设置。快捷键保存后生效，并保存在本机 `userdata/keybindings.json`。
 
 选择有明确弹速参数的武器后，可在 **子弹基础速度** 中修改每种弹体的基础速度（整数 `0–1000000`）。同一物品的全部实例共用此设置；原有速度词缀继续保留，存活时间不变，因此射程也可能改变。数值沿用原版武器参数，不统一标作 px/s；`0` 是零基础速度，不是恢复默认。点 **恢复原值** 可还原。
@@ -162,6 +164,8 @@ Weapons with an explicit speed parameter expose **Base projectile speed** for ea
 To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 tools/gear_editor.py --show` from the project folder, or run `preview-editor.command`. Saving in this preview writes local settings; Windows global hotkeys and in-game effects cannot be verified there.
 
 **Restore defaults** immediately resets all four class loadouts, projectile speeds and encounter settings to the shipped presets. Previous files are backed up under `userdata/before-restore-defaults-*`; language and key bindings are retained.
+
+For GY / EGY Boss, **Skip opening** defaults to off and is saved per encounter. Enable it and save to begin the next attempt with the boss ship in position and platforms ready, skipping the opening robots and ship arrival. Restore defaults turns it off.
 
 ### Local files and troubleshooting
 

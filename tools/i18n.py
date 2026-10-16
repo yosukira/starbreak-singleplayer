@@ -74,6 +74,8 @@ EN = {
     '{0}  （原值 {1}）': '{0}  (default {1})',
     '恢复原值': 'Reset to default',
     '恢复默认配置': 'Restore defaults',
+    '跳过开局': 'Skip opening',
+    '新一局生效；直接从首领飞船停稳后开始': 'Applies to the next attempt; start with the boss ship in position',
     '全部配装与战斗设置已恢复默认；原配置已备份：': 'All loadouts and encounter settings restored; previous settings backed up: ',
     '整数 0–1000000；同名武器共用。保存后退出并重新启动模拟器生效。':
         'Integer 0–1000000; shared by all instances of this item. Save, exit the game, then relaunch.',

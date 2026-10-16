@@ -140,7 +140,7 @@ class Workspace:
             raise ValueError('Invalid game settings')
         result['settings'] = game_settings.normalize(settings)
         # Export only settings used by the simulator, never arbitrary imported fields.
-        result['settings'] = {k: result['settings'][k] for k in ('map', 'drops', 'balance') if k in result['settings']}
+        result['settings'] = {k: result['settings'][k] for k in ('map', 'drops', 'balance', 'skip_intro') if k in result['settings']}
         return result
 
     def save(self, document):

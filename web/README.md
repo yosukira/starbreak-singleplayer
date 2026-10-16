@@ -44,6 +44,8 @@ speeds and encounter settings to the shipped presets, saves them and keeps a
 backup of the previous profile. It preserves language and original game key
 bindings. Existing battles change when you start a new attempt.
 
+For GY / EGY Boss, **Skip opening** defaults to off and is saved per encounter. Enabling it skips the opening robots and ship arrival; the next attempt begins with the boss ship in position and platforms ready.
+
 **Export / Import** shares the browser profile as JSON. Import is a draft until
 saved. Browser exports use their own schema, separate from native editor exports.
 Unsaved drafts survive a page reload. If another tab has saved a newer version,
@@ -127,6 +129,8 @@ Mac 双击 **start-web.command**。会自动打开 <http://127.0.0.1:8765>；若
 - **恢复默认配置**：立即将四职业配装、弹速与战斗设置全部恢复为发布预设并保存，
   自动备份原配置，语言与游戏按键保留；下一局生效。
 - **导出/导入**：分享网页版 JSON 配置，导入后需保存；格式与桌面版导出不同。
+
+GY / EGY 首领的 **跳过开局** 默认关闭，两图分别保存。开启后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人及进场；恢复默认配置会关闭它。
 
 刷新会保留未保存草稿；多标签页发生保存冲突时，先导出草稿再重新载入。
 先点击画面获得焦点，场内操作沿用原版游戏自己的按键设置。

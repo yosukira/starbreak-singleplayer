@@ -93,6 +93,7 @@ class LiveSession(object):
 
         self.map_id = str(getattr(options, 'map', None)
                           or getattr(self, 'MAP_ID', game_settings.ORIGINAL_MAP))
+        self.skip_intro = game_settings.skip_intro(self.map_id)
         self.supplies = SupplyDrops(self, self.map_id, rng=self.loot_random)
         self.supplies.pending = self.pending_loot
         self.balance = game_settings.Balance(
@@ -521,6 +522,50 @@ class LiveSession(object):
         self.ledge_drop_until = None
         self.event('ledges-deployed')
 
+    def _skip_opening(self):
+        """Start at the real ship entrance endpoint, without simulating old attacks."""
+        if self.ship_controller is None:
+            self.log('Skip opening unavailable: ship entrance motion is missing')
+            self._reveal()
+            return
+        arrived = self.ship_controller.track.times[-1]
+        for objid in sorted(self.intro_units):
+            self.batch.destroy(objid, ownerid=self.worldid, reason='CANCEL')
+        self.intro_destroyed = sorted(self.intro_units)
+        self._begin_boss_arrival()
+        # Advance choreography/state only. Never transmit the skipped movement
+        # or generate loader loot, survivors, turret volleys or enemy waves.
+        outgoing = self.batch
+        self.batch = DeltaBatch(self.layouts, self.worldid)
+        try:
+            # Later door moves start where their previous move finished.
+            checkpoints = {0., arrived, *(row[0] for row in self.entrance_events if row[0] <= arrived)}
+            for at in sorted(checkpoints):
+                for objid, (started, track) in self.motion_tracks.items():
+                    self.room.move_object(objid, *track.position(at - started))
+                self.boss_time = at
+                self._step_boss_entrance(dt=0)
+            self._deploy_ledges()
+        finally:
+            self.batch = outgoing
+        self.phase_time = max(0., arrived - self.rules.LEDGE_DEPLOY_DELAY)
+        ship = self.ship_controller
+        self.batch.modify(self.rules.SHIP_ID, 'MOVE', message=('Properties_Move',
+            ship.track.native_movement(arrived - ship.started)))
+        for objid, (started, track) in self.motion_tracks.items():
+            self.batch.modify(objid, 'MOVE', message=('Properties_Move',
+                track.native_movement(arrived - started)))
+        self.platforms.terrain_due.clear()
+        for objid in self.rules.LEDGE_IDS:
+            self.room.object(objid).set(terraintype_=self.rules.LEDGE_TERRAIN_TYPE)
+            self.batch.modify(objid, 'VID', stringval='hulk.bossledgeshort')
+            self.batch.modify(objid, 'TERRAINTYPE', intval=self.rules.LEDGE_TERRAIN_TYPE)
+        self.gens.start()
+        self.gens.next_panel_delay = max(0., self.rules.PANEL_FIRST_DELAY - arrived)
+        self.enemies.start()
+        self.enemies.wave_timer = max(0., self.enemies.first_wave_delay() - arrived)
+        self.event('opening-skipped', boss_time=arrived, ship=list(self.room.ship.position()))
+
     def _check_restart_request(self):
         """Return True when the bridge queued a restart/class hold.
 
@@ -581,7 +626,10 @@ class LiveSession(object):
                     self._create_demo_player()
             if self.player is not None:
 
-                self._reveal()
+                if self.skip_intro:
+                    self._skip_opening()
+                else:
+                    self._reveal()
             self._send_tick(dt)
             return
 
