@@ -1064,7 +1064,39 @@ class ScBossLiveSession:
                     break
         return found
 
-    def _orbit_targets(self,rings,count):
+    def _nova_ring_center(self,radius,base,side):
+        """Sample the current side's usable band around the Boss."""
+        head=self.pack.templates['6'];bounds=self.pack.scene['bounds']
+        hx,hy=head['xmp'],head['ymp'];hr=hx+head['wmp'];hb=hy+head['hmp']
+        reach=max(max(r for r,p,cx,cy in base),
+                  int((self.pack.entities.get('nova') or {}).get('single_min_radius_px',256)*256))
+        gap=int((self.pack.entities.get('nova') or {}).get('gap_px',24)*256)
+        left=min(cx-r for r,p,cx,cy in base);right=max(cx+r for r,p,cx,cy in base)
+        top=min(cy-r for r,p,cx,cy in base);bottom=max(cy+r for r,p,cx,cy in base)
+        if side not in ('U','R','D','L'):
+            dx=(sum(q[2] for q in base)/len(base)-(hx+hr)/2)/max(1,head['wmp'])
+            dy=(sum(q[3] for q in base)/len(base)-(hy+hb)/2)/max(1,head['hmp'])
+            side=('R' if dx>=0 else 'L') if abs(dx)>abs(dy) else ('D' if dy>=0 else 'U')
+        fragments=[p['props'] for c in self.pack.programs['courses'] for p in c['platforms']]
+        width=max(p['wmp'] for p in fragments);height=max(p['hmp'] for p in fragments)
+        if side in ('U','D'):
+            left=min(left,hx-reach);right=max(right,hr+reach)
+            if side=='U':top=min(top,hy-2*reach-gap);bottom=hy-gap-height
+            else:top=hb+gap;bottom=max(bottom,hb+2*reach+gap)
+        else:
+            top=min(top,hy-reach);bottom=max(bottom,hb+reach)
+            if side=='L':left=min(left,hx-2*reach-gap);right=hx-gap-width
+            else:left=hr+gap;right=max(right,hr+2*reach+gap)
+        left=max(left,bounds['x']*256)+radius
+        right=min(right,(bounds['x']+bounds['w'])*256-width)-radius
+        top=max(top,bounds['y']*256)+radius
+        bottom=min(bottom,(bounds['y']+bounds['h'])*256-height)-radius
+        if left>right or top>bottom:
+            return base[-1][2:]
+        return (self._rng.randint(int(math.ceil(left)),int(math.floor(right))),
+                self._rng.randint(int(math.ceil(top)),int(math.floor(bottom))))
+
+    def _orbit_targets(self,rings,count,side=None):
         'Target (centre,radius,period) per ring, anchored on the capture.'
         base=sorted({(r,p,cx,cy) for r,p,cx,cy in rings.values()},key=lambda q:q[0])
         if not base:
@@ -1078,8 +1110,8 @@ class ScBossLiveSession:
         targets=base[:count]
         missing=count-len(targets)
         if missing:
-            # Keep supplementation, but fill at an existing centre with normal
-            # configured radii rather than doubling each new ring outward.
+            # Keep supplementation with normal radii and freely placed centres
+            # on this side, rather than compounding the previous ring's size.
             r,p,cx,cy=base[-1]
             rules=self.pack.entities.get('nova') or {}
             low,high=sorted(rules.get('radius_px',[88,130]))
@@ -1089,7 +1121,8 @@ class ScBossLiveSession:
                 radius=int(round((high if missing==1 else
                     high-(high-low)*i/(missing-1))*256))
                 period=max(1,int(round(p*radius/max(1,r))))
-                targets.append((radius,period,cx,cy))
+                nx,ny=self._nova_ring_center(radius,base,side)
+                targets.append((radius,period,nx,ny))
         return targets
 
     def _assign_nova_rings(self,slot):
@@ -1097,7 +1130,8 @@ class ScBossLiveSession:
         rings=self._payload_rings(slot['course'],slot['start'],slot['end'])
         if not rings:
             return
-        targets=self._orbit_targets(rings,slot.get('rings',len({r for r,_c,_x,_y in rings.values()})))
+        targets=self._orbit_targets(rings,slot.get('rings',len({r for r,_c,_x,_y in rings.values()})),
+                                    side=slot.get('side'))
         if not targets:
             return
         order=sorted(rings,key=lambda sid:(rings[sid][0],rings[sid][1],sid))
