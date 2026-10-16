@@ -24,6 +24,7 @@ import json
 import math
 import os
 import queue
+from pathlib import Path
 import re
 import shutil
 import sys
@@ -40,7 +41,7 @@ if LAB not in sys.path:
 from localserver import game_settings, jsonio, projectile_speeds, presets
 from localserver.equipment import (SLOTS, STAT_NAMES, CANDIDATE_CACHE, AFFIX_DEFAULTS,
     num, load_catalogue, candidate_items, build_affix_priority, affix_default_value)
-from tools import i18n
+from tools import i18n, update
 from tools.editor_widgets import ScrollFrame, fit_window, key_dialog, work_area
 from plugins import _practice_keybindings as keybindings
 from localserver.live.turrets import (normalize_missile_counts,
@@ -520,6 +521,7 @@ class GearEditor(object):
         self.language = i18n.resolve_language(self.language_preference)
         self.keybindings = keybindings.load(KEYBINDINGS)
         self.stat_names = STAT_NAMES
+        self.update_checker = update.UpdateChecker(Path(LAB))
         self.owner_pid = int(owner_pid) if owner_pid else None
         self.catalogue = load_catalogue()
         self.overrides = load_overrides()
@@ -585,6 +587,7 @@ class GearEditor(object):
         if os.name == 'nt':
             self._start_hotkey()
         self.root.after(50, self._poll_hotkey)
+        self.root.after(500, self._poll_updates)
         if self.owner_pid:
             self.root.after(2000, self._check_owner)
 
@@ -652,6 +655,13 @@ class GearEditor(object):
         self.status = ttk.Label(self.root, padding=(12, 4),
                                 wraplength=max(300, right - left - 60))
         self.status.pack(fill='x', side='bottom')
+        update_row = ttk.Frame(self.root, padding=(12, 4))
+        update_row.pack(fill='x', side='bottom')
+        self.update_button = ttk.Button(update_row, text=self.tr('检查更新'), command=self._check_updates)
+        self.update_button.pack(side='left')
+        self.update_label = ttk.Label(update_row, wraplength=max(240, min(650, right-left-180)), style='Hint.TLabel')
+        self.update_label.pack(side='left', fill='x', expand=True, padx=(12, 0))
+        self._render_update_status()
         actions = ttk.Frame(self.root, padding=(8, 4))
         actions.pack(side='bottom', fill='x')
         self.viewport = ScrollFrame(self.root)
@@ -1771,6 +1781,20 @@ class GearEditor(object):
             self.toggle()
         if not self._hotkey_stop:
             self.root.after(50, self._poll_hotkey)
+
+    def _render_update_status(self):
+        result = self.update_checker.status()
+        self.update_label.configure(text=update.status_message(result, self.language))
+        self.update_button.configure(state='disabled' if self.update_checker.busy else 'normal')
+
+    def _check_updates(self):
+        self.update_checker.start()
+        self._render_update_status()
+
+    def _poll_updates(self):
+        if not self._hotkey_stop:
+            self._render_update_status()
+            self.root.after(500, self._poll_updates)
 
     def _start_hotkey(self):
 

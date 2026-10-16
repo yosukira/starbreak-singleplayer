@@ -85,6 +85,43 @@ class EditorWindowTests(unittest.TestCase):
             try:root.destroy()
             except tk.TclError:pass
 
+    def test_update_check_is_nonblocking_and_uses_inline_bilingual_results(self):
+        import tkinter as tk
+        import tempfile
+        import threading
+        from pathlib import Path
+        from tools import update
+        from tools.gear_editor import GearEditor
+        entered,release=threading.Event(),threading.Event()
+        def delayed_manifest():
+            entered.set();release.wait(3)
+            return dict(sequence=1,version='v20261016-r1')
+        with tempfile.TemporaryDirectory() as directory:
+            checker=update.UpdateChecker(Path(directory));root=tk.Tk()
+            try:
+                with mock.patch('tools.gear_editor.update.UpdateChecker',return_value=checker),mock.patch.object(update,'manifest',side_effect=delayed_manifest) as request,mock.patch.object(i18n,'load_preference',return_value='zh'),mock.patch.object(i18n,'save_preference'),mock.patch('tools.gear_editor.messagebox.showerror') as popup:
+                    editor=GearEditor(root,show=False)
+                    editor._check_updates()
+                    self.assertTrue(entered.wait(1))
+                    self.assertEqual(str(editor.update_button['state']),'disabled')
+                    editor.mk_var.set('MK3');root.update_idletasks()
+                    release.set();checker.thread.join(3);editor._render_update_status()
+                    self.assertIn('发现新版',editor.update_label['text'])
+                    editor.language_var.set(i18n.LANGUAGES['en']);editor._change_language()
+                    self.assertIn('available',editor.update_label['text'])
+                    self.assertEqual(editor.mk_var.get(),'MK3')
+                    request.side_effect=OSError('offline')
+                    editor._check_updates();checker.thread.join(3);editor._render_update_status()
+                    self.assertIn('failed',editor.update_label['text'])
+                    self.assertEqual(str(editor.update_button['state']),'normal')
+                    popup.assert_not_called()
+                    editor.close()
+            finally:
+                release.set()
+                if checker.thread:checker.thread.join(3)
+                try:root.destroy()
+                except tk.TclError:pass
+
 
 if __name__ == '__main__':
     unittest.main()

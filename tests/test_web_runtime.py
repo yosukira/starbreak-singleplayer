@@ -135,6 +135,8 @@ class WebRuntimeTests(unittest.TestCase):
         app.start.return_value = dict(running=True)
         app.prepare.return_value = dict(assets_ready=True)
         app.info.return_value = dict(running=False)
+        app.update_checker.status.return_value=dict(state='updated',current_version='v20261016-r6',latest_version='v20261016-r6')
+        app.update_checker.start.return_value=dict(state='checking',current_version='v20261016-r6')
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
         server.prototype = app
         thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -174,6 +176,20 @@ class WebRuntimeTests(unittest.TestCase):
             self.assertEqual(code, 200)
             self.assertTrue(json.loads(data)['assets_ready'])
             app.prepare.assert_called_once_with({})
+            code,data=request('GET','/api/update')
+            self.assertEqual(code,200)
+            self.assertEqual(json.loads(data)['state'],'updated')
+            self.assertIn('Successfully updated',json.loads(data)['messages']['en'])
+            code,_=request('POST','/api/update','{}',{'Origin':'https://attacker.example'})
+            self.assertEqual(code,403)
+            app.update_checker.start.assert_not_called()
+            code,data=request('POST','/api/update','{}')
+            self.assertEqual(code,200)
+            self.assertEqual(json.loads(data)['state'],'checking')
+            app.update_checker.start.assert_called_once_with()
+            # Version checks must not start or restart a game.
+            self.assertEqual(app.start.call_count,1)
+
         finally:
             server.shutdown()
             server.server_close()

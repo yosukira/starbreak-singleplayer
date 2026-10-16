@@ -9,6 +9,7 @@ PREFERENCE = Path(__file__).resolve().parents[1] / 'userdata' / 'ui.json'
 LANGUAGES = {'auto': 'System / 跟随系统', 'zh': '简体中文', 'en': 'English'}
 
 EN = {
+    '检查更新': 'Check for updates',
     '按键设置': 'Keyboard settings', '互动键': 'Interaction key',
     '显示/隐藏编辑器': 'Show / hide editor', '备用编辑器快捷键': 'Alternate editor shortcut',
     '重开当前局': 'Restart current run', '切换 WF': 'Switch to WF', '切换 DW': 'Switch to DW',

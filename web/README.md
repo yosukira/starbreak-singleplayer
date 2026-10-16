@@ -162,6 +162,10 @@ Mac 浏览器已验证四职业、移动/攻击/受伤、死亡重开、改配�
 
 ### Player updates / 玩家更新
 
+Use **Equipment & settings → Check for updates** for a background version check. The result appears beside the button, including startup update success/failure. No popup interrupts play. A newer version is installed after closing and relaunching the simulator; restarting an encounter is not enough. Startup automatic updates remain enabled by default.
+
+在 **装备与设置 → 检查更新** 可后台检查版本。检查结果及启动更新的成功或失败会显示在按钮旁，不弹窗打断操作。发现新版后，关闭模拟器并重新启动即可安装，重开当前局不会安装更新；启动自动更新仍默认开启。
+
 From v20261016-r3 onward, the Windows and macOS player launchers check the public GitHub update channel at startup and install newer simulator files before launching. Player data under `userdata`, downloaded game assets, and the included `python` runtime are retained. Downloads verify HTTPS certificates and SHA-256 checksums. The updater keeps backups and restores interrupted/failed installations on the next launch. Network failures leave the installed version usable. A running launcher prevents a second updater from changing its files. Source checkouts containing `.git` are maintained through Git and skip player updates.
 
 Older player packages need one manual download of v20261016-r3 (or newer) to acquire this updater. Later simulator updates use small downloads in the existing `update-channel` prerelease; a new complete player release is not needed each time. Runtime upgrades still require a complete player package. To disable startup updates, create `userdata/update-settings.json` containing `{"enabled":false}`; remove the file or set it to true to re-enable them. The update service receives ordinary download requests, not equipment, account information or local settings.

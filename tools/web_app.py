@@ -30,6 +30,7 @@ from localserver import game_settings, paths, pb_layout
 from tools.web_client import patch_client
 from tools.web_workspace import Workspace, atomic_json
 from tools.web_text import map_names
+from tools import update
 
 # These encounters need inventory/ground handoff adapters before being enabled.
 PENDING_MAPS = {'eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run'}
@@ -76,6 +77,7 @@ class Prototype:
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
         self.workspace = Workspace(self.directory)
+        self.update_checker = update.UpdateChecker(ROOT)
         self.prepared_map = 'hulk_mid'
         self.asset_paths = self.required_assets(self.prepared_map)
         self.preparing, self.asset_error = False, ''
@@ -336,7 +338,10 @@ class Handler(BaseHTTPRequestHandler):
             if path in ('/api/info', '/api/status'):
                 return self.send(self.server.prototype.info())
             if path == '/api/editor':
-                return self.send(self.server.prototype.workspace.editor())
+                return self.send(dict(self.server.prototype.workspace.editor(),
+                                      update=update.public_status(self.server.prototype.update_checker.status())))
+            if path == '/api/update':
+                return self.send(update.public_status(self.server.prototype.update_checker.status()))
             if path == '/api/inventory':
                 return self.send(dict(inventory=self.server.prototype.latest_inventory, error=self.server.prototype.inventory_error))
             if path == '/client.js':
@@ -355,7 +360,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -368,6 +373,8 @@ class Handler(BaseHTTPRequestHandler):
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
+            if self.path == '/api/update':
+                return self.send(update.public_status(self.server.prototype.update_checker.start()))
             if self.path == '/api/preferences':
                 return self.send(self.server.prototype.workspace.save_preferences(document))
             if self.path == '/api/draft':

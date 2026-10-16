@@ -3,6 +3,8 @@ class WebEquipment {
   constructor(language, changed) {
     this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';
     this.$=id=>document.getElementById(id);
+    this.updateState=null;this.updateTimer=null;
+    this.$('check-updates').onclick=()=>this.checkUpdates();
     this.$('open-editor').onclick=()=>{this.render();this.$('equipment-dialog').showModal();};
     this.$('close-editor').onclick=()=>this.$('equipment-dialog').close();
     this.$('editor-class').onchange=event=>{this.selectClass(+event.target.value);this.changed();};
@@ -50,7 +52,28 @@ class WebEquipment {
   touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
     clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>this.post('/api/draft',this.profile).catch(()=>{}),250);
   }
-  flush(){if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
+  flush(){clearTimeout(this.updateTimer);if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
+  renderUpdate(){
+    const state=this.updateState||{},notice=this.$('update-notice');
+    const message=state.messages?.[this.language()]||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
+    if(notice.textContent!==message)notice.textContent=message;
+    this.$('check-updates').disabled=['checking','installing'].includes(state.state);
+    notice.closest('.update-row').dataset.state=state.state||'idle';
+  }
+  setUpdateStatus(state){
+    clearTimeout(this.updateTimer);this.updateState=state;this.renderUpdate();
+    if(['checking','installing'].includes(state.state))this.updateTimer=setTimeout(()=>this.pollUpdate(),1000);
+  }
+  updateFailure(){this.setUpdateStatus({state:'failed',messages:{zh:'检查更新失败，请稍后重试；继续使用当前版本。',en:'Could not check for updates. Try again later; the installed version remains in use.'}});}
+  async pollUpdate(){
+    try{const response=await fetch('/api/update');if(!response.ok)throw new Error('Update status unavailable');this.setUpdateStatus(await response.json());}
+    catch(_){this.updateFailure();}
+  }
+  async checkUpdates(){
+    if(['checking','installing'].includes(this.updateState?.state))return;
+    this.setUpdateStatus({state:'checking',messages:{zh:'正在检查更新…',en:'Checking for updates…'}});
+    try{this.setUpdateStatus(await this.post('/api/update',{}));}catch(_){this.updateFailure();}
+  }
   preferenceDocument(){return {...this.preferences,shell:this.shell,slot:this.slot,item_sort:this.itemSort,query:this.$('item-search').value,all_classes:this.$('all-classes').checked,language:this.language()};}
   remember(){if(!this.preferences)return;clearTimeout(this.preferenceTimer);this.preferenceTimer=setTimeout(()=>this.post('/api/preferences',this.preferenceDocument()).catch(()=>{}),250);}
   keyboard(){
@@ -71,6 +94,7 @@ class WebEquipment {
   async load(restoreDraft=true){
     const response=await fetch('/api/editor'),data=await response.json();if(!response.ok)throw new Error(data.error);
     this.profile=data.profile;this.data=data;
+    if(data.update)this.setUpdateStatus(data.update);
     if(!this.preferences){this.preferences=data.preferences;this.shell=this.preferences.shell;this.slot=this.preferences.slot;this.itemSort=this.preferences.item_sort;this.$('item-search').value=this.preferences.query;this.$('all-classes').checked=this.preferences.all_classes;}
     if(restoreDraft&&data.draft){this.profile=data.draft;this.dirty=true;}
     this.catalogue=new Map(data.items.map(item=>[item.type,item]));this.dirty=!!(restoreDraft&&data.draft);
@@ -89,6 +113,7 @@ class WebEquipment {
   main(){return this.row().items_.find(item=>item.slotpos_===256)?.type_;}
   render(){
     if(!this.profile)return;
+    this.renderUpdate();
     this.$('editor-class').value=this.shell;this.$('editor-mk').value=this.row().mk_;this.$('editor-implants').value=this.row().impslots_;
     this.$('equipment-slots').replaceChildren(...this.data.slots.map(slot=>{
       const button=document.createElement('button'),item=this.row().items_.find(item=>item.slotpos_===slot.id),label=document.createElement('strong'),name=document.createElement('small');
