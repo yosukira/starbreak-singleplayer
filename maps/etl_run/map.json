@@ -1,1 +1,1 @@
-{"id":"etl_run","title":"Elite Temple of the Lost · 整关试玩","pvid":"lab","zone":"labHard","gdv":1,"session_module":"localserver.maps.etl_run.session","session_class":"EtlRunLiveSession","preview":{"stage":"playable-preview","documentation":"docs/full-levels-current-goal.md"}}
+{"id":"etl_run","title":"Elite Temple of the Lost · Full run","pvid":"lab","zone":"labHard","gdv":1,"session_module":"localserver.maps.etl_run.session","session_class":"EtlRunLiveSession","preview":{"stage":"playable-preview","documentation":"docs/full-levels-current-goal.md"}}

@@ -106,13 +106,13 @@ class WebEquipment {
     this.$('editor-item').replaceChildren(...options);this.$('editor-item').value=current?.type_||0;
     const base=this.catalogue.get(current?.type_)?.base||[];this.$('base-stats').textContent=this.t('基础属性：','Base stats: ')+(base.map(boost=>this.statName(boost.stat_)+' '+boost.val_).join(' · ')||'—');
   }
-  statName(id){return this.data.stats.find(stat=>stat.id===id)?.[this.language()]||'#'+id;}
+  statName(id){return this.data.stats.find(stat=>stat.id===id)?.en||'#'+id;}
   modifiers(){
     const current=this.current(),description=this.catalogue.get(current?.type_);this.$('add-modifier').disabled=!current||current.statboosts_.length>=64;
     this.$('modifier-rows').replaceChildren(...(current?.statboosts_||[]).map((boost,index)=>{
       const row=document.createElement('div'),select=document.createElement('select'),input=document.createElement('input'),remove=document.createElement('button');row.className='modifier-row';
       const stats=[...this.data.stats].sort((a,b)=>Number(!description.suggested.includes(a.id))-Number(!description.suggested.includes(b.id))||a.id-b.id);
-      select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${stat[this.language()]} · ${stat.id}`,stat.id)));select.value=boost.stat_;
+      select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${stat.en} · ${stat.id}`,stat.id)));select.value=boost.stat_;
       select.setAttribute('aria-label',this.t('词缀属性','Modifier stat')+' '+(index+1));select.onchange=()=>{boost.stat_=+select.value;this.touch();};
       input.type='number';input.step='1';input.value=boost.val_;input.setAttribute('aria-label',this.t('词缀数值','Modifier value')+' '+(index+1));input.oninput=()=>{boost.val_=Number(input.value);this.touch();};
       remove.textContent=this.t('删除','Remove');remove.className='secondary';remove.onclick=()=>{current.statboosts_.splice(index,1);this.touch();this.modifiers();};row.append(select,input,remove);return row;

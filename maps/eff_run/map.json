@@ -1,1 +1,1 @@
-{"id":"eff_run","title":"Elite Fire Forest · 整关试玩","pvid":"forest","zone":"forestHard","gdv":1,"session_module":"localserver.maps.eff_run.session","session_class":"EffRunLiveSession","preview":{"stage":"playable-preview","documentation":"docs/full-levels-current-goal.md"}}
+{"id":"eff_run","title":"Elite Fire Forest · Full run","pvid":"forest","zone":"forestHard","gdv":1,"session_module":"localserver.maps.eff_run.session","session_class":"EffRunLiveSession","preview":{"stage":"playable-preview","documentation":"docs/full-levels-current-goal.md"}}

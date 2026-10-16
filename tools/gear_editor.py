@@ -519,7 +519,7 @@ class GearEditor(object):
         self.language_preference = i18n.load_preference()
         self.language = i18n.resolve_language(self.language_preference)
         self.keybindings = keybindings.load(KEYBINDINGS)
-        self.stat_names = i18n.STATS_ZH if self.language == 'zh' else STAT_NAMES
+        self.stat_names = STAT_NAMES
         self.owner_pid = int(owner_pid) if owner_pid else None
         self.catalogue = load_catalogue()
         self.overrides = load_overrides()
@@ -882,7 +882,7 @@ class GearEditor(object):
         projectile_values = {obj['index']: variable.get() for obj, variable in self.projectile_speed_rows}
         geometry = self.root.geometry()
         self.language = language
-        self.stat_names = i18n.STATS_ZH if language == 'zh' else STAT_NAMES
+        self.stat_names = STAT_NAMES
         for child in self.root.winfo_children():
             child.destroy()
         self.affix_rows = []

@@ -187,7 +187,6 @@ class LanguageTests(unittest.TestCase):
 
     def test_map_and_stat_labels(self):
         from tools.gear_editor import STAT_NAMES, editor_map_choices
-        self.assertEqual(set(STAT_NAMES), set(i18n.STATS_ZH))
         english = dict(editor_map_choices('en'))
         chinese = dict(editor_map_choices('zh'))
         self.assertEqual(english, chinese)

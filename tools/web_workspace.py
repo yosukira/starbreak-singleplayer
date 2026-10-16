@@ -232,6 +232,6 @@ class Workspace:
                        balance_defaults=game_settings.balance_defaults(map_id))
                   for map_id in game_settings.ordered_maps()],
             slots=[dict(id=slot, zh=name, en=i18n.translate(name, 'en')) for slot, name in equipment.SLOTS],
-            stats=[dict(id=stat, en=name, zh=i18n.STATS_ZH.get(stat, name)) for stat, name in equipment.STAT_NAMES.items()],
+            stats=[dict(id=stat, en=name, zh=name) for stat, name in equipment.STAT_NAMES.items()],
             items=[dict(item, suggested=self.priority['exact'].get(item['type'], []),
                         defaults=self.priority['defaults'].get(item['type'], {})) for item in self.catalogue.values()])
