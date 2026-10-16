@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.client import HTTPException
 import json
+import hashlib
 import mimetypes
 import os
 import re
@@ -239,7 +240,11 @@ class Prototype:
         path = urlsplit(ws.request.path).path
         stop = threading.Event()
         if path == '/game':
-            target = socket.create_connection(('127.0.0.1', self.options.game_port), timeout=10)
+            try:
+                target = socket.create_connection(('127.0.0.1', self.options.game_port), timeout=10)
+            except OSError:
+                ws.close(1013, 'Start or restart the encounter')
+                return
             target.settimeout(.5)
         elif path == '/telemetry':
             target = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -304,13 +309,21 @@ class Handler(BaseHTTPRequestHandler):
         if '/api/status' not in args[0]:
             super().log_message(fmt, *args)
 
-    def send(self, data, content_type='application/json', status=200):
+    def send(self, data, content_type='application/json', status=200, cache=False):
         if not isinstance(data, bytes):
             data = json.dumps(data, ensure_ascii=False).encode('utf8')
+        etag='"'+hashlib.sha256(data).hexdigest()+'"' if cache else None
+        if etag and self.headers.get('If-None-Match')==etag:
+            self.send_response(304)
+            self.send_header('ETag',etag)
+            self.send_header('Cache-Control','public, max-age=0, must-revalidate')
+            self.end_headers()
+            return
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(data)))
-        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Cache-Control', 'public, max-age=0, must-revalidate' if cache else 'no-store')
+        if etag:self.send_header('ETag',etag)
         with contextlib.suppress(BrokenPipeError, ConnectionResetError):
             self.end_headers()
             self.wfile.write(data)
@@ -327,22 +340,22 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/inventory':
                 return self.send(dict(inventory=self.server.prototype.latest_inventory, error=self.server.prototype.inventory_error))
             if path == '/client.js':
-                return self.send(self.server.prototype.client, 'text/javascript')
+                return self.send(self.server.prototype.client, 'text/javascript',cache=True)
             if path == '/runtime.js':
-                data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=self.server.prototype.options.ws_port)) + ';'
+                data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=self.server.prototype.options.ws_port,keybindings=self.server.prototype.workspace.preferences()['keys'])) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/inventory.js', '/bridge.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
-                return self.send((ROOT / 'web' / filename).read_bytes(), mimetypes.guess_type(filename)[0] or 'text/plain')
+                return self.send((ROOT / 'web' / filename).read_bytes(), mimetypes.guess_type(filename)[0] or 'text/plain',cache=True)
             data = self.server.prototype.asset(path)
-            return self.send(data, mimetypes.guess_type(path)[0] or 'application/octet-stream')
+            return self.send(data, mimetypes.guess_type(path)[0] or 'application/octet-stream',cache=True)
         except Exception as error:
             return self.send(dict(error=str(error)), status=404)
 
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -350,11 +363,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(dict(error='Origin rejected'), status=403)
         try:
             length = int(self.headers.get('Content-Length', 0))
-            if not 0 < length <= (512*1024 if self.path in ('/api/editor', '/api/validate') else 4096):
+            if not 0 < length <= (512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft') else 4096):
                 raise ValueError('Invalid request size')
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
+            if self.path == '/api/preferences':
+                return self.send(self.server.prototype.workspace.save_preferences(document))
+            if self.path == '/api/draft':
+                return self.send(self.server.prototype.workspace.save_draft(document))
             if self.path == '/api/editor':
                 return self.send(self.server.prototype.workspace.save(document))
             if self.path == '/api/validate':

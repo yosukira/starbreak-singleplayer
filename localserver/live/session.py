@@ -94,6 +94,7 @@ class LiveSession(object):
         self.map_id = str(getattr(options, 'map', None)
                           or getattr(self, 'MAP_ID', game_settings.ORIGINAL_MAP))
         self.skip_intro = game_settings.skip_intro(self.map_id)
+        self.projectiles.missile_delay_seconds = game_settings.missile_delay_ms(self.map_id)/1000.
         self.supplies = SupplyDrops(self, self.map_id, rng=self.loot_random)
         self.supplies.pending = self.pending_loot
         self.balance = game_settings.Balance(
@@ -2063,6 +2064,7 @@ class LiveSession(object):
         if mtime == self._balance_mtime:
             return
         self._balance_mtime = mtime
+        self.projectiles.missile_delay_seconds = game_settings.missile_delay_ms(self.map_id)/1000.
         values = game_settings.balance(self.map_id)
         if values != self.balance.values:
             self.balance.update(values)

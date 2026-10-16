@@ -46,6 +46,8 @@ bindings. Existing battles change when you start a new attempt.
 
 For GY / EGY Boss, **Skip opening** defaults to off and is saved per encounter. Enabling it skips the opening robots and ship arrival; the next attempt begins with the boss ship in position and platforms ready.
 
+**Homing missile delay (ms)** is saved separately for GY / EGY Boss: 0–500ms, default 275ms. It changes how old the player position used for steering is, not the 50ms steering interval or firing cooldown. 0ms uses the current position. Save to apply; Restore defaults returns both maps to 275ms.
+
 **Export / Import** shares the browser profile as JSON. Import is a draft until
 saved. Browser exports use their own schema, separate from native editor exports.
 Unsaved drafts survive a page reload. If another tab has saved a newer version,
@@ -132,6 +134,8 @@ Mac 双击 **start-web.command**。会自动打开 <http://127.0.0.1:8765>；若
 
 GY / EGY 首领的 **跳过开局** 默认关闭，两图分别保存。开启后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人及进场；恢复默认配置会关闭它。
 
+**追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
+
 刷新会保留未保存草稿；多标签页发生保存冲突时，先导出草稿再重新载入。
 先点击画面获得焦点，场内操作沿用原版游戏自己的按键设置。
 
@@ -154,3 +158,28 @@ Mac 浏览器已验证四职业、移动/攻击/受伤、死亡重开、改配�
 保存。恢复默认的备份位于同目录 `profile.before-restore-defaults-*.json`。
 源码运行需要 Python 3.11+，安装与命令见上方；启动失败可看终端和
 `userdata/web/server.log`。
+
+
+### Player updates / 玩家更新
+
+From v20261016-r3 onward, the Windows and macOS player launchers check the public GitHub update channel at startup and install newer simulator files before launching. Player data under `userdata`, downloaded game assets, and the included `python` runtime are retained. Downloads verify HTTPS certificates and SHA-256 checksums. The updater keeps backups and restores interrupted/failed installations on the next launch. Network failures leave the installed version usable. A running launcher prevents a second updater from changing its files. Source checkouts containing `.git` are maintained through Git and skip player updates.
+
+Older player packages need one manual download of v20261016-r3 (or newer) to acquire this updater. Later simulator updates use small downloads in the existing `update-channel` prerelease; a new complete player release is not needed each time. Runtime upgrades still require a complete player package. To disable startup updates, create `userdata/update-settings.json` containing `{"enabled":false}`; remove the file or set it to true to re-enable them. The update service receives ordinary download requests, not equipment, account information or local settings.
+
+从 v20261016-r3 起，Windows / Mac 玩家启动器会在启动时检查 GitHub 上的公开更新频道，有新版时先更新模拟器再启动。`userdata` 下的配装、按键、草稿、已下载资源及包内 `python` 环境都会保留。下载校验 HTTPS 证书及 SHA-256；更新会留备份，失败或中断后可恢复。断网时继续使用现有版本；模拟器运行期间不会由另一个启动器替换文件。含 `.git` 的源码目录由 Git 管理，不自动覆盖。
+
+旧版玩家包需要先手动下载一次 v20261016-r3 或之后的完整包，之后模拟器代码更新通过现有 `update-channel` 预发布频道分发小型更新包，不必每次重新发布完整玩家包；运行环境升级仍需完整玩家包。如需关闭启动更新，在 `userdata/update-settings.json` 写入 `{"enabled":false}`，删除文件或改为 true 可恢复。更新服务仅接收下载请求，不上传配装、账号或本地设置。
+
+### Equipment and browser preferences / 装备与网页偏好
+
+Both editors support item name/ID search, equipment sorting by ID or A–Z, and Chinese/English labels. Changing search/sort preserves the selected item and its modifiers. The browser remembers the selected class/slot, language, search/sort, all-class filter, keyboard settings and unsaved equipment drafts in its local data folder. **Save / Save & start** commits a draft; **Reload saved** discards it. Cached assets are reused, and browser HTTP caches revalidate content so an update does not leave stale scripts.
+
+The browser's **Equipment & settings → Keyboard settings** uses the same defaults and validation as the native edition: hold R to restart, hold 7/8/9/0 for WF/DW/FAB/IC, and Backtick/F8 to toggle the editor. Default hold time is 2 seconds; editable from 0.5 to 5 seconds. Short presses, held-key repeats, text inputs, focus loss and hidden tabs do not accidentally repeat hold actions. Movement and attack bindings remain in the original game's Controls menu.
+
+两个编辑器均支持物品名称 / ID 搜索、装备按 ID / 名称首字母排序与中英文界面；搜索和排序不会替换当前装备或清空词缀。网页端会在本地数据目录保留职业、槽位、语言、搜索排序、全部职业筛选、按键与未保存配装草稿。点击“保存 / 保存并开始”提交草稿，“载入已保存配装”放弃草稿。游戏资源复用本地下载缓存，浏览器缓存按内容校验，避免升级后仍加载旧脚本。
+
+网页端“装备与设置 → 按键设置”与原生版使用相同默认值和校验：长按 R 重开，长按 7 / 8 / 9 / 0 切换 WF / DW / FAB / IC，Backtick / F8 显示隐藏编辑器。默认长按 2 秒，可改为 0.5–5 秒；短按、键盘重复、输入文字、失焦或切到后台不会反复触发。移动与攻击仍在原版游戏的 Controls 中设置。
+
+GY / EGY Boss now default to a **0.66× spawn-rate multiplier**, in both editions and after Restore defaults. Explicit saved custom multipliers are retained.
+
+GY / EGY 首领的默认刷怪速率改为 **0.66×**，两个版本及恢复默认配置统一使用此值；已经明确保存的自定义倍率会保留。

@@ -8,6 +8,7 @@ import threading
 from localserver import equipment, game_settings, paths, projectile_speeds, presets
 from localserver.live.turrets import normalize_missile_counts, normalize_turret_counts
 from tools import i18n
+from plugins import _practice_keybindings as keybindings
 
 SCHEMA = 'starbreak-web-loadouts-v1'
 CLASSES = (1, 2, 5, 3)
@@ -69,6 +70,43 @@ class Workspace:
                     output.write(original)
             atomic_json(self.path, normalized)
         self.read()  # Corrupt saved data is reported, never silently replaced.
+
+    def preferences(self):
+        try:value=json.loads((self.directory/'preferences.json').read_text(encoding='utf8'))
+        except (OSError,ValueError):value={}
+        return self.normalize_preferences(value)
+
+    def normalize_preferences(self, value):
+        if not isinstance(value,dict):raise ValueError('Invalid preferences')
+        shell=value.get('shell',1);slot=value.get('slot',256)
+        return dict(language=value.get('language') if value.get('language') in ('en','zh') else None,
+                    shell=shell if type(shell) is int and shell in CLASSES else 1,
+                    slot=slot if type(slot) is int and slot in {s for s,_ in equipment.SLOTS} else 256,
+                    item_sort='name' if value.get('item_sort')=='name' else 'id',
+                    query=str(value.get('query',''))[:100],all_classes=value.get('all_classes') is True,
+                    keys=keybindings.normalize(value.get('keys',keybindings.DEFAULTS)))
+
+    def save_preferences(self, value):
+        result=self.normalize_preferences(value)
+        with self.lock:atomic_json(self.directory/'preferences.json',result)
+        return result
+
+    def draft(self):
+        try:
+            value=self.validate(json.loads((self.directory/'draft.json').read_text(encoding='utf8')))
+            return value if value['revision']==self.read()['revision'] else None
+        except (OSError,ValueError):return None
+
+    def save_draft(self, value):
+        with self.lock:
+            if value.get('discard') is True:
+                if value.get('revision')!=self.read()['revision']:raise ValueError('Stale draft')
+                (self.directory/'draft.json').unlink(missing_ok=True)
+                return dict(discarded=True)
+            draft=self.validate(value)
+            if draft['revision']!=self.read()['revision']:raise ValueError('Stale draft')
+            atomic_json(self.directory/'draft.json',draft)
+            return dict(saved=True)
 
     def read(self):
         with self.lock:
@@ -140,7 +178,7 @@ class Workspace:
             raise ValueError('Invalid game settings')
         result['settings'] = game_settings.normalize(settings)
         # Export only settings used by the simulator, never arbitrary imported fields.
-        result['settings'] = {k: result['settings'][k] for k in ('map', 'drops', 'balance', 'skip_intro') if k in result['settings']}
+        result['settings'] = {k: result['settings'][k] for k in ('map', 'drops', 'balance', 'skip_intro', 'missile_delay_ms') if k in result['settings']}
         return result
 
     def save(self, document):
@@ -151,6 +189,7 @@ class Workspace:
                 raise ValueError('Loadout changed in another tab. Export your draft, then reload.')
             value['revision'] += 1
             atomic_json(self.path, value)
+            (self.directory/'draft.json').unlink(missing_ok=True)
         return copy.deepcopy(value)
 
     def materialize(self, map_id):
@@ -186,7 +225,8 @@ class Workspace:
 
     def editor(self):
         profile = self.read()
-        return dict(profile=profile,
+        return dict(profile=profile, preferences=self.preferences(), draft=self.draft(),
+            key_choices=list(keybindings.CHOICES), key_defaults=dict(keybindings.DEFAULTS),
             maps=[dict(id=map_id, drops=game_settings.drop_settings(map_id, profile['settings']),
                        balance_limits=game_settings.balance_limits(map_id) if map_id in game_settings.BALANCE_MAPS else {},
                        balance_defaults=game_settings.balance_defaults(map_id))

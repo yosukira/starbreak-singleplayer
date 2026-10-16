@@ -38,6 +38,24 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(json.loads((self.workspace.directory / 'game_settings.json').read_text())['map'], 'hulk_mid')
         self.assertEqual(self.original, {p.name: p.read_bytes() for p in self.source.iterdir()})
 
+    def test_preferences_drafts_and_keys_survive_restart_without_applying_draft(self):
+        preferences=self.workspace.preferences()
+        preferences.update(language='en',shell=3,slot=1280,item_sort='name',query='drag',all_classes=True)
+        preferences['keys'].update(restart='T',hold_seconds=.7)
+        self.workspace.save_preferences(preferences)
+        draft=self.workspace.read();draft['loadouts']['1']['mk_']=2
+        self.workspace.save_draft(draft)
+        again=Workspace(self.workspace.directory,self.source)
+        self.assertEqual(again.preferences(),preferences)
+        self.assertEqual(again.draft()['loadouts']['1']['mk_'],2)
+        self.assertNotEqual(again.read()['loadouts']['1']['mk_'],2)
+        again.save(draft)
+        self.assertIsNone(again.draft())
+        preferences['keys']['wf']='T'
+        before=(again.directory/'preferences.json').read_bytes()
+        with self.assertRaisesRegex(ValueError,'Duplicate'):again.save_preferences(preferences)
+        self.assertEqual((again.directory/'preferences.json').read_bytes(),before)
+
     def test_stale_tab_cannot_overwrite_newer_loadout(self):
         first = self.workspace.read()
         second = copy.deepcopy(first)

@@ -15,7 +15,7 @@ class Socket {
   send(value) { sent.push(JSON.parse(value)); }
 }
 const context = {
-  WebSocket: Socket, STARBREAK_WEB_BOOT: {wsPort: 8766},
+  WebSocket: Socket, STARBREAK_WEB_BOOT: {wsPort: 8766,keybindings:{interact:'Auto'}},
   location: {hostname: '127.0.0.1', origin: 'http://127.0.0.1:8765'},
   Module: {HEAP32: i32, HEAPU8: u8},
   performance: {now: () => now += 20}, Date,
@@ -23,6 +23,8 @@ const context = {
   addEventListener(name, callback) {listeners[name]=callback;}, document: {getElementById: () => ({focus() {}, hidden: false})},
   console: {error: error => { throw error; }},
 };
+context.window=context; context.document.addEventListener=()=>{};
+context.PracticeShortcuts=require('../web/shortcuts.js');
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../web/bridge.js'), 'utf8'), context);
 const set = (pointer, offset, value) => i32[(pointer + offset) >> 2] = value;
 const world = 1024, player = 4096, subworld = 8192, update = 12288, damage = 16384;

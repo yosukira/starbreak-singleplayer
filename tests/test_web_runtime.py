@@ -131,6 +131,7 @@ class WebRuntimeTests(unittest.TestCase):
     def test_http_boundary_and_dynamic_websocket_port(self):
         app = mock.Mock()
         app.options = SimpleNamespace(ws_port=19999)
+        app.workspace.preferences.return_value={'keys':{'interact':'Auto'}}
         app.start.return_value = dict(running=True)
         app.prepare.return_value = dict(assets_ready=True)
         app.info.return_value = dict(running=False)
@@ -147,6 +148,13 @@ class WebRuntimeTests(unittest.TestCase):
             finally:
                 connection.close()
         try:
+            connection=http.client.HTTPConnection('127.0.0.1',server.server_port)
+            connection.request('GET','/editor.js');response=connection.getresponse();response.read()
+            tag=response.getheader('ETag');self.assertTrue(tag)
+            self.assertIn('must-revalidate',response.getheader('Cache-Control'))
+            connection.close()
+            code,data=request('GET','/editor.js',headers={'If-None-Match':tag})
+            self.assertEqual(code,304);self.assertEqual(data,b'')
             code, data = request('GET', '/runtime.js')
             self.assertEqual(code, 200)
             self.assertIn(b'19999', data)

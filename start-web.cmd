@@ -10,5 +10,5 @@ if not exist "python\python.exe" (
 )
 set "PYTHONHOME="
 set "PYTHONPATH="
-"python\python.exe" tools\web_app.py %*
+"python\python.exe" tools\launch.py web %*
 if errorlevel 1 pause

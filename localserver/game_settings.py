@@ -8,8 +8,8 @@ map before starting a server, and the live session re-reads it with an
 mtime check so a change applies without restarting the game.  The file is
 optional: each map owns a ``drops.<map_id>`` row for health, ammo and EC.
 The three Hulk maps default to 5%% for each category, and TL Mid defaults
-to 1%% for each. There is no automatic difficulty multiplier. Every balance
-multiplier ships at 1.0x (the unmodified encounter).
+to 1%% for each. There is no automatic difficulty multiplier. GY / EGY default to a 0.66x spawn-rate multiplier; other balance
+settings default to 1.0x (the unmodified encounter).
 
 ``maps/<id>/map.json`` is the optional map manifest.  It names pvid/zone
 and the live-session module/class so a future map pack works without
@@ -64,6 +64,30 @@ DEFAULT_DROPS = {'health': 5.0, 'ammo': 5.0, 'ec': 5.0}
 HULK_DROP_MAPS = frozenset((ORIGINAL_MAP, 'hulk_normal', 'hulk_mid', 'egy_run'))
 SKIP_INTRO_MAPS = frozenset((ORIGINAL_MAP, 'hulk_normal'))
 
+MISSILE_DELAY_MAPS = SKIP_INTRO_MAPS
+DEFAULT_MISSILE_DELAY_MS = 275
+
+def normalize_missile_delays(document):
+    import math
+    rows = document if isinstance(document, dict) else {}
+    result = {}
+    for map_id in sorted(MISSILE_DELAY_MAPS):
+        value = rows.get(map_id, DEFAULT_MISSILE_DELAY_MS)
+        try:
+            value = float(value) if not isinstance(value, bool) else math.nan
+            if not math.isfinite(value):
+                raise ValueError('Non-finite delay')
+        except (TypeError, ValueError, OverflowError):
+            value = DEFAULT_MISSILE_DELAY_MS
+        result[map_id] = int(round(max(0., min(500., value))))
+    return result
+
+def missile_delay_ms(map_id, document=None):
+    if map_id not in MISSILE_DELAY_MAPS:
+        return 0
+    data = document if isinstance(document, dict) else load()
+    return normalize_missile_delays(data.get('missile_delay_ms'))[map_id]
+
 def skip_intro(map_id, document=None):
     data = document if isinstance(document, dict) else load()
     rows = data.get('skip_intro')
@@ -115,7 +139,10 @@ def balance_limits(map_id):
     return MAP_BALANCE_LIMITS.get(map_id, BALANCE_LIMITS)
 
 def balance_defaults(map_id):
-    return {key: BALANCE_DEFAULTS.get(key, 1.) for key in balance_limits(map_id)}
+    values = {key: BALANCE_DEFAULTS.get(key, 1.) for key in balance_limits(map_id)}
+    if map_id in ('egy_hulk', 'hulk_normal'):
+        values['spawn_rate'] = .66
+    return values
 LEGACY_SESSIONS = {
     'lab_hard': ('localserver.maps.lab_hard.session', 'LabHardLiveSession'),
     'lab_mid': ('localserver.maps.lab_mid.session', 'LabMidLiveSession'),
@@ -217,6 +244,7 @@ def normalize(document):
     for key, old_key in zip(DROP_FIELDS, LEGACY_DROP_FIELDS):
         result[old_key] = selected[key]
     result['balance'] = normalize_balance(result.get('balance'))
+    result['missile_delay_ms'] = normalize_missile_delays(result.get('missile_delay_ms'))
     choices = result.get('skip_intro')
     result['skip_intro'] = {key: choices[key] is True for key in sorted(SKIP_INTRO_MAPS)
                             if isinstance(choices, dict) and key in choices}

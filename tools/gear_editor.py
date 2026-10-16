@@ -238,6 +238,9 @@ def apply_import_document(document, overrides, settings):
                     if isinstance(map_id, str) and isinstance(entry, dict):
                         merged[map_id] = dict(entry)
                 settings['balance'] = merged
+        elif name == '_missile_delay_ms':
+            if isinstance(rows, dict):
+                settings['missile_delay_ms'] = game_settings.normalize_missile_delays(rows)
         elif name == '_skip_intro':
             if isinstance(rows, dict):
                 settings['skip_intro'] = game_settings.normalize({'skip_intro': rows})['skip_intro']
@@ -531,6 +534,9 @@ class GearEditor(object):
         self.affix_rows = []
         self.projectile_speed_rows = []
         self.affix_sort = 'id'
+        self.item_sort = 'id'
+        self.item_search_var = tk.StringVar()
+        self.all_classes_var = tk.BooleanVar(value=False)
         self.mk_var = tk.StringVar(value='MK6')
         self.implant_var = tk.StringVar(value='1')
         self.turret_vars = {}
@@ -540,6 +546,9 @@ class GearEditor(object):
         self.game_settings = game_settings.load()
         self.skip_intro_var = tk.BooleanVar(value=game_settings.skip_intro(
             self.game_settings.get('map'), self.game_settings))
+        self.missile_delay_var = tk.StringVar(value=str(game_settings.missile_delay_ms(
+            self.game_settings.get('map'), self.game_settings)))
+        self.missile_delay_var.trace_add('write', self._store_missile_delay)
         self.map_var = tk.StringVar(
             value=self.game_settings.get('map') or game_settings.ORIGINAL_MAP)
         self.map_display_var = tk.StringVar()
@@ -755,6 +764,15 @@ class GearEditor(object):
         ttk.Label(self.intro_row, text=self.tr('新一局生效；直接从首领飞船停稳后开始'),
                   style='Hint.TLabel').pack(side='left', padx=(12, 0))
 
+        self.missile_delay_row = ttk.Frame(content, padding=(12, 0, 12, 8))
+        self.missile_delay_row.pack(fill='x')
+        ttk.Label(self.missile_delay_row, text=self.tr('追踪弹延迟 (ms)')).pack(side='left')
+        ttk.Spinbox(self.missile_delay_row, from_=0, to=500, increment=1,
+                    textvariable=self.missile_delay_var, width=7).pack(side='left', padx=(8, 12))
+        ttk.Label(self.missile_delay_row,
+                  text=self.tr('瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms'),
+                  style='Hint.TLabel').pack(side='left')
+
         body = ttk.Frame(content, padding=(12, 4, 12, 8))
         body.pack(fill='both', expand=True)
         self.body_frame = body
@@ -772,6 +790,16 @@ class GearEditor(object):
         right = ttk.Frame(body)
         right.pack(side='left', fill='both', expand=True)
         ttk.Label(right, text=self.tr('物品 type / 名称')).pack(anchor='w')
+        ttk.Label(right, text=self.tr('搜索物品名称或 ID')).pack(anchor='w', pady=(6, 0))
+        self.item_search = ttk.Entry(right, textvariable=self.item_search_var)
+        self.item_search.pack(fill='x', pady=(4, 0))
+        self.item_search.bind('<KeyRelease>', self._refresh_item_options)
+        item_controls = ttk.Frame(right)
+        item_controls.pack(fill='x', pady=(4, 0))
+        ttk.Checkbutton(item_controls, text=self.tr('显示所有职业装备'), variable=self.all_classes_var,
+                        command=self._refresh_item_options).pack(side='left')
+        self.item_sort_button = ttk.Button(item_controls, text=self.tr('装备排序：ID') if self.item_sort == 'id' else self.tr('装备排序：首字母'), command=self.toggle_item_sort)
+        self.item_sort_button.pack(side='left', padx=(10, 0))
         self.item_var = tk.StringVar()
         self.item_box = ttk.Combobox(right, textvariable=self.item_var,
                                      state='readonly', font=self.ui_font)
@@ -843,6 +871,7 @@ class GearEditor(object):
             'mk_var', 'implant_var', 'map_var', 'drop_health_var',
             'drop_ammo_var', 'drop_ec_var', 'spawn_cap_var')}
         values['skip_intro_var'] = self.skip_intro_var.get()
+        values['missile_delay_var'] = self.missile_delay_var.get()
         multipliers = {key: var.get() for key, var in self.balance_entry_vars.items()}
         turret_values = {key: var.get() for key, var in self.turret_vars.items()}
         missile_values = {key: var.get() for key, var in self.turret_missile_vars.items()}
@@ -894,6 +923,23 @@ class GearEditor(object):
         if selection:
             self.slotpos = SLOTS[int(selection[0])][0]
             self._load_slot()
+
+    def _refresh_item_options(self, _event=None):
+        query = self.item_search_var.get().strip().casefold()
+        def visible(item):
+            return item['type'] == self.item_type or (
+                (not query or query in (str(item['type'])+' '+item.get('name','')).casefold())
+                and (self.all_classes_var.get() or self.slotpos >= 3840
+                     or not item.get('usableby') or self.char_type in item['usableby']))
+        values = [item for item in candidate_items(self.catalogue, self.char_type, self.slotpos) if visible(item)]
+        values.sort(key=(lambda item:(item.get('name','').casefold(), int(item['type'])))
+                    if self.item_sort == 'name' else (lambda item:int(item['type'])))
+        self.item_box['values'] = ['{0}  {1}'.format(item['type'],item['name']) for item in values]
+
+    def toggle_item_sort(self):
+        self.item_sort = 'name' if self.item_sort == 'id' else 'id'
+        self.item_sort_button.configure(text=self.tr('装备排序：ID') if self.item_sort == 'id' else self.tr('装备排序：首字母'))
+        self._refresh_item_options()
 
     def _on_item_select(self, _event=None):
         text = self.item_var.get()
@@ -1015,7 +1061,7 @@ class GearEditor(object):
             self.map_var.get(), self.map_var.get()))
 
     def _on_map_choice(self, _event=None):
-        if not self._stash_drop_controls():
+        if not self._valid_missile_delay() or not self._stash_drop_controls():
             self._refresh_map_choices()
             return
         index = self.map_box.current()
@@ -1081,6 +1127,13 @@ class GearEditor(object):
                 intro.pack(fill='x', before=self.body_frame)
         elif intro.winfo_manager():
             intro.pack_forget()
+        delay_row = self.missile_delay_row
+        if self.map_var.get() in game_settings.MISSILE_DELAY_MAPS:
+            self.missile_delay_var.set(str(game_settings.missile_delay_ms(self.map_var.get(), self.game_settings)))
+            if not delay_row.winfo_manager():
+                delay_row.pack(fill='x', before=self.body_frame)
+        elif delay_row.winfo_manager():
+            delay_row.pack_forget()
         supported = self.map_var.get() in TURRET_MAPS
         row = getattr(self, 'turret_row', None)
         if row is not None:
@@ -1216,6 +1269,27 @@ class GearEditor(object):
         elif row.winfo_manager():
             row.pack_forget()
 
+    def _store_missile_delay(self, *_args):
+        map_id = self.map_var.get()
+        if map_id not in game_settings.MISSILE_DELAY_MAPS:
+            return True
+        try:
+            value = int(self.missile_delay_var.get())
+            if not 0 <= value <= 500:
+                return False
+        except (ValueError, TypeError):
+            return False
+        rows = dict(self.game_settings.get('missile_delay_ms') or {})
+        rows[map_id] = value
+        self.game_settings['missile_delay_ms'] = rows
+        return True
+
+    def _valid_missile_delay(self):
+        if self._store_missile_delay():
+            return True
+        messagebox.showwarning(self.tr('Gear Editor'), self.tr('追踪弹延迟请填 0–500 的整数'))
+        return False
+
     def _store_intro_choice(self):
         map_id = self.map_var.get()
         if map_id in game_settings.SKIP_INTRO_MAPS:
@@ -1225,6 +1299,8 @@ class GearEditor(object):
 
     def _persist_game_settings(self):
         """Write map + drop rates + the current map's balance row."""
+        if not self._valid_missile_delay():
+            return False
         self._store_intro_choice()
         document = dict(self.game_settings)
         document['map'] = self.map_var.get()
@@ -1276,6 +1352,8 @@ class GearEditor(object):
         still imports the gear part and simply skips them.
         """
         document = dict(self.overrides or {})
+        self._store_missile_delay()
+        document['_missile_delay_ms'] = dict(self.game_settings.get('missile_delay_ms') or {})
         document['_map'] = self.map_var.get()
         rows = dict(self.game_settings.get('skip_intro') or {})
         if self.map_var.get() in game_settings.SKIP_INTRO_MAPS:
@@ -1312,9 +1390,11 @@ class GearEditor(object):
         self.slot_list.selection_clear(0, 'end')
         self.slot_list.selection_set(self._slot_index())
         self.slot_list.activate(self._slot_index())
+        context = (self.char_type, self.slotpos)
+        if getattr(self, '_item_search_context', None) != context:
+            self.item_search_var.set('')
+        self._item_search_context = context
         candidates = candidate_items(self.catalogue, self.char_type, self.slotpos)
-        self.item_box['values'] = [
-            '{0}  {1}'.format(item['type'], item['name']) for item in candidates]
         rows = (self.overrides.get(str(self.char_type)) or {})
         current = rows.get(str(self.slotpos)) or {}
         if current.get('type_') is not None:
@@ -1338,6 +1418,7 @@ class GearEditor(object):
             self._refresh_affix_options()
             self._set_affixes([])
 
+        self._refresh_item_options()
         self._load_projectile_speeds()
 
     def _load_projectile_speeds(self):
@@ -1514,6 +1595,8 @@ class GearEditor(object):
         return result
 
     def apply(self):
+        if not self._valid_missile_delay():
+            return
         try:
             speeds = self._current_projectile_speeds()
         except (TypeError, ValueError):
@@ -1563,6 +1646,8 @@ class GearEditor(object):
 
 
     def export(self):
+        if not self._valid_missile_delay():
+            return
         path = filedialog.asksaveasfilename(
             title=self.tr('导出装备配置'), defaultextension='.json',
             filetypes=[('JSON', '*.json')])

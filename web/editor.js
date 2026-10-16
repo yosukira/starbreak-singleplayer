@@ -1,15 +1,18 @@
 /* Equipment drafts are validated by the Python model before being saved. */
 class WebEquipment {
   constructor(language, changed) {
-    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;
+    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';
     this.$=id=>document.getElementById(id);
     this.$('open-editor').onclick=()=>{this.render();this.$('equipment-dialog').showModal();};
     this.$('close-editor').onclick=()=>this.$('equipment-dialog').close();
     this.$('editor-class').onchange=event=>{this.selectClass(+event.target.value);this.changed();};
     this.$('editor-mk').oninput=event=>{this.row().mk_=+event.target.value;this.touch();};
     this.$('editor-implants').oninput=event=>{this.row().impslots_=+event.target.value;this.touch();};
-    this.$('item-search').oninput=()=>this.itemOptions();
-    this.$('all-classes').onchange=()=>this.itemOptions();
+    this.$('item-search').oninput=()=>{this.itemOptions();this.remember();};
+    this.$('sort-items').onclick=()=>{this.itemSort=this.itemSort==='id'?'name':'id';localStorage.setItem('starbreak-item-sort',this.itemSort);this.itemOptions();this.remember();};
+    this.$('all-classes').onchange=()=>{this.itemOptions();this.remember();};
+    this.$('reset-keys').onclick=()=>{this.keyDraft={...this.data.key_defaults};this.keyboard();};
+    this.$('save-keys').onclick=()=>this.action(async()=>{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),keys:this.keyDraft});this.keyDraft={...this.preferences.keys};this.changed();this.$('keyboard-notice').textContent=this.t('按键已保存，立即生效。','Keyboard settings saved and applied.');});
     this.$('editor-item').onchange=event=>{this.replaceItem(+event.target.value);this.render();};
     this.$('add-modifier').onclick=()=>{
       const item=this.current();if(!item)return;
@@ -21,6 +24,7 @@ class WebEquipment {
     this.$('save-profile').onclick=()=>this.action(async()=>{await this.save();this.notice(this.t('配装已保存，新一局生效。','Loadout saved for the next attempt.'));});
     this.$('reload-profile').onclick=()=>this.action(async()=>{await this.load(false);this.render();this.changed();this.notice(this.t('已载入保存的配装。','Saved loadout loaded.'));});
     this.$('restore-defaults').onclick=()=>this.action(async()=>{
+      clearTimeout(this.draftTimer);
       this.$('restore-defaults').disabled=true;
       try{this.profile=await this.post('/api/reset',{revision:this.profile.revision});this.dirty=false;
         localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;
@@ -43,18 +47,38 @@ class WebEquipment {
   t(zh,en){return this.language()==='zh'?zh:en;}
   row(){return this.profile.loadouts[this.shell];}
   current(){return this.row().items_.find(item=>item.slotpos_===this.slot);}
-  touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();}
+  touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
+    clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>this.post('/api/draft',this.profile).catch(()=>{}),250);
+  }
+  flush(){if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
+  preferenceDocument(){return {...this.preferences,shell:this.shell,slot:this.slot,item_sort:this.itemSort,query:this.$('item-search').value,all_classes:this.$('all-classes').checked,language:this.language()};}
+  remember(){if(!this.preferences)return;clearTimeout(this.preferenceTimer);this.preferenceTimer=setTimeout(()=>this.post('/api/preferences',this.preferenceDocument()).catch(()=>{}),250);}
+  keyboard(){
+    if(!this.preferences)return;
+    this.keyDraft||={...this.preferences.keys};
+    const box=this.$('keyboard-settings');box.replaceChildren();
+    const names={interact:['互动键','Interaction key'],editor_toggle:['显示/隐藏编辑器','Show / hide editor'],editor_toggle_alt:['备用编辑器快捷键','Alternate editor shortcut'],restart:['重开当前局','Restart current run'],wf:['切换 WF','Switch to WF'],dw:['切换 DW','Switch to DW'],fab:['切换 FAB','Switch to FAB'],ic:['切换 IC','Switch to IC']};
+    for(const [key,label]of Object.entries(names)){
+      const row=document.createElement('label'),text=document.createElement('span'),select=document.createElement('select');row.className='setting-row';text.textContent=this.t(...label);select.setAttribute('aria-label',text.textContent);
+      const choices=[...(key==='interact'?['Auto']:['None']),...this.data.key_choices];
+      select.append(...choices.map(name=>new Option(name,name)));select.value=this.keyDraft[key];select.onchange=()=>{this.keyDraft[key]=select.value;};row.append(text,select);box.append(row);
+    }
+    const row=document.createElement('label'),text=document.createElement('span'),input=document.createElement('input');row.className='setting-row';text.textContent=this.t('长按时间（秒）','Hold duration (seconds)');input.type='number';input.min='.5';input.max='5';input.step='.1';input.value=this.keyDraft.hold_seconds;input.setAttribute('aria-label',text.textContent);input.oninput=()=>{this.keyDraft.hold_seconds=Number(input.value);};row.append(text,input);box.append(row);
+  }
   notice(text){this.$('editor-error').hidden=false;this.$('editor-error').textContent=text;}
   async action(run){this.$('editor-error').hidden=true;try{await run();}catch(error){this.notice(error.message);}}
   async post(url,value){const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const data=await response.json();if(!response.ok)throw new Error(data.error);return data;}
   async load(restoreDraft=true){
     const response=await fetch('/api/editor'),data=await response.json();if(!response.ok)throw new Error(data.error);
-    this.profile=data.profile;this.data=data;this.catalogue=new Map(data.items.map(item=>[item.type,item]));this.dirty=false;
+    this.profile=data.profile;this.data=data;
+    if(!this.preferences){this.preferences=data.preferences;this.shell=this.preferences.shell;this.slot=this.preferences.slot;this.itemSort=this.preferences.item_sort;this.$('item-search').value=this.preferences.query;this.$('all-classes').checked=this.preferences.all_classes;}
+    if(restoreDraft&&data.draft){this.profile=data.draft;this.dirty=true;}
+    this.catalogue=new Map(data.items.map(item=>[item.type,item]));this.dirty=!!(restoreDraft&&data.draft);
     if(restoreDraft){try{const draft=JSON.parse(localStorage.getItem('starbreak-web-draft'));if(draft&&draft.revision===this.profile.revision){this.profile=await this.post('/api/validate',draft);this.dirty=true;}}catch(_){}}
-    else {localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;}
+    else {clearTimeout(this.draftTimer);await this.post('/api/draft',{discard:true,revision:this.profile.revision});localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;}
   }
-  async save(){if(this.dirty){this.profile=await this.post('/api/editor',this.profile);this.dirty=false;localStorage.removeItem('starbreak-web-draft');this.changed();}}
-  selectClass(shell){this.shell=shell;this.render();}
+  async save(){clearTimeout(this.draftTimer);if(this.dirty){this.profile=await this.post('/api/editor',this.profile);this.dirty=false;localStorage.removeItem('starbreak-web-draft');this.changed();}}
+  selectClass(shell){this.shell=shell;this.remember();this.render();}
   setMap(map){this.map=map;this.profile.settings.map=map;this.touch();this.settings();}
   replaceItem(type,slot=this.slot){
     if(this.row().items_.find(item=>item.slotpos_===slot)?.type_===type)return;
@@ -69,14 +93,15 @@ class WebEquipment {
     this.$('equipment-slots').replaceChildren(...this.data.slots.map(slot=>{
       const button=document.createElement('button'),item=this.row().items_.find(item=>item.slotpos_===slot.id),label=document.createElement('strong'),name=document.createElement('small');
       label.textContent=slot[this.language()];name.textContent=item?this.catalogue.get(item.type_)?.name||'#'+item.type_:this.t('空','Empty');
-      button.append(label,name);button.classList.toggle('selected',slot.id===this.slot);button.onclick=()=>{this.slot=slot.id;this.$('item-search').value='';this.render();};return button;
-    }));this.itemOptions();this.modifiers();this.projectiles();this.settings();
+      button.append(label,name);button.classList.toggle('selected',slot.id===this.slot);button.onclick=()=>{this.slot=slot.id;this.$('item-search').value='';this.remember();this.render();};return button;
+    }));this.itemOptions();this.modifiers();this.projectiles();this.settings();this.keyboard();
   }
   itemOptions(){
     const current=this.current(),query=this.$('item-search').value.toLowerCase().trim(),all=this.$('all-classes').checked;
     const values=[...this.catalogue.values()].filter(item=>(this.slot>=3840||item.slot===this.slot)&&
       (item.type===current?.type_||((!query||(item.type+' '+item.name).toLowerCase().includes(query))&&(all||this.slot>=3840||!item.usableby.length||item.usableby.includes(this.shell)))));
-    values.sort((a,b)=>Number(!a.usableby.includes(this.shell))-Number(!b.usableby.includes(this.shell))||a.type-b.type);
+    values.sort(this.itemSort==='name'?(a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),'en')||a.type-b.type:(a,b)=>a.type-b.type);
+    this.$('sort-items').textContent=this.itemSort==='name'?this.t('装备排序：首字母','Equipment sort: A–Z'):this.t('装备排序：ID','Equipment sort: ID');
     const options=values.map(item=>new Option(`${item.name} · #${item.type}`,item.type));if(this.slot!==256)options.unshift(new Option(this.t('— 空槽位 —','— Empty slot —'),0));
     this.$('editor-item').replaceChildren(...options);this.$('editor-item').value=current?.type_||0;
     const base=this.catalogue.get(current?.type_)?.base||[];this.$('base-stats').textContent=this.t('基础属性：','Base stats: ')+(base.map(boost=>this.statName(boost.stat_)+' '+boost.val_).join(' · ')||'—');
@@ -122,6 +147,8 @@ class WebEquipment {
       check.onchange=()=>{const rows=this.profile.settings.skip_intro||={};rows[this.map]=check.checked;this.touch();};
       toggle.append(check,caption);container.append(toggle);
       const hint=document.createElement('p');hint.className='hint';hint.textContent=this.t('新一局生效；直接从首领飞船停稳后开始','Applies to the next attempt; start with the boss ship in position');container.append(hint);
+      field(this.t('追踪弹延迟 (ms)','Homing missile delay (ms)'),this.profile.settings.missile_delay_ms?.[this.map]??275,0,500,value=>{const delays=this.profile.settings.missile_delay_ms||={};delays[this.map]=value===''?275:Number(value);},'1');
+      const delayHint=document.createElement('p');delayHint.className='hint';delayHint.textContent=this.t('瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms','Aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms');container.append(delayHint);
       const rows={front:['前面炮台','Front turrets'],upper:['上面炮台','Upper turrets'],lower:['下面炮台','Lower turrets']};
       for(const [key,names]of Object.entries(rows))field(this.t(...names),this.profile.turrets[key],0,key==='front'?10:20,value=>this.profile.turrets[key]=value===''?null:Number(value),'1');
       for(const key of ['upper','lower'])field(this.t(key==='upper'?'上方追踪炮台':'下方追踪炮台',key==='upper'?'Upper seeking turrets':'Lower seeking turrets'),this.profile.missiles[key],0,20,value=>this.profile.missiles[key]=value===''?null:Number(value),'1');

@@ -3,6 +3,9 @@
   'use strict';
   const socket = new WebSocket('ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/telemetry', 'binary');
   const keys = new Set();
+  let practiceKeys=STARBREAK_WEB_BOOT.keybindings;
+  const shortcuts=new PracticeShortcuts(window,practiceKeys,action=>parent.postMessage({type:'practice-shortcut',action},location.origin));
+  addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data.type==='practice-keys'){practiceKeys=event.data.keys;shortcuts.update(practiceKeys);}});
   let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '';
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
@@ -29,7 +32,7 @@
         alive:read(pointer,64)>0,vid:'browser-player',ammo:read(pointer,540),input:read(pointer,520)} : {...lastPlayer,hp:0,alive:false};
       lastPlayer = player;
       // ClientWorld.totalInput already reflects the player's own game bindings.
-      const interact = !!(read(world,668)&128);
+      const interact = practiceKeys.interact==='Auto'?!!(read(world,668)&128):keys.has(shortcuts.code(practiceKeys.interact));
       const documentState={};
       if(context.map){
         documentState.room_context={map:context.map,room_token:context.room_token,room_seed:read(world,200)>>>0};

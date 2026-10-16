@@ -1,6 +1,7 @@
 """Server-authoritative projectile physics for the live Boss controller."""
 
 import math
+from collections import deque
 import random
 
 from . import constants
@@ -131,7 +132,7 @@ class Projectile(object):
         self.vx=math.floor(math.cos(self.steering_angle)*self.steering_speed/quantum+1e-9)*quantum
         self.vy=math.floor(math.sin(self.steering_angle)*self.steering_speed/quantum+1e-9)*quantum
 
-    def _step_homing(self,dt,target):
+    def _step_homing(self,dt,target,lock_target=None):
         remaining=dt
         interval=self.rules.MISSILE_STEER_SECONDS
         while remaining>1e-9:
@@ -141,8 +142,11 @@ class Projectile(object):
                     tx,ty=target[0]-(self.x+self.w/2),target[1]-(self.y+self.h/2)
                     wanted=math.atan2(ty,tx)
                     delta=(wanted-self.steering_angle+math.pi)%(2*math.pi)-math.pi
-                    if (not self.target_locked and math.hypot(tx,ty)<=self.lock_range
-                            and abs(math.degrees(delta))<=self.lock_cone):
+                acquisition = lock_target if lock_target is not None else target
+                if not self.target_locked and acquisition is not None:
+                    lx, ly = acquisition[0]-(self.x+self.w/2), acquisition[1]-(self.y+self.h/2)
+                    error = (math.atan2(ly,lx)-self.steering_angle+math.pi)%(2*math.pi)-math.pi
+                    if math.hypot(lx,ly)<=self.lock_range and abs(math.degrees(error))<=self.lock_cone:
                         self.target_locked=True
                 if self.target_locked:
                     limit=math.radians(self.turn_rate)*interval
@@ -155,7 +159,7 @@ class Projectile(object):
             self.x+=self.vx*travel;self.y+=self.vy*travel
             remaining-=travel;self.steering_time_left-=travel
 
-    def step(self, dt, target=None, defer_expiry=False):
+    def step(self, dt, target=None, defer_expiry=False, lock_target=None):
         if not self.alive:
             return
         if self.prepared:
@@ -175,7 +179,7 @@ class Projectile(object):
             self._step_velocity_command(dt)
             return
         if self.homing:
-            self._step_homing(dt,target)
+            self._step_homing(dt,target,lock_target)
             return
         previous_vy = self.vy
         if self.kind in ('falling', 'bouncing', 'napalm') and not self.grounded:
@@ -210,6 +214,43 @@ class ProjectileSystem(object):
         self.projectiles = []
         self.next_objid = int(first_objid)
         self.random = random.Random(seed)
+        self.missile_delay_seconds = 0.
+        self.target_time = 0.
+        self.target_history = {}
+
+    def _record_targets(self, candidates, dt):
+        from ..participants import life_identity
+        self.target_time += dt
+        live = {life_identity(player): player for player in candidates}
+        # Life-scoped history must never leak across death, respawn or room changes.
+        self.target_history = {key: self.target_history.get(key, deque()) for key in live}
+        for key, player in live.items():
+            history = self.target_history[key]
+            sample = (self.target_time, player.center())
+            if history and history[-1][0] == self.target_time:
+                history[-1] = sample
+            else:
+                history.append(sample)
+            # Keep one sample before the maximum editable delay for interpolation.
+            while len(history) > 2 and history[1][0] <= self.target_time-.5:
+                history.popleft()
+
+    def _delayed_center(self, player):
+        from ..participants import life_identity
+        if self.missile_delay_seconds <= 0:
+            return player.center()
+        history = self.target_history.get(life_identity(player))
+        if not history:
+            return player.center()
+        at = self.target_time-self.missile_delay_seconds
+        before = history[0]
+        for after in history:
+            if after[0] >= at:
+                span = after[0]-before[0]
+                fraction = max(0., min(1., (at-before[0])/span)) if span > 0 else 0.
+                return tuple(a+(b-a)*fraction for a,b in zip(before[1],after[1]))
+            before = after
+        return history[-1][1]
 
     def allocate(self):
         self.next_objid += 1
@@ -314,6 +355,7 @@ class ProjectileSystem(object):
         'Advance every projectile; append player-damage events.'
         from ..participants import active_players, nearest, life_identity
         candidates = active_players(players if players is not None else (player,))
+        self._record_targets(candidates, dt)
         target = player.center() if player is not None and player.alive else None
         surfaces = [(item.objid, item.rect(), terrain_type(item))
                     for item in self.room.objects.values()
@@ -362,7 +404,13 @@ class ProjectileSystem(object):
                             for _objid, rect, kind in surfaces if kind == 1)):
                 steering = None
             fire_fuse = projectile.vid in ('hulk.dronebomb', 'hulk.ngrenade')
-            projectile.step(dt, steering, defer_expiry=fire_fuse)
+            lock_target = None
+            if projectile.vid == 'hulk.bossmissile' and selected is not None and steering is not None:
+                # Acquisition/visibility and collisions use the current roster;
+                # only the missile's steering direction uses historical position.
+                lock_target = steering
+                steering = self._delayed_center(selected)
+            projectile.step(dt, steering, defer_expiry=fire_fuse, lock_target=lock_target)
             if projectile.target_locked and selected is not None and projectile.target_player_key is None:
                 projectile.target_player_key = life_identity(selected)
             if not projectile.alive:

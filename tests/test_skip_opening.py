@@ -32,6 +32,7 @@ class SkipOpeningTests(unittest.TestCase):
         for map_id in ('hulk_normal','egy_hulk'):
             with self.subTest(map=map_id):
                 session = self.session(map_id,False)
+                self.assertEqual(session.projectiles.missile_delay_seconds,.275)
                 session.suppress_send = True
                 session.step(1/60)
                 self.assertEqual(session.phase,'intro')

@@ -46,7 +46,7 @@ if /i "%~1"=="--check-runtime" (
   set "SIMULATOR_EXIT=0"
   goto finish
 )
-"%SIMULATOR_PYTHON%" %SIMULATOR_PYTHON_ARGS% tools\play_hulk.py --sbpe "%~dp0.." --sbpe-direct %*
+"%SIMULATOR_PYTHON%" %SIMULATOR_PYTHON_ARGS% tools\launch.py native --sbpe "%~dp0.." --sbpe-direct %*
 set "SIMULATOR_EXIT=%errorlevel%"
 
 :finish

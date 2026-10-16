@@ -28,6 +28,7 @@ jobs:
         run: |
           node tests/test_web_bridge.js
           node tests/test_web_inventory.js
+          node tests/test_web_shortcuts.js
       - name: Build both editor languages
         if: runner.os == 'Windows'
         env:

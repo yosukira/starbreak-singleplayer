@@ -1,1 +1,19 @@
-{"map":"egy_hulk","skip_intro":{"egy_hulk":false,"hulk_normal":false}}
+{
+ "map": "egy_hulk",
+ "skip_intro": {
+  "egy_hulk": false,
+  "hulk_normal": false
+ },
+ "missile_delay_ms": {
+  "egy_hulk": 275,
+  "hulk_normal": 275
+ },
+ "balance": {
+  "egy_hulk": {
+   "spawn_rate": 0.66
+  },
+  "hulk_normal": {
+   "spawn_rate": 0.66
+  }
+ }
+}
