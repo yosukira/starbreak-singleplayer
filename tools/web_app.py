@@ -27,7 +27,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from localserver import game_settings, paths, pb_layout
-from tools.web_client import patch_client
+from tools.web_client import CLIENT_FILENAME, ensure_cached_client, patch_client
 from tools.web_workspace import Workspace, atomic_json
 from tools.web_text import map_names
 from tools import update
@@ -261,8 +261,15 @@ class Prototype:
                 while not stop.is_set():
                     try:
                         data = target.recv(262144)
-                    except (socket.timeout, ConnectionRefusedError):
+                    except socket.timeout:
                         continue
+                    except (ConnectionRefusedError, ConnectionResetError):
+                        # The browser can send before the live UDP bridge binds.
+                        # Windows reports its ICMP port-unreachable as 10054.
+                        # Keep the channel alive for the next player frame.
+                        if path == '/telemetry':
+                            continue
+                        raise
                     if not data:
                         break
                     ws.send(data.decode('utf8') if path == '/telemetry' else data)
@@ -293,7 +300,12 @@ class Prototype:
                                 self.received_damage += int(event.get('value', 0))
                             else:
                                 self.damage += int(event.get('value', 0))
-                    target.send(message.encode('utf8'))
+                    try:
+                        target.send(message.encode('utf8'))
+                    except (ConnectionRefusedError, ConnectionResetError):
+                        # An early UDP error may surface on send as well as recv.
+                        # Telemetry is a snapshot; the next frame replaces it.
+                        continue
                 elif isinstance(message, bytes):
                     target.sendall(message)
         except Exception:
@@ -412,14 +424,8 @@ def main():
         print('Browser runtime OK: Python ' + sys.version.split()[0] + ', WebSockets available')
         return
     if options.client is None:
-        options.client = ROOT / 'userdata/web/VR1574197275.mvmmoclient.js'
-        if not options.client.is_file():
-            print('Downloading the original 1.14.6 web client from starbreak.com...', flush=True)
-            with urlopen('https://www.starbreak.com/VR1574197275.mvmmoclient.js', timeout=60) as response:
-                data = response.read()
-            patch_client(data)  # Check exact supported version before caching.
-            options.client.parent.mkdir(parents=True, exist_ok=True)
-            options.client.write_bytes(data)
+        directory = options.data_dir or ROOT / 'userdata/web'
+        options.client = ensure_cached_client(directory / CLIENT_FILENAME)
     paths.ensure_user_data()
     prototype = Prototype(options)
     http = ThreadingHTTPServer(('127.0.0.1', options.port), Handler)

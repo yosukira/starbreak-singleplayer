@@ -1,7 +1,7 @@
 /* Local 1.14.6 browser feedback adapter. No account login or native injection. */
 (() => {
   'use strict';
-  const socket = new WebSocket('ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/telemetry', 'binary');
+  let socket;
   const keys = new Set();
   let practiceKeys=STARBREAK_WEB_BOOT.keybindings;
   const shortcuts=new PracticeShortcuts(window,practiceKeys,action=>parent.postMessage({type:'practice-shortcut',action},location.origin));
@@ -12,10 +12,16 @@
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
-  socket.onmessage = e => {
+  const receive = e => {
     try { const ack = JSON.parse(e.data); if(ack.map)context=ack; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
   };
+  const connect = () => {
+    socket = new WebSocket('ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/telemetry', 'binary');
+    socket.onmessage = receive;
+    socket.onclose = () => setTimeout(connect, 500);
+  };
+  connect();
   Module.webFrame = world => {
     try {
       frame++;

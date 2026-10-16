@@ -4,8 +4,52 @@ The original client and assets stay outside the source repository. Patches are
 applied in memory when served and never modify the user's source client.
 """
 import hashlib
+from http.client import HTTPException
+from pathlib import Path
+import tempfile
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 CLIENT_SHA256 = 'f6a285c504a5832a7a7f02d73769672a66bb46b7b1b60c1a136309aeb0727c8d'
+CLIENT_FILENAME = 'VR1574197275.mvmmoclient.js'
+
+
+def ensure_cached_client(path):
+    """Reuse a verified cache, or replace it only after a complete download."""
+    if path.is_file():
+        try:
+            patch_client(path.read_bytes())
+            return path
+        except ValueError:
+            print('Cached web client is incomplete or unsupported; downloading it again.', flush=True)
+    else:
+        print('Downloading the original 1.14.6 web client from starbreak.com...', flush=True)
+    for attempt in range(3):
+        try:
+            with urlopen('https://www.starbreak.com/' + CLIENT_FILENAME, timeout=60) as response:
+                data = response.read()
+            patch_client(data)
+            break
+        except HTTPError as error:
+            if error.code < 500 or attempt == 2:
+                raise
+        except (OSError, HTTPException, ValueError):
+            if attempt == 2:
+                raise
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as output:
+        temporary = Path(output.name)
+        try:
+            output.write(data)
+        except BaseException:
+            output.close()
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return path
 
 
 def patch_client(source):
