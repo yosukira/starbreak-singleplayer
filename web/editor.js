@@ -148,7 +148,7 @@ class WebEquipment {
       toggle.append(check,caption);container.append(toggle);
       const hint=document.createElement('p');hint.className='hint';hint.textContent=this.t('新一局生效；直接从首领飞船停稳后开始','Applies to the next attempt; start with the boss ship in position');container.append(hint);
       field(this.t('追踪弹延迟 (ms)','Homing missile delay (ms)'),this.profile.settings.missile_delay_ms?.[this.map]??275,0,500,value=>{const delays=this.profile.settings.missile_delay_ms||={};delays[this.map]=value===''?275:Number(value);},'1');
-      const delayHint=document.createElement('p');delayHint.className='hint';delayHint.textContent=this.t('瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms','Aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms');container.append(delayHint);
+      const delayHint=document.createElement('p');delayHint.className='hint';delayHint.textContent=this.t('首领与小怪共用；瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms','Shared by boss and enemy missiles; aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms');container.append(delayHint);
       const rows={front:['前面炮台','Front turrets'],upper:['上面炮台','Upper turrets'],lower:['下面炮台','Lower turrets']};
       for(const [key,names]of Object.entries(rows))field(this.t(...names),this.profile.turrets[key],0,key==='front'?10:20,value=>this.profile.turrets[key]=value===''?null:Number(value),'1');
       for(const key of ['upper','lower'])field(this.t(key==='upper'?'上方追踪炮台':'下方追踪炮台',key==='upper'?'Upper seeking turrets':'Lower seeking turrets'),this.profile.missiles[key],0,20,value=>this.profile.missiles[key]=value===''?null:Number(value),'1');

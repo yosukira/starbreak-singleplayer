@@ -405,9 +405,10 @@ class ProjectileSystem(object):
                 steering = None
             fire_fuse = projectile.vid in ('hulk.dronebomb', 'hulk.ngrenade')
             lock_target = None
-            if projectile.vid == 'hulk.bossmissile' and selected is not None and steering is not None:
+            if (projectile.homing and projectile.owner_type == 2
+                    and selected is not None and steering is not None):
                 # Acquisition/visibility and collisions use the current roster;
-                # only the missile's steering direction uses historical position.
+                # boss and mob missiles share the map's historical aiming delay.
                 lock_target = steering
                 steering = self._delayed_center(selected)
             projectile.step(dt, steering, defer_expiry=fire_fuse, lock_target=lock_target)

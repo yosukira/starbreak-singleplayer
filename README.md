@@ -73,7 +73,7 @@ SBPE/
 
 GY（Graveyard Boss）与 EGY（Elite Graveyard Boss）的 **跳过开局** 开关默认关闭，两图分别保存。开启并保存后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人与飞船进场。恢复默认配置会关闭此开关。
 
-**追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
+**追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。Boss 与小怪的追踪弹共用此设置。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
 
 点击右上角 **按键设置**，可以修改编辑器显示/隐藏、重开、四职业切换的快捷键和长按时间。互动键默认为 **Auto**，跟随游戏当前绑定；识别异常时，手动选择与游戏设置相同的键。移动和攻击等操作在游戏内设置。快捷键保存后生效，并保存在本机 `userdata/keybindings.json`。
 
@@ -169,7 +169,7 @@ To preview the editor on macOS, install Python 3.10+ with Tk and run `python3 to
 
 For GY / EGY Boss, **Skip opening** defaults to off and is saved per encounter. Enable it and save to begin the next attempt with the boss ship in position and platforms ready, skipping the opening robots and ship arrival. Restore defaults turns it off.
 
-**Homing missile delay (ms)** is saved separately for GY / EGY Boss: 0–500ms, default 275ms. It changes how old the player position used for steering is, not the 50ms steering interval or firing cooldown. 0ms uses the current position. Save to apply; Restore defaults returns both maps to 275ms.
+**Homing missile delay (ms)** is saved separately for GY / EGY Boss: 0–500ms, default 275ms. Boss missiles and enemy homing missiles share this setting. It changes how old the player position used for steering is, not the 50ms steering interval or firing cooldown. 0ms uses the current position. Save to apply; Restore defaults returns both maps to 275ms.
 
 ### Local files and troubleshooting
 

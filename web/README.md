@@ -46,7 +46,7 @@ bindings. Existing battles change when you start a new attempt.
 
 For GY / EGY Boss, **Skip opening** defaults to off and is saved per encounter. Enabling it skips the opening robots and ship arrival; the next attempt begins with the boss ship in position and platforms ready.
 
-**Homing missile delay (ms)** is saved separately for GY / EGY Boss: 0–500ms, default 275ms. It changes how old the player position used for steering is, not the 50ms steering interval or firing cooldown. 0ms uses the current position. Save to apply; Restore defaults returns both maps to 275ms.
+**Homing missile delay (ms)** is saved separately for GY / EGY Boss: 0–500ms, default 275ms. Boss missiles and enemy homing missiles share this setting. It changes how old the player position used for steering is, not the 50ms steering interval or firing cooldown. 0ms uses the current position. Save to apply; Restore defaults returns both maps to 275ms.
 
 **Export / Import** shares the browser profile as JSON. Import is a draft until
 saved. Browser exports use their own schema, separate from native editor exports.
@@ -134,7 +134,7 @@ Mac 双击 **start-web.command**。会自动打开 <http://127.0.0.1:8765>；若
 
 GY / EGY 首领的 **跳过开局** 默认关闭，两图分别保存。开启后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人及进场；恢复默认配置会关闭它。
 
-**追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
+**追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。Boss 与小怪的追踪弹共用此设置。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
 
 刷新会保留未保存草稿；多标签页发生保存冲突时，先导出草稿再重新载入。
 先点击画面获得焦点，场内操作沿用原版游戏自己的按键设置。

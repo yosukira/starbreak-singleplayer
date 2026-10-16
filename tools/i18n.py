@@ -78,8 +78,8 @@ EN = {
     '恢复原值': 'Reset to default',
     '恢复默认配置': 'Restore defaults',
     '追踪弹延迟 (ms)': 'Homing missile delay (ms)',
-    '瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms':
-        'Aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms',
+    '首领与小怪共用；瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms':
+        'Shared by boss and enemy missiles; aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms',
     '追踪弹延迟请填 0–500 的整数': 'Enter a homing missile delay from 0 to 500 milliseconds (whole numbers).',
     '跳过开局': 'Skip opening',
     '新一局生效；直接从首领飞船停稳后开始': 'Applies to the next attempt; start with the boss ship in position',

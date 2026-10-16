@@ -770,7 +770,7 @@ class GearEditor(object):
         ttk.Spinbox(self.missile_delay_row, from_=0, to=500, increment=1,
                     textvariable=self.missile_delay_var, width=7).pack(side='left', padx=(8, 12))
         ttk.Label(self.missile_delay_row,
-                  text=self.tr('瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms'),
+                  text=self.tr('首领与小怪共用；瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms'),
                   style='Hint.TLabel').pack(side='left')
 
         body = ttk.Frame(content, padding=(12, 4, 12, 8))
