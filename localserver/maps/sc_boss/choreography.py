@@ -190,7 +190,7 @@ def snapshot_geometry(course,slot,mode):
     return refs,at
 
 def append_layout(session,pieces,targets,at,head,minimum_s=1.5,envelopes=None,
-                  previous=None,following=None,individual=False):
+                  previous=None,following=None,individual=False,limit_speed=False):
     """Follow native speed envelopes; settle when the last piece arrives."""
     paths=[];longest=0.
     starts=at if isinstance(at,list) else [at]*len(pieces)
@@ -207,6 +207,14 @@ def append_layout(session,pieces,targets,at,head,minimum_s=1.5,envelopes=None,
     for n,(piece,(start,path,length)) in enumerate(zip(pieces,paths)):
         if envelopes is not None:
             native_points,own_duration=paced_points(start,path,envelopes[n],minimum_s=minimum_s)
+            if limit_speed:
+                # Plan the same durations that the runtime speed cap will use.
+                x,y=start
+                for point in native_points:
+                    tx,ty=point['xmp'],point['ymp']
+                    point['dt']=max(point['dt'],int(math.ceil(
+                        math.hypot(tx-x,ty-y)/(MAX_PLATFORM_SPEED_PX_S*256.)*1000.)))
+                    x,y=tx,ty
             piece['commands'].append(dict(t=round(starts[n],6),modifyprops=dict(property=41,
                 decoded=dict(waypoint=dict(points=native_points)))))
             arrival=max(arrival,sum(p['dt'] for p in native_points)/1000.)
@@ -222,11 +230,11 @@ def append_layout(session,pieces,targets,at,head,minimum_s=1.5,envelopes=None,
         arrivals.append(starts[n]+sum(p['dt'] for p in points)/1000.)
     return arrivals if individual else arrival
 
-def append_transfer(session,pieces,entries,envelopes,at,head,previous=None,following=None,individual=False):
+def append_transfer(session,pieces,entries,envelopes,at,head,previous=None,following=None,individual=False,limit_speed=False):
     """Reach the packet's pre-formation positions before applying its shape."""
     entries=[side_entry(p,(q['props']['wmp'],q['props']['hmp']),head,following) for q,p in zip(pieces,entries)] if following else entries
     return append_layout(session,pieces,entries,at,head,minimum_s=0.,envelopes=envelopes,
-                         previous=previous,following=following,individual=individual)
+                         previous=previous,following=following,individual=individual,limit_speed=limit_speed)
 
 def compile_course(session,plan,live_pieces=None,initial=True,exits=True):
     courses=session.pack.programs['courses'];first=courses[plan[0]['course']]
@@ -288,11 +296,11 @@ def compile_course(session,plan,live_pieces=None,initial=True,exits=True):
             travel=timing['assembled']-direction_arrival
         else:
             entry_times=append_transfer(session,pieces,entries,transfer_curves,cursor,head,
-                previous=previous_side,following=slot['side'],individual=True)
+                previous=previous_side,following=slot['side'],individual=True,limit_speed=mode=='nova')
             shape_times=append_layout(session,pieces,targets,entry_times,head,
-                                      minimum_s=0.,envelopes=shape_curves,individual=True)
+                                      minimum_s=0.,envelopes=shape_curves,individual=True,limit_speed=mode=='nova')
             direction_arrival=statistics.median(entry_times)
-            arrived=max(shape_times) if mode=='pachinko' else sorted(shape_times)[int((len(shape_times)-1)*.9)]
+            arrived=max(shape_times) if mode in ('pachinko','nova') else sorted(shape_times)[int((len(shape_times)-1)*.9)]
             travel=arrived-direction_arrival
         arrived=direction_arrival+travel
         attack_at=arrived+timing['lead_s']

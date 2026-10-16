@@ -1075,17 +1075,21 @@ class ScBossLiveSession:
             minimum=int((self.pack.entities.get('nova') or {}).get('single_min_radius_px',256)*256)
             if r<minimum:p=int(round(p*minimum/max(1,r)));r=minimum
             return [(r,p,cx,cy)]
-        targets=[]
-        for i in range(max(1,count)):
-            if i<len(base):
-                targets.append(base[i])
-            else:
-                r,p,cx,cy=targets[-1]
-                if len(targets)>=2:
-
-                    _r0,_p0,cx0,cy0=targets[-2]
-                    cx,cy=cx+(cx-cx0),cy+(cy-cy0)
-                targets.append((r*2,p*2,cx,cy))
+        targets=base[:count]
+        missing=count-len(targets)
+        if missing:
+            # Keep supplementation, but fill at an existing centre with normal
+            # configured radii rather than doubling each new ring outward.
+            r,p,cx,cy=base[-1]
+            rules=self.pack.entities.get('nova') or {}
+            low,high=sorted(rules.get('radius_px',[88,130]))
+            high=max(1.,min(high,r/256.-rules.get('gap_px',24)))
+            low=min(low,high)
+            for i in range(missing):
+                radius=int(round((high if missing==1 else
+                    high-(high-low)*i/(missing-1))*256))
+                period=max(1,int(round(p*radius/max(1,r))))
+                targets.append((radius,period,cx,cy))
         return targets
 
     def _assign_nova_rings(self,slot):
