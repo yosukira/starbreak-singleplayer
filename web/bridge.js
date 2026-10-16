@@ -38,7 +38,8 @@
         alive:read(pointer,64)>0,vid:'browser-player',ammo:read(pointer,540),input:read(pointer,520)} : {...lastPlayer,hp:0,alive:false};
       lastPlayer = player;
       // ClientWorld.totalInput already reflects the player's own game bindings.
-      const interact = practiceKeys.interact==='Auto'?!!(read(world,668)&128):keys.has(shortcuts.code(practiceKeys.interact));
+      const interact = !!(read(world,668)&128) ||
+        (practiceKeys.interact!=='Auto' && keys.has(shortcuts.code(practiceKeys.interact)));
       const documentState={};
       if(context.map){
         documentState.room_context={map:context.map,room_token:context.room_token,room_seed:read(world,200)>>>0};

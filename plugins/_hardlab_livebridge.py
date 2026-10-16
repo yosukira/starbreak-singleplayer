@@ -441,7 +441,15 @@ class LiveBridge(object):
         return self._key_states
 
     def interact_down(self, scancode=0):
-        """Use current native bindings on every map; an explicit key is a fallback override."""
+        """Use the game's combined keyboard/gamepad input, with a keyboard fallback.
+
+        ClientWorld.total is written before the player's action consumes input,
+        so controller presses still pass through the release/repress gate below.
+        Never infer a fixed controller button: Controls owns those bindings.
+        """
+        cw = self._current_world()
+        if cw is not None and int(cw.total) & (1 << INTERACT_INPUT):
+            return True
         if not scancode:
             try:
                 return bool(self.physical_input_mask() & (1 << INTERACT_INPUT))

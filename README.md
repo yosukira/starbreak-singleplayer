@@ -75,7 +75,7 @@ GY（Graveyard Boss）与 EGY（Elite Graveyard Boss）的 **跳过开局** 开�
 
 **追踪弹延迟 (ms)** 在 GY / EGY 分别保存，范围 0–500ms，默认 275ms。Boss 与小怪的追踪弹共用此设置。它决定转向时瞄准玩家多久以前的位置，0ms 表示当前位置；不改变 50ms 的转向更新间隔或发射 CD。保存后生效，恢复默认配置会将两图都恢复到 275ms。
 
-点击右上角 **按键设置**，可以修改编辑器显示/隐藏、重开、四职业切换的快捷键和长按时间。互动键默认为 **Auto**，跟随游戏当前绑定；识别异常时，手动选择与游戏设置相同的键。移动和攻击等操作在游戏内设置。快捷键保存后生效，并保存在本机 `userdata/keybindings.json`。
+点击右上角 **按键设置**，可以修改编辑器显示/隐藏、重开、四职业切换的快捷键和长按时间。互动始终识别游戏 Controls 中的键盘和手柄绑定，支持 Gen、传送等互动；默认为 **Auto**，手动选择的键作为额外键盘识别后备。移动和攻击等操作在游戏内设置。快捷键保存后生效，并保存在本机 `userdata/keybindings.json`。
 
 选择有明确弹速参数的武器后，可在 **子弹基础速度** 中修改每种弹体的基础速度（整数 `0–1000000`）。同一物品的全部实例共用此设置；原有速度词缀继续保留，存活时间不变，因此射程也可能改变。数值沿用原版武器参数，不统一标作 px/s；`0` 是零基础速度，不是恢复默认。点 **恢复原值** 可还原。
 
@@ -151,7 +151,7 @@ If the game path cannot be detected from SBPE configuration:
 
 The editor fits low-resolution screens such as 1366×768. Its contents scroll while the bottom action buttons remain visible; hold Shift while scrolling to view wide controls horizontally.
 
-Use **Keyboard settings** in the top-right corner to change editor shortcuts, restart and class-switch keys, and hold duration. Interaction defaults to **Auto**, following the game's current binding. If detection fails, select the same key as in the game settings. Movement and attack bindings use the game settings. Shortcut changes apply after saving and are stored locally in `userdata/keybindings.json`.
+Use **Keyboard settings** in the top-right corner to change editor shortcuts, restart and class-switch keys, and hold duration. Interaction always recognizes the keyboard and gamepad bindings in the game's Controls menu, including generators and teleports. **Auto** is the default; a manually selected key adds a keyboard detection fallback. Movement and attack bindings use the game settings. Shortcut changes apply after saving and are stored locally in `userdata/keybindings.json`.
 
 Weapons with an explicit speed parameter expose **Base projectile speed** for each projectile. Enter an integer from `0` to `1000000`. The setting applies to every instance of that item; existing speed modifiers remain, and lifetime is unchanged, so range may change. Values use the original weapon parameters and are not universally pixels per second. `0` means zero base speed, not the default. Use **Reset to default** to restore the original value.
 
