@@ -22,6 +22,9 @@ jobs:
           Expand-Archive dist/starbreak-singleplayer-windows.zip $destination
           $project = Join-Path $destination 'starbreak-singleplayer'
           Copy-Item tests (Join-Path $project 'tests') -Recurse
+          # Build-helper tests run in the extracted test fixture only.
+          New-Item -ItemType Directory -Path (Join-Path $project 'packaging') | Out-Null
+          Copy-Item packaging/runtime_dependencies.py (Join-Path $project 'packaging/runtime_dependencies.py')
           $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
           $env:PYTHONHOME = 'Z:\unavailable-python'
           $env:PYTHONPATH = 'Z:\unavailable-python'
