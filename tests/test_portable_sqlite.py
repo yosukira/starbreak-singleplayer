@@ -32,3 +32,17 @@ class PortableSqliteTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'standard library'):dependencies.verify_sqlite(root)
             (library/'lib-dynload/_sqlite3.cpython-312-darwin.so').write_bytes(b'test native extension')
             dependencies.verify_sqlite(root)
+
+
+class ConnectionLifetimeTests(unittest.TestCase):
+    def test_battle_and_client_connections_close_after_commit_and_rollback(self):
+        import tempfile,sqlite3
+        from localserver.battle_records import RecordStore
+        from tools.client_replay import ClientJournals
+        with tempfile.TemporaryDirectory() as directory:
+            for store in (RecordStore(directory),ClientJournals(directory)):
+                with store.connect() as db:db.execute('SELECT 1')
+                with self.assertRaises(sqlite3.ProgrammingError):db.execute('SELECT 1')
+                with self.assertRaisesRegex(RuntimeError,'rollback'):
+                    with store.connect() as db:raise RuntimeError('rollback')
+                with self.assertRaises(sqlite3.ProgrammingError):db.execute('SELECT 1')

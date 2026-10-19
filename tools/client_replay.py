@@ -11,6 +11,7 @@ import math
 import re
 from pathlib import Path
 import sqlite3
+from contextlib import contextmanager
 import uuid
 import zlib
 
@@ -97,8 +98,14 @@ class ClientJournals:
             db.execute('CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, header TEXT, sequence INTEGER, size INTEGER, complete INTEGER)')
             db.execute('CREATE TABLE IF NOT EXISTS chunks (id TEXT, sequence INTEGER, digest TEXT, data BLOB, PRIMARY KEY(id,sequence))')
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(self.path, timeout=5, isolation_level='IMMEDIATE')
+        connection = sqlite3.connect(self.path, timeout=5, isolation_level='IMMEDIATE')
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def begin(self, identifier, client, adapter, preferences, viewport):
         identifier = str(uuid.UUID(identifier))

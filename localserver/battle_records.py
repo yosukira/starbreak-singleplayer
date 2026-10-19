@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+from contextlib import contextmanager
 import threading
 import tempfile
 import time
@@ -175,8 +176,14 @@ class RecordStore:
             db.execute('CREATE TABLE IF NOT EXISTS records (id TEXT PRIMARY KEY, started REAL, updated REAL, owner INTEGER, document TEXT)')
             db.execute('CREATE INDEX IF NOT EXISTS records_started ON records(started DESC)')
 
+    @contextmanager
     def connect(self):
-        return sqlite3.connect(str(self.path), timeout=5)
+        connection = sqlite3.connect(str(self.path), timeout=5)
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def save(self, document, owner=None):
         document = validate(document)
