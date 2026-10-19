@@ -1,5 +1,13 @@
 (() => {
   const $=id=>document.getElementById(id);
+  const desktop=new URLSearchParams(location.search).get('desktop')==='1';
+  if(desktop){
+    document.body.classList.add('desktop-workspace');
+    document.querySelector('.main-tabs').prepend($('tab-equipment'));
+    $('tab-equipment').hidden=false;$('tab-guide').hidden=true;$('tab-battle').hidden=true;$('open-editor').hidden=true;
+    $('tab-equipment').onclick=()=>setTab('equipment');
+    $('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
+  }
   let language=localStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
@@ -47,14 +55,14 @@
     configure:()=>$('open-editor').click(),records:()=>setTab(true),battle:()=>setTab(false),language:setLanguage
   });
   function playbackControl(action,extra={}){
-    if(replayRecord?.platform==='native'){
+    if(replayRecord?.replay?.engine==='native'){
       void fetch('/api/native/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})}).then(async response=>{if(!response.ok)throw Error((await response.json()).error);}).catch(error=>{$('replay-progress').textContent=error.message;});return;
     }
     document.querySelector('iframe')?.contentWindow.postMessage({type:'replay-control',action,...extra},location.origin);
   }
   let nativePoll=0;
   async function pollNativeReplay(){
-    clearTimeout(nativePoll);if(replayRecord?.platform!=='native')return;
+    clearTimeout(nativePoll);if(replayRecord?.replay?.engine!=='native')return;
     try{
       const response=await fetch('/api/native/status',{cache:'no-store'});const value=await response.json();
       if(!response.ok)throw Error(value.error);
@@ -63,13 +71,13 @@
       }
       replayStatus({...value,state:value.paused&&value.state==='playing'?'paused':value.state,message:value.error||value.message,frame:value.seconds>0?1:0});
     }catch(error){$('replay-progress').textContent=error.message;}
-    if(replayRecord?.platform==='native')nativePoll=setTimeout(pollNativeReplay,400);
+    if(replayRecord?.replay?.engine==='native')nativePoll=setTimeout(pollNativeReplay,400);
   }
   function updatePause(){ $('replay-pause').textContent=replayPaused?t('继续','Resume'):t('暂停','Pause'); }
   function replayStatus(data){
     lastReplayState=data;
     const state=data.state;
-    if(replayRecord?.platform==='native'&&state==='preparing'){
+    if(replayRecord?.replay?.engine==='native'&&state==='preparing'){
       $('status').textContent=t('正在准备客户端资源','Preparing native-client assets');
       $('replay-progress').textContent=`${data.assets_loaded||0} / ${data.assets_total||0}`;
       $('replay-takeover').disabled=true;return;
@@ -107,7 +115,7 @@
   $('replay-seek').onchange=event=>{
     seekDragging=false;if(!replayRecord||busy)return;
     const target=Number(event.target.value),current=lastReplayState?.seconds||0;
-    if(replayRecord.platform==='native')playbackControl('seek',{seconds:target,paused:replayPaused});
+    if(replayRecord.replay?.engine==='native')playbackControl('seek',{seconds:target,paused:replayPaused});
     else if(target<current||lastReplayState?.state==='ended')void startReplay(replayRecord,target,replayPaused,Number($('replay-speed').value));
     else playbackControl('seek',{seconds:target,paused:replayPaused});
   };
@@ -118,10 +126,17 @@
   $('replay-takeover').onclick=()=>playbackControl('takeover');
   function setTab(view){
     if(loading)return;
-    activeTab=view===true?'records':view==='guide'?'guide':'battle';
+    activeTab=view==='equipment'&&desktop?'equipment':view===true?'records':view==='guide'?'guide':'battle';
     if(activeTab!=='battle'&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
     document.querySelector('.game-layout').hidden=activeTab!=='battle';
     $('guide-page').hidden=activeTab!=='guide';
+    if(desktop){
+      const panel=$('equipment-dialog');
+      if(activeTab==='equipment'){editor.render();if(!panel.open)panel.show();}
+      else if(panel.open)panel.close();
+      $('tab-equipment').classList.toggle('selected',activeTab==='equipment');
+      $('tab-equipment').setAttribute('aria-pressed',String(activeTab==='equipment'));
+    }
     for(const name of ['guide','battle','records']){
       $('tab-'+name).classList.toggle('selected',activeTab===name);
       $('tab-'+name).setAttribute('aria-pressed',String(activeTab===name));
@@ -158,6 +173,7 @@
   let shortcutFingerprint='';
   const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy||!!loading);
   function shortcut(action){
+    if(desktop)return; // Native shortcuts are owned by the shared host/game.
     if(action.startsWith('zoom_')){if(activeTab==='battle'&&!$('equipment-dialog').open)document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(action==='zoom_in'?1:-1);return;}
     if(action==='editor'){if($('equipment-dialog').open)$('equipment-dialog').close();else $('open-editor').click();return;}
     if(busy||loading||activeTab!=='battle'||$('equipment-dialog').open||!liveMap)return;
@@ -168,7 +184,7 @@
     if(!editor.profile)return;
     if(editor.preferences){const signature=JSON.stringify(editor.preferences.keys);if(signature!==shortcutFingerprint){shortcutFingerprint=signature;shortcuts.update(editor.preferences.keys);document.querySelector('iframe')?.contentWindow.postMessage({type:'practice-keys',keys:editor.preferences.keys},location.origin);}}
     if(catalogue.length){$('map').value=editor.map;editor.mapTitle=title(catalogue.find(map=>map.id===editor.map));}
-    $('draft-state').textContent=editor.dirty?t('修改尚未保存','Unsaved changes'):t('网页配装已保存','Browser loadout saved');
+    $('draft-state').textContent=editor.dirty?t('修改尚未保存','Unsaved changes'):t('配装已保存','Loadout saved');
   }
   function setLanguage(value){
     if(!['en','zh','zh-affixes'].includes(value))return;
@@ -183,12 +199,24 @@
   }
   function updateLocks(){
     const locked=busy||!!loading;
-    for(const id of ['open-editor','tab-guide','tab-battle','tab-records','language','start','close-editor','replay-back','replay-restart'])$(id).disabled=locked;
+    for(const id of ['tab-equipment','open-editor','tab-guide','tab-battle','tab-records','language','start','close-editor','replay-back','replay-restart'])$(id).disabled=locked;
     document.querySelector('header')?.setAttribute('aria-busy',String(locked));
     for(const id of ['equipment-dialog','replay-controls','stage'])$(id).inert=locked;
   }
   $('start').onclick=()=>startEncounter($('map').value,editor.shell,true);
   async function startEncounter(map,shell,saveDraft){
+    if(desktop){
+      if(busy)return;setBusy(true);
+      try{
+        if(saveDraft)await editor.save();
+        await editor.post('/api/start',{map,shell});
+        replayRecord=null;lastReplayState=null;$('replay-controls').hidden=true;
+        editor.notice(t('已在游戏客户端开始。','Started in the game client.'));
+        window.pywebview?.api?.show_native_game?.();
+      }catch(error){editor.notice(error.message);}
+      finally{setBusy(false);}
+      return;
+    }
     if(busy)return;battleEnded=false;setTab(false);setBusy(true);$('error').hidden=true;$('editor-error').hidden=true;$('status').textContent=t('正在启动…','Starting…');
     showLoading('starting');
     try{
@@ -214,10 +242,11 @@
   async function startReplay(record,seek=0,paused=false,speed=1){
     if(busy)return;
     battleEnded=false;
+    if(desktop)$('tab-battle').hidden=false;
     setBusy(true);setTab(false);$('error').hidden=true;
     showLoading('replay');
     try{
-      if(record.platform==='native'){
+      if(record.replay?.engine==='native'){
         const response=await fetch('/api/native/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'watch',record:record.id})});
         if(!response.ok)throw Error((await response.json()).error);
         replayRecord=record;replayPaused=false;lastReplayState=null;
@@ -291,8 +320,6 @@
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
     finally{if(loading?.phase==='environment')finishLoading();setBusy(false);}
   }
-  if(new URLSearchParams(location.search).get('desktop')==='1'){
-    $('open-editor').onclick=()=>{void globalThis.pywebview?.api.show_editor();};
-  }
-  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');if(view==='records'||view==='guide'){showLoading(null);setTab(view==='records'?true:'guide');}});
+  if(desktop)$('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
+  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:'equipment');else if(view==='records'||view==='guide')setTab(view==='records'?true:'guide');});
 })();

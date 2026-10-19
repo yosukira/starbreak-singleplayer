@@ -1,8 +1,8 @@
-"""Native battle-record window sharing the browser UI and the existing store.
+"""One native equipment/history window using the shared browser components.
 
-Optional, pinned viewer dependencies are cached in userdata on first use. No
-package manager or executable installer is run, and the original Tk editor
-keeps its own workflow and configuration files.
+Pinned viewer dependencies are bundled or cached in userdata on first use. No
+package manager or executable installer is run. Equipment and shortcuts write
+the native player's existing configuration files.
 """
 import argparse
 import hashlib
@@ -27,6 +27,9 @@ def alive(pid):
     if not pid:return False
     if os.name=='nt':
         import ctypes
+        ctypes.windll.kernel32.OpenProcess.restype=ctypes.c_void_p
+        ctypes.windll.kernel32.GetExitCodeProcess.argtypes=(ctypes.c_void_p,ctypes.c_void_p)
+        ctypes.windll.kernel32.CloseHandle.argtypes=(ctypes.c_void_p,)
         handle=ctypes.windll.kernel32.OpenProcess(0x1000,False,int(pid))
         if not handle:return False
         try:
@@ -37,12 +40,15 @@ def alive(pid):
     except OSError:return False
 
 
-def install(directory, progress=lambda *_:None):
-    if sys.version_info[:2]!=(3,12):raise ValueError('The native records window requires the bundled Python 3.12 runtime')
-    target=('windows-x64' if os.name=='nt' else 'macos-arm64' if platform.machine()=='arm64' else 'macos-x64')
-    if os.name!='nt' and sys.platform!='darwin':raise ValueError('Native records window supports Windows and macOS')
+def install(directory, progress=lambda *_:None, target=None, check_python=True, bundled=True):
+    if check_python and sys.version_info[:2]!=(3,12):raise ValueError('The native records window requires the bundled Python 3.12 runtime')
+    if target is None:
+        target=('windows-x64' if os.name=='nt' else 'macos-arm64' if platform.machine()=='arm64' else 'macos-x64')
+        if os.name!='nt' and sys.platform!='darwin':raise ValueError('Native records window supports Windows and macOS')
     manifest=json.loads((ROOT/'data/desktop-view-runtime.json').read_text())[target]
     digest=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest()[:16]
+    packaged=ROOT/'python/desktop-view'/('runtime-'+target+'-'+digest)
+    if bundled and (packaged/'.ready').is_file() and (packaged/'webview/__init__.py').is_file():return packaged
     destination=Path(directory)/('runtime-'+target+'-'+digest)
     if (destination/'.ready').is_file():return destination
     from tools.web_workspace import atomic_json
@@ -95,16 +101,24 @@ def ports():
         for sock in sockets:sock.close()
 
 
-def main():
+def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--owner-pid',type=int,required=True)
     parser.add_argument('--directory',type=Path,default=ROOT/'userdata/desktop-records')
     parser.add_argument('--records-dir',type=Path,default=ROOT/'userdata/battles')
     parser.add_argument('--check-runtime',action='store_true')
-    options=parser.parse_args()
+    parser.add_argument('--show',action='store_true')
+    options=parser.parse_args(argv)
     folder=options.directory;folder.mkdir(parents=True,exist_ok=True)
     from tools.web_workspace import atomic_json
     status=folder/'window-status.json'
+    if not options.check_runtime:
+        try:
+            previous=json.loads(status.read_text())
+            if previous.get('state') not in ('closed','failed') and alive(previous.get('pid')):
+                if options.show:atomic_json(folder/'show.json',{'at':time.time()})
+                return
+        except (OSError,ValueError):pass
     def report(**value):atomic_json(status,dict(pid=os.getpid(),**value))
     process=None;url=None
     try:
@@ -120,7 +134,7 @@ def main():
         from tools.web_client import CLIENT_FILENAME,ensure_cached_client
         shared_client=ROOT/'userdata/web'/CLIENT_FILENAME
         client=ensure_cached_client(shared_client if shared_client.is_file() else folder/'web'/CLIENT_FILENAME)
-        command=[sys.executable,'-u','-m','tools.web_app','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
+        command=[sys.executable,'-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
         process=subprocess.Popen(command,cwd=ROOT,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         url='http://127.0.0.1:'+str(http)
         deadline=time.monotonic()+120
@@ -134,9 +148,12 @@ def main():
                 if time.monotonic()>deadline:raise RuntimeError('Local records service timed out')
                 time.sleep(.2)
         class Bridge:
-            def show_editor(self):
-                report(state='editor');window.hide()
-            def show_native_game(self):window.minimize()
+            def show_native_game(self):
+                nonlocal visible
+                visible=False;window.hide()
+            def hide_window(self):
+                nonlocal visible
+                visible=False;window.hide()
         webview.settings['ALLOW_DOWNLOADS']=True
         width,height=1280,800
         if sys.platform=='darwin':
@@ -149,15 +166,35 @@ def main():
             bounds=wintypes.RECT()
             if ctypes.windll.user32.SystemParametersInfoW(48,0,ctypes.byref(bounds),0):
                 width=min(width,max(640,bounds.right-bounds.left-40));height=min(height,max(480,bounds.bottom-bounds.top-50))
-        window=webview.create_window('StarBreak · Battle records',url+'/?view=records&desktop=1',js_api=Bridge(),width=width,height=height,min_size=(640,480),background_color='#0b141d')
+        window=webview.create_window('StarBreak',url+'/?desktop=1',js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d')
         stopped=threading.Event()
+        visible=options.show
+        def toggle():
+            nonlocal visible
+            visible=not visible
+            if visible:window.show();window.restore()
+            else:window.hide()
+        def closing():
+            nonlocal visible
+            if not stopped.is_set():
+                visible=False;window.hide();return False
+        window.events.closing+=closing
         def monitor():
-            stamp=0
-            while not stopped.wait(.4):
-                if not alive(options.owner_pid):window.destroy();return
+            nonlocal visible
+            stamp=0;held={};next_keys=0;keys=()
+            while not stopped.wait(.04):
+                if not alive(options.owner_pid):stopped.set();window.destroy();return
                 control=folder/'show.json'
                 if control.is_file() and control.stat().st_mtime_ns!=stamp:
-                    stamp=control.stat().st_mtime_ns;window.show();window.restore();report(state='ready')
+                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore();report(state='ready')
+                if os.name=='nt':
+                    from plugins import _practice_keybindings as bindings
+                    if time.monotonic()>=next_keys:
+                        keys=bindings.editor_keys(bindings.load(ROOT/'userdata/keybindings.json'));next_keys=time.monotonic()+.5
+                    for key in keys:
+                        down=bool(ctypes.windll.user32.GetAsyncKeyState(key)&0x8000)
+                        if down and not held.get(key):toggle()
+                        held[key]=down
         window.events.closed+=lambda:stopped.set()
         report(state='ready')
         webview.start(monitor,private_mode=False,storage_path=str(folder/'browser'))

@@ -412,9 +412,10 @@
   const boot=globalThis.STARBREAK_WEB_BOOT?.replay;
   if(!boot)return;
   const playback=boot.mode==='play';
-  const replay=new ClientReplay({module:Module,mode:playback?'play':'record',document:boot.document,takeoverAllowed:boot.takeover!==false,
+  const ReplayEngine=boot.document?.schema==='starbreak-native-journal-v1'?StarBreakNativeReplay(ClientReplay):ClientReplay;
+  const replay=new ReplayEngine({module:Module,mode:playback?'play':'record',document:boot.document,takeoverAllowed:boot.takeover!==false,
     stage:chunk=>StarBreakReplayStorage.stage(boot.id,chunk),
-    save:chunk=>StarBreakReplayStorage.deliver(boot.id,chunk),notice:status=>{
+      save:chunk=>StarBreakReplayStorage.deliver(boot.id,chunk),notice:status=>{
       const element=document.getElementById('loading');
       if(status.state==='playing')element.hidden=true;
       else if(status.state==='closed')element.hidden=true;
@@ -440,7 +441,7 @@
   const warmTimer=playback?setInterval(async()=>{
     if(warming||pendingTakeover||!replay.canTakeOver())return;
     warming=true;
-    try{await fetch('/api/replay/warm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:boot.id,record:boot.record,cursor:replay.cursor,player:replay.playerState(replay.world)}),signal:AbortSignal.timeout(60000)});}catch(_){}
+    try{await fetch('/api/replay/warm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:boot.id,record:boot.record,cursor:replay.cursor,player:replay.playerState(replay.world),...(replay.runnerInfo?{runner:replay.runnerInfo}:{})}),signal:AbortSignal.timeout(60000)});}catch(_){}
     finally{warming=false;}
   },400):null;
   async function takeOver(tap=null){
@@ -455,7 +456,7 @@
     replay.handoffPending=true;
     parent.postMessage({type:'replay-status',state:'taking-over'},location.origin);
     try{
-      const branch=await prepareTakeover({id:boot.id,record:boot.record,cursor:replay.cursor,player:replay.playerState(replay.world)},
+      const branch=await prepareTakeover({id:boot.id,record:boot.record,cursor:replay.cursor,player:replay.playerState(replay.world),...(replay.runnerInfo?{runner:replay.runnerInfo}:{})},
         {notice:progress=>parent.postMessage({type:'replay-status',state:'taking-over',progress},location.origin)});
       const transport=new replay.NativeSocket('ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/takeover?token='+encodeURIComponent(branch.token),'binary');
       transport.binaryType='arraybuffer';

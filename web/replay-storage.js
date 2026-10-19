@@ -17,7 +17,7 @@
       this.storage.setItem(key,value);
     }
     async send(id,chunk){
-      await this.request({id,sequence:chunk.sequence,ops:chunk.ops,end:chunk.end});
+      await this.request({id,sequence:chunk.sequence,ops:chunk.ops,end:chunk.end,...(chunk.native===true?{native:true}:{})});
       const key=this.key(id,chunk.sequence);
       if(this.storage.getItem(key)===JSON.stringify(chunk))this.storage.removeItem(key);
     }

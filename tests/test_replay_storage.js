@@ -15,6 +15,10 @@ function storage(){const rows=new Map();return {get length(){return rows.size;},
   assert.deepEqual(await newPage.recover(),{saved:2,pending:0});
   assert.deepEqual(uploaded.map(d=>[d.id,d.sequence,d.end]),[[id,0,false],[id,1,true]]);
   assert.equal(disk.length,0);
+  const nativeChunk={...chunk,native:true};newPage.stage(id,nativeChunk);
+  const nativeUploads=[];
+  await new ReplayStorage({storage:disk,request:async d=>nativeUploads.push(d)}).recover();
+  assert.equal(nativeUploads[0].native,true,'A portable native chunk retains its journal format after unload recovery');
   // A failed sequence blocks only that attempt, preserving ordering while
   // allowing another finished battle to recover in the same browser session.
   newPage.stage(id,chunk);newPage.stage(id,{sequence:1,ops:[],end:true});newPage.stage(other,{sequence:0,ops:[],end:true});

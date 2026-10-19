@@ -100,6 +100,25 @@ class NativeExecutionTests(unittest.TestCase):
 
 
 class NativeJournalTests(unittest.TestCase):
+    def test_portable_branch_preserves_engine_history_and_cross_end_bundle(self):
+        with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+            native,identifier,tape=tape_document(source)
+            original=native.read(identifier);cursor=original['ops'].index(['loop',1])+1
+            fork=native.fork(identifier,cursor)
+            runner=dict(client='c'*64,adapter='d'*64)
+            native.mark_runner(fork['id'],original,cursor,runner)
+            native.append(fork['id'],dict(sequence=fork['sequence'],ops=[],end=True))
+            document=native.read(fork['id'])
+            self.assertEqual(document['runners'],[dict(cursor=cursor,engine='browser',**runner)])
+            self.assertNotIn('runners',native.read(identifier))
+            records=RecordStore(source);entry=sample();entry.update(platform='web',replay=dict(id=fork['id'],format='native'))
+            records.save(entry);_,blob=records.export([entry['id']])
+            dest=RecordStore(target);dest.import_bytes(blob)
+            _,again=dest.export([entry['id']])
+            self.assertEqual(read_battle(again)[1]['runners'],document['runners'])
+            altered=copy.deepcopy(document);altered['runners'][0]['cursor']-=1
+            with self.assertRaises(ValueError):globals()['document'](altered)
+
     def test_atomic_chunks_native_web_isolation_and_forked_continuation(self):
         with tempfile.TemporaryDirectory()as directory:
             native,identifier,recorded=tape_document(directory)

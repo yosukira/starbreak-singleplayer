@@ -164,6 +164,9 @@ class NativePlayerTests(unittest.TestCase):
         self.assertTrue(player.requested);checkpoint=player.checkpoint();self.assertEqual(checkpoint['player'],target.capture.state())
         target.now=70000;chunks=[];player.commit(chunks.append,0)
         self.assertEqual(player.phase,'live');self.assertEqual(target.capture.clock_offset,340-70000)
+        self.assertFalse(player.requested)
+        self.assertFalse(player.paused)
+        self.assertEqual(player.speed,1.)
         with self.assertRaises(ValueError):player.control(dict(action='seek',seconds=.1))
         player=target.play(document)
         # Backward seek rebuilds through the original CreateWorld dispatcher.

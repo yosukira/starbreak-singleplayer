@@ -216,6 +216,9 @@ class Takeover:
                     self.recorder.tick(0)
                     self.recorder.document['parent'] = dict(id=self.source['id'],at=self.parent_seconds)
                     self.recorder.document['replay'] = dict(id=self.branch['id'])
+                    if getattr(self,'portable_runner',False):
+                        self.recorder.document['platform']='web'
+                        self.recorder.document['replay']['format']='native'
                     if self.recorder.player_acted:
                         self.recorder.store.save(self.recorder.document)
                 except Exception as error:

@@ -411,7 +411,7 @@ class LiveBridge(object):
         if self.health_metrics is None and self.health_error is None:
             try:
                 try:from ._native_battle_metrics import create
-                except (ImportError,ValueError):from _native_battle_metrics import create
+                except (ImportError,ValueError,SystemError):from _native_battle_metrics import create
                 self.health_metrics=create(self.ffi,self.lib,self.refs)
             except Exception as error:
                 self.health_error=type(error).__name__

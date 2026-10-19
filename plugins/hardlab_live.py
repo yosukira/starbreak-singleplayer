@@ -111,7 +111,7 @@ class Plugin(PluginBase):
                 self.native_capture=recorder.create(ffi,lib,self.refs)
                 if self.native_capture is not None:self.bridge.feedback_sink=self.native_capture.divert_feedback
             except Exception as error:
-                LOG.warning('native recording unavailable: %s',type(error).__name__)
+                LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)
 
     def _enable(self):
         try:
@@ -163,6 +163,9 @@ class Plugin(PluginBase):
                 self.native_capture.before()
             except Exception as error:
                 self.native_capture.tape.fail(error)
+                if not getattr(self,'_replay_error_reported',False):
+                    LOG.exception('native replay update failed')
+                    self._replay_error_reported=True
         if self.session and self.active:
             try:self.bridge.sample_interaction_target()
             except Exception:

@@ -28,8 +28,10 @@ class NativePlayback:
             action=value.get('action')
             if action=='watch':
                 record=self.records.get(str(uuid.UUID(value['record'])))
-                if record['platform']!='native':raise ValueError('This recording needs the browser engine; native interchange is not verified')
+                if record.get('replay',{}).get('format',record['platform'])!='native':raise ValueError('This recording uses the browser replay engine')
                 document=self.clients.read(record['replay']['id'])
+                from tools.portable_replay import supported_runners
+                supported_runners(document)
                 if document['client']!=self.client or document['adapter']!=adapter_digest():
                     raise ValueError('Native replay requires the matching checked client and replay adapter')
                 if not any(row[0]=='message' and row[1]==10 for row in document['ops']):

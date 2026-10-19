@@ -153,7 +153,8 @@ def export_battle(store, document):
     if not attempt:
         return metadata,len(metadata)
     from tools.native_replay import NativeJournals
-    clients=(NativeJournals if document.get('platform')=='native'else ClientJournals)(store.directory)
+    native_format=document.get('replay',{}).get('format',document.get('platform'))=='native'
+    clients=(NativeJournals if native_format else ClientJournals)(store.directory)
     try:client=clients.read(attempt)
     except ValueError:
         return metadata,len(metadata)
@@ -177,7 +178,7 @@ def read_battle(blob):
             if value.get('encoding')!='wire-clear-v1':raise ValueError('Unsupported replay compression')
             client=transform_wire(client)
         from plugins._native_replay import SCHEMA as NATIVE_SCHEMA
-        if (client['schema']==NATIVE_SCHEMA)!=(record['platform']=='native'):
+        if (client['schema']==NATIVE_SCHEMA)!=(record['replay'].get('format',record['platform'])=='native'):
             raise ValueError('Battle and recording editions do not match')
         server=server_document(value['server']) if 'server' in value else None
         if record.get('replay',{}).get('id')!=client['id'] or (server and server['attempt']!=client['id']):

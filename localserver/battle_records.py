@@ -141,6 +141,9 @@ def validate(value):
     replay_id = replay.get('id')
     if replay_id is not None:
         result['replay']['id'] = str(uuid.UUID(replay_id))
+    if 'format' in replay:
+        if replay['format'] not in ('native','web'):raise ValueError('Invalid replay format')
+        result['replay']['format']=replay['format']
     if value.get('parent') is not None:
         parent = value['parent']
         result['parent'] = dict(id=str(uuid.UUID(parent['id'])), at=number(parent['at'], 0, 7*86400))
@@ -316,7 +319,7 @@ class RecordStore:
                         # Independent namespace; never replace an existing local
                         # recording because a shared file reuses its attempt ID.
                         identifier=str(uuid.uuid4());client=dict(client,id=identifier)
-                        document['replay']=dict(id=identifier)
+                        document['replay']=dict(id=identifier,**({'format':'native'} if client['schema']=='starbreak-native-journal-v1' and document['platform']=='web' else {}))
                         chunks=list(client_chunks(client));total=sum(c[3] for c in chunks)
                         if total>MAX_BYTES:raise ValueError('Client recording exceeds 128 MB')
                         header={k:v for k,v in client.items() if k!='ops'}

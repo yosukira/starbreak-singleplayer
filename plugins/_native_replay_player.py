@@ -8,7 +8,7 @@ import time
 
 try:
     from ._native_replay import NativeTape,validate_operations,CALLS
-except (ImportError,ValueError):
+except (ImportError,ValueError,SystemError):  # Embedded PyPy 3.5 top-level load
     from _native_replay import NativeTape,validate_operations,CALLS
 
 
@@ -17,6 +17,11 @@ class NativePlayer:
         ops=validate_operations(document['ops'])
         if not any(row[0]=='message' and row[1]==10 for row in ops):
             raise ValueError('This recording predates native world bootstrap capture')
+        import base64
+        descriptions=getattr(capture,'descriptions',set())
+        if any((row[1],base64.b64decode(row[2])) not in descriptions
+               for row in ops if row[0]=='message' and row[1] in (16,17)):
+            raise ValueError('Native replay requires matching item and character descriptions')
         self.capture,self.document=capture,document
         self.keyboard,self.post_frame,self.clock=keyboard,post_frame,clock
         self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[]
@@ -143,6 +148,7 @@ class NativePlayer:
         real=int(self.capture.functions['clock'].original())
         self.capture.clock_offset=((clocks[-1]-real+2**31)%2**32-2**31) if clocks else 0
         tape.continue_recording(save,sequence);self.phase='live'
+        self.requested=False;self.paused=False;self.speed=1.
         return checkpoint
 
     def status(self):

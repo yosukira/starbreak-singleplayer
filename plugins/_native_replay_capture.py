@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 try:
     from ._native_replay import NativeTape,MESSAGES
     from ._native_replay_hooks import NativeHook, NativeHookGroup
-except (ImportError, ValueError):
+except (ImportError, ValueError, SystemError):  # PyPy 3.5 top-level relative import
     from _native_replay import NativeTape,MESSAGES
     from _native_replay_hooks import NativeHook, NativeHookGroup
 
@@ -40,6 +40,19 @@ ABI=(
     ('ServerConnection::sendMessage','void',('int',),'thiscall','ack'),
     ('GameClient::handleKeyboardEvent','void',('int','int'),'thiscall','keyboard'),
 )
+
+
+def read_control(response,limit=272*1024*1024):
+    # Embedded PyPy's HTTP read(n) reserves n bytes even for a tiny reply.
+    # A 272 MB reservation on each idle poll can exhaust the 32-bit client.
+    chunks=[];size=0
+    while True:
+        chunk=response.read(min(64*1024,limit+1-size))
+        if not chunk:break
+        size+=len(chunk)
+        if size>limit:raise ValueError('Native playback document is too large')
+        chunks.append(chunk)
+    return b''.join(chunks)
 
 
 class ChunkDelivery:
@@ -95,9 +108,8 @@ class ChunkDelivery:
                     self.last_poll=time.monotonic()
                     request=Request(self.url[:-len('/chunks')]+'/control?serial='+str(self.serial),headers={'Authorization':'Bearer '+self.token})
                     with urlopen(request,timeout=3) as response:
-                        raw=response.read(272*1024*1024+1)
-                    if len(raw)>272*1024*1024:raise ValueError('Native playback document is too large')
-                    value=json.loads(raw)
+                        raw=read_control(response)
+                    value=json.loads(raw.decode('utf8'))
                     if value.get('play'):self.serial=value['serial']
                     self.incoming.put_nowait(value)
             except Exception as error:self.control_error=type(error).__name__
@@ -139,6 +151,7 @@ class NativeCapture:
         self.ffi,self.refs=ffi,refs;self.frames=0;self.owner=threading.get_ident();self.engine_elapsed=0
         self.player=None;self.driving=False;self.clock_offset=0;self.functions={};self.keyboard_depth=0
         self.serial=0;self.branch=None;self.packet_buffer=bytearray();self.control_error=None
+        self.descriptions=set()
         self.last_ack=None;self.bridge_documents=[]
         self.resource_depth=0;self.pending_assets=0
         self.tape=NativeTape(save=save,notice=notice)
@@ -185,11 +198,20 @@ class NativeCapture:
                 if not 0<size<=262144:raise ValueError('Invalid native message size')
                 payload=bytes(self.ffi.buffer(args[2],size))
                 def receive():
+                    if self.tape.mode=='play' and message in (16,17):
+                        if (message,payload) not in self.descriptions:
+                            raise ValueError('Native replay requires matching item and character descriptions')
+                        # Retail libraries reject duplicate descriptions. The
+                        # exact bytes are already installed by this client's
+                        # original login; replay the boundary without adding
+                        # the same global catalogue entry a second time.
+                        return None
                     if message!=21:return original(*args)
                     self.pending_assets+=1;self.resource_depth+=1
                     try:return original(*args)
                     finally:self.resource_depth-=1
                 result=self.tape.call(['message',message,base64.b64encode(payload).decode('ascii')],receive)
+                if message in (16,17):self.descriptions.add((message,payload))
                 if message==10:
                     self.sync_refs()
                     if player is not None:player.world_created=True
@@ -273,9 +295,12 @@ class NativeCapture:
             if value.get('play'):
                 if self.tape.mode=='record':self.tape.finish()
                 try:from ._native_replay_player import NativePlayer
-                except (ImportError,ValueError):from _native_replay_player import NativePlayer
+                except (ImportError,ValueError,SystemError):from _native_replay_player import NativePlayer
                 request=value['play'];self.serial=request['serial'];self.branch=None
-                self.player=NativePlayer(self,request['document'],post_frame=post_frame)
+                try:self.player=NativePlayer(self,request['document'],post_frame=post_frame)
+                except Exception as error:
+                    delivery.feedback(dict(serial=self.serial,status=dict(state='failed',error=type(error).__name__)))
+                    raise
                 self.packet_buffer=bytearray();self.control_error=None
             if self.player is None:continue
             if value.get('ack') is not None:self.last_ack=value['ack']
@@ -322,12 +347,12 @@ class NativeCapture:
     def feedback(self,telemetry=None,documents=None):
         if self.player is None or not hasattr(self,'delivery'):return
         player=self.player;status=player.status()
-        if player.requested:status['state']='taking-over'
+        if player.requested and player.phase!='live':status['state']='taking-over'
         if self.control_error:status['message']=self.control_error
         value=dict(serial=self.serial,status=status,telemetry=telemetry,documents=documents or [],acks=player.acks)
         player.acks=[]
         if player.can_takeover():value['checkpoint']=player.checkpoint()
-        if player.requested:value['takeover']=True
+        if player.requested and player.phase!='live':value['takeover']=True
         if self.branch:value['committed']=self.branch['id']
         self.delivery.feedback(value)
 

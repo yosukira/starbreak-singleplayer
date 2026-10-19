@@ -1,4 +1,4 @@
-/* Browser battle history. The native editor uses its own Tk tab. */
+/* Battle history shared by browser and native desktop windows. */
 (() => {
   'use strict';
   const classes={1:'Wildfire',2:'Duskwing',5:'Fabricator',3:'Ironclad'};

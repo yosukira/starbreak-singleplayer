@@ -25,13 +25,35 @@ def document(value):
         if not isinstance(value.get(key),str)or not re.fullmatch('[0-9a-f]{64}',value[key]):
             raise ValueError('Invalid native replay version digest')
     if value.get('preferences')is not None:raise ValueError('Native recordings do not include browser preferences')
-    return dict(schema=native.SCHEMA,id=str(uuid.UUID(value['id'])),client=value['client'],adapter=value['adapter'],
+    result=dict(schema=native.SCHEMA,id=str(uuid.UUID(value['id'])),client=value['client'],adapter=value['adapter'],
         preferences=None,viewport=[integer(v,1,16384)for v in viewport],ops=native.validate_operations(value['ops']))
+    if 'runners' in value:
+        rows=value['runners']
+        if not isinstance(rows,list) or len(rows)>64:raise ValueError('Invalid portable replay engine history')
+        result['runners']=[];previous=0
+        for row in rows:
+            cursor=integer(row['cursor'],previous+1,len(result['ops']))
+            if result['ops'][cursor-1]!=['loop',1] or row.get('engine')!='browser':raise ValueError('Invalid portable engine boundary')
+            for key in ('client','adapter'):
+                if not isinstance(row.get(key),str) or not re.fullmatch('[0-9a-f]{64}',row[key]):raise ValueError('Invalid portable engine version')
+            result['runners'].append(dict(cursor=cursor,engine='browser',client=row['client'],adapter=row['adapter']));previous=cursor
+    return result
 
 
 class NativeJournals(ClientJournals):
     schema=native.SCHEMA
     operation=staticmethod(native.operation)
+
+    def mark_runner(self,branch,source,cursor,runner):
+        import json
+        rows=[row for row in source.get('runners',[]) if row['cursor']<cursor]
+        rows.append(dict(cursor=cursor,engine='browser',client=runner['client'],adapter=runner['adapter']))
+        if len(rows)>64:raise ValueError('Too many portable engine transitions')
+        with self.connect() as db:
+            row=db.execute('SELECT header FROM attempts WHERE id=?',(branch,)).fetchone()
+            if row is None:raise ValueError('Unknown portable branch')
+            header=json.loads(row[0]);header['runners']=rows
+            db.execute('UPDATE attempts SET header=? WHERE id=?',(json.dumps(header,separators=(',',':')),branch))
 
     def begin(self,identifier,client,adapter,preferences,viewport):
         if preferences.get('content')is not None:raise ValueError('Native preferences must remain on the local client')

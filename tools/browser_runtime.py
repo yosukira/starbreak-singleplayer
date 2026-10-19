@@ -191,7 +191,11 @@ class BrowserRuntime:
         elif self.server and self.server.live_session:self.server.live_session.step(dt)
 
     def replay_document(self, identifier, require_exact=False):
-        value=self.clients.read(identifier)
+        try:value=self.clients.read(identifier)
+        except ValueError:
+            from tools.portable_replay import browser_document
+            version=pb_layout.default_layouts().decode('DataVersion',base64.b64decode(self.manifest['data_version']))
+            return browser_document(self.records.directory,identifier,version,self.manifest.get('native_adapter'),require_exact)
         if value['client']!=self.manifest['client']:raise ValueError('This replay requires a supported original game client')
         if require_exact and value['adapter']!=self.manifest['adapter']:
             raise ValueError('Compatible playback can be tried, but takeover requires the matching replay adapter')
@@ -210,7 +214,8 @@ class BrowserRuntime:
                 from localserver.replay import read_journal, compatible_engine
                 try:
                     header = read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
-                    replay['takeover'] = document['adapter']==self.manifest['adapter'] and compatible_engine(header['engine'])
+                    self.replay_document(attempt,require_exact=True)
+                    replay['takeover'] = compatible_engine(header['engine'])
                 except (ValueError,OSError):pass
             prefs = dict(key='LocalStorage.pb',revision=0,content=document['preferences'])
         return dict(wsPort=0,keybindings=self.workspace.preferences()['keys'],gamePreferences=prefs,replay=replay)
@@ -232,26 +237,46 @@ class BrowserRuntime:
         if path == '/api/records':
             rows = self.records.list()
             states = self.clients.statuses([r['replay']['id'] for r in rows if r.get('replay',{}).get('id')],self.manifest['adapter'],client=self.manifest['client'],allow_compatible=True)
+            from tools.portable_replay import availability
+            states.update(availability(self.records.directory,[r['replay']['id'] for r in rows if r.get('replay',{}).get('id')]))
             for row in rows:
                 if row.get('replay',{}).get('id') in states:row['replay']=states[row['replay']['id']]
             return dict(records=rows)
-        if path == '/api/replay/client':return self.clients.append(document['id'],document)
+        if path == '/api/replay/client':
+            clients=self.clients
+            if document.get('native') is True:
+                from tools.native_replay import NativeJournals
+                clients=NativeJournals(self.records.directory)
+            return clients.append(document['id'],document)
         if path == '/api/replay/check':
             attempt = parse_qs(urlsplit(url).query)['id'][0]
             value = self.replay_document(attempt)
             return dict(ready=True)
         if path == '/api/replay/warm':
             from tools.replay_host import WarmTakeovers
-            self.replay_document(document['id'],require_exact=True)
+            source=self.replay_document(document['id'],require_exact=True)
+            clients=self.clients
+            if source['schema']=='starbreak-native-journal-v1':
+                from tools.native_replay import NativeJournals
+                from tools.portable_replay import check_runner
+                check_runner(document.get('runner'),self.manifest.get('native_adapter'));clients=NativeJournals(self.records.directory)
             if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
-            return self.warm_takeovers.warm(self.records,self.clients,document)
+            return self.warm_takeovers.warm(self.records,clients,document)
         if path == '/api/replay/takeover':
             if method=='GET':return self.jobs[parse_qs(urlsplit(url).query)['job'][0]]
             from tools.replay_host import WarmTakeovers
-            self.replay_document(document['id'],require_exact=True)
+            source=self.replay_document(document['id'],require_exact=True)
+            clients=self.clients
+            if source['schema']=='starbreak-native-journal-v1':
+                from tools.native_replay import NativeJournals
+                from tools.portable_replay import check_runner
+                check_runner(document.get('runner'),self.manifest.get('native_adapter'));clients=NativeJournals(self.records.directory)
             if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
             self.stop()
-            host = self.warm_takeovers.take(self.records,self.clients,document,manual=True)
+            host = self.warm_takeovers.take(self.records,clients,document,manual=True)
+            from tools.portable_replay import append_runner
+            try:append_runner(host,document,clients,source,self.manifest.get('native_adapter'))
+            except Exception:host.stop();raise
             self.takeovers[host.token] = host
             self.jobs[host.token] = dict(state='ready',result=dict(host.description(),preferences=self.preferences.read()))
             return dict(job=host.token)

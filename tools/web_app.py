@@ -132,6 +132,9 @@ class Prototype:
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
         self.workspace = Workspace(self.directory)
+        if getattr(options, 'desktop', False):
+            from tools.desktop_workspace import DesktopWorkspace
+            self.workspace = DesktopWorkspace(self.directory, paths.USERDATA)
         self.records = RecordStore(getattr(options,'records_dir',None) or self.directory / 'battles')
         self.client_journals = ClientJournals(self.records.directory)
         self.takeovers, self.takeover_lock = {}, threading.Lock()
@@ -176,7 +179,8 @@ class Prototype:
                     ws_port=self.options.ws_port, feedback=self.feedback, damage=self.damage,
                     received_damage=self.received_damage,
                     player=self.latest_player,
-                    maps=maps(),
+                    desktop=getattr(self.options, 'desktop', False),
+                    maps=[dict(row, ready=True) for row in maps()] if getattr(self.options, 'desktop', False) else maps(),
                     items=[dict(id=k, name=v['name_'], slot=v.get('slot_'), usableby=v.get('usableby_', []))
                            for k, v in self.items.items() if v.get('slot_') == 256])
 
@@ -206,24 +210,29 @@ class Prototype:
         identifiers = [row['replay']['id'] for row in rows if row.get('replay', {}).get('id')]
         adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
         states = self.client_journals.statuses(identifiers, adapter, client=CLIENT_SHA256, allow_compatible=True)
+        from tools.portable_replay import availability
+        states.update(availability(self.records.directory,identifiers))
         for row in rows:
             identifier = row.get('replay', {}).get('id')
             if identifier in states:
                 row['replay'] = states[identifier]
-        native_ids=[row['replay']['id'] for row in rows if row.get('platform')=='native' and row.get('replay',{}).get('id')]
-        if native_ids:
+        native_ids=[row['replay']['id'] for row in rows if row.get('replay',{}).get('format',row.get('platform'))=='native' and row.get('replay',{}).get('id')]
+        if native_ids and getattr(self.options,'desktop',False):
             try:
                 from tools.native_playback import NativeControlClient
                 control=NativeControlClient();native_states={}
                 for offset in range(0,len(native_ids),500):native_states.update(control.call('/availability',dict(ids=native_ids[offset:offset+500])))
                 for row in rows:
-                    if row.get('platform')=='native' and row.get('replay',{}).get('id') in native_states:
+                    if native_states.get(row.get('replay',{}).get('id'),{}).get('available'):
                         row['replay']=dict(native_states[row['replay']['id']],engine='native')
             except (OSError,ValueError,KeyError):pass
         return rows
 
     def replay_document(self, identifier, require_exact=False):
-        document = self.client_journals.read(identifier)
+        try:document = self.client_journals.read(identifier)
+        except ValueError:
+            from tools.portable_replay import browser_document
+            return browser_document(self.records.directory,identifier,self.version,require_exact=require_exact)
         adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
         if document['client'] != CLIENT_SHA256:
             raise ValueError('Replay requires a supported original game client')
@@ -233,16 +242,26 @@ class Prototype:
 
     def warm_takeover(self, document):
         from tools.replay_host import WarmTakeovers
-        self.replay_document(document['id'],require_exact=True)
+        source=self.replay_document(document['id'],require_exact=True)
+        clients=self.client_journals
+        if source.get('schema')=='starbreak-native-journal-v1':
+            from tools.native_replay import NativeJournals
+            from tools.portable_replay import check_runner
+            check_runner(document.get('runner'));clients=NativeJournals(self.records.directory)
         # Instantiate under the existing lock so concurrent HTTP requests cannot
         # allocate unbounded caches. Warm requests create no branch or record.
         with self.takeover_lock:
             if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
-        return self.warm_takeovers.warm(self.records,self.client_journals,document)
+        return self.warm_takeovers.warm(self.records,clients,document)
 
     def prepare_takeover(self, document, progress=None):
         from tools.replay_host import WarmTakeovers
-        self.replay_document(document['id'],require_exact=True)
+        source=self.replay_document(document['id'],require_exact=True)
+        clients=self.client_journals
+        if source.get('schema')=='starbreak-native-journal-v1':
+            from tools.native_replay import NativeJournals
+            from tools.portable_replay import check_runner
+            check_runner(document.get('runner'));clients=NativeJournals(self.records.directory)
         # Verify compatibility before creating any branch files or records.
         if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
         preferences=self.game_preferences.read()
@@ -254,7 +273,10 @@ class Prototype:
                 matches=[r['id'] for r in self.records.list() if r.get('replay',{}).get('id')==document['id']]
                 if len(matches)!=1:raise ValueError('Select the battle to take over')
                 document=dict(document,record=matches[0])
-            host=self.warm_takeovers.take(self.records,self.client_journals,document,progress=progress)
+            host=self.warm_takeovers.take(self.records,clients,document,progress=progress)
+            from tools.portable_replay import append_runner
+            try:append_runner(host,document,clients,source)
+            except Exception:host.stop();raise
             if progress is not None:
                 try:progress(1, 1)
                 except Exception:
@@ -375,7 +397,11 @@ class Prototype:
         from localserver.replay import engine_fingerprint, compatible_engine, SUPPORTED_MAPS, SCHEMA
         from localserver.run_replay import SCHEMA as RUN_SCHEMA
         from localserver.replay import FULL_RUN_MAPS
-        if client_document is not None and client_document['adapter']!=hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest():return False
+        if client_document is not None:
+            if client_document['schema']=='starbreak-native-journal-v1':
+                try:self.replay_document(identifier,require_exact=True)
+                except (OSError,ValueError):return False
+            elif client_document['adapter']!=hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest():return False
         if record is None:
             matches=[r for r in self.records.list() if r.get('replay',{}).get('id')==identifier]
             if len(matches)!=1:return False
@@ -646,7 +672,7 @@ class Handler(BaseHTTPRequestHandler):
                     preferences = dict(key='LocalStorage.pb', revision=0, content=document['preferences'])
                 data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=prototype.options.ws_port,keybindings=prototype.workspace.preferences()['keys'],gamePreferences=preferences,replay=replay)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/canvas.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/replay.js', '/replay-storage.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/canvas.js', '/zoom.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/native-replay.js', '/replay.js', '/replay-storage.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
                 data = (ROOT / 'web' / filename).read_bytes()
                 if path == '/game.html':
@@ -694,7 +720,11 @@ class Handler(BaseHTTPRequestHandler):
                 if not getattr(self.server.prototype.options,'records_dir',None):raise ValueError('This server is managed by its launcher')
                 self.send(dict(closing=True));threading.Thread(target=self.server.shutdown,daemon=True).start();return
             if self.path == '/api/replay/client':
-                return self.send(self.server.prototype.client_journals.append(document.get('id'), document))
+                store=self.server.prototype.client_journals
+                if document.get('native') is True:
+                    from tools.native_replay import NativeJournals
+                    store=NativeJournals(store.path.parent)
+                return self.send(store.append(document.get('id'), document))
             if self.path == '/api/replay/warm':
                 return self.send(self.server.prototype.warm_takeover(document))
             if self.path == '/api/replay/takeover':
@@ -751,6 +781,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(self.server.prototype.workspace.validate(document))
             if self.path == '/api/reset':
                 return self.send(self.server.prototype.workspace.restore_defaults(document.get('revision')))
+            if getattr(self.server.prototype.options, 'desktop', False):
+                if self.path == '/api/prepare':return self.send(dict(assets_ready=True))
+                from tools.native_playback import NativeControlClient
+                request=self.server.prototype.workspace.start(document)
+                return self.send(NativeControlClient().call('/command',dict(action='practice',map=request['map'],shell=request['shell'])))
             self.send(self.server.prototype.prepare(document) if self.path == '/api/prepare' else self.server.prototype.start(document))
         except Exception as error:
             self.send(dict(error=str(error)), status=400)
@@ -771,6 +806,7 @@ def main():
     parser.add_argument('--bridge-port', type=int, default=21551)
     parser.add_argument('--data-dir', type=Path, help='Separate browser profile and asset cache directory')
     parser.add_argument('--records-dir', type=Path, help='Use an existing battle history without moving or copying records')
+    parser.add_argument('--desktop', action='store_true', help='Shared UI backed by native equipment, settings and launch controls')
     parser.add_argument('--no-browser', action='store_true', help='Print the address without opening a browser')
     parser.add_argument('--check-runtime', action='store_true', help='Verify the bundled browser runtime and exit')
     options = parser.parse_args()

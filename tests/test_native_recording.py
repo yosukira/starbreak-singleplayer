@@ -19,6 +19,34 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_control_poll_streams_small_reads_and_decodes_json_for_python35(self):
+        import io
+        import queue
+        from plugins import _native_replay_capture as capture
+        class Response(io.BytesIO):
+            def read(self, size=-1):
+                if not 0 < size <= 65536:raise MemoryError('oversized 32-bit HTTP reservation')
+                return super().read(size)
+        class Work:
+            calls=0
+            def get(self, **_):
+                self.calls+=1
+                if self.calls==1:raise queue.Empty
+                return None
+            def task_done(self):pass
+        with mock.patch.object(capture.threading.Thread,'start'),mock.patch.object(capture,'urlopen',return_value=Response(b'{"serial":1,"controls":[]}')):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64))
+            delivery.queue=Work()
+            loads=capture.json.loads
+            def legacy_loads(value):
+                self.assertIsInstance(value,str,'Python 3.5 json.loads rejects raw bytes')
+                return loads(value)
+            with mock.patch.object(capture.json,'loads',side_effect=legacy_loads):delivery.run()
+            self.assertIsNone(delivery.control_error)
+            self.assertEqual(delivery.incoming.get_nowait()['serial'],1)
+        with self.assertRaisesRegex(ValueError,'too large'):
+            capture.read_control(Response(b'x'*11),limit=10)
+
     def environment(self,save=None):
         ffi=mock.Mock(NULL=None);ffi.buffer.side_effect=lambda pointer,size:pointer[:size]
         props=NS(seed=123,xmp=100,ymp=200,wmp=10240,hmp=20480,hitpoints=150,maxhitpoints=150,facing=1)
@@ -112,6 +140,19 @@ class NativeCaptureTests(unittest.TestCase):
 
 
 class NativeRecordingEndpointTests(unittest.TestCase):
+    def test_practice_restarts_only_the_owned_launcher_with_a_valid_map_and_class(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recording=self.recording(directory)
+            try:
+                def command(value):
+                    request=Request(recording.config['url'].replace('/chunks','/command'),data=json.dumps(value).encode(),headers={'Authorization':'Bearer '+recording.token})
+                    with urlopen(request) as response:return json.load(response)
+                command(dict(action='practice',map='hulk_mid',shell=2))
+                self.assertEqual(recording.restart_request,dict(map='hulk_mid',shell=2))
+                with self.assertRaises(HTTPError):command(dict(action='practice',map='invalid',shell=2))
+                self.assertEqual(recording.restart_request,dict(map='hulk_mid',shell=2))
+            finally:recording.close()
+
     def recording(self,directory):
         with mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
             return NativeRecording(directory,'owned-client.exe')

@@ -25,6 +25,7 @@ class NativeRecording:
         if manifest['client'] not in CLIENTS:raise ValueError('The native replay adapter does not match this executable')
         self.identifier=str(uuid.uuid4());self.token=secrets.token_hex(32)
         self.journals=NativeJournals(directory);self.lock=threading.RLock();self.closed=False
+        self.restart_request=None
         from tools.native_playback import NativePlayback
         self.playback=NativePlayback(directory,manifest['client']);self.ready=threading.Event();self.proxy=None
         self.registry=Path(registry) if registry else None
@@ -41,7 +42,7 @@ class NativeRecording:
                 if not self.authorized():return self.send_error(403)
                 from urllib.parse import urlsplit,parse_qs
                 url=urlsplit(self.path)
-                if url.path=='/status':return self.result(dict(owner.playback.status,serial=owner.playback.serial,error=owner.playback.error))
+                if url.path=='/status':return self.result(dict(owner.playback.status,serial=owner.playback.serial,error=owner.playback.error or owner.playback.status.get('error')))
                 if url.path!='/control':return self.send_error(404)
                 try:
                     serial=int(parse_qs(url.query).get('serial',['0'])[0]);owner.ready.set()
@@ -56,7 +57,17 @@ class NativeRecording:
                     if not 0<length<=512*1024:raise ValueError('Invalid native recording body')
                     value=json.loads(self.rfile.read(length))
                     if not isinstance(value,dict):raise ValueError('Expected native request')
-                    if self.path=='/command':return self.result(owner.playback.action(value))
+                    if self.path=='/command':
+                        if value.get('action')=='practice':
+                            from localserver import game_settings
+                            map_id,shell=value.get('map'),value.get('shell')
+                            if map_id not in game_settings.available_maps() or type(shell) is not int or shell not in (1,2,3,5):
+                                raise ValueError('Invalid practice encounter')
+                            with owner.lock:
+                                if owner.closed:raise ValueError('Native launcher has closed')
+                                owner.restart_request=dict(map=map_id,shell=shell)
+                            return self.result(dict(starting=True,map=map_id,shell=shell))
+                        return self.result(owner.playback.action(value))
                     if self.path=='/feedback':owner.playback.feedback(value);return self.result(dict(accepted=True))
                     if self.path=='/availability':
                         identifiers=value['ids']

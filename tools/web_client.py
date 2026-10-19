@@ -224,4 +224,5 @@ def patch_client(source):
     original = text[start:end]
     observed = original.replace(before, before + 'webHealth(b|0,0);').replace(';return}', ';webHealth(b|0,1);return}')
     replace(original, observed)
-    return text.encode('utf8')
+    from tools.native_web_client import patch as portable_replay
+    return portable_replay(text).encode('utf8')

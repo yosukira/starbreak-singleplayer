@@ -252,13 +252,12 @@ def bundled_tk_environment():
     return None
 
 def choose_editor_python():
-    """Return an interpreter that can run Tk, or None.
+    """Return the CPython 3.12 interpreter used by the shared desktop host.
 
     Prefers the interpreter running this launcher (in the package that is
     the bundled python/, which ships Tk), then any installed CPython.  The
-    probe also initialises a bare Tcl interpreter, so a python whose Tcl
-    script library is missing is rejected here instead of failing after the
-    game has started.
+    The embedded viewer has a pinned ABI; never choose the game's 32-bit
+    PyPy interpreter or a different Python version just because Tk is present.
     """
     bundled_tk_environment()
     candidates = [sys.executable]
@@ -277,7 +276,7 @@ def choose_editor_python():
         seen.add(key)
         try:
             result = subprocess.run(
-                [str(candidate), '-c', 'import tkinter; tkinter.Tcl()'],
+                [str(candidate), '-c', 'import sys,platform; assert platform.python_implementation()=="CPython" and sys.version_info[:2]==(3,12) and sys.maxsize>2**32'],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except (IOError, OSError):
             continue
@@ -779,7 +778,7 @@ def choose_local_port(preferred, kind=socket.SOCK_STREAM,
         candidate = sock.getsockname()[1]
     return candidate, note + 'using {0} instead.'.format(candidate)
 
-def main():
+def session(argv=None,show_editor=True):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--demo', action='store_true',
@@ -809,10 +808,11 @@ def main():
     parser.add_argument('--map', default=None,
                         help='map pack from maps/ (default: the map saved in '
                              'game_settings.json, else egy_hulk)')
+    parser.add_argument('--player-type',type=int,choices=(1,2,3,5),default=1)
     parser.add_argument('--terrain-variant', default=None,
                         help='lab_hard captured terrain variant name; '
                              'default picks a random captured layout')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if os.name != 'nt':
         raise SystemExit('The simulator requires Windows and the Windows StarBreak client.')
     from localserver.runtime_content import require_runtime_content
@@ -937,12 +937,13 @@ def main():
     if args.check:
         print('Preflight OK. No game or server started.')
         return
-    logs = LAB / 'userdata' / 'logs' / ('session-' + time.strftime('%Y%m%d-%H%M%S'))
+    logs = LAB / 'userdata' / 'logs' / ('session-' + time.strftime('%Y%m%d-%H%M%S')+'-'+str(time.time_ns()%1000000000))
     logs.mkdir(parents=True, exist_ok=True)
     server = None
     native_recording = None
     gear_editor = None
     gear_editor_log = None
+    restart=None
     try:
         from localserver.replay import CLIENT_MAPS
         if args.map in CLIENT_MAPS and os.environ.get('SB_RECORD_REPLAY','1')=='1':
@@ -957,16 +958,16 @@ def main():
         if not args.no_gear_editor:
             editor_python = choose_editor_python()
             if editor_python is None:
-                print('Gear editor skipped: no Python with tkinter on this '
-                      'machine (install CPython or use --no-gear-editor).',
+                print('Equipment window requires the bundled 64-bit Python 3.12 '
+                      'runtime (or use --no-gear-editor).',
                       flush=True)
             else:
                 gear_editor_log_path = logs / 'gear-editor.log'
                 gear_editor_log = gear_editor_log_path.open(
                     'w', encoding='utf-8', errors='replace')
                 gear_editor = subprocess.Popen([
-                    editor_python, str(LAB / 'tools' / 'gear_editor.py'),
-                    '--show', '--log', str(gear_editor_log_path),
+                    editor_python, '-u', '-m', 'tools.desktop_view',
+                    *(['--show'] if show_editor else []),
                     '--owner-pid', str(os.getpid())],
                     cwd=str(LAB), stdout=gear_editor_log,
                     stderr=subprocess.STDOUT,
@@ -1004,6 +1005,7 @@ def main():
                 '--data-version', str(game_dir / 'data' / 'texture' / 'dataVersion.bpb'),
                 '--loadout', str(required[6]),
                 '--class-loadouts', str(required[7]),
+                '--player-type', str(args.player_type),
                 '--player-payloads', str(required[8]),
                 '--no-time-echo']
             if args.terrain_variant:
@@ -1041,18 +1043,26 @@ def main():
                      '--sbpe', str(args.sbpe), '--client', str(client),
                      '--server', '127.0.0.1:' + str(client_port),
                      '--runtime-dir', str(runtime), '--keep']
-                if args.stop_file:
-                    client_command.extend(['--stop-file', str(args.stop_file)])
-                result = subprocess.run(client_command,
+                owned_stop=logs/'stop-owned-client'
+                client_command.extend(['--stop-file',str(owned_stop)])
+                result = subprocess.Popen(client_command,
                     env=client_env, stdin=subprocess.DEVNULL,
                     stdout=out, stderr=subprocess.STDOUT)
+                while result.poll() is None:
+                    if args.stop_file and args.stop_file.exists():
+                        owned_stop.touch();break
+                    if native_recording and native_recording.restart_request:
+                        restart=dict(native_recording.restart_request)
+                        owned_stop.touch();break
+                    time.sleep(.1)
+                result.wait(timeout=30)
             if result.returncode != 0:
                 tail = client_log.read_text(errors='replace')[-2000:]
                 raise RuntimeError(
                     'Client launcher exited with {0}. Log: {1}\n{2}'.format(
                         result.returncode, client_log, tail))
     finally:
-        if gear_editor is not None and gear_editor.poll() is None:
+        if restart is None and gear_editor is not None and gear_editor.poll() is None:
             gear_editor.terminate()
             try:
                 gear_editor.wait(timeout=5)
@@ -1068,6 +1078,21 @@ def main():
             except Exception as error:print('Native recording could not be sealed: '+type(error).__name__,flush=True)
         if finish_direct is not None:
             finish_direct()
+    return restart
+
+
+def main(argv=None):
+    arguments=list(sys.argv[1:] if argv is None else argv)
+    first=True
+    while True:
+        restart=session(arguments,show_editor=first)
+        if not restart:return
+        first=False
+        for flag,value in (('--map',restart['map']),('--player-type',str(restart['shell']))):
+            for index in range(len(arguments)-1,-1,-1):
+                if arguments[index]==flag:del arguments[index:index+2]
+                elif arguments[index].startswith(flag+'='):del arguments[index]
+            arguments.extend([flag,value])
 
 if __name__ == '__main__':
     main()

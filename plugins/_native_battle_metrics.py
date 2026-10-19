@@ -9,7 +9,7 @@ import os
 
 try:
     from ._native_replay_hooks import NativeHook
-except (ImportError, ValueError):
+except (ImportError, ValueError, SystemError):
     from _native_replay_hooks import NativeHook
 
 RVA=0x175c0

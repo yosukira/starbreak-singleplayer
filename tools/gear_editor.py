@@ -1925,6 +1925,9 @@ def main(argv=None):
     parser.add_argument('--owner-pid', type=int,
                         help='launcher process; the panel closes when it exits')
     options = parser.parse_args(argv)
+    if not options.self_test:
+        from tools.desktop_view import main as shared_editor
+        return shared_editor(['--owner-pid', str(options.owner_pid or os.getpid()), *(['--show'] if options.show else [])])
     _ensure_bundled_tcl()
 
     kernel32 = ctypes.windll.kernel32 if os.name == 'nt' else None

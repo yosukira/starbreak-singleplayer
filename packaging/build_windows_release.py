@@ -21,6 +21,14 @@ VERSION = '3.12.10'
 EMBED_URL = 'https://www.python.org/ftp/python/' + VERSION + '/python-' + VERSION + '-embed-amd64.zip'
 EMBED_SHA256 = '4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3'
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+
+
+def install_viewer(runtime):
+    from tools.desktop_view import install as viewer
+    directory=runtime/'desktop-view'
+    viewer(directory,target='windows-x64',check_python=False,bundled=False)
+    for cache in directory.glob('*.download'):cache.unlink()
 
 
 def download(url, digest=None):
@@ -74,6 +82,7 @@ def main():
             url = 'https://raw.githubusercontent.com/tcltk/' + name + '/' + tag + '/license.terms'
             (runtime / (name.upper() + '-LICENSE.txt')).write_bytes(download(url))
         install(runtime)
+        install_viewer(runtime)
         verify_sqlite(runtime, windows=True)
         (runtime / 'python312._pth').write_text('python312.zip\n.\n..\n../tools\n', encoding='utf8')
         (runtime / 'SOURCE.txt').write_text(
@@ -112,6 +121,7 @@ def build_with_runtime(source, output):
         shutil.copytree(source, runtime,
                         ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.log'))
         install(runtime)
+        install_viewer(runtime)
         (runtime / 'python312._pth').write_text(
             'python312.zip\n.\n..\n../tools\n', encoding='utf8')
         if not (runtime / 'SOURCE.txt').exists():
