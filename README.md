@@ -260,3 +260,7 @@ Battle details use a compact centered sheet, with backdrop dismissal and a full-
 录像导出与分享支持新的无损压缩文件，完整保留输入、时序、随机数和网络消息；新版本继续读取旧 `.sbreplay`。新的压缩文件需要更新后的读取器。仅界面或记录层变化时，同一原游戏客户端的网页录像可尝试兼容回放；状态不一致会停止，未经校验的适配版本不能接管。
 
 Replay exports and sharing support lossless compact files that retain every input, clock, random value and network message. The new reader accepts older `.sbreplay` files; compact files require the updated reader. Browser recordings from another adapter may attempt compatible playback with the same original game client. A state mismatch stops playback; an unverified adapter cannot take over.
+
+The **Guide** tab to the left of Battle provides a nine-part tutorial for setup, controls, history, replay/takeover, sharing, comments, local data and troubleshooting. It follows the same saved Chinese/English language preference as the editor. Open it directly at [the web guide](https://sbre.online/singleweb/?view=guide).
+
+“战斗”左侧的“使用说明”提供九个章节的系统教程，覆盖开局配装、操控缩放、战绩、回放接管、分享、评论、本地数据与常见问题。教程跟随编辑器共用的中英文语言设置，也可在说明页切换；[直接打开说明](https://sbre.online/singleweb/?view=guide)。

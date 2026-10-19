@@ -3,6 +3,7 @@
   let language=localStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
+  let activeTab='battle';
   const t=(zh,en)=>language.startsWith('zh')?zh:en;
   let loading=null,loadingPercent=0,loadingHide;
   function finishLoading(){if(!loading||loadingHide)return;loadingPercent=100;renderLoading();loadingHide=setTimeout(()=>showLoading(null),220);}
@@ -42,6 +43,9 @@
   addEventListener('starbreak-loading',event=>{const p=event.detail;if(!loading||p.phase==='environment'&&loading.phase!=='environment')return;loadingPercent=Math.max(loadingPercent,p.percent||0);loading={...loading,...p};renderLoading();});
   const editor=new WebEquipment(()=>language,()=>sync());
   const records=new BattleRecords($('records-page'),()=>language,()=>editor.data?.items||[],startReplay,()=>catalogue);
+  const guide=new BattleGuide($('guide-page'),()=>language,{
+    configure:()=>$('open-editor').click(),records:()=>setTab(true),battle:()=>setTab(false),language:setLanguage
+  });
   function playbackControl(action,extra={}){
     if(replayRecord?.platform==='native'){
       void fetch('/api/native/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})}).then(async response=>{if(!response.ok)throw Error((await response.json()).error);}).catch(error=>{$('replay-progress').textContent=error.message;});return;
@@ -112,14 +116,26 @@
   $('replay-back').onclick=()=>{replayPaused=true;playbackControl('pause',{paused:true});updatePause();setTab(true);};
   $('replay-restart').onclick=()=>{if(replayRecord)startReplay(replayRecord);};
   $('replay-takeover').onclick=()=>playbackControl('takeover');
-  function setTab(history){
+  function setTab(view){
     if(loading)return;
-    if(history&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
-    document.querySelector('.game-layout').hidden=history;
-    $('tab-battle').classList.toggle('selected',!history);$('tab-records').classList.toggle('selected',history);
-    if(history)records.show();else{records.hide();document.querySelector('iframe')?.contentWindow.focus();}
+    activeTab=view===true?'records':view==='guide'?'guide':'battle';
+    if(activeTab!=='battle'&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
+    document.querySelector('.game-layout').hidden=activeTab!=='battle';
+    $('guide-page').hidden=activeTab!=='guide';
+    for(const name of ['guide','battle','records']){
+      $('tab-'+name).classList.toggle('selected',activeTab===name);
+      $('tab-'+name).setAttribute('aria-pressed',String(activeTab===name));
+    }
+    if(activeTab==='records')records.show();else records.hide();
+    if(activeTab==='battle')document.querySelector('iframe')?.contentWindow.focus();
+    if(activeTab==='guide')guide.render();
+    if(window.history?.replaceState){
+      const url=new URL(location.href);url.hash='';
+      if(activeTab==='battle')url.searchParams.delete('view');else url.searchParams.set('view',activeTab);
+      window.history.replaceState(null,'',url);
+    }
   }
-  $('tab-records').onclick=()=>setTab(true);$('tab-battle').onclick=()=>setTab(false);
+  $('tab-guide').onclick=()=>setTab('guide');$('tab-records').onclick=()=>setTab(true);$('tab-battle').onclick=()=>setTab(false);
   addEventListener('pagehide',()=>editor.flush());
   const title=map=>map?.names?.[language]||map?.title||'StarBreak';
   function mapOptions(){
@@ -131,6 +147,7 @@
   function translate(){
     document.documentElement.lang=language.startsWith('zh')?'zh':'en';$('language').value=language;
     document.querySelectorAll('[data-en]').forEach(element=>element.textContent=element.dataset[language.startsWith('zh')?'zh':'en']);
+    guide.render();
     records.render(true);
     mapOptions();editor.mapTitle=title(catalogue.find(map=>map.id===editor.map));editor.render();sync();
     $('arena-title').textContent=replayRecord?.map_title||title(catalogue.find(map=>map.id===(liveMap||editor.map)));updatePause();
@@ -141,9 +158,9 @@
   let shortcutFingerprint='';
   const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy||!!loading);
   function shortcut(action){
-    if(action.startsWith('zoom_')){if(!records.visible&&!$('equipment-dialog').open)document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(action==='zoom_in'?1:-1);return;}
+    if(action.startsWith('zoom_')){if(activeTab==='battle'&&!$('equipment-dialog').open)document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(action==='zoom_in'?1:-1);return;}
     if(action==='editor'){if($('equipment-dialog').open)$('equipment-dialog').close();else $('open-editor').click();return;}
-    if(busy||loading||records.visible||$('equipment-dialog').open||!liveMap)return;
+    if(busy||loading||activeTab!=='battle'||$('equipment-dialog').open||!liveMap)return;
     const shell={wf:1,dw:2,fab:5,ic:3}[action]||editor.shell;
     editor.selectClass(shell);startEncounter(runMap||editor.map,shell,false);
   }
@@ -153,7 +170,11 @@
     if(catalogue.length){$('map').value=editor.map;editor.mapTitle=title(catalogue.find(map=>map.id===editor.map));}
     $('draft-state').textContent=editor.dirty?t('修改尚未保存','Unsaved changes'):t('网页配装已保存','Browser loadout saved');
   }
-  $('language').onchange=event=>{language=event.target.value;localStorage.setItem('starbreak-web-language',language);editor.remember();translate();};
+  function setLanguage(value){
+    if(!['en','zh','zh-affixes'].includes(value))return;
+    language=value;localStorage.setItem('starbreak-web-language',language);editor.remember();translate();
+  }
+  $('language').onchange=event=>setLanguage(event.target.value);
   $('map').onchange=()=>{const row=catalogue.find(map=>map.id===$('map').value);editor.mapTitle=title(row);editor.setMap(row.id);if(!liveMap)$('arena-title').textContent=title(row);};
   function setBusy(value){
     busy=value;for(const element of document.querySelectorAll('dialog input,dialog select,dialog button'))if(element.id!=='close-editor')element.disabled=value;
@@ -162,7 +183,7 @@
   }
   function updateLocks(){
     const locked=busy||!!loading;
-    for(const id of ['open-editor','tab-battle','tab-records','language','start','close-editor','replay-back','replay-restart'])$(id).disabled=locked;
+    for(const id of ['open-editor','tab-guide','tab-battle','tab-records','language','start','close-editor','replay-back','replay-restart'])$(id).disabled=locked;
     document.querySelector('header')?.setAttribute('aria-busy',String(locked));
     for(const id of ['equipment-dialog','replay-controls','stage'])$(id).inert=locked;
   }
@@ -273,5 +294,5 @@
   if(new URLSearchParams(location.search).get('desktop')==='1'){
     $('open-editor').onclick=()=>{void globalThis.pywebview?.api.show_editor();};
   }
-  void init().then(()=>{if(new URLSearchParams(location.search).get('view')==='records'){showLoading(null);setTab(true);}});
+  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');if(view==='records'||view==='guide'){showLoading(null);setTab(view==='records'?true:'guide');}});
 })();
