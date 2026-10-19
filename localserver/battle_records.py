@@ -5,12 +5,12 @@ writes, so the UI can read while the simulator records a battle in another proce
 """
 from datetime import datetime
 import hashlib
+import errno
+import shutil
 import io
 import json
 import math
 import os
-import errno
-import shutil
 from pathlib import Path
 import re
 import sqlite3
@@ -131,8 +131,10 @@ def validate(value):
         metrics={key: None if value.get('metrics', {}).get(key) is None else
                  number(value['metrics'][key]) for key in METRICS},
         replay=dict(available=False, reason='not-recorded'), changes=[])
-    from .replay_identity import nickname
+    from .replay_identity import nickname, sharing_code
+    result['combat_duration']=None if value.get('combat_duration') is None else number(value['combat_duration'],0,result['duration'])
     result['shared_by'] = nickname(value.get('shared_by', ''))
+    result['shared_code'] = sharing_code(value.get('shared_code',''))
     replay = value.get('replay', {})
     if not isinstance(replay, dict):
         raise ValueError('Invalid replay reference')
@@ -253,7 +255,19 @@ class RecordStore:
             raise ValueError('Export is too large; select fewer battles')
         return 'StarBreak-Battles-' + datetime.now().strftime('%Y%m%d-%H%M%S') + '.zip', output.getvalue()
 
-    def import_bytes(self, data):
+    def remember_share_code(self, identifier, code, author=None):
+        from .replay_identity import sharing_code, nickname
+        identifier=str(uuid.UUID(identifier));code=sharing_code(code)
+        with self.connect() as db:
+            row=db.execute('SELECT document FROM records WHERE id=?',(identifier,)).fetchone()
+            if row is None:raise ValueError('Battle not found')
+            value=json.loads(row[0])
+            if not value.get('shared_code'):
+                value['shared_code']=code
+                if author is not None:value['shared_by']=nickname(author)
+                db.execute('UPDATE records SET document=? WHERE id=?',(encoded(value).decode(),identifier))
+
+    def import_bytes(self, data, shared_code=None):
         if not data or len(data) > MAX_IMPORT:
             raise ValueError('Battle import exceeds 256 MB')
         if data[:2] == b'PK':
@@ -266,6 +280,8 @@ class RecordStore:
                 blobs = [archive.read(e) for e in entries]
         else:
             blobs = [data]
+        from .replay_identity import sharing_code
+        original_code=sharing_code(shared_code)
         from tools.replay_bundle import read_battle, client_chunks
         from tools.client_replay import ClientJournals, MAX_BYTES
         from .replay import JournalWriter
@@ -278,6 +294,7 @@ class RecordStore:
             if document['result'] == 'active':
                 document['result'] = 'interrupted'
             document['source'] = 'import'
+            if original_code:document['shared_code']=original_code
             documents.append((document,client,server))
         # Validate the complete batch before writing. Re-import never overwrites originals.
         added = 0
@@ -288,7 +305,13 @@ class RecordStore:
                 db.execute('ATTACH DATABASE ? AS replay', (str(clients.path),))
                 db.execute('BEGIN IMMEDIATE')
                 for document,client,server in documents:
-                    if db.execute('SELECT 1 FROM records WHERE id=?',(document['id'],)).fetchone():continue
+                    existing=db.execute('SELECT document FROM records WHERE id=?',(document['id'],)).fetchone()
+                    if existing:
+                        previous=json.loads(existing[0])
+                        if original_code and previous.get('source')=='import' and not previous.get('shared_code'):
+                            previous['shared_code']=original_code
+                            db.execute('UPDATE records SET document=? WHERE id=?',(encoded(previous).decode(),document['id']))
+                        continue
                     if client:
                         # Independent namespace; never replace an existing local
                         # recording because a shared file reuses its attempt ID.
@@ -378,12 +401,15 @@ class BattleRecorder:
         self.identifier = str(uuid.uuid4())
         self.document = None
         self.elapsed = 0.
+        self.combat_elapsed=0.;self.combat_started=False
         self.last_saved = -10.
         self.settings_stamp = None
         self.pending_damage = 0
         self.pending_kills = 0
         self.pending_generators = 0
         self.closed = False
+        self.player_acted = False
+        self.saved = False
         self._metric_previous = {}
         self._metric_room = None
         self._visited_room = None
@@ -423,14 +449,36 @@ class BattleRecorder:
                 turret_layout=[dict(id=s.objid, row=s.row, ammo=s.ammo) for s in getattr(session, 'turret_layout', {}).values()],
                 metrics={key: None for key in METRICS}, changes=[], rooms=[])
             attempt = os.environ.get('SB_REPLAY_ATTEMPT')
-            if attempt and self.document['platform'] == 'web':
+            if attempt and (self.document['platform'] == 'web' or os.environ.get('SB_RECORD_REPLAY')=='1'):
                 self.document['replay'] = dict(id=str(uuid.UUID(attempt)))
             if map_id in ('egy_hulk', 'hulk_normal') or self.combat_observer is not None:
                 self.document['metrics'].update(damage_dealt=0, kills=0)
             if map_id in ('egy_hulk', 'hulk_normal', 'egy_run'):
                 self.document['metrics']['generators_destroyed'] = 0
+        # Menus, gear changes, gravity, incoming damage and automatic attacks
+        # are not player participation. Both clients latch accepted gameplay
+        # input before telemetry throttling, so even a short tap is retained.
+        bridge = getattr(session, 'bridge', None)
+        if bridge is not None:
+            observed, keys = bridge.snapshot()
+            if observed is not None and keys.get('gameplay') is True:
+                self.player_acted = True
         self.elapsed += max(0., min(float(dt), 1.))
         self.document['duration'] = round(self.elapsed, 3)
+        if self.document['map'] in ('egy_hulk','hulk_normal'):
+            step=max(0.,min(float(dt),1.))
+            if self.document['parameters']['skip_intro']:
+                self.combat_elapsed=self.elapsed
+                self.document['combat_duration']=round(self.combat_elapsed,3)
+            else:
+                ship=getattr(session,'ship_controller',None)
+                arrived=getattr(ship,'arrival_time',None)
+                if arrived is not None:
+                    boss_time=float(getattr(session,'boss_time',0))
+                    if self.combat_started:self.combat_elapsed+=step
+                    elif getattr(session,'phase',None) in ('deploying','fighting','death','done') and boss_time>=arrived:
+                        self.combat_started=True;self.combat_elapsed+=min(step,max(0.,boss_time-arrived))
+                    self.document['combat_duration']=round(self.combat_elapsed,3)
         room_context = getattr(getattr(session, 'bridge', None), 'native_context', None) or {}
         token = ((getattr(player, 'raw', {}) or {}).get('room_seed'),
                  room_context.get('room_token'), (getattr(player, 'raw', {}) or {}).get('life_id'))
@@ -445,7 +493,7 @@ class BattleRecorder:
                 self._visited_room = visit
         metrics = getattr(player, 'raw', {}).get('battle_metrics', {}) if player is not None else {}
         if isinstance(metrics, dict) and metrics.get('protocol') == 'player-metrics-v1':
-            for key in ('health_packs', 'ammo_packs', 'healing'):
+            for key in ('health_packs', 'ammo_packs', 'healing', 'damage_taken'):
                 value = metrics.get(key)
                 if type(value) is int and 0 <= value <= 10**12:
                     # Counters are cumulative within one client world. A new
@@ -478,12 +526,14 @@ class BattleRecorder:
             self.finish('victory')
         elif phase == 'failed' or (player is not None and not player.alive):
             self.finish('defeat')
-        elif self.elapsed - self.last_saved >= 1:
+        elif self.elapsed - self.last_saved >= 1 or self.player_acted and not self.saved:
             current = snapshot(session)
             previous = self.document['changes'][-1]['parameters'] if self.document['changes'] else self.document['parameters']
             if current != previous and len(self.document['changes']) < 1000:
                 self.document['changes'].append(dict(at=round(self.elapsed, 3), parameters=current))
-            self.store.save(self.document)
+            if self.player_acted:
+                self.store.save(self.document)
+                self.saved = True
             self.last_saved = self.elapsed
 
     def damage(self, value, killed=False):
@@ -503,7 +553,8 @@ class BattleRecorder:
                 return
             if self.document is not None:
                 self.document['result'] = result
-                self.store.save(self.document)
+                if self.player_acted:
+                    self.store.save(self.document)
             self.closed = True
 
 

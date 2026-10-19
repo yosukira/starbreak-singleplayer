@@ -33,6 +33,15 @@ class ClientJournalTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'sequence'):
                 store.append(identifier,dict(sequence=2,ops=[],end=True))
 
+    def test_adapter_changes_can_be_tried_only_with_the_same_original_client(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store,identifier=self.begin(directory)
+            store.append(identifier,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))
+            value=store.statuses([identifier],'c'*64,client='a'*64,allow_compatible=True)[identifier]
+            self.assertTrue(value['available']);self.assertEqual(value['reason'],'compatible')
+            self.assertFalse(store.statuses([identifier],'c'*64,client='d'*64,allow_compatible=True)[identifier]['available'])
+            self.assertFalse(store.statuses([identifier],'b'*64,client='d'*64,allow_compatible=True)[identifier]['available'])
+
     def test_rejects_out_of_order_unbounded_and_arbitrary_metadata(self):
         with tempfile.TemporaryDirectory() as directory:
             store,identifier=self.begin(directory)

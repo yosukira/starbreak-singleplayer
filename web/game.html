@@ -1,6 +1,6 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>StarBreak battle</title>
-<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080e17}canvas{width:100%;height:100%;object-fit:contain;outline:0}#loading{position:absolute;top:15px;left:20px;color:#d7e6ef;font:14px monospace;pointer-events:none}</style>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080e17}canvas{position:absolute;display:block;outline:0}#loading{position:absolute;top:15px;left:20px;color:#d7e6ef;font:14px monospace;pointer-events:none}</style>
 </head><body><canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas><div id="loading">Loading game…</div>
 <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
 <script src="runtime.js"></script>
@@ -11,5 +11,5 @@ var Module={arguments:['-s','127.0.0.1:'+STARBREAK_WEB_BOOT.wsPort,'-k'],TOTAL_M
  setStatus:function(t){document.getElementById('loading').textContent=t},
  onAbort:function(t){clearInterval(Module.replayTimerId);Module.clientReplay?.fail(t);console.error(new Error('Game halted: '+String(t)).stack);parent.postMessage({type:'game-error',message:String(t)},location.origin)}};
 </script>
-<script src="zoom.js"></script><script src="game-preferences.js"></script><script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="replay-storage.js"></script><script src="replay.js"></script><script src="client.js"></script>
+<script src="canvas.js"></script><script src="zoom.js"></script><script src="game-preferences.js"></script><script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="replay-storage.js"></script><script src="replay.js"></script><script src="client.js"></script>
 </body></html>

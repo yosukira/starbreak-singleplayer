@@ -30,3 +30,29 @@ const {nickname}=require('../web/records.js');
 assert.equal(nickname(' Player_34 '),'Player_34');assert.equal(nickname(''),'');
 for(const invalid of ['null','UnKnOwN','unknow','n_u_l_l','中文','<script>', 'a'.repeat(33)])assert.throws(()=>nickname(invalid));
 console.log('Explicit English sharing nicknames reject reserved and unsafe names.');
+for(const invalid of ['XiJinPing','xi_jin_ping','Xi.Jin-Ping_42','x1j1np1ng','MaoZeDong','Hu_Jin_Tao'])assert.throws(()=>nickname(invalid));
+for(const valid of ['Player_34','ChinaPlayer','Xi']){
+  assert.equal(nickname(valid),valid);
+}
+// Run the real controller method with both local and unimported shared details.
+const vm=require('node:vm'),fs=require('node:fs');
+const ui={window:{},localStorage:{getItem(){return null;}}};
+vm.runInNewContext(fs.readFileSync(require.resolve('../web/records.js'),'utf8'),ui);
+const original={id:'local',parameters:{loadout:{items_:[equipped,implant,bag]}}};
+const shared={...original,id:'shared'};
+for(const row of [original,shared]){
+  const cards=[{dataset:{record:row.id},open:false},{dataset:{record:'other'},open:false}];
+  const instance={rows:[original],sharedDetails:new Map([['shared',shared]]),current:row.id,expandedEquipment:new Map(),root:{querySelectorAll(){return cards;}}};
+  ui.window.BattleRecords.prototype.setEquipmentExpanded.call(instance,true);
+  assert.equal(cards[0].open,true);assert.equal(cards[1].open,false);
+  assert.deepEqual([...instance.expandedEquipment.get(row.id)],[256,1536]);
+  ui.window.BattleRecords.prototype.setEquipmentExpanded.call(instance,false);
+  assert.equal(cards[0].open,false);assert.equal(instance.expandedEquipment.get(row.id).size,0);
+}
+console.log('Local/shared expand-collapse and English political-name restrictions passed.');
+const {battleDuration}=require('../web/records.js');
+assert.equal(battleDuration({map:'egy_hulk',duration:150,combat_duration:130,parameters:{skip_intro:false}}),'2:10 (2:30)');
+assert.equal(battleDuration({map:'hulk_normal',duration:130,combat_duration:130,parameters:{skip_intro:true}}),'2:10');
+assert.equal(battleDuration({map:'egy_hulk',duration:150,combat_duration:null}),'2:30');
+assert.equal(battleDuration({map:'ice_boss',duration:150,combat_duration:130}),'2:30');
+console.log('Graveyard adjusted/full duration and legacy unknown timing passed.');

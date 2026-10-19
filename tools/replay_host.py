@@ -33,36 +33,108 @@ def state_player(state):
                      'hp','maxhp','facing','ammo','input','alive'), state), vid='browser-player')
 
 
+class PreparedReplay:
+    def __init__(self, records, clients, request):
+        self.source=records.get(str(uuid.UUID(request['record'])))
+        self.attempt=str(uuid.UUID(request['id']))
+        if self.source.get('replay',{}).get('id')!=self.attempt:raise ValueError('Replay does not belong to this battle')
+        self.client=clients.read(self.attempt)
+        self.server=read_journal(Path(records.directory)/(self.source['id']+'.server.jsonl.gz'))
+        if self.server.get('attempt')!=self.attempt:raise ValueError('Server recording does not belong to this replay')
+        if self.client.get('schema')=='starbreak-native-journal-v1':
+            from tools.native_replay_stream import NativeReplayStream
+            self.stream=NativeReplayStream(self.client,self.server)
+        else:self.stream=ReplayStream(self.client,self.server)
+        self.rebuilt=None
+        self.clients=clients;self.branch=None;self.branch_cursor=0;self.writer=None;self.adopted=False
+
+    def at(self, request, progress=None):
+        cursor=request.get('cursor');ops=self.client['ops']
+        if type(cursor)is int and self.branch and cursor<self.branch_cursor:
+            self.close_staging();self.rebuilt=None
+        if type(cursor)is not int or not 0<cursor<=len(ops) or ops[cursor-1]!=['loop',1]:raise ValueError('Take over between complete game iterations')
+        checkpoint=next((row[1] for row in reversed(ops[:cursor]) if row[0]=='state'),None)
+        if checkpoint!=request.get('player'):raise ValueError('Client player state has not been verified')
+        player=state_player(checkpoint)
+        received,sent=self.stream.progress(cursor)
+        boundary,suffix=self.stream.catchup(received)
+        if self.rebuilt is None or self.rebuilt.index>boundary.frame+1:
+            self.rebuilt=RunReplay(self.server) if self.server.get('schema')==RUN_SCHEMA else ServerReplay(self.server,wire=self.stream)
+        while self.rebuilt.index<=boundary.frame:
+            if progress and self.rebuilt.index%100==0:progress(self.rebuilt.index,boundary.frame+1)
+            self.rebuilt.advance()
+        # Keep journal copying and cipher positioning off the input edge.
+        self.stream.transmitter(received);self.stream.receiver(sent)
+        if not self.branch:self.branch=self.clients.fork(self.attempt,cursor,source=self.client)
+        elif cursor>=self.branch_cursor:self.clients.extend_fork(self.branch,self.client['ops'][self.branch_cursor:cursor])
+        else:
+            self.close_staging()
+            self.branch=self.clients.fork(self.attempt,cursor,source=self.client)
+        self.branch_cursor=cursor
+        if self.writer is None:
+            header=dict(self.server,attempt=self.branch['id']);header.pop('frames')
+            path=self.clients.path.parent/('.takeover-'+self.branch['id']+'.pending.gz')
+            self.writer=JournalWriter(path,header)
+        for row in self.server['frames'][self.writer.count:boundary.frame+1]:self.writer.frame(row)
+        return player,boundary,suffix,received,sent
+
+    def close_staging(self):
+        if self.adopted:return
+        if self.writer:
+            self.writer.close(complete=False);self.writer.path.unlink(missing_ok=True);self.writer=None
+        if self.branch:
+            with self.clients.connect() as db:
+                db.execute('DELETE FROM chunks WHERE id=?',(self.branch['id'],))
+                db.execute('DELETE FROM attempts WHERE id=?',(self.branch['id'],))
+            self.branch=None;self.branch_cursor=0
+        if self.rebuilt and self.server.get('schema')==RUN_SCHEMA:self.rebuilt.close()
+
+
+
+class WarmTakeovers:
+    def __init__(self):
+        self.lock=threading.RLock();self.key=None;self.prepared=None
+
+    def get(self, records, clients, request):
+        key=(request.get('id'),request.get('record'))
+        if key!=self.key or self.prepared is None:
+            if self.prepared:self.prepared.close_staging()
+            value=PreparedReplay(records,clients,request)
+            self.key,self.prepared=key,value
+        return self.prepared
+
+    def warm(self, records, clients, request):
+        with self.lock:
+            prepared=self.get(records,clients,request)
+            prepared.at(request)
+            return dict(ready=True)
+
+    def close(self):
+        with self.lock:
+            if self.prepared:self.prepared.close_staging()
+            self.prepared=None;self.key=None
+
+    def take(self, records, clients, request, **options):
+        with self.lock:
+            prepared=self.get(records,clients,request)
+            result=Takeover(records,clients,request,prepared=prepared,**options)
+            self.prepared=None
+            return result
+
+
 class Takeover:
-    def __init__(self, records, clients, request, progress=None, manual=False):
-        self.manual = manual
-        if progress is not None:progress(0, 0)
-        self.directory = Path(records.directory)
-        self.source = records.get(str(uuid.UUID(request['record'])))
-        attempt = str(uuid.UUID(request['id']))
-        if self.source.get('replay', {}).get('id') != attempt:
-            raise ValueError('Replay does not belong to this battle')
-        client = clients.read(attempt)
-        server = read_journal(self.directory/(self.source['id']+'.server.jsonl.gz'))
-        if server.get('attempt') != attempt:
-            raise ValueError('Server recording does not belong to this replay')
-        cursor = request.get('cursor')
-        if type(cursor) is not int or not 0 < cursor <= len(client['ops']) or client['ops'][cursor-1] != ['loop',1]:
-            raise ValueError('Take over between complete game iterations')
-        checkpoint = next((row[1] for row in reversed(client['ops'][:cursor]) if row[0] == 'state'), None)
-        if checkpoint != request.get('player'):
-            raise ValueError('Client player state has not been verified')
-        player = state_player(checkpoint)
-        self.stream = ReplayStream(client, server)
-        received, sent = self.stream.progress(cursor)
-        boundary, self.suffix = self.stream.catchup(received)
+    def __init__(self, records, clients, request, progress=None, manual=False, prepared=None):
+        self.manual=manual
+        if progress:progress(0,0)
+        self.directory=Path(records.directory)
+        prepared=prepared or PreparedReplay(records,clients,request)
+        self.source=prepared.source
+        client,server=prepared.client,prepared.server
+        attempt=prepared.attempt;cursor=request['cursor']
+        player,boundary,self.suffix,received,sent=prepared.at(request,progress)
+        self.stream=prepared.stream
         self.full_run=server.get('schema')==RUN_SCHEMA
-        rebuilt = RunReplay(server) if self.full_run else ServerReplay(server)
-        self.rebuilt=rebuilt
-        while rebuilt.index <= boundary.frame:
-            if progress is not None and rebuilt.index % 100 == 0:
-                progress(rebuilt.index, boundary.frame + 1)
-            rebuilt.advance()
+        rebuilt=self.rebuilt=prepared.rebuilt
         if progress is not None:progress(boundary.frame + 1, boundary.frame + 1)
         if getattr(rebuilt.session,'phase',None) in ('death','done','failed','defeated'):
             raise ValueError('This battle has already ended')
@@ -96,12 +168,13 @@ class Takeover:
                 class_loadouts={server['shell']:copy.deepcopy(params['loadout'])},
                 _live_world_sequence=server.get('world_sequence',1))
             self.session = rebuilt.continue_live(self.bridge, self.server, None)
-        self.session.options.web_client = True
+        self.session.options.web_client = client.get('schema')!='starbreak-native-journal-v1'
         self.recorder = BattleRecorder(self.session, records)
         self.session.battle_recorder = self.recorder
         self.token = str(uuid.uuid4())
-        self.branch = clients.fork(attempt, cursor)
-        self.parent_seconds = sum(row[1] for row in client['ops'][:cursor] if row[0]=='frame')/1000.
+        self.branch = prepared.branch
+        elapsed_kind='step' if client.get('schema')=='starbreak-native-journal-v1' else 'frame'
+        self.parent_seconds = sum(row[1] for row in client['ops'][:cursor] if row[0]==elapsed_kind)/1000.
         with game_settings.event_snapshot(self.settings):
             self.capture = (RunCapture if self.full_run else ServerCapture)(self.session, keep_frames=False)
         self.capture.header = dict(server, attempt=self.branch['id'])
@@ -112,8 +185,9 @@ class Takeover:
             self.capture.started = time.monotonic()-wall
             since = getattr(self.session,'_player_missing_since',None)
             if since is not None:self.session._player_missing_since = wall-(time.time()-since)
-        self.writer = JournalWriter(self.directory/(self.recorder.identifier+'.server.jsonl.gz'),self.capture.header)
-        for frame in server['frames'][:boundary.frame+1]: self.writer.frame(frame)
+        self.writer=prepared.writer
+        self.journal_path=self.directory/(self.recorder.identifier+'.server.jsonl.gz')
+        prepared.adopted=True
         self.capture.sink = self.writer.frame
         self.capture_closed = False
         if self.full_run:self.capture.enter(self.session,record=False)
@@ -142,7 +216,8 @@ class Takeover:
                     self.recorder.tick(0)
                     self.recorder.document['parent'] = dict(id=self.source['id'],at=self.parent_seconds)
                     self.recorder.document['replay'] = dict(id=self.branch['id'])
-                    self.recorder.store.save(self.recorder.document)
+                    if self.recorder.player_acted:
+                        self.recorder.store.save(self.recorder.document)
                 except Exception as error:
                     self.record_error=type(error).__name__
                     self.close_capture()
@@ -242,7 +317,9 @@ class Takeover:
 
     def close_capture(self):
         if self.capture_closed:return
-        try:self.writer.close(complete=not (self.capture.failed or self.record_error))
+        try:
+            self.writer.close(complete=not (self.capture.failed or self.record_error))
+            self.writer.path.replace(self.journal_path)
         except Exception as error:self.record_error=type(error).__name__
         finally:
             if self.full_run:self.capture.detach()

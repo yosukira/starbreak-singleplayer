@@ -34,6 +34,25 @@ class ReplayStreamTests(unittest.TestCase):
         recovered=ReplayStream(partial,dict(server,world_sequence=1))
         self.assertEqual(recovered.boundaries,earlier.boundaries)
 
+    def test_cross_platform_integer_angle_only_allows_one_ulp_cosmetic_difference(self):
+        from types import SimpleNamespace
+        import math
+        layouts=pb_layout.default_layouts()
+        def payload(angle,damage=35):return layouts.encode('Delta',dict(worldupdate_=dict(worldid_=1,dt_=17,generalupdates_=[dict(offset_=17,create_=dict(objid_=40077,props_=dict(vid_='hulk.sgmbullet',facing_=angle,damage_=damage)))])))
+        expected=payload(44)
+        wire=ReplayStream.__new__(ReplayStream);wire._packet_frame=10;wire._packet_rows=[(12,expected)]
+        projectile=SimpleNamespace(objid=40077,rotate=True,homing=False,vx=1.,vy=1.)
+        session=SimpleNamespace(projectiles=SimpleNamespace(projectiles=[projectile]))
+        self.assertEqual(wire.reconcile(10,0,12,payload(45),session),expected)
+        # Damage/position changes and real aim differences remain fatal to the
+        # subsequent packet hash; recording data cannot override game rules.
+        changed=payload(45,damage=99)
+        self.assertEqual(wire.reconcile(10,0,12,changed,session),changed)
+        projectile.vy=math.tan(math.radians(45.1));changed=payload(45)
+        self.assertEqual(wire.reconcile(10,0,12,changed,session),changed)
+        projectile.vy=1.;changed=payload(46)
+        self.assertEqual(wire.reconcile(10,0,12,changed,session),changed)
+
     def documents(self, repeated=False):
         packets=[]
         with game_settings.event_snapshot(game_settings.normalize({'map':'egy_hulk'})):

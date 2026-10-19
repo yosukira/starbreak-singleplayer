@@ -21,6 +21,18 @@ class BrowserRuntimeTests(unittest.TestCase):
         self.addCleanup(app.stop)
         return app
 
+    def test_compatible_playback_does_not_enable_unverified_takeover(self):
+        import uuid
+        app=self.app();identifier=str(uuid.uuid4())
+        app.clients.begin(identifier,'a'*64,'c'*64,dict(content=None),[1366,768])
+        app.clients.append(identifier,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))
+        self.assertTrue(app.api('GET','/api/replay/check?id='+identifier)['ready'])
+        self.assertFalse(app.boot('?replay='+identifier)['replay']['takeover'])
+        for endpoint in ('/api/replay/warm','/api/replay/takeover'):
+            with self.assertRaisesRegex(ValueError,'matching replay adapter'):
+                app.api('POST',endpoint,dict(id=identifier))
+        self.assertEqual(app.records.list(),[])
+
     def test_native_socket_timeout_still_checks_duration(self):
         from localserver.server import LocalServer
         server=LocalServer.__new__(LocalServer)

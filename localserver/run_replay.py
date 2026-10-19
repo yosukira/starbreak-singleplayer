@@ -18,7 +18,7 @@ from .battle_records import parameters, snapshot
 from .live.bridge import PlayerBridge
 from .replay import (FULL_RUN_MAPS, MAX_CALLS, MAX_FRAMES, ObservedBridge,
     RecordedBridge, ReplayMismatch, ServerCapture, OPTIONS, METHODS, call_arguments, call_value,
-    engine_fingerprint, finite, gameplay_settings, integer, packet_digest, refresh_settings)
+    engine_fingerprint, compatible_engine, finite, gameplay_settings, integer, packet_digest, refresh_settings)
 
 SCHEMA='starbreak-run-journal-v1'
 
@@ -266,7 +266,7 @@ class RunReplay:
     def __init__(self,document):
         from .server import LocalServer,parse_args
         document=validate(document)
-        if document['engine']!=engine_fingerprint():raise ValueError('Replay requires the same simulator engine and map data')
+        if not compatible_engine(document['engine']):raise ValueError('Replay requires the same simulator engine and map data')
         self.document=document;self.frames=document['frames'];self.index=0;self.failed=False
         self.settings=document['settings'];self.session=None;self.bridge=RunBridge()
         self.bridge._teleport_serial=document['teleport_serial']

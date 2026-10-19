@@ -70,9 +70,11 @@ class WebEquipment {
   touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
     clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>this.post('/api/draft',this.profile).catch(()=>{}),250);
   }
-  flush(){clearTimeout(this.updateTimer);if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
+  flush(){clearTimeout(this.updateTimer);clearInterval(this.autoUpdateTimer);if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
   renderUpdate(){
     const state=this.updateState||{},notice=this.$('update-notice');
+    const version=state.current_version||state.version||this.installedVersion;
+    if(version){this.installedVersion=version;this.$('current-version').textContent=version;}
     const message=state.messages?.[this.language().startsWith('zh')?'zh':'en']||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
     if(notice.textContent!==message)notice.textContent=message;notice.title=message;
     this.$('check-updates').disabled=['checking','installing'].includes(state.state);
@@ -89,7 +91,7 @@ class WebEquipment {
   }
   async checkUpdates(){
     if(['checking','installing'].includes(this.updateState?.state))return;
-    this.setUpdateStatus({state:'checking',messages:{zh:'正在检查更新…',en:'Checking for updates…'}});
+    this.lastUpdateCheck=Date.now();this.setUpdateStatus({state:'checking',messages:{zh:'正在检查更新…',en:'Checking for updates…'}});
     try{this.setUpdateStatus(await this.post('/api/update',{}));}catch(_){this.updateFailure();}
   }
   preferenceDocument(){return {...this.preferences,shell:this.shell,slot:this.slot,item_sort:this.itemSort,query:this.$('item-search').value,all_classes:this.$('all-classes').checked,language:this.language()};}
@@ -98,14 +100,18 @@ class WebEquipment {
     if(!this.preferences)return;
     this.keyDraft||={...this.preferences.keys};
     const box=this.$('keyboard-settings');box.replaceChildren();
+    const groups={};
+    for(const [name,columns] of [['interaction',1],['editor',2],['run',6],['zoom',3]]){
+      const group=document.createElement('div');group.className='key-group keys-'+name;group.style.setProperty('--key-columns',columns);groups[name]=group;box.append(group);
+    }
     const names={interact:['互动键','Interaction key'],editor_toggle:['显示/隐藏编辑器','Show / hide editor'],editor_toggle_alt:['备用编辑器快捷键','Alternate editor shortcut'],restart:['重开当前局','Restart current run'],wf:['切换 WF','Switch to WF'],dw:['切换 DW','Switch to DW'],fab:['切换 FAB','Switch to FAB'],ic:['切换 IC','Switch to IC'],zoom_in:['放大画面 / 缩小视野','Zoom in / narrower view'],zoom_out:['缩小画面 / 扩大视野','Zoom out / wider view']};
     for(const [key,label]of Object.entries(names)){
       const row=document.createElement('label'),text=document.createElement('span'),select=document.createElement('select');row.className='setting-row';text.textContent=this.t(...label);select.setAttribute('aria-label',text.textContent);
       const choices=[...(key==='interact'?['Auto']:['None']),...this.data.key_choices,...(key.startsWith('zoom_')?this.data.zoom_key_choices||[]:[])];
-      select.append(...choices.map(name=>new Option(({Equal:'+',Minus:'−',NumpadAdd:'Numpad +',NumpadSubtract:'Numpad −'})[name]||name,name)));select.value=this.keyDraft[key];select.onchange=()=>{this.keyDraft[key]=select.value;};row.append(text,select);box.append(row);
+      select.append(...choices.map(name=>new Option(({Equal:'+',Minus:'−',NumpadAdd:'Numpad +',NumpadSubtract:'Numpad −'})[name]||name,name)));select.value=this.keyDraft[key];select.onchange=()=>{this.keyDraft[key]=select.value;};row.append(text,select);groups[key==='interact'?'interaction':key.startsWith('editor_')?'editor':key.startsWith('zoom_')?'zoom':'run'].append(row);
     }
-    const zoomRow=document.createElement('label'),zoomText=document.createElement('span'),zoomStep=document.createElement('input');zoomRow.className='setting-row';zoomText.textContent=this.t('每次缩放比例（%）','Zoom step (%)');zoomStep.type='number';zoomStep.min='5';zoomStep.max='50';zoomStep.step='1';zoomStep.value=this.keyDraft.zoom_percent??10;zoomStep.oninput=()=>this.keyDraft.zoom_percent=Number(zoomStep.value);zoomRow.append(zoomText,zoomStep);box.append(zoomRow);
-    const row=document.createElement('label'),text=document.createElement('span'),input=document.createElement('input');row.className='setting-row';text.textContent=this.t('长按时间（秒）','Hold duration (seconds)');input.type='number';input.min='.5';input.max='5';input.step='.1';input.value=this.keyDraft.hold_seconds;input.setAttribute('aria-label',text.textContent);input.oninput=()=>{this.keyDraft.hold_seconds=Number(input.value);};row.append(text,input);box.append(row);
+    const zoomRow=document.createElement('label'),zoomText=document.createElement('span'),zoomStep=document.createElement('input');zoomRow.className='setting-row';zoomText.textContent=this.t('每次缩放比例（%）','Zoom step (%)');zoomStep.type='number';zoomStep.min='5';zoomStep.max='50';zoomStep.step='1';zoomStep.value=this.keyDraft.zoom_percent??10;zoomStep.oninput=()=>this.keyDraft.zoom_percent=Number(zoomStep.value);zoomRow.append(zoomText,zoomStep);groups.zoom.append(zoomRow);
+    const row=document.createElement('label'),text=document.createElement('span'),input=document.createElement('input');row.className='setting-row';text.textContent=this.t('长按时间（秒）','Hold duration (seconds)');input.type='number';input.min='.5';input.max='5';input.step='.1';input.value=this.keyDraft.hold_seconds;input.setAttribute('aria-label',text.textContent);input.oninput=()=>{this.keyDraft.hold_seconds=Number(input.value);};row.append(text,input);groups.run.append(row);
   }
   notice(text){this.$('editor-error').hidden=false;this.$('editor-error').textContent=text;}
   async action(run){this.$('editor-error').hidden=true;try{await run();}catch(error){this.notice(error.message);}}
@@ -114,6 +120,11 @@ class WebEquipment {
     const response=await fetch('/api/editor'),data=await response.json();if(!response.ok)throw new Error(data.error);
     this.profile=data.profile;this.data=data;
     if(data.update)this.setUpdateStatus(data.update);
+    if(globalThis.StarBreakBrowser&&!this.autoUpdateTimer){
+      void this.checkUpdates();
+      this.autoUpdateTimer=setInterval(()=>{if(!document.hidden)void this.checkUpdates();},300000);
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-(this.lastUpdateCheck||0)>60000)void this.checkUpdates();});
+    }
     if(!this.preferences){this.preferences=data.preferences;this.shell=this.preferences.shell;this.slot=this.preferences.slot;this.itemSort=this.preferences.item_sort;this.$('item-search').value=this.preferences.query;this.$('all-classes').checked=this.preferences.all_classes;}
     if(restoreDraft&&data.draft){this.profile=data.draft;this.dirty=true;}
     this.catalogue=new Map(data.items.map(item=>[item.type,item]));this.dirty=!!(restoreDraft&&data.draft);

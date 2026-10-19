@@ -7,18 +7,67 @@
   const base64 = value => {const data=bytes(value);let output='';for(let i=0;i<data.length;i+=8192)output+=String.fromCharCode(...data.subarray(i,i+8192));return btoa(output);};
   const unbase64 = value => Uint8Array.from(atob(value),c=>c.charCodeAt(0)).buffer;
 
+  function gameplayKeys(content){
+    // Original 1.14.6 defaults. Controller buttons and menu/emote bindings
+    // are not takeover gestures. Explicit personal bindings replace a row.
+    const bindings=[[1073741904],[1073741903],[1073741906],[1073741905],[32,102],[100],[115],[97],[],[1073742049,1073742053],[],[],[],[]];
+    function fields(bytes){
+      let cursor=0;const result=[];
+      const integer=()=>{let n=0,scale=1;for(let i=0;i<10;i++){if(cursor>=bytes.length)throw Error();const b=bytes[cursor++];n+=(b&127)*scale;if(!(b&128))return n;scale*=128;}throw Error();};
+      while(cursor<bytes.length){const tag=integer(),kind=tag%8;let value;
+        if(kind===0)value=integer();
+        else if(kind===2){const size=integer();if(cursor+size>bytes.length)throw Error();value=bytes.subarray(cursor,cursor+size);cursor+=size;}
+        else throw Error();
+        result.push([Math.floor(tag/8),kind,value]);
+      }return result;
+    }
+    try{
+      if(content){
+        const bytes=new Uint8Array(unbase64(atob(content)));
+        if(bytes.length>65536)throw Error();
+        for(const [,kind,entry] of fields(bytes))if(kind===2){
+          const pair=fields(entry),name=pair.find(v=>v[0]===1)?.[2],value=pair.find(v=>v[0]===2)?.[2];
+          if(!name||String.fromCharCode(...name)!=='impbstr'||!value)continue;
+          for(const [field,wire,row] of fields(value))if(field===1&&wire===2){
+            const values=fields(row),action=values.find(v=>v[0]===1&&v[1]===0)?.[2]??0;
+            if(action>=0&&action<14&&action!==8)bindings[action]=values.filter(v=>v[1]===0&&[2,3,4].includes(v[0])).map(v=>v[2]);
+          }
+        }
+      }
+    }catch(_){}
+    return new Set(bindings.flat().filter(v=>Number.isInteger(v)&&v>0&&(v<0x20000000||v>=0x40000000)));
+  }
+
   class ClientReplay {
-    constructor({module, mode='record', document=null, socket=globalThis.WebSocket, save=null, stage=null, notice=()=>{}, keepOps=false, takeoverAllowed=true}) {
+    constructor({module, mode='record', document=null, socket=globalThis.WebSocket, save=null, stage=null, notice=()=>{}, keepOps=false, takeoverAllowed=true, now=()=>performance.now()}) {
       this.module=module;this.mode=mode;this.NativeSocket=socket;this.save=save;this.notice=notice;this.keepOps=keepOps;
       this.ops=document?.ops||[];this.cursor=0;this.pending=[];this.pendingSize=0;this.totalSize=0;this.queuedSize=0;this.sequence=0;
       this.chain=Promise.resolve();this.error=null;this.finished=false;this.inLoop=false;this.injecting=false;this.world=0;
       this.liveSocket=null;this.frameCount=0;this.lastSeed=null;this.hadPlayer=false;this.endAfterLoop=false;
       this.sendQueue=[];
       this.assets=new Map();this.blockedAsset=false;this.lastValues={};
-      this.paused=false;this.speed=1;this.iterationCredit=0;
+      this.paused=false;this.pauseWhenReady=false;this.worldReady=false;this.speed=1;this.iterationCredit=0;
+      this.hasPlayerFrames=this.mode==='play'&&this.ops.some(row=>row[0]==='state'&&row[1].length===14);
+      this.now=now;this.wall=null;this.playTime=0;this.scheduleIndex=0;
+      // Iterations without a physics step still consume recorded time. A tape
+      // made at 190 Hz must retain its pace on a 60 Hz display.
+      this.schedule=[];this.seekTarget=null;this.seekPaused=false;
+      if(mode==='play'){
+        let previous=0,origin=null;
+        for(let i=0;i<this.ops.length;i++)if(this.ops[i][0]==='loop'&&this.ops[i][1]===0){
+          let tick=null,dt=0;
+          for(let j=i+1;j<this.ops.length&&this.ops[j][0]!=='loop';j++){
+            if(tick===null&&this.ops[j][0]==='tick')tick=this.ops[j][1];
+            if(this.ops[j][0]==='frame')dt+=this.ops[j][1];
+          }
+          if(tick!==null){if(origin===null)origin=tick;previous=Math.max(previous,tick-origin);}
+          else if(this.schedule.length)previous+=dt||1000/60;
+          this.schedule.push({cursor:i,time:previous});
+        }
+      }
       this.elapsed=0;this.totalDuration=this.mode==='play'?this.ops.reduce((sum,row)=>sum+(row[0]==='frame'?row[1]:0),0):0;
       this.heldKeys=new Set();this.liveOffsets={};this.releaseAfterFrame=[];
-      this.takeoverAllowed=takeoverAllowed;
+      this.takeoverAllowed=takeoverAllowed;this.lastPlaybackNotice=-Infinity;
       this.stage=stage;
       this.leaving=false;this.runtimeStopped=false;
     }
@@ -141,7 +190,7 @@
       }catch(error){this.fail(error);return actual;}
     }
     loop(stage) {
-      if(stage===0&&this.mode==='play'&&this.paused)return false;
+      if(stage===0&&this.mode==='play'&&this.paused&&this.seekTarget===null)return false;
       if(this.error||this.finished){if(stage===1){this.inLoop=false;this.stopIfLeaving();}return this.mode==='record';}
       try{
         if(this.mode==='record')this.write(['loop',stage]);
@@ -186,16 +235,51 @@
     iterate(callback) {
       if(this.mode==='record'){callback();return;}
       if(this.paused||this.handoffPending||this.finished||this.error)return;
-      this.iterationCredit+=this.speed;
-      const count=Math.floor(this.iterationCredit);this.iterationCredit-=count;
-      for(let index=0;index<count&&!this.paused&&!this.finished&&!this.error;index++)callback();
+      if(!this.schedule.length){
+        this.iterationCredit+=this.speed;
+        const count=Math.floor(this.iterationCredit);this.iterationCredit-=count;
+        for(let i=0;i<count&&!this.paused&&!this.finished&&!this.error;i++)callback();
+        return;
+      }
+      const started=this.now();
+      if(this.wall!==null)this.playTime+=Math.min(250,Math.max(0,started-this.wall))*this.speed;
+      this.wall=started;
+      let count=0;
+      while(!this.paused&&!this.handoffPending&&!this.finished&&!this.error){
+        while(this.scheduleIndex<this.schedule.length&&this.schedule[this.scheduleIndex].cursor<this.cursor)this.scheduleIndex++;
+        const next=this.schedule[this.scheduleIndex];
+        if(this.seekTarget===null&&!this.pauseWhenReady&&next&&next.time>this.playTime)break;
+        const cursor=this.cursor;callback();
+        if(this.cursor===cursor||this.blockedAsset){
+          // Loading is outside playback time; do not sprint to catch up after
+          // an image download or a backgrounded browser tab.
+          this.playTime=next?.time??this.playTime;this.wall=null;break;
+        }
+        if(this.seekTarget!==null&&this.elapsed>=this.seekTarget&&(!this.seekPaused||this.worldReady||!this.hasPlayerFrames)){
+          this.seekTarget=null;this.paused=this.seekPaused;this.wall=null;
+          this.playTime=this.schedule[this.scheduleIndex]?.time??this.playTime;
+          this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});break;
+        }
+        if(++count>=240||this.now()-started>=12)break;
+      }
+    }
+    seek(seconds, paused=false){
+      if(this.mode!=='play'||this.finished||this.error||this.handoffPending||!Number.isFinite(seconds))return;
+      this.seekTarget=Math.max(this.elapsed,Math.min(this.totalDuration,Math.max(0,seconds)*1000));
+      this.seekPaused=paused;this.paused=false;this.pauseWhenReady=false;this.wall=null;
+      this.notice({state:'seeking',seconds:this.elapsed/1000,duration:this.totalDuration/1000,target:this.seekTarget/1000});
     }
     setPaused(value) {
       if(this.mode!=='play'||this.finished||this.error||this.handoffPending)return;
-      this.paused=value===true;this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
+      // Initial UI/network/texture callbacks must reach a real player frame
+      // before pausing. Otherwise seeking back to 0 while paused deadlocks the
+      // loading overlay and leaves its navigation permanently disabled.
+      this.pauseWhenReady=value===true&&!this.worldReady&&this.hasPlayerFrames;
+      this.paused=value===true&&!this.pauseWhenReady;this.wall=null;
+      if(!this.pauseWhenReady)this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
     }
     setSpeed(value) {
-      if([.5,1,2,4].includes(value))this.speed=value;
+      if([.25,.5,1,2,4].includes(value)){this.speed=value;this.wall=null;}
     }
     asset(kind, path, callback) {
       if(this.error||this.finished){callback();return;}
@@ -227,7 +311,7 @@
       return [seed,total,read(player,8),read(subworld,4),...[16,20,24,28,64,68,40,540,520].map(offset=>read(player,offset)),Number(read(player,64)>0)];
     }
     canTakeOver() {
-      if(!this.takeoverAllowed||this.mode!=='play'||this.error||this.finished||this.inLoop||this.sendQueue.length||!this.world)return false;
+      if(this.seekTarget!==null||!this.takeoverAllowed||this.mode!=='play'||this.error||this.finished||this.inLoop||this.sendQueue.length||!this.world)return false;
       const state=this.playerState(this.world);
       return state.length===14&&state[8]>0&&state[13]===1;
     }
@@ -268,10 +352,14 @@
           for(const key of this.releaseAfterFrame.splice(0))this.control('key',[0,key],()=>this.module.replayControl('key',[0,key]));
         } else {
           if(JSON.stringify(this.next('state')[1])!==JSON.stringify(state))throw Error(`Client player state diverged at frame ${this.frameCount}`);
+          if(state.length===14)this.worldReady=true;
           // A short takeover tap is released at this exact engine boundary.
           // Delaying it until the next clock import changes input timestamps.
           this.external();
-          this.notice({state:'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.takeoverAllowed&&state.length===14&&state[8]>0});
+          const now=this.now();
+          const initialized=this.pauseWhenReady&&this.worldReady;
+          if(initialized){this.pauseWhenReady=false;this.paused=true;this.wall=null;}
+          if(initialized||this.frameCount===1||now-this.lastPlaybackNotice>=100){this.lastPlaybackNotice=now;this.notice({state:this.seekTarget!==null?'seeking':this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,target:this.seekTarget===null?undefined:this.seekTarget/1000,takeover:this.seekTarget===null&&this.takeoverAllowed&&state.length===14&&state[8]>0});}
         }
       }catch(error){this.fail(error);}
     }
@@ -309,17 +397,17 @@
     if(typeof job.job!=='string')throw Error('Invalid takeover verification');
     // Each HTTP request stays short; reconstructing a long battle may take
     // minutes. Keep the original replay paused until verification completes.
-    for(let poll=0;poll<600;poll++){
+    for(let poll=0;poll<12000;poll++){
       const status=await read('/api/replay/takeover?job='+encodeURIComponent(job.job));
       if(status.state==='ready')return status.result;
       if(status.state!=='pending')throw Error(status.error||'Takeover verification failed');
       notice(status.total>0?Math.min(99,Math.floor(100*status.current/status.total)):0);
-      await sleep(1000);
+      await sleep(50);
     }
     throw Error('Takeover verification timed out');
   }
 
-  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover};return;}
+  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys};return;}
   globalThis.StarBreakClientReplay=ClientReplay;
   const boot=globalThis.STARBREAK_WEB_BOOT?.replay;
   if(!boot)return;
@@ -338,11 +426,29 @@
   Module.webReplayEnd=world=>replay.frameEnd(world);
   Module.webReplayInput=(world,pointer)=>replay.input(world,pointer);
   Module.preMainLoop=()=>replay.loop(0);
-  Module.postMainLoop=()=>replay.loop(1);
+  Module.postMainLoop=()=>{
+    replay.loop(1);
+    if(queuedTakeover!==undefined&&replay.canTakeOver()){
+      const tap=queuedTakeover;queuedTakeover=undefined;queueMicrotask(()=>takeOver(tap));
+    }
+  };
   const physical=new Set();
-  let pendingTakeover=false;
+  let takeoverKeys=gameplayKeys(null);
+  if(playback)void fetch('/api/game-preferences',{cache:'no-store'}).then(response=>response.json()).then(value=>{takeoverKeys=gameplayKeys(value.content);}).catch(()=>{});
+  let pendingTakeover=false,queuedTakeover;
+  let warming=false;
+  const warmTimer=playback?setInterval(async()=>{
+    if(warming||pendingTakeover||!replay.canTakeOver())return;
+    warming=true;
+    try{await fetch('/api/replay/warm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:boot.id,record:boot.record,cursor:replay.cursor,player:replay.playerState(replay.world)}),signal:AbortSignal.timeout(60000)});}catch(_){}
+    finally{warming=false;}
+  },400):null;
   async function takeOver(tap=null){
-    if(pendingTakeover||!replay.canTakeOver())return;
+    if(pendingTakeover)return;
+    if(!replay.canTakeOver()){
+      if(replay.seekTarget===null&&replay.takeoverAllowed&&replay.mode==='play'&&!replay.error&&!replay.finished&&replay.world)queuedTakeover=tap;
+      return;
+    }
     pendingTakeover=true;
     const previousPreferences=Module.gamePreferences;
     const paused=replay.paused;replay.setPaused(true);
@@ -369,13 +475,14 @@
             try{
               replay.becomeLive(transport,branch,[...physical],tap,()=>
                 Module.gamePreferences?.becomeLive?.(branch.preferences,content=>replay.preferences(content)));
-              boot.id=branch.id;boot.document=null;
+              clearInterval(warmTimer);queuedTakeover=undefined;boot.id=branch.id;boot.document=null;
               Module.webStartLiveTelemetry(feedback);
               ready=true;
               for(const data of buffered)replay.receiveLive(data);
               transport.send(JSON.stringify({type:'takeover-commit'}));
               parent.postMessage({type:'replay-status',state:'taken-over',record:branch.record},location.origin);
               document.getElementById('loading').hidden=true;
+              window.focus();Module.canvas?.focus();
               resolve();
             }catch(error){reject(error);transport.close();}
           }else feedback.onmessage?.({data:event.data});
@@ -396,6 +503,7 @@
   addEventListener('message',event=>{
     if(event.origin!==location.origin||event.source!==parent||event.data.type!=='replay-control')return;
     if(event.data.action==='pause')replay.setPaused(event.data.paused);
+    if(event.data.action==='seek')replay.seek(event.data.seconds,event.data.paused);
     if(event.data.action==='speed')replay.setSpeed(event.data.speed);
     if(event.data.action==='takeover')void takeOver();
   });
@@ -405,11 +513,11 @@
       event.preventDefault();event.stopImmediatePropagation();
       if(type==='keydown'||type==='keyup'){
         const key=Module.replayTranslateKey?.(event.keyCode||event.which)||0;
-        if(type==='keyup')physical.delete(key);else physical.add(key);
-        if(type==='keydown'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!/^(?:F\d+|Tab|Shift|Control|Alt|Meta|Backquote)/.test(event.code))void takeOver(key);
+        if(type==='keyup')physical.delete(key);else if(takeoverKeys.has(key))physical.add(key);
+        if(type==='keydown'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&takeoverKeys.has(key))void takeOver(key);
       }
     },true);
     parent.postMessage({type:'replay-status',state:'ready'},location.origin);
   }
-  addEventListener('pagehide',()=>{replay.finish();});
+  addEventListener('pagehide',()=>{clearInterval(warmTimer);replay.finish();});
 })();

@@ -104,6 +104,14 @@ class Plugin(PluginBase):
             LOG.info('dormant (no %s)', SESSION_ENV)
         elif bool(self.config.enabled):
             self._enable()
+        self.native_capture=None
+        if self.session:
+            try:
+                recorder=importlib.import_module('_native_replay_capture')
+                self.native_capture=recorder.create(ffi,lib,self.refs)
+                if self.native_capture is not None:self.bridge.feedback_sink=self.native_capture.divert_feedback
+            except Exception as error:
+                LOG.warning('native recording unavailable: %s',type(error).__name__)
 
     def _enable(self):
         try:
@@ -137,13 +145,46 @@ class Plugin(PluginBase):
             self._enable()
 
     def beforeUpdate(self):
+        if self.native_capture is not None:
+            branch=self.native_capture.branch
+            try:
+                self.native_capture.poll(self._replay_post_frame)
+                self.bridge.feedback_isolated=self.native_capture.player is not None
+                if self.native_capture.last_ack is not None:
+                    self.bridge.receive_native_ack(self.native_capture.last_ack)
+                    self.native_capture.last_ack=None
+                for document in self.native_capture.bridge_documents:
+                    self.bridge.receive_native_ack(document)
+                self.native_capture.bridge_documents=[]
+                if branch is None and self.native_capture.branch is not None:
+                    self.bridge._battle_activity=False
+                    metrics=getattr(self.bridge,'health_metrics',None)
+                    if metrics is not None:metrics.totals.reset(None)
+                self.native_capture.before()
+            except Exception as error:
+                self.native_capture.tape.fail(error)
         if self.session and self.active:
             try:self.bridge.sample_interaction_target()
             except Exception:
                 self.bridge._interaction_pre_local=False
 
     def afterUpdate(self):
+        try:self._after_update_live()
+        finally:
+            if self.native_capture is not None:
+                try:self.native_capture.after()
+                except Exception as error:self.native_capture.tape.fail(error)
+
+    def _replay_post_frame(self):
+        if bool(self.config.keep_time_reserve):self.bridge.top_up_reserve()
+        self.bridge.begin_native_frame()
+
+    def _after_update_live(self):
         if not self.session:
+            return
+        if self.native_capture is not None and self.native_capture.player is not None and self.native_capture.player.blocked():
+            state=self.native_capture.player.status()
+            self.status='Replay {0}  {1:.1f}/{2:.1f}s'.format(state['state'],state['seconds'],state['duration'])
             return
         try:
             edge = self._edge()

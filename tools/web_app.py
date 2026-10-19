@@ -73,7 +73,7 @@ class TakeoverJobs:
                     job.update(state='ready', result=result)
             except Exception as error:
                 with self.lock:
-                    job.update(state='failed', error='Takeover verification failed ('+type(error).__name__+')')
+                    job.update(state='failed', error=str(error)[:200] if isinstance(error,ValueError) else 'Takeover verification failed ('+type(error).__name__+')')
             finally:job['done'].set()
 
         threading.Thread(target=worker, daemon=True).start()
@@ -132,8 +132,8 @@ class Prototype:
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
         self.workspace = Workspace(self.directory)
-        self.records = RecordStore(self.directory / 'battles')
-        self.client_journals = ClientJournals(self.directory / 'battles')
+        self.records = RecordStore(getattr(options,'records_dir',None) or self.directory / 'battles')
+        self.client_journals = ClientJournals(self.records.directory)
         self.takeovers, self.takeover_lock = {}, threading.Lock()
         self.takeover_jobs = TakeoverJobs()
         self.game_connections, self.connection_lock = {}, threading.Lock()
@@ -205,24 +205,46 @@ class Prototype:
         rows = self.records.list()
         identifiers = [row['replay']['id'] for row in rows if row.get('replay', {}).get('id')]
         adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
-        states = self.client_journals.statuses(identifiers, adapter)
+        states = self.client_journals.statuses(identifiers, adapter, client=CLIENT_SHA256, allow_compatible=True)
         for row in rows:
             identifier = row.get('replay', {}).get('id')
             if identifier in states:
                 row['replay'] = states[identifier]
+        native_ids=[row['replay']['id'] for row in rows if row.get('platform')=='native' and row.get('replay',{}).get('id')]
+        if native_ids:
+            try:
+                from tools.native_playback import NativeControlClient
+                control=NativeControlClient();native_states={}
+                for offset in range(0,len(native_ids),500):native_states.update(control.call('/availability',dict(ids=native_ids[offset:offset+500])))
+                for row in rows:
+                    if row.get('platform')=='native' and row.get('replay',{}).get('id') in native_states:
+                        row['replay']=dict(native_states[row['replay']['id']],engine='native')
+            except (OSError,ValueError,KeyError):pass
         return rows
 
-    def replay_document(self, identifier):
+    def replay_document(self, identifier, require_exact=False):
         document = self.client_journals.read(identifier)
         adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
-        if document['client'] != CLIENT_SHA256 or document['adapter'] != adapter:
-            raise ValueError('Replay requires the same browser engine and replay adapter')
+        if document['client'] != CLIENT_SHA256:
+            raise ValueError('Replay requires a supported original game client')
+        if require_exact and document['adapter'] != adapter:
+            raise ValueError('Compatible playback can be tried, but takeover requires the matching replay adapter')
         return document
 
+    def warm_takeover(self, document):
+        from tools.replay_host import WarmTakeovers
+        self.replay_document(document['id'],require_exact=True)
+        # Instantiate under the existing lock so concurrent HTTP requests cannot
+        # allocate unbounded caches. Warm requests create no branch or record.
+        with self.takeover_lock:
+            if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
+        return self.warm_takeovers.warm(self.records,self.client_journals,document)
+
     def prepare_takeover(self, document, progress=None):
-        from tools.replay_host import Takeover
+        from tools.replay_host import WarmTakeovers
+        self.replay_document(document['id'],require_exact=True)
         # Verify compatibility before creating any branch files or records.
-        self.replay_document(document.get('id'))
+        if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
         preferences=self.game_preferences.read()
         with self.takeover_lock:
             for token, old in list(self.takeovers.items()):
@@ -232,7 +254,7 @@ class Prototype:
                 matches=[r['id'] for r in self.records.list() if r.get('replay',{}).get('id')==document['id']]
                 if len(matches)!=1:raise ValueError('Select the battle to take over')
                 document=dict(document,record=matches[0])
-            host=Takeover(self.records,self.client_journals,document,progress=progress)
+            host=self.warm_takeovers.take(self.records,self.client_journals,document,progress=progress)
             if progress is not None:
                 try:progress(1, 1)
                 except Exception:
@@ -246,6 +268,7 @@ class Prototype:
         # publication so restarting a battle cannot leave an orphan live host.
         with getattr(self, 'takeover_lock', threading.Lock()):
             for host in list(getattr(self,'takeovers',{}).values()):host.stop()
+            if getattr(self,'warm_takeovers',None):self.warm_takeovers.close()
         # Half-close owned game sockets first. The child seals its journal and
         # battle record before closing its side; only then terminate the idle
         # listener. This also works on Windows, where terminate skips finally.
@@ -314,7 +337,7 @@ class Prototype:
                        '--projectile-overrides', str(self.directory / 'class_loadout_overrides.json'),
                        '--player-payloads', str(ROOT / 'data/catalogue/class_players.json'), '--no-time-echo']
             environment = dict(os.environ, SB_GAME_SETTINGS_PATH=str(self.directory / 'game_settings.json'),
-                               SB_BATTLE_RECORDS_PATH=str(self.directory / 'battles'),
+                               SB_BATTLE_RECORDS_PATH=str(self.records.directory),
                                SB_RECORD_REPLAY='1' if self.recording_id else '0',
                                SB_REPLAY_ATTEMPT=self.recording_id or '')
             self.process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=self.log, stderr=subprocess.STDOUT)
@@ -346,12 +369,13 @@ class Prototype:
         else:
             self.recording_id = identifier
 
-    def replay_takeover_ready(self, identifier, record=None):
+    def replay_takeover_ready(self, identifier, record=None, client_document=None):
         """Only offer continuation when matching server state is present."""
         import gzip
-        from localserver.replay import engine_fingerprint, SUPPORTED_MAPS, SCHEMA
+        from localserver.replay import engine_fingerprint, compatible_engine, SUPPORTED_MAPS, SCHEMA
         from localserver.run_replay import SCHEMA as RUN_SCHEMA
         from localserver.replay import FULL_RUN_MAPS
+        if client_document is not None and client_document['adapter']!=hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest():return False
         if record is None:
             matches=[r for r in self.records.list() if r.get('replay',{}).get('id')==identifier]
             if len(matches)!=1:return False
@@ -366,7 +390,7 @@ class Prototype:
             supported=((header.get('schema')==SCHEMA and header.get('map') in SUPPORTED_MAPS) or
                        (header.get('schema')==RUN_SCHEMA and header.get('map') in FULL_RUN_MAPS))
             return (supported and
-                    header.get('attempt')==identifier and header.get('engine')==engine_fingerprint())
+                    header.get('attempt')==identifier and compatible_engine(header.get('engine')))
         except (OSError,EOFError,ValueError,KeyError,TypeError):
             return False
 
@@ -556,6 +580,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ('/api/info', '/api/status'):
                 return self.send(self.server.prototype.info())
+            if path=='/api/native/status':
+                from tools.native_playback import NativeControlClient
+                return self.send(NativeControlClient().call('/status'))
             if path == '/api/editor':
                 return self.send(dict(self.server.prototype.workspace.editor(),
                                       update=update.public_status(self.server.prototype.update_checker.status())))
@@ -570,14 +597,25 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/records/transfer':
                 token=parse_qs(urlsplit(self.path).query).get('id',[''])[0]
                 return self.send(getattr(self.server.prototype,'transfer_progress',{}).get(token,dict(stage='connecting')))
+            if path == '/api/records/origin':
+                from tools.replay_sharing import ShareClient
+                identifier=parse_qs(urlsplit(self.path).query).get('id',[''])[0]
+                row=self.server.prototype.records.get(identifier)
+                result=ShareClient(self.server.prototype.directory).origin(row)
+                self.server.prototype.records.remember_share_code(identifier,result['code'])
+                return self.send(result)
+            if path == '/api/records/comments':
+                from tools.replay_sharing import ShareClient
+                query=parse_qs(urlsplit(self.path).query)
+                return self.send(ShareClient(self.server.prototype.directory).comments(query.get('code',[''])[0],query.get('before',[None])[0]))
             if path == '/api/records/shared-detail':
                 from tools.replay_sharing import ShareClient
                 identifier=parse_qs(urlsplit(self.path).query).get('code',[''])[0]
                 return self.send(ShareClient(self.server.prototype.directory).details(identifier))
             if path == '/api/records/shared':
                 from tools.replay_sharing import ShareClient
-                order=parse_qs(urlsplit(self.path).query).get('sort',['latest'])[0]
-                return self.send(ShareClient(self.server.prototype.directory).listings(order))
+                query={key:values[0] for key,values in parse_qs(urlsplit(self.path).query).items()}
+                return self.send(ShareClient(self.server.prototype.directory).listings(query.get('sort','latest'),query))
             if path == '/api/records':
                 return self.send(dict(records=self.server.prototype.battle_records()))
             if path == '/api/replay/check':
@@ -604,11 +642,11 @@ class Handler(BaseHTTPRequestHandler):
                     record=parse_qs(urlsplit(self.path).query).get('record',[None])[0]
                     if record is not None:record=str(uuid.UUID(record))
                     replay = dict(id=document['id'], mode='play', document=document, record=record,
-                                  takeover=prototype.replay_takeover_ready(identifier,record))
+                                  takeover=prototype.replay_takeover_ready(identifier,record,document))
                     preferences = dict(key='LocalStorage.pb', revision=0, content=document['preferences'])
                 data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=prototype.options.ws_port,keybindings=prototype.workspace.preferences()['keys'],gamePreferences=preferences,replay=replay)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/replay.js', '/replay-storage.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/canvas.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/replay.js', '/replay-storage.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
                 data = (ROOT / 'web' / filename).read_bytes()
                 if path == '/game.html':
@@ -627,7 +665,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update', '/api/records/import', '/api/records/export', '/api/records/share', '/api/records/redeem', '/api/game-preferences', '/api/replay/client', '/api/replay/takeover'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update', '/api/records/import', '/api/records/export', '/api/records/share', '/api/records/redeem', '/api/records/comments', '/api/game-preferences', '/api/replay/client', '/api/replay/takeover', '/api/replay/warm', '/api/native/command', '/api/quit'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -639,7 +677,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not 0 < length <= MAX_IMPORT:
                     raise ValueError('Battle import exceeds 256 MB')
                 return self.send(self.server.prototype.records.import_bytes(self.rfile.read(length)))
-            limit = 512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft', '/api/game-preferences') else 4096
+            limit = 8192 if self.path=='/api/records/comments' else 512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft', '/api/game-preferences') else 4096
             if self.path == '/api/replay/client':
                 limit = MAX_CHUNK
             if self.path == '/api/records/export':
@@ -649,8 +687,16 @@ class Handler(BaseHTTPRequestHandler):
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
+            if self.path=='/api/native/command':
+                from tools.native_playback import NativeControlClient
+                return self.send(NativeControlClient().call('/command',document))
+            if self.path == '/api/quit':
+                if not getattr(self.server.prototype.options,'records_dir',None):raise ValueError('This server is managed by its launcher')
+                self.send(dict(closing=True));threading.Thread(target=self.server.shutdown,daemon=True).start();return
             if self.path == '/api/replay/client':
                 return self.send(self.server.prototype.client_journals.append(document.get('id'), document))
+            if self.path == '/api/replay/warm':
+                return self.send(self.server.prototype.warm_takeover(document))
             if self.path == '/api/replay/takeover':
                 prototype = self.server.prototype
                 return self.send(prototype.takeover_jobs.begin(prototype.prepare_takeover, document))
@@ -658,13 +704,27 @@ class Handler(BaseHTTPRequestHandler):
                 import base64
                 name, data = self.server.prototype.records.export(document.get('ids'))
                 return self.send(dict(filename=name, content=base64.b64encode(data).decode('ascii')))
+            if self.path == '/api/records/comments':
+                from tools.replay_sharing import ShareClient
+                return self.send(ShareClient(self.server.prototype.directory).comment(document.get('code'),document.get('nickname'),document.get('text')))
             if self.path in ('/api/records/share', '/api/records/redeem'):
                 from tools.replay_sharing import ShareClient
                 service = ShareClient(self.server.prototype.directory)
                 if self.path.endswith('/share'):
                     identifier = str(uuid.UUID(document['id']))
-                    _name, data = self.server.prototype.records.export([identifier])
-                    return self.send(service.upload(data,document.get('nickname','')))
+                    row=self.server.prototype.records.get(identifier)
+                    if row['source']=='import':
+                        result=service.origin(row);self.server.prototype.records.remember_share_code(identifier,result['code'])
+                        return self.send(result)
+                    token=str(uuid.UUID(document.get('transfer_id',str(uuid.uuid4()))))
+                    prototype=self.server.prototype
+                    if not hasattr(prototype,'transfer_progress'):prototype.transfer_progress={}
+                    def progress(stage,loaded=0,total=0):prototype.transfer_progress[token]=dict(stage=stage,loaded=loaded,total=total)
+                    progress('preparing')
+                    _name, data = prototype.records.export([identifier])
+                    result=service.upload(data,document.get('nickname',''),progress)
+                    prototype.records.remember_share_code(identifier,result['code'],result.get('nickname',document.get('nickname','')))
+                    return self.send(result)
                 token=str(uuid.UUID(document.get('transfer_id',str(uuid.uuid4()))))
                 prototype=self.server.prototype
                 if not hasattr(prototype,'transfer_progress'):prototype.transfer_progress={}
@@ -673,7 +733,7 @@ class Handler(BaseHTTPRequestHandler):
                 progress('connecting')
                 data = service.download(document.get('code'),progress)
                 progress('validate',len(data),len(data))
-                result=self.server.prototype.records.import_bytes(data)
+                result=self.server.prototype.records.import_bytes(data,shared_code=document.get('code'))
                 progress('saved',len(data),len(data))
                 if result['imported']:service.acknowledge(document.get('code'))
                 return self.send(result)
@@ -710,6 +770,7 @@ def main():
     parser.add_argument('--game-port', type=int, default=20480)
     parser.add_argument('--bridge-port', type=int, default=21551)
     parser.add_argument('--data-dir', type=Path, help='Separate browser profile and asset cache directory')
+    parser.add_argument('--records-dir', type=Path, help='Use an existing battle history without moving or copying records')
     parser.add_argument('--no-browser', action='store_true', help='Print the address without opening a browser')
     parser.add_argument('--check-runtime', action='store_true', help='Verify the bundled browser runtime and exit')
     options = parser.parse_args()

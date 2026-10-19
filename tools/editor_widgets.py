@@ -70,15 +70,26 @@ class ScrollFrame(ttk.Frame):
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
 
     def _wheel(self, event):
-        widget = event.widget
-        while widget is not None and widget is not self.content:
-            widget = getattr(widget, 'master', None)
-        if widget is None:
+        # Aqua may deliver wheel events to the focused widget, rather than the
+        # widget under the pointer. Scope scrolling by the hovered viewport.
+        try:widget=self.top.winfo_containing(event.x_root,event.y_root)
+        except (tk.TclError,AttributeError):widget=None
+        widget=widget or event.widget
+        owner=widget
+        while owner is not None and not isinstance(owner,ScrollFrame):owner=getattr(owner,'master',None)
+        if owner is not self:return
+        if isinstance(widget,(tk.Listbox,tk.Text,ttk.Treeview)):
+            # These widgets own independent scroll regions.
             return
-        if isinstance(event.widget, (tk.Listbox, ttk.Combobox, ttk.Spinbox, ttk.Scale)):
-            return
-        units = -int(event.delta / 120) or (-1 if event.delta > 0 else 1)
-        (self.canvas.xview_scroll if event.state & 1 else self.canvas.yview_scroll)(units, 'units')
+        delta=getattr(event,'delta',0)
+        if not delta:return
+        aqua=self.tk.call('tk','windowingsystem')=='aqua'
+        amount=-delta/(8 if aqua and abs(delta)<120 else 120)
+        self._wheel_fraction=getattr(self,'_wheel_fraction',0)+amount
+        units=int(self._wheel_fraction)
+        if units:
+            self._wheel_fraction-=units
+            (self.canvas.xview_scroll if event.state & 1 else self.canvas.yview_scroll)(units,'units')
         return 'break'
 
     def _destroyed(self, event):

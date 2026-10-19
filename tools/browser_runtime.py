@@ -190,22 +190,27 @@ class BrowserRuntime:
         if host and host.committed and not host.stopped.is_set():host.step(dt)
         elif self.server and self.server.live_session:self.server.live_session.step(dt)
 
+    def replay_document(self, identifier, require_exact=False):
+        value=self.clients.read(identifier)
+        if value['client']!=self.manifest['client']:raise ValueError('This replay requires a supported original game client')
+        if require_exact and value['adapter']!=self.manifest['adapter']:
+            raise ValueError('Compatible playback can be tried, but takeover requires the matching replay adapter')
+        return value
+
     def boot(self, query):
         values = parse_qs(query.lstrip('?'))
         replay = dict(id=self.attempt,mode='record') if self.attempt else None
         prefs = self.preferences.read()
         if 'replay' in values:
             attempt = str(uuid.UUID(values['replay'][0]))
-            document = self.clients.read(attempt)
-            if document['client'] != self.manifest['client'] or document['adapter'] != self.manifest['adapter']:
-                raise ValueError('This replay requires a different browser version')
+            document = self.replay_document(attempt)
             replay = dict(id=attempt,mode='play',document=document, record=values.get('record',[None])[0],takeover=False)
             record = next((r for r in self.records.list() if r['id']==replay['record']),None)
             if record:
-                from localserver.replay import read_journal, engine_fingerprint
+                from localserver.replay import read_journal, compatible_engine
                 try:
                     header = read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
-                    replay['takeover'] = header['engine']==engine_fingerprint()
+                    replay['takeover'] = document['adapter']==self.manifest['adapter'] and compatible_engine(header['engine'])
                 except (ValueError,OSError):pass
             prefs = dict(key='LocalStorage.pb',revision=0,content=document['preferences'])
         return dict(wsPort=0,keybindings=self.workspace.preferences()['keys'],gamePreferences=prefs,replay=replay)
@@ -226,26 +231,38 @@ class BrowserRuntime:
         if path == '/api/inventory':return dict(inventory=self.player.get('inventory_preview'),error=self.player.get('inventory_error'))
         if path == '/api/records':
             rows = self.records.list()
-            states = self.clients.statuses([r['replay']['id'] for r in rows if r.get('replay',{}).get('id')],self.manifest['adapter'])
+            states = self.clients.statuses([r['replay']['id'] for r in rows if r.get('replay',{}).get('id')],self.manifest['adapter'],client=self.manifest['client'],allow_compatible=True)
             for row in rows:
                 if row.get('replay',{}).get('id') in states:row['replay']=states[row['replay']['id']]
             return dict(records=rows)
         if path == '/api/replay/client':return self.clients.append(document['id'],document)
         if path == '/api/replay/check':
             attempt = parse_qs(urlsplit(url).query)['id'][0]
-            value = self.clients.read(attempt)
-            if value['adapter']!=self.manifest['adapter']:raise ValueError('Replay version differs')
+            value = self.replay_document(attempt)
             return dict(ready=True)
+        if path == '/api/replay/warm':
+            from tools.replay_host import WarmTakeovers
+            self.replay_document(document['id'],require_exact=True)
+            if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
+            return self.warm_takeovers.warm(self.records,self.clients,document)
         if path == '/api/replay/takeover':
             if method=='GET':return self.jobs[parse_qs(urlsplit(url).query)['job'][0]]
-            from tools.replay_host import Takeover
+            from tools.replay_host import WarmTakeovers
+            self.replay_document(document['id'],require_exact=True)
+            if not getattr(self,'warm_takeovers',None):self.warm_takeovers=WarmTakeovers()
             self.stop()
-            host = Takeover(self.records,self.clients,document,manual=True)
+            host = self.warm_takeovers.take(self.records,self.clients,document,manual=True)
             self.takeovers[host.token] = host
             self.jobs[host.token] = dict(state='ready',result=dict(host.description(),preferences=self.preferences.read()))
             return dict(job=host.token)
         if path == '/api/records/export':
             name, data = self.records.export(document['ids'])
             return dict(filename=name,content=base64.b64encode(data).decode())
-        if path == '/api/records/import':return self.records.import_bytes(base64.b64decode(document['content']))
+        if path == '/api/records/reference':
+            row=self.records.get(parse_qs(urlsplit(url).query).get('id',[''])[0])
+            return {key:row.get(key,'') for key in ('id','source','shared_by','shared_code')}
+        if path == '/api/records/origin':
+            self.records.remember_share_code(document['id'],document['code'],document.get('nickname'))
+            return dict(saved=True)
+        if path == '/api/records/import':return self.records.import_bytes(base64.b64decode(document['content']),shared_code=document.get('shared_code'))
         raise ValueError('Unknown browser action')

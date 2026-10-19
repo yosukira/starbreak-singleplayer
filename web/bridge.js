@@ -11,7 +11,7 @@
   let maximumDependencies=0;
   Module.monitorRunDependencies=count=>{maximumDependencies=Math.max(maximumDependencies,count);parent.postMessage({type:'loading-progress',percent:75+(maximumDependencies?15*(1-count/maximumDependencies):0),step:'engine'},location.origin);};
   (Module.preRun||=[]).push(()=>parent.postMessage({type:'loading-progress',percent:92,step:'world'},location.origin));
-  let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '';
+  let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false;
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
@@ -36,15 +36,22 @@
     reconnectTelemetry=false;
     socket.onmessage=null;
     socket=transport;socket.onmessage=acknowledge;
-    seq=0;last=0;wasInteract=false;events=[];lastPlayer=null;keys.clear();
-    pickupTotals={health_packs:0,ammo_packs:0,healing:0};pickups.clear();healthBefore.clear();
+    seq=0;last=0;wasInteract=false;events=[];lastPlayer=null;keys.clear();gameplay=false;
+    pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};pickups.clear();healthBefore.clear();
   };
   Module.webFrame = world => {
     try {
       frame++;
       const pointer = read(world, 672), subworld = read(world, 664);
       const key=world+'/'+(read(world,200)>>>0);
-      if(key!==worldKey){worldKey=key;lastPlayer=null;events=[];pickups.clear();healthBefore.clear();activePlayer=0;pickupTotals={health_packs:0,ammo_packs:0,healing:0};}
+      if(key!==worldKey){worldKey=key;lastPlayer=null;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
+      activePlayer=valid(pointer)?pointer:0;
+      // Engine input uses the game's own remapped keyboard/controller binds.
+      // Sample every frame, before rate limiting; menu clicks do not set it.
+      if(reconnectTelemetry||socket.readyState===WebSocket.OPEN){
+        const customInteract=practiceKeys.interact!=='Auto'&&keys.has(shortcuts.code(practiceKeys.interact));
+        if(valid(pointer)&&read(pointer,64)>0&&((read(world,668)&0x2ff)||customInteract))gameplay=true;
+      }
       const now = performance.now();
       if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 60000) return;
       last = now;
@@ -73,19 +80,24 @@
         }
       }
       socket.send(JSON.stringify({seq:++seq,t:Date.now()/1000,player,
-        keys:{interact,interact_edge:interact&&!wasInteract,interaction_blocked:false,attack:keys.has('KeyD')},events,...documentState}));
+        keys:{interact,interact_edge:interact&&!wasInteract,interaction_blocked:false,attack:keys.has('KeyD'),gameplay},events,...documentState}));
       wasInteract = interact; events = [];
       document.getElementById('loading').hidden = true;
       if (seq % 30 === 0) parent.postMessage({type:'player-state',player,frame,world,pointer},location.origin);
     } catch (e) { console.error('Browser bridge:',e); }
   };
   const pickups = new Map();
-  let pickupTotals = {health_packs:0,ammo_packs:0,healing:0}, activePlayer = 0;
+  let pickupTotals = {health_packs:0,ammo_packs:0,healing:0,damage_taken:0}, activePlayer = 0;
   const healthBefore = new Map();
   Module.webHealth = (player, stage) => {
     if(player!==activePlayer||!valid(player))return;
-    if(stage===0)healthBefore.set(player,read(player,64));
-    else{const hp=healthBefore.get(player);healthBefore.delete(player);if(hp>0)pickupTotals.healing+=Math.max(0,read(player,64)-hp);}
+    if(stage===0){const stack=healthBefore.get(player)||[];stack.push({hp:read(player,64),children:0});healthBefore.set(player,stack);}
+    else{
+      const stack=healthBefore.get(player),before=stack?.pop();if(!before)return;
+      const change=Math.max(0,read(player,64))-Math.max(0,before.hp);
+      if(stack.length)stack.at(-1).children+=change;else healthBefore.delete(player);
+      if(before.hp>0){const own=change-before.children;pickupTotals.healing+=Math.max(0,own);pickupTotals.damage_taken+=Math.max(0,-own);}
+    }
   };
   Module.webLoot = (loot, player, stage) => {
     try {

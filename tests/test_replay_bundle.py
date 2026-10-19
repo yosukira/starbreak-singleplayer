@@ -13,7 +13,7 @@ from localserver.battle_records import RecordStore
 from localserver import game_settings
 from localserver.replay import ServerReplay, ServerCapture, read_journal
 from tools.client_replay import ClientJournals
-from tools.replay_bundle import MAGIC, read_battle, server_document
+from tools.replay_bundle import MAGIC, MAGIC_COMPACT, read_battle, server_document
 from tools.replay_host import Takeover
 import test_replay_host
 from test_battle_records import sample
@@ -64,7 +64,7 @@ class PortableReplayTests(unittest.TestCase):
             store,clients,request,ops=self.fixture(source)
             name,blob=store.export([request['record']])
             self.assertTrue(name.startswith('Wildfire-'))
-            self.assertTrue(name.endswith('.sbreplay'));self.assertTrue(blob.startswith(MAGIC))
+            self.assertTrue(name.endswith('.sbreplay'));self.assertTrue(blob.startswith((MAGIC,MAGIC_COMPACT)))
             imported=RecordStore(target)
             self.assertEqual(imported.import_bytes(blob),dict(imported=1,duplicates=0))
             record=imported.get(request['record']);identifier=record['replay']['id']

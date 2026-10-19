@@ -12,11 +12,31 @@ import re
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 from localserver.battle_records import encoded
-from tools.replay_bundle import MAGIC, read_battle
+from tools.replay_bundle import MAGIC, MAGIC_COMPACT, read_battle, pack_battle
+from urllib.parse import urlencode
 
 MAX_FILE = 32 * 1024 * 1024
 MAX_EXPANDED = 96 * 1024 * 1024
 ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+
+def listing_filters(value=None):
+    value=value or {};result={}
+    for key in ('map','shell','front','upper','lower'):
+        item=value.get(key)
+        if item is None or item=='':continue
+        if key=='map':
+            from localserver import game_settings
+            if not isinstance(item,str) or item not in game_settings.available_maps():raise ValueError('Invalid shared map filter')
+            result[key]=item
+        else:
+            if type(item)not in(str,int) or not re.fullmatch('[0-9]{1,3}',str(item)):raise ValueError('Invalid shared numeric filter')
+            item=int(item)
+            if key=='shell' and item not in(1,2,3,5) or key!='shell' and not 0<=item<=100:raise ValueError('Invalid shared filter value')
+            result[key]=item
+    if any(k in result for k in ('front','upper','lower')) and result.get('map')not in('egy_hulk','hulk_normal','egy_run'):
+        raise ValueError('Turret filters require a Graveyard map')
+    return result
 
 
 def code(value):
@@ -34,7 +54,7 @@ def display_code(value):
 
 
 def clean_replay(blob, author=None):
-    if not 0 < len(blob) <= MAX_FILE or not blob.startswith(MAGIC):
+    if not 0 < len(blob) <= MAX_FILE or not blob.startswith((MAGIC,MAGIC_COMPACT)):
         raise ValueError('Share a complete replay, up to 32 MB')
     with gzip.GzipFile(fileobj=io.BytesIO(blob[len(MAGIC):])) as stream:
         raw = stream.read(MAX_EXPANDED + 1)
@@ -51,7 +71,7 @@ def clean_replay(blob, author=None):
     if author is not None:
         from localserver.replay_identity import nickname
         value['record']['shared_by'] = nickname(author)
-    clean = MAGIC + gzip.compress(encoded(value), compresslevel=6, mtime=0)
+    clean,_ = pack_battle(value)
     if len(clean) > MAX_FILE:
         raise ValueError('Replay sharing file exceeds 32 MB')
     return clean
@@ -69,7 +89,7 @@ class ShareClient:
                 not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment):
             raise ValueError('Replay sharing requires HTTPS')
 
-    def upload(self, blob, author=''):
+    def upload(self, blob, author='', progress=None):
         from localserver.replay_identity import nickname
         author = nickname(author)
         if len(blob) > MAX_FILE:
@@ -83,14 +103,20 @@ class ShareClient:
         if key in cache:
             entry = cache[key]
             return dict(code=display_code(entry['code']),size=entry['size'],nickname=author)
-        request = Request(self.url + '/replays', data=blob, headers={'Content-Type': 'application/octet-stream', 'X-Replay-Nickname': author}, method='POST')
+        def chunks():
+            for offset in range(0,len(blob),128*1024):
+                chunk=blob[offset:offset+128*1024]
+                yield chunk
+                progress('upload',min(offset+len(chunk),len(blob)),len(blob))
+            progress('processing',len(blob),len(blob))
+        request = Request(self.url + '/replays', data=chunks() if progress else blob, headers={'Content-Type': 'application/octet-stream', 'X-Replay-Nickname': author,'Content-Length':str(len(blob))}, method='POST')
         with urlopen(request, timeout=60) as response:
             result = json.loads(response.read(4097))
         result['code'] = display_code(result['code'])
         if type(result.get('size')) is not int or not 0 < result['size'] <= MAX_FILE:
             raise ValueError('Invalid sharing service response')
         entry = {key: result[key] for key in ('code', 'size')}
-        entry['nickname'] = author
+        entry['nickname'] = result.get('nickname',author)
         cache[key] = entry
         from tools.web_workspace import atomic_json
         atomic_json(path, cache)
@@ -128,15 +154,39 @@ class ShareClient:
             with urlopen(Request(self.url+'/replays/'+code(identifier)+'/imported',data=data,headers={'Content-Type':'application/json'}),timeout=10) as response:response.read(4096)
         except (OSError,ValueError):pass  # Import stays successful if counting is offline.
 
+    def origin(self, record):
+        import uuid
+        identifier=str(uuid.UUID(record['id']))
+        if record.get('shared_code'):
+            return dict(code=display_code(record['shared_code']),nickname=record.get('shared_by',''),original=True)
+        with urlopen(self.url+'/replays/origin?record='+identifier,timeout=20) as response:
+            result=json.loads(response.read(4097))
+        result['code']=display_code(result['code']);result['original']=True
+        return result
+
     def details(self, identifier):
         with urlopen(self.url+'/replays/'+code(identifier)+'/details',timeout=30) as response:
             data=response.read(2*1024*1024+1)
         if len(data)>2*1024*1024:raise ValueError('Replay details are too large')
         return json.loads(data)
 
-    def listings(self, order='latest'):
+    def comments(self, identifier, before=None):
+        suffix=('?before='+str(int(before))) if before else ''
+        with urlopen(self.url+'/replays/'+code(identifier)+'/comments'+suffix,timeout=20) as response:data=response.read(512*1024+1)
+        if len(data)>512*1024:raise ValueError('Comments response is too large')
+        return json.loads(data)
+
+    def comment(self, identifier, author, text):
+        from localserver.replay_identity import nickname, comment_text
+        author=nickname(author)
+        if not author:raise ValueError('Enter your English ID before commenting')
+        data=encoded(dict(nickname=author,text=comment_text(text)))
+        request=Request(self.url+'/replays/'+code(identifier)+'/comments',data=data,headers={'Content-Type':'application/json'})
+        with urlopen(request,timeout=20) as response:return json.loads(response.read(8192))
+
+    def listings(self, order='latest',filters=None):
         order='popular' if order=='popular' else 'latest'
-        with urlopen(self.url+'/replays/feed?sort='+order,timeout=20) as response:
+        with urlopen(self.url+'/replays/feed?'+urlencode(dict(sort=order,**listing_filters(filters))),timeout=20) as response:
             data=response.read(256*1024+1)
         if len(data)>256*1024:raise ValueError('Replay listing is too large')
         return json.loads(data)

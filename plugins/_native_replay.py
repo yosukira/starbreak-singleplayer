@@ -9,7 +9,8 @@ import base64
 import json
 
 SCHEMA='starbreak-native-journal-v1'
-CALLS=('input','delta','frame')
+CALLS=('input','delta','frame','read','player-input','engine-frame','message','ack')
+MESSAGES=(10,12,15,16,17,21,37,38)
 MAX_OPERATIONS=3000000
 MAX_PACKET=262144
 
@@ -23,29 +24,36 @@ def operation(row):
     if not isinstance(row,list) or not row:raise ValueError('Invalid native replay operation')
     kind=row[0]
     if kind=='loop' and len(row)==2:return [kind,integer(row[1],0,1)]
-    if kind=='frame' and len(row)==1:return [kind]
+    if kind in ('frame','read') and len(row)==1:return [kind]
+    if kind=='engine-frame' and len(row)==2:return [kind,integer(row[1],0,10000)]
+    if kind=='player-input' and len(row)==5:return [kind]+[integer(value)for value in row[1:]]
     if kind=='return' and len(row)==2 and row[1]in CALLS:return list(row)
     if kind=='input' and len(row)==3:
         return [kind,integer(row[1],0,16383),integer(row[2],0,1)]
-    if kind in ('clock','random32') and len(row)==2:return [kind,integer(row[1],0,2**32-1)]
+    if kind=='clock' and len(row)==2:return [kind,integer(row[1],-(2**31),2**31-1)]
+    if kind=='random32' and len(row)==2:return [kind,integer(row[1],0,2**32-1)]
     if kind=='random64' and len(row)==3:
         return [kind,integer(row[1],0,2**32-1),integer(row[2],0,2**32-1)]
     if kind=='step' and len(row)==2:return [kind,integer(row[1],0,10000)]
-    if kind=='state' and len(row)==2 and isinstance(row[1],list)and len(row[1])in(2,14):
+    if kind in ('state','engine-state') and len(row)==2 and isinstance(row[1],list)and len(row[1])in(2,14):
         state=[integer(value)for value in row[1]]
         for index in(0,1):integer(state[index],0,2**32-1)
         if len(state)==14:
             integer(state[13],0,1)
             for index in(2,3,6,7,9):integer(state[index],0,2**31-1)
         return [kind,state]
-    if kind=='delta' and len(row)==3 and isinstance(row[2],str):
+    if kind=='ack' and len(row)==2:return [kind,integer(row[1],1,255)] if row[1]in(11,22) else _invalid_ack()
+    if kind in ('delta','message') and len(row)==3 and isinstance(row[2],str):
         message=integer(row[1],1,255)
-        if message not in(12,37,38):raise ValueError('Only incoming world deltas belong in native replay')
+        if message not in ((12,37,38) if kind=='delta' else MESSAGES):raise ValueError('Only offline game messages belong in native replay')
         if len(row[2])>350000:raise ValueError('Native replay packet is too large')
         packet=base64.b64decode(row[2],validate=True)
         if not packet or len(packet)>MAX_PACKET:raise ValueError('Invalid native replay packet')
         return [kind,message,base64.b64encode(packet).decode('ascii')]
     raise ValueError('Unsupported native replay operation')
+
+
+def _invalid_ack():raise ValueError('Unsupported native replay acknowledgement')
 
 
 def validate_operations(rows,complete=True):
@@ -64,6 +72,9 @@ def validate_operations(rows,complete=True):
             if len(stack)>32:raise ValueError('Native replay call nesting is too deep')
         elif kind=='return':
             if not stack or stack.pop()!=row[1]:raise ValueError('Native replay call order changed')
+        elif kind=='engine-state':
+            if not in_loop or not output or output[-1]!=['return','engine-frame']:
+                raise ValueError('Native engine checkpoint must follow its own completed frame')
         elif kind=='state':
             if not in_loop or stack or checked:raise ValueError('Invalid native player check boundary')
             checked=True

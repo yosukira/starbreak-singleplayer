@@ -10,6 +10,7 @@ class ShipMotion(object):
         self.started = 0.0
         self.state = 'entrance'
         self.track = MotionTrack(start, evidence['entrance'][0]['move'])
+        self.arrival_time = self.track.times[-1]
         self.home = self.track.position(self.track.times[-1])
         self.diagonal = evidence['diagonal']
         self.horizontal = evidence['horizontal']

@@ -68,7 +68,7 @@ class NativeHook:
             raise ValueError('A native executable signature is required')
         if convention not in ('thiscall', 'cdecl'):
             raise ValueError('Unknown native call convention')
-        if result not in ('void', 'int', 'unsigned int', 'unsigned long long'):
+        if result not in ('void', 'int', '_Bool', 'unsigned int', 'unsigned long long'):
             raise ValueError('Unsupported native result type')
         arguments = tuple(arguments)
         argument_count(len(arguments))

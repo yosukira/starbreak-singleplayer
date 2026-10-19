@@ -59,7 +59,7 @@ class WholeRun:
                 quality=dict(stable=True,slot_source='Item.slotPos',declared_count=len(items),traversed_count=len(items),abi=dict(name='web-1.14.6-items-v1'),errors=[]),
                 account='private-inventory',unknown_path='/private/not-exported')
         self.seq+=1
-        self.bridge._absorb(dict(seq=self.seq,room_context=context,player=player,keys=dict(interact=interact),
+        self.bridge._absorb(dict(seq=self.seq,room_context=context,player=player,keys=dict(interact=interact,gameplay=True),
             events=[dict(event,native_seed=context['room_seed']) for event in events or []]))
         (self.session.step if self.integrated else self.capture.step)(.02)
 

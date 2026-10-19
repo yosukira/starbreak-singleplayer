@@ -8,6 +8,7 @@ delivers only the missing suffix before fresh live updates.
 import base64
 import bisect
 import hashlib
+import math
 import struct
 from dataclasses import dataclass
 
@@ -127,6 +128,42 @@ class ReplayStream:
         self.boundaries = boundaries
         self.ends = [row.end for row in self.boundaries]
 
+    def reconcile(self, frame, ordinal, kind, payload, session):
+        if kind!=12:return payload
+        if getattr(self,'_packet_frame',None)!=frame:
+            boundary=next((b for b in self.boundaries if b.frame==frame),None)
+            self._packet_frame=frame;self._packet_rows=[]
+            if boundary:
+                pos=boundary.start
+                while pos<boundary.end:
+                    size=struct.unpack('>i',self.plain[pos+1:pos+5])[0]
+                    self._packet_rows.append((self.plain[pos],self.plain[pos+5:pos+5+size]));pos+=size+5
+        if ordinal>=len(self._packet_rows):return payload
+        expected_kind,expected=self._packet_rows[ordinal]
+        if expected_kind!=kind or expected==payload:return payload
+        layouts=pb_layout.default_layouts()
+        actual=layouts.decode('Delta',payload);wanted=layouts.decode('Delta',expected)
+        a=actual.get('worldupdate_',{}).get('generalupdates_',[])
+        b=wanted.get('worldupdate_',{}).get('generalupdates_',[])
+        if len(a)!=len(b):return payload
+        projectiles=getattr(getattr(session,'projectiles',None),'projectiles',[])
+        changed=False
+        for current,recorded in zip(a,b):
+            if current==recorded:continue
+            create=current.get('create_',{});other=recorded.get('create_',{})
+            props=create.get('props_',{});old=other.get('props_',{})
+            facing=props.get('facing_');original=old.get('facing_')
+            if type(facing)is not int or type(original)is not int or abs(facing-original)!=1:return payload
+            projectile=next((p for p in projectiles if p.objid==create.get('objid_')),None)
+            if projectile is None or not projectile.rotate or projectile.homing:return payload
+            angle=math.degrees(math.atan2(projectile.vy,projectile.vx));integer=round(angle)
+            # libm/WASM atan2 can straddle an exact integer by one ULP. Only
+            # this cosmetic creation angle may differ: positions, velocity,
+            # damage, RNG and every other protocol field must remain identical.
+            if abs(angle-integer)>1e-10 or integer not in (facing,original):return payload
+            props['facing_']=original;changed=True
+        return expected if changed and actual==wanted else payload
+
     def select_epoch(self,epoch):
         self.epoch=epoch
         self.hello_end=epoch['hello_end']
@@ -160,21 +197,29 @@ class ReplayStream:
         boundary = self.boundary(byte_count)
         return boundary, self.plain[byte_count:boundary.end]
 
-    def cipher_at(self, encrypted_bytes):
-        if type(encrypted_bytes) is not int or not 0 <= encrypted_bytes <= MAX_JOURNAL_BYTES:
-            raise ValueError('Invalid replay cipher offset')
-        cipher = RC4(self.key)
-        while encrypted_bytes:
-            count = min(encrypted_bytes, 65536)
-            cipher.crypt(bytes(count))
-            encrypted_bytes -= count
+    def cipher_at(self, encrypted_bytes, direction=None):
+        if type(encrypted_bytes) is not int or not 0<=encrypted_bytes<=MAX_JOURNAL_BYTES:raise ValueError('Invalid replay cipher offset')
+        key=(self.epoch['start'],direction)
+        cache=getattr(self,'_ciphers',{});previous=cache.get(key)
+        cipher=RC4(self.key);remaining=encrypted_bytes
+        if previous and previous[0]<=encrypted_bytes:
+            from localserver.protocol import native_rc4
+            offset,state,i,j=previous
+            cipher.s=state.copy();cipher.i=i;cipher.j=j
+            cipher._native=native_rc4.state_from_python(cipher.s,i,j)
+            if cipher._native is not None:cipher.s=cipher._native.data
+            remaining-=offset
+        while remaining:
+            count=min(remaining,65536);cipher.crypt(bytes(count));remaining-=count
+        cache[key]=(encrypted_bytes,[int(cipher.s[i]) for i in range(256)],cipher.i,cipher.j)
+        self._ciphers=cache
         return cipher
 
     def transmitter(self, received_bytes):
         self.boundary(received_bytes)
-        return self.cipher_at(received_bytes-self.hello_end)
+        return self.cipher_at(received_bytes-self.hello_end,'tx')
 
     def receiver(self, sent_bytes):
         if self.connect_length is None or not self.epoch['sent_start']+self.connect_length <= sent_bytes <= self.epoch['sent_end']:
             raise ValueError('Missing original CONNECT')
-        return self.cipher_at(sent_bytes-self.epoch['sent_start']-self.connect_length)
+        return self.cipher_at(sent_bytes-self.epoch['sent_start']-self.connect_length,'rx')

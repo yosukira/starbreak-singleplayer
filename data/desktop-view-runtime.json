@@ -1,0 +1,204 @@
+{
+  "windows-x64": [
+    {
+      "name": "pywebview",
+      "version": "6.2.1",
+      "url": "https://files.pythonhosted.org/packages/3d/25/9491695c22c4842c5b3903b4dc172e0eecf67a27c0af34a71512c9b76a0a/pywebview-6.2.1-py3-none-any.whl",
+      "sha256": "9d07275f53894ab4d5e2e0e996227193e7187dec276d9b624dccbce029216b46",
+      "size": 525463
+    },
+    {
+      "name": "proxy_tools",
+      "version": "0.1.0",
+      "url": "https://files.pythonhosted.org/packages/f2/cf/77d3e19b7fabd03895caca7857ef51e4c409e0ca6b37ee6e9f7daa50b642/proxy_tools-0.1.0.tar.gz",
+      "sha256": "ccb3751f529c047e2d8a58440d86b205303cf0fe8146f784d1cbcd94f0a28010",
+      "size": 2978
+    },
+    {
+      "name": "bottle",
+      "version": "0.13.4",
+      "url": "https://files.pythonhosted.org/packages/83/f6/b55ec74cfe68c6584163faa311503c20b0da4c09883a41e8e00d6726c954/bottle-0.13.4-py2.py3-none-any.whl",
+      "sha256": "045684fbd2764eac9cdeb824861d1551d113e8b683d8d26e296898d3dd99a12e",
+      "size": 103807
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "size": 45571
+    },
+    {
+      "name": "pythonnet",
+      "version": "3.2.1",
+      "url": "https://files.pythonhosted.org/packages/d8/dc/c96a542079a69d3d091e91808fc8aaf9a0d5e2f8e73a63560e4379134bb6/pythonnet-3.2.1-cp311.cp312.cp313.cp314.cp315-none-any.whl",
+      "sha256": "dd5668b74b0c903d9a24e1ba86f728fc490f8e919d56b3c24bf06739b9ee2b7f",
+      "size": 222572
+    },
+    {
+      "name": "clr_loader",
+      "version": "0.3.1",
+      "url": "https://files.pythonhosted.org/packages/5e/da/ec1a6e36624000b6df0dd61183c42342ee5814c073315e802cadaad04d2f/clr_loader-0.3.1-py3-none-any.whl",
+      "sha256": "cbad189de20d202a7d621956b0fc38049e13c9bf7ca2923441eff725cd121aa1",
+      "size": 55730
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1",
+      "url": "https://files.pythonhosted.org/packages/d9/79/615cc094e2fb508cade7de88d3b4f6c4ec2bab695c97bce9153dc65aadf5/cffi-2.1.1-cp312-cp312-win_amd64.whl",
+      "sha256": "f53e442b08449d42821fa4a4fba000095af9f62742a500f978a9f557ec44339a",
+      "size": 185919
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0",
+      "url": "https://files.pythonhosted.org/packages/0c/c3/44f3fbbfa403ea2a7c779186dc20772604442dde72947e7d01069cbe98e3/pycparser-3.0-py3-none-any.whl",
+      "sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992",
+      "size": 48172
+    }
+  ],
+  "macos-arm64": [
+    {
+      "name": "pywebview",
+      "version": "6.2.1",
+      "url": "https://files.pythonhosted.org/packages/3d/25/9491695c22c4842c5b3903b4dc172e0eecf67a27c0af34a71512c9b76a0a/pywebview-6.2.1-py3-none-any.whl",
+      "sha256": "9d07275f53894ab4d5e2e0e996227193e7187dec276d9b624dccbce029216b46",
+      "size": 525463
+    },
+    {
+      "name": "proxy_tools",
+      "version": "0.1.0",
+      "url": "https://files.pythonhosted.org/packages/f2/cf/77d3e19b7fabd03895caca7857ef51e4c409e0ca6b37ee6e9f7daa50b642/proxy_tools-0.1.0.tar.gz",
+      "sha256": "ccb3751f529c047e2d8a58440d86b205303cf0fe8146f784d1cbcd94f0a28010",
+      "size": 2978
+    },
+    {
+      "name": "bottle",
+      "version": "0.13.4",
+      "url": "https://files.pythonhosted.org/packages/83/f6/b55ec74cfe68c6584163faa311503c20b0da4c09883a41e8e00d6726c954/bottle-0.13.4-py2.py3-none-any.whl",
+      "sha256": "045684fbd2764eac9cdeb824861d1551d113e8b683d8d26e296898d3dd99a12e",
+      "size": 103807
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "size": 45571
+    },
+    {
+      "name": "pyobjc-core",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/86/b2/bbf7f049880ab40d110e66f25122342a1f6c98d6fe3c59bb98985503c660/pyobjc_core-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "122e6ad302a2abf5d4d4adb0156db751600ddf2768441696cba17b31323085e7",
+      "size": 6427637
+    },
+    {
+      "name": "pyobjc-framework-Cocoa",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/fd/2f/b67e73d8bc367e03fe7861cd9c49fff9dcfa6db83bc0630c0adcfb25b7fa/pyobjc_framework_cocoa-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "e106f395531e67694376b0f1184612cbeea3ec8b9bf56b55ef41d026171d2a2d",
+      "size": 388117
+    },
+    {
+      "name": "pyobjc-framework-Quartz",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/ed/e4/8be95d2ff850f82fb55b44c63333a00a920bf8a73642e7d9c2f3638a26d2/pyobjc_framework_quartz-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "7f668979d0c7320bf8f7ed6e030da578f93ab0f5dd619b295ec735cd8d5faa34",
+      "size": 219003
+    },
+    {
+      "name": "pyobjc-framework-WebKit",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/b9/76/344b197a89878e8b103727984f2815bc38393515be5bf63aa7b847c414e0/pyobjc_framework_webkit-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "ef37692f0280151bf8164a718e334a9b3cb0abfc5455be14172280de7e277505",
+      "size": 50371
+    },
+    {
+      "name": "pyobjc-framework-Security",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/15/59/79722efbbb5cf6a313d364bb4faff39f9c165740e46acaa4d0a3d71c0f8c/pyobjc_framework_security-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "266f41995f2fc80660c8451bdb199a7e259a6cad02fbc1e0e2f69dd5576e2203",
+      "size": 41298
+    },
+    {
+      "name": "pyobjc-framework-UniformTypeIdentifiers",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/79/c3/45ec69ed9fdcde5d0f229a031b610127c592d2c4674c3ff0e184d7f2741b/pyobjc_framework_uniformtypeidentifiers-12.2.2-py2.py3-none-any.whl",
+      "sha256": "1dc6a538df07c410e4bfd6457adcb0b663a5e0df331905dbe135bcfd3f89ae57",
+      "size": 5045
+    }
+  ],
+  "macos-x64": [
+    {
+      "name": "pywebview",
+      "version": "6.2.1",
+      "url": "https://files.pythonhosted.org/packages/3d/25/9491695c22c4842c5b3903b4dc172e0eecf67a27c0af34a71512c9b76a0a/pywebview-6.2.1-py3-none-any.whl",
+      "sha256": "9d07275f53894ab4d5e2e0e996227193e7187dec276d9b624dccbce029216b46",
+      "size": 525463
+    },
+    {
+      "name": "proxy_tools",
+      "version": "0.1.0",
+      "url": "https://files.pythonhosted.org/packages/f2/cf/77d3e19b7fabd03895caca7857ef51e4c409e0ca6b37ee6e9f7daa50b642/proxy_tools-0.1.0.tar.gz",
+      "sha256": "ccb3751f529c047e2d8a58440d86b205303cf0fe8146f784d1cbcd94f0a28010",
+      "size": 2978
+    },
+    {
+      "name": "bottle",
+      "version": "0.13.4",
+      "url": "https://files.pythonhosted.org/packages/83/f6/b55ec74cfe68c6584163faa311503c20b0da4c09883a41e8e00d6726c954/bottle-0.13.4-py2.py3-none-any.whl",
+      "sha256": "045684fbd2764eac9cdeb824861d1551d113e8b683d8d26e296898d3dd99a12e",
+      "size": 103807
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "size": 45571
+    },
+    {
+      "name": "pyobjc-core",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/86/b2/bbf7f049880ab40d110e66f25122342a1f6c98d6fe3c59bb98985503c660/pyobjc_core-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "122e6ad302a2abf5d4d4adb0156db751600ddf2768441696cba17b31323085e7",
+      "size": 6427637
+    },
+    {
+      "name": "pyobjc-framework-Cocoa",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/fd/2f/b67e73d8bc367e03fe7861cd9c49fff9dcfa6db83bc0630c0adcfb25b7fa/pyobjc_framework_cocoa-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "e106f395531e67694376b0f1184612cbeea3ec8b9bf56b55ef41d026171d2a2d",
+      "size": 388117
+    },
+    {
+      "name": "pyobjc-framework-Quartz",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/ed/e4/8be95d2ff850f82fb55b44c63333a00a920bf8a73642e7d9c2f3638a26d2/pyobjc_framework_quartz-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "7f668979d0c7320bf8f7ed6e030da578f93ab0f5dd619b295ec735cd8d5faa34",
+      "size": 219003
+    },
+    {
+      "name": "pyobjc-framework-WebKit",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/b9/76/344b197a89878e8b103727984f2815bc38393515be5bf63aa7b847c414e0/pyobjc_framework_webkit-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "ef37692f0280151bf8164a718e334a9b3cb0abfc5455be14172280de7e277505",
+      "size": 50371
+    },
+    {
+      "name": "pyobjc-framework-Security",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/15/59/79722efbbb5cf6a313d364bb4faff39f9c165740e46acaa4d0a3d71c0f8c/pyobjc_framework_security-12.2.2-cp312-cp312-macosx_10_13_universal2.whl",
+      "sha256": "266f41995f2fc80660c8451bdb199a7e259a6cad02fbc1e0e2f69dd5576e2203",
+      "size": 41298
+    },
+    {
+      "name": "pyobjc-framework-UniformTypeIdentifiers",
+      "version": "12.2.2",
+      "url": "https://files.pythonhosted.org/packages/79/c3/45ec69ed9fdcde5d0f229a031b610127c592d2c4674c3ff0e184d7f2741b/pyobjc_framework_uniformtypeidentifiers-12.2.2-py2.py3-none-any.whl",
+      "sha256": "1dc6a538df07c410e4bfd6457adcb0b663a5e0df331905dbe135bcfd3f89ae57",
+      "size": 5045
+    }
+  ]
+}

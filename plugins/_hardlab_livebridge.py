@@ -342,6 +342,8 @@ class LiveBridge(object):
         self.sent = 0
         self.hook = DamageHook(ffi, lib)
         self.hook_error = None
+        self.health_metrics = None
+        self.health_error = None
         self.enabled = False
         self._key_states = None
         self._old_interact = False
@@ -406,6 +408,13 @@ class LiveBridge(object):
 
     def enable(self):
         self.open_socket()
+        if self.health_metrics is None and self.health_error is None:
+            try:
+                try:from ._native_battle_metrics import create
+                except (ImportError,ValueError):from _native_battle_metrics import create
+                self.health_metrics=create(self.ffi,self.lib,self.refs)
+            except Exception as error:
+                self.health_error=type(error).__name__
         if not self.hook.installed and self.hook_error is None:
             try:
                 self.hook.install()
@@ -491,6 +500,23 @@ class LiveBridge(object):
                 getattr(self,'_interaction_pre_local',False)):self._interaction_held_blocked=True
         self._interaction_was_blocked=blocked
         self._interaction_pre_local=False
+        self.sample_battle_activity(down and not self.interaction_blocked())
+
+    def sample_battle_activity(self, interact=False):
+        """Latch real gameplay input per world, independently of UDP timing."""
+        cw = self._current_world()
+        if cw is None:
+            self._battle_activity_world = None
+            self._battle_activity = False
+            return
+        identity = (int(self.ffi.cast('uintptr_t', cw)), int(cw.asWorld.props.seed))
+        if identity != getattr(self, '_battle_activity_world', None):
+            self._battle_activity_world = identity
+            self._battle_activity = False
+        if (not self._overlay_open() and cw.player != self.ffi.NULL and
+                int(cw.player.asClientObject.asNativeObject.asWorldObject.props.hitpoints) > 0 and
+                (int(cw.total) & 0x2ff or interact)):
+            self._battle_activity = True
 
     def local_interaction_selected(self):
         """Resolve the pre-input ObjKey; local objects use native interaction."""
@@ -748,7 +774,7 @@ class LiveBridge(object):
         cw = self._current_world()
         if cw is None:
             return None
-        document = {}
+        document = {'room_seed': int(cw.asWorld.props.seed)}
         try:
             sub = cw.mySubWorld
             if sub != self.ffi.NULL:
@@ -847,6 +873,9 @@ class LiveBridge(object):
         terrain=self.terrain_document(cw)
         if terrain:document['terrainObjects']=terrain
         document['interaction_blocked']=bool(self.interaction_blocked())
+        if self.health_metrics is not None:
+            metrics=self.health_metrics.document()
+            if metrics:document['battle_metrics']=metrics
         return document
 
     def _drawmods_document(self, props):
@@ -899,6 +928,8 @@ class LiveBridge(object):
             return []
 
     def send(self, payload):
+        sink=getattr(self,'feedback_sink',None)
+        if sink is not None and sink(payload):return
         if self.socket is None:
             return
         try:
@@ -1077,7 +1108,14 @@ class LiveBridge(object):
                 if result and result not in self._command_results:
                     self._command_results.append(result)
 
+    def receive_native_ack(self,document):
+        raw=json.dumps(document,separators=(',',':'),allow_nan=False).encode('ascii')
+        if len(raw)>ACK_MAX_DATAGRAM:raise ValueError('Native acknowledgement is too large')
+        self._receive_document(_ack_json(raw),raw)
+
     def _drain_ack(self):
+        if getattr(self,'feedback_isolated',False):
+            return
         if self.socket is None:
             return
         frame = self._network_frame
@@ -1153,7 +1191,9 @@ class LiveBridge(object):
                 if not isinstance(raw,bytes) or not 0 < len(raw) <= 60000:
                     raise ValueError('restore wire must be bounded ASCII bytes')
                 raw.decode('ascii')
-                self.socket.sendto(raw, self._udp_target or (self.host,self.port))
+                sink=getattr(self,'feedback_sink',None)
+                if sink is None or not sink(json.loads(raw.decode('ascii'))):
+                    self.socket.sendto(raw, self._udp_target or (self.host,self.port))
                 self.seq += 1; self.sent += 1
                 self._network_totals['restore_sent'] += 1
         except Exception as error:
@@ -1184,6 +1224,7 @@ class LiveBridge(object):
                 'interact': bool(interact_down),
                 'interact_edge': bool(interact_edge),
                 'interaction_blocked': bool(self.interaction_blocked()),
+                'gameplay': bool(getattr(self, '_battle_activity', False)),
             },
             'events': events,
         }

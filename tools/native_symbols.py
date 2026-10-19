@@ -19,7 +19,61 @@ HOOKS=(
     'TimeUtil::NowMS','randUtil::randomSeed','randUtil::randomSeed64',
     'WorldClient::updateInput','WorldClient::doTimePasses',
     'WorldClient::handleServerDelta','ServerConnection::doRead',
+    'ClientWorld::addPlayerInput','ClientWorld::internalUpdate',
+    'MessageHandlers::run','ServerConnection::sendMessage',
+    'GameClient::handleKeyboardEvent',
 )
+
+# Exact linker names in the 1.14.6 Win32 executable. Reading its own COFF
+# table also works on macOS; no Windows program or supplied code is executed.
+LINKER_NAMES=dict(zip(HOOKS,(
+    '__ZN8TimeUtil5NowMSEv','__ZN8randUtil10randomSeedEv',
+    '__ZN8randUtil12randomSeed64Ev','__ZN11WorldClient11updateInputEjb',
+    '__ZN11WorldClient12doTimePassesEv',
+    '__ZN11WorldClient17handleServerDeltaE11MessageTypePKci',
+    '__ZN16ServerConnection6doReadEv',
+    '__ZN11ClientWorld14addPlayerInputERK11PlayerInput',
+    '__ZN11ClientWorld14internalUpdateEi',
+    '__ZN15MessageHandlers3runE11MessageTypePKci',
+    '__ZN16ServerConnection11sendMessageE11MessageType',
+    '__ZN10GameClient19handleKeyboardEventEii',
+)))
+
+
+def coff_symbols(image):
+    """Read only the known replay symbols, rejecting truncated/aliased tables."""
+    if len(image)<256 or image[:2]!=b'MZ':raise ValueError('A Win32 game executable is required')
+    pe=struct.unpack_from('<I',image,0x3c)[0]
+    if pe>len(image)-256 or image[pe:pe+4]!=b'PE\0\0':raise ValueError('Invalid PE header')
+    if struct.unpack_from('<H',image,pe+4)[0]!=0x14c or struct.unpack_from('<H',image,pe+24)[0]!=0x10b:
+        raise ValueError('Native replay currently requires the Win32 x86 client')
+    table,count=struct.unpack_from('<II',image,pe+12)
+    strings=table+count*18
+    if not table or not 1<=count<=2000000 or table<pe+24 or strings>len(image)-4:
+        raise ValueError('Missing or invalid native COFF symbol table')
+    size=struct.unpack_from('<I',image,strings)[0]
+    if size<4 or size>64*1024*1024 or strings+size>len(image):raise ValueError('Invalid native COFF string table')
+    base,sections=parse_pe_sections(image)
+    wanted={value:key for key,value in LINKER_NAMES.items()};result={};index=0
+    while index<count:
+        offset=table+index*18;raw=image[offset:offset+8]
+        if raw[:4]==b'\0'*4:
+            start=struct.unpack_from('<I',raw,4)[0]
+            if not 4<=start<size:raise ValueError('Invalid native COFF symbol name')
+            end=image.find(b'\0',strings+start,strings+size)
+            if end<0:raise ValueError('Unterminated native COFF symbol name')
+            name=image[strings+start:end]
+        else:name=raw.rstrip(b'\0')
+        value,section,_kind,_storage,aux=struct.unpack_from('<IhHBB',image,offset+8)
+        if index+aux>=count:raise ValueError('Truncated native COFF auxiliary record')
+        name=wanted.get(name.decode('ascii','replace'))
+        if name and section>0:
+            if section>len(sections):raise ValueError('Invalid native COFF code section')
+            address=base+sections[section-1][1]+value
+            if name in result and result[name]!=address:raise ValueError('Ambiguous native replay symbol: '+name)
+            result[name]=address
+        index+=1+aux
+    return result
 
 
 def manifest(image,symbols):
@@ -45,9 +99,11 @@ def manifest(image,symbols):
     return dict(schema=SCHEMA,client=hashlib.sha256(image).hexdigest(),image_base=base,pointer_bytes=4,hooks=rows)
 
 
-def resolve(executable,symquery):
-    executable,symquery=Path(executable),Path(symquery)
+def resolve(executable,symquery=None):
+    executable=Path(executable)
     image=executable.read_bytes()
+    if symquery is None:return manifest(image,coff_symbols(image))
+    symquery=Path(symquery)
     result=subprocess.run([str(symquery),'-e',str(executable),'--list'],check=True,
                           stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=45)
     if len(result.stdout)>64*1024*1024:raise ValueError('Native symbol table is too large')
@@ -74,7 +130,7 @@ def main():
     import argparse
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--client',required=True,type=Path)
-    parser.add_argument('--symquery',required=True,type=Path)
+    parser.add_argument('--symquery',type=Path,help='Optional SBPE fallback; otherwise read the executable symbol table directly')
     parser.add_argument('--output',required=True,type=Path)
     args=parser.parse_args()
     document=save(args.client,args.symquery,args.output)

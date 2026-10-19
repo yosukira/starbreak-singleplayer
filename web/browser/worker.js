@@ -71,7 +71,7 @@ globalThis.onmessage=event=>{queue=queue.then(async()=>{
       if(!source)throw Error('Unknown browser request');
       result=JSON.parse(run(`req=json.loads(browser_request)\njson.dumps(${source})`));
       events();
-      if(message.kind==='close'||message.kind==='api'&&message.method==='POST')await flush();
+      if(message.kind==='close'||message.kind==='api'&&message.method==='POST'&&message.url!=='/api/replay/warm')await flush();
     }
     postMessage({id:message.id,result});
   }catch(error){postMessage({id:message.id,error:String(error.message||error)});}

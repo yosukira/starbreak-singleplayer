@@ -209,6 +209,7 @@ class ReplayTests(unittest.TestCase):
             recorder=Path(directory)/'localserver/battle_records.py';recorder.write_text('columns = 4')
             original=engine_fingerprint()
             recorder.write_text('columns = 5')
+            identity=Path(directory)/'localserver/replay_identity.py';identity.write_text('comment_id = 1')
             self.assertEqual(engine_fingerprint(),original)
             ai.write_text('speed = 30')
             self.assertNotEqual(engine_fingerprint(),original)

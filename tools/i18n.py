@@ -9,6 +9,10 @@ PREFERENCE = Path(__file__).resolve().parents[1] / 'userdata' / 'ui.json'
 LANGUAGES = {'auto': 'System / 跟随系统', 'zh': '简体中文', 'en': 'English'}
 
 EN = {
+    '打开完整战斗记录': 'Open full battle records',
+    '准备战斗记录窗口': 'Preparing battle records',
+    '暂时无法打开战斗记录': 'Could not open battle records',
+    '战斗记录在客户端窗口中打开；可直接回放、导入和分享。': 'Battle records open in a native window with replay, import and sharing.',
     '装备与设置': 'Equipment & settings',
     '战斗记录': 'Battle records',
     '检查更新': 'Check for updates',

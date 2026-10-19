@@ -11,7 +11,7 @@ from tools.client_replay import ClientJournals,integer
 def adapter_digest():
     root=Path(__file__).resolve().parents[1]
     value=hashlib.sha256()
-    for name in ('_native_replay.py','_native_replay_hooks.py'):
+    for name in ('_native_replay.py','_native_replay_hooks.py','_native_replay_capture.py','_native_replay_player.py'):
         value.update((root/'plugins'/name).read_bytes())
     return value.hexdigest()
 

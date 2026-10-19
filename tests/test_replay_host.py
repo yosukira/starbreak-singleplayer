@@ -60,6 +60,18 @@ class ReplayHostTests(unittest.TestCase):
         request=dict(id=attempt,record=parent['id'],cursor=cursor,player=state)
         return records,clients,request,ops
 
+    def test_warming_never_creates_a_battle_and_takeover_reuses_verified_state(self):
+        from tools.replay_host import WarmTakeovers
+        with tempfile.TemporaryDirectory() as directory:
+            records,clients,request,_=self.documents(directory)
+            warm=WarmTakeovers();warm.warm(records,clients,request)
+            rebuilt=warm.prepared.rebuilt
+            self.assertEqual(len(records.list()),1)
+            with mock.patch('tools.replay_host.PreparedReplay',side_effect=AssertionError('Must reuse verified controller')):
+                host=warm.take(records,clients,request,manual=True)
+            self.assertIs(host.rebuilt,rebuilt)
+            host.stop()
+
     def test_continues_verified_controller_and_keeps_independent_replay_and_history(self):
         with tempfile.TemporaryDirectory() as directory:
             records,clients,request,ops=self.documents(directory)
@@ -69,6 +81,9 @@ class ReplayHostTests(unittest.TestCase):
             host.bind(transport)
             with mock.patch('tools.replay_host.threading.Thread'):
                 host.commit()
+            with self.assertRaisesRegex(ValueError,'not found'):records.get(host.recorder.identifier)
+            first=input_at(19);first['keys']['gameplay']=True
+            host.telemetry(first);host.step(1/60)
             self.assertEqual(records.get(host.recorder.identifier)['parent']['id'],request['record'])
             self.assertEqual(records.get(host.recorder.identifier)['replay']['id'],host.branch['id'])
             for tick in range(20,40):

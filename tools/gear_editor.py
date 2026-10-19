@@ -27,6 +27,7 @@ import queue
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -624,7 +625,7 @@ class GearEditor(object):
         style.map('TCombobox', fieldbackground=[('readonly','#0d1b26')], foreground=[('readonly','#e0ebf1')], selectbackground=[('readonly','#0d1b26')], selectforeground=[('readonly','#e0ebf1')])
         style.configure('TNotebook', background='#0b131b', borderwidth=0)
         style.configure('TNotebook.Tab', background='#152633', foreground='#91a9b9', padding=(18,8))
-        style.map('TNotebook.Tab', background=[('selected','#263e31')], foreground=[('selected','#c0e975')])
+        style.map('TNotebook.Tab', background=[('selected','#c0e975'),('!selected','#152633')], foreground=[('selected','#122014'),('!selected','#91a9b9')])
         style.configure('TLabelframe', background='#101923', bordercolor='#304657')
         style.configure('TLabelframe.Label', background='#101923', foreground='#c0e975')
         style.configure('Treeview', background='#122330', fieldbackground='#122330', foreground='#d6e4ed')
@@ -653,6 +654,7 @@ class GearEditor(object):
         header.pack(fill='x')
         ttk.Label(header, text=self.tr('StarBreak 装备编辑'),
                   style='Title.TLabel').pack(side='left')
+        ttk.Label(header,text=update.version(Path(LAB)).get('version','development'),style='Hint.TLabel').pack(side='left',padx=12)
         hotkeys = ttk.Frame(self.root, padding=(12, 0, 12, 4))
         hotkeys.pack(fill='x')
         self.key_hint = ttk.Label(hotkeys, style='Hint.TLabel',
@@ -686,6 +688,10 @@ class GearEditor(object):
         from tools.battle_panel import BattlePanel
         self.battle_panel = BattlePanel(notebook, self.language)
         notebook.add(self.battle_panel, text=self.tr('战斗记录'))
+        self.notebook,self.gear_page=notebook,gear_page
+        ttk.Button(self.battle_panel,text=self.tr('打开完整战斗记录'),command=self._open_records_window).pack(side='bottom',fill='x',pady=8)
+        notebook.bind('<<NotebookTabChanged>>',lambda event:self._open_records_window() if notebook.select()==str(self.battle_panel) and self.root.winfo_viewable() else None)
+
         actions = ttk.Frame(gear_page, padding=(8, 4))
         actions.pack(side='bottom', fill='x')
         self.viewport = ScrollFrame(gear_page)
@@ -1845,6 +1851,45 @@ class GearEditor(object):
         self._hotkey_stop = True
         if self._hotkey_thread and self._hotkey_thread is not threading.current_thread():
             self._hotkey_thread.join(timeout=0.5)
+
+    def _open_records_window(self):
+        from tools.desktop_view import alive
+        from tools.web_workspace import atomic_json
+        folder=Path(LAB)/'userdata/desktop-records';folder.mkdir(parents=True,exist_ok=True)
+        status=folder/'window-status.json'
+        process=getattr(self,'_records_window',None)
+        if process is not None and process.poll() is None:
+            atomic_json(folder/'show.json',{'at':time.time()});return
+        try:
+            # A language/layout rebuild may replace Tk widgets, never the
+            # already-open record window or its user data.
+            state=json.loads(status.read_text()) if status.is_file() else {}
+            if alive(state.get('pid')):
+                atomic_json(folder/'show.json',{'at':time.time()});return
+        except (OSError,ValueError):pass
+        try:
+            self._records_window=subprocess.Popen([sys.executable,'-u','-m','tools.desktop_view','--owner-pid',str(os.getpid()),'--directory',str(folder)],cwd=LAB,stdout=subprocess.DEVNULL,stderr=(folder/'window.log').open('ab'),creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            self._records_status_stamp=None
+            self.root.after(200,self._poll_records_window)
+        except OSError as error:self.battle_panel.notice.configure(text=str(error))
+
+    def _poll_records_window(self):
+        try:
+            path=Path(LAB)/'userdata/desktop-records/window-status.json'
+            state=json.loads(path.read_text()) if path.is_file() else {}
+            value=state.get('state')
+            if value=='preparing':
+                percent=int(100*state.get('current',0)/max(1,state.get('total',1)))
+                message=self.tr('准备战斗记录窗口')+' · '+str(percent)+'%'
+            elif value=='failed':message=self.tr('暂时无法打开战斗记录')+' · '+state.get('error','')
+            else:message=self.tr('战斗记录在客户端窗口中打开；可直接回放、导入和分享。')
+            self.battle_panel.notice.configure(text=message)
+            if value=='editor' and self._records_status_stamp!=path.stat().st_mtime_ns:
+                self.notebook.select(self.gear_page);self.root.deiconify();self.root.lift()
+            if path.is_file():self._records_status_stamp=path.stat().st_mtime_ns
+            process=getattr(self,'_records_window',None)
+            if process is not None and process.poll() is None:self.root.after(400,self._poll_records_window)
+        except (tk.TclError,OSError,ValueError):pass
 
     def close(self):
         self._stop_hotkey()

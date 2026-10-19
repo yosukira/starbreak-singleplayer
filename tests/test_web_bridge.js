@@ -128,3 +128,32 @@ const beforePlayback=socketsCreated;
 vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../web/bridge.js'),'utf8'),playbackContext);
 assert.equal(socketsCreated,beforePlayback,'Playback must never open ordinary live telemetry');
 console.log('Startup reconnect, stale socket isolation and replay telemetry isolation passed');
+// Participation latches before telemetry throttling and survives key release.
+context.performance.now=()=>100000;
+set(world,200,9876);set(world,672,player);set(player,64,150);set(world,668,0);
+context.Module.webFrame(world);assert.equal(sent.at(-1).keys.gameplay,false);
+set(world,668,1);context.Module.webFrame(world);
+set(world,668,0);context.Module.webFrame(world);
+context.performance.now=()=>100020;context.Module.webFrame(world);
+assert.equal(sent.at(-1).keys.gameplay,true,'A short tap between UDP samples counts');
+set(world,200,9877);set(world,668,1<<8|1<<10);context.performance.now=()=>100040;context.Module.webFrame(world);
+assert.equal(sent.at(-1).keys.gameplay,false,'New worlds and non-gameplay shortcuts do not inherit activity');
+console.log('Browser activity: idle/menu excluded, short taps retained, and new-world reset passed.');
+// Count actual clamped HP losses, including several hits and healing in one
+// frame. Damage events/armor estimates cannot substitute for these results.
+set(world,200,11111);set(world,668,1);set(player,64,150);context.performance.now=()=>100060;context.Module.webFrame(world);
+context.Module.webHealth(player,0);set(player,64,133);context.Module.webHealth(player,1);
+context.Module.webHealth(player,0);set(player,64,150);context.Module.webHealth(player,1);
+context.Module.webHealth(player,0);context.Module.webHealth(player,1);
+context.performance.now=()=>100080;context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.damage_taken,17);
+assert.equal(sent.at(-1).player.battle_metrics.healing,17);
+set(player,64,100);context.Module.webHealth(player,0);context.Module.webHealth(player,0);
+set(player,64,110);context.Module.webHealth(player,1);set(player,64,90);context.Module.webHealth(player,1);
+context.Module.webHealth(player,0);set(player,64,-1000);context.Module.webHealth(player,1);
+context.performance.now=()=>100100;context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.damage_taken,127);
+assert.equal(sent.at(-1).player.battle_metrics.healing,27);
+set(world,200,11112);set(player,64,150);context.performance.now=()=>100120;context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.damage_taken,0,'Next battle starts at zero');
+console.log('Damage taken: actual HP, mitigation, same-frame healing, nested changes, fatal overkill and room reset passed.');

@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const {ClientReplay,prepareTakeover}=require('../web/replay.js');
+const {ClientReplay,prepareTakeover,gameplayKeys}=require('../web/replay.js');
 
 function engine(){
   const HEAP32=new Int32Array(32768),module={HEAP32,_malloc:()=>24000,asm:{}};
@@ -11,6 +11,13 @@ function engine(){
 }
 
 (async()=>{
+  const defaults=gameplayKeys(null);
+  assert.ok(defaults.has(1073741904)&&defaults.has(32)&&defaults.has(100));
+  assert.ok(!defaults.has(113)&&!defaults.has(27)&&!defaults.has(104),'Unbound keys, menus and Home cannot take over');
+  const field=(id,value)=>Buffer.concat([Buffer.from([id*8+2,value.length]),value]);
+  const binding=field(1,Buffer.from([8,0,16,122]));
+  const content=btoa(btoa(field(1,Buffer.concat([field(1,Buffer.from('impbstr')),field(2,binding)])).toString('binary')));
+  const personal=gameplayKeys(content);assert.ok(personal.has(122));assert.ok(!personal.has(1073741904));assert.ok(personal.has(1073741903));
   let jobPolls=0,jobSleeps=0;
   const progress=[];
   const jobBranch=await prepareTakeover({cursor:10000},{
@@ -21,7 +28,7 @@ function engine(){
       }
       assert.equal(url,'/api/replay/takeover?job=verification');
       return ++jobPolls>30?{state:'ready',result:{id:'new-branch'}}:{state:'pending',current:jobPolls,total:40};
-    }}),sleep:async ms=>{assert.equal(ms,1000);jobSleeps++;},notice:value=>progress.push(value)
+    }}),sleep:async ms=>{assert.equal(ms,50);jobSleeps++;},notice:value=>progress.push(value)
   });
   assert.equal(jobBranch.id,'new-branch');assert.equal(jobSleeps,30);
   assert.equal(progress.length,30,'Long verification must continue beyond the old 20-second timeout');
@@ -74,6 +81,40 @@ function engine(){
   let iterations=0;controls.setPaused(true);controls.iterate(()=>iterations++);assert.equal(iterations,0);
   controls.setPaused(false);controls.setSpeed(.5);controls.iterate(()=>iterations++);assert.equal(iterations,0);controls.iterate(()=>iterations++);assert.equal(iterations,1);
   controls.setSpeed(4);controls.iterate(()=>iterations++);assert.equal(iterations,5);
+  // Real elapsed time, not the playback monitor's refresh rate, controls pace.
+  for(const hz of [30,60,144])for(const speed of [.25,.5,1,2,4]){
+    let now=0;
+    const ops=[];
+    for(let i=0;i<2001;i++)ops.push(['loop',0],['tick',i*5],['loop',1]);
+    const timed=new ClientReplay({module:{},mode:'play',document:{ops},now:()=>now});
+    timed.setSpeed(speed);
+    const step=()=>{timed.loop(0);timed.value('tick',0);timed.loop(1);};
+    timed.iterate(step);
+    for(let frame=1;frame<=hz;frame++){now=frame*1000/hz;timed.iterate(step);}
+    const elapsed=(timed.cursor/3-1)*5;
+    assert.ok(Math.abs(elapsed-1000*speed)<=5,`${hz}Hz ${speed}x must follow recorded time: ${elapsed}`);
+    timed.setPaused(true);now+=5000;timed.iterate(step);timed.setPaused(false);timed.iterate(step);
+    assert.equal((timed.cursor/3-1)*5,elapsed,'Pausing cannot accumulate catch-up debt');
+  }
+  const seekEngine=engine(),seekState=new ClientReplay({module:seekEngine.module}).playerState(seekEngine.world),seekOps=[];
+  for(let i=0;i<100;i++)seekOps.push(['loop',0],['tick',i*10],['frame',10],['state',seekState],['loop',1]);
+  const seeking=new ClientReplay({module:seekEngine.module,mode:'play',document:{ops:seekOps},now:()=>0});
+  seeking.seek(.5,true);
+  seeking.iterate(()=>{seeking.loop(0);seeking.value('tick',0);seeking.frame(seekEngine.world,99);seeking.frameEnd(seekEngine.world);seeking.loop(1);});
+  assert.equal(seeking.elapsed,500);assert.equal(seeking.paused,true);assert.equal(seeking.seekTarget,null);assert.equal(seeking.error,null);
+  assert.equal(seeking.cursor,50*5,'Seeking executes and verifies every original operation in order');
+  const initializeOps=[['loop',0],['tick',0],['loop',1],['loop',0],['tick',5000],['loop',1],
+    ['loop',0],['tick',6000],['frame',17],['state',seekState],['loop',1]];
+  const initialize=new ClientReplay({module:seekEngine.module,mode:'play',document:{ops:initializeOps},now:()=>0});
+  initialize.setPaused(true);assert.equal(initialize.pauseWhenReady,true);
+  initialize.iterate(()=>{
+    initialize.loop(0);initialize.value('tick',0);
+    if(initialize.ops[initialize.cursor]?.[0]==='frame'){initialize.frame(seekEngine.world,99);initialize.frameEnd(seekEngine.world);}
+    initialize.loop(1);
+  });
+  assert.equal(initialize.cursor,initializeOps.length,'Paused-at-start must still execute the recorded initialization');
+  assert.equal(initialize.paused,true);assert.equal(initialize.pauseWhenReady,false);assert.equal(initialize.error,null);
+  assert.equal(initialize.elapsed,17,'Initialization stops at the first verified player frame, without running the battle ahead');
   // Camera/audio decisions depend on the original logical viewport, even
   // when the player opens an imported recording in a larger window.
   const screenRecord=new ClientReplay({module:engine().module,keepOps:true});

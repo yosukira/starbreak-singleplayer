@@ -220,11 +220,22 @@ def engine_fingerprint():
     for base, pattern in (('localserver', '*.py'), ('maps', '*'), ('data/catalogue', '*')):
         for path in sorted((paths.ROOT/base).rglob(pattern)):
             if not path.is_file() or '__pycache__' in path.parts: continue
-            if path in (paths.ROOT/'localserver/battle_records.py', paths.ROOT/'localserver/battle_metrics.py', paths.ROOT/'localserver/replay.py', paths.ROOT/'localserver/run_replay.py'):
+            if path in (paths.ROOT/'localserver/replay_identity.py', paths.ROOT/'localserver/battle_records.py', paths.ROOT/'localserver/battle_metrics.py', paths.ROOT/'localserver/replay.py', paths.ROOT/'localserver/run_replay.py'):
                 continue
             relative = path.relative_to(paths.ROOT).as_posix().encode()
             digest.update(relative+b'\0'+hashlib.sha256(path.read_bytes()).digest())
     return digest.hexdigest()
+
+
+def compatible_engine(recorded):
+    current=engine_fingerprint()
+    if recorded==current:return True
+    # Exact, audited recorder-only migrations; a future mechanics edit changes
+    # the current digest and automatically stops accepting these aliases.
+    try:
+        aliases=json.loads((paths.ROOT/'data/mechanics/replay_compatibility.json').read_text())
+        return recorded in aliases.get(current,[])
+    except (OSError,ValueError,TypeError):return False
 
 
 class ObservedBridge:
@@ -401,8 +412,9 @@ class ServerCapture:
 
 class ServerReplay:
     """Rebuild and verify, leaving the real controller alive for continuation."""
-    def __init__(self, document):
-        if document.get('schema') != SCHEMA or document.get('engine') != engine_fingerprint():
+    def __init__(self, document, wire=None):
+        self.wire=wire
+        if document.get('schema') != SCHEMA or not compatible_engine(document.get('engine')):
             raise ValueError('Replay requires the same simulator engine and map data')
         map_id = document.get('map')
         if map_id not in SUPPORTED_MAPS: raise ValueError('Unsupported replay map')
@@ -442,6 +454,7 @@ class ServerReplay:
         self.frames, self.index, self.verified, self.failed = frames, 0, False, False
 
     def packet(self, channel, kind, payload, *args, **kwargs):
+        if self.wire is not None:payload=self.wire.reconcile(self.index,self.packets,kind,payload,self.session)
         packet_digest(self.digest, kind, payload)
         self.packets += 1
 

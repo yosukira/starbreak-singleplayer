@@ -55,6 +55,20 @@ class WebRuntimeTests(unittest.TestCase):
         self.assertEqual(forwarded[0]['player']['hp'],99)
         self.assertEqual(app.feedback,2)
 
+    def test_local_compatible_playback_retains_strict_takeover_checks(self):
+        from tools.web_client import CLIENT_SHA256
+        from tools.client_replay import ClientJournals
+        import uuid
+        with tempfile.TemporaryDirectory() as directory:
+            app=Prototype.__new__(Prototype);app.client=b'current patched client';app.client_journals=ClientJournals(directory)
+            identifier=str(uuid.uuid4())
+            app.client_journals.begin(identifier,CLIENT_SHA256,'c'*64,dict(content=None),[1366,768])
+            app.client_journals.append(identifier,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))
+            self.assertEqual(app.replay_document(identifier)['id'],identifier)
+            for invoke in (app.warm_takeover,app.prepare_takeover):
+                with self.assertRaisesRegex(ValueError,'matching replay adapter'):invoke(dict(id=identifier))
+            with self.assertRaisesRegex(ValueError,'matching replay adapter'):app.replay_document(identifier,require_exact=True)
+
     def test_incomplete_client_cache_is_replaced_only_after_verified_download(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'client.js';path.write_bytes(b'incomplete')

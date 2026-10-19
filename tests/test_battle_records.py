@@ -26,7 +26,36 @@ def sample():
         metrics=dict(damage_dealt=300,kills=2,health_packs=None),changes=[])
 
 
+def participating(session):
+    # Existing outcome tests describe played battles; idle behavior is tested
+    # separately below with actual empty bridge feedback.
+    if not getattr(session, 'bridge', None):
+        session.bridge=SimpleNamespace(snapshot=lambda:(session.player, {'gameplay':True}))
+    return session
+
+
 class RecordTests(unittest.TestCase):
+    def test_graveyard_combat_timer_uses_actual_ship_arrival_on_both_clients(self):
+        for web in (False,True):
+            with self.subTest(web=web),tempfile.TemporaryDirectory() as directory:
+                initial=records.parameters(sample()['parameters']);initial['skip_intro']=False
+                session=SimpleNamespace(player=PlayerState(objid=1,worldid=2,hp=100,alive=True),
+                    options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=web),seed=30,
+                    phase='intro',boss_time=0.,ship_controller=SimpleNamespace(arrival_time=14.))
+                recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
+                with mock.patch.object(records,'snapshot',return_value=initial):
+                    recorder.tick(1);self.assertEqual(recorder.document['combat_duration'],0)
+                    session.phase='fighting';session.boss_time=13.9
+                    recorder.tick(.2);self.assertEqual(recorder.document['combat_duration'],0,'Fighting/platform deployment is earlier than ship stability')
+                    session.boss_time=14.1;recorder.tick(.2)
+                    self.assertEqual(recorder.document['combat_duration'],.1)
+                    session.boss_time=14.3;recorder.tick(.2)
+                    self.assertEqual(recorder.document['combat_duration'],.3)
+                    row=records.validate(recorder.document)
+                    self.assertEqual(row['duration'],1.6);self.assertEqual(row['combat_duration'],.3)
+                    self.assertIsNone(records.validate(sample())['combat_duration'],'Legacy records cannot claim an invented adjusted time')
+                    with self.assertRaises(ValueError):records.validate(dict(row,combat_duration=2))
+
     def test_roundtrip_dedup_and_snapshot_are_immutable(self):
         with tempfile.TemporaryDirectory() as directory:
             source=records.RecordStore(Path(directory)/'one');destination=records.RecordStore(Path(directory)/'two')
@@ -104,7 +133,7 @@ class RecordTests(unittest.TestCase):
             store=records.RecordStore(directory)
             initial=records.parameters(sample()['parameters'])
             session=SimpleNamespace(player=None,options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=True),seed=30,phase='waiting')
-            recorder=records.BattleRecorder(session,store)
+            recorder=records.BattleRecorder(participating(session),store)
             with mock.patch.object(records,'snapshot',return_value=initial):
                 recorder.tick(.1);self.assertEqual(store.list(),[])
                 session.player=PlayerState(objid=1,worldid=2,hp=100,alive=True)
@@ -119,6 +148,55 @@ class RecordTests(unittest.TestCase):
                 session.phase='death';recorder.tick(.1);recorder.finish('interrupted')
                 self.assertEqual(store.list()[0]['result'],'victory')
                 self.assertIsNone(store.list()[0]['metrics']['health_packs'])
+
+    def test_no_gameplay_input_never_creates_history_on_either_client(self):
+        for web in (False, True):
+            for outcome in ('victory', 'defeat', 'interrupted'):
+                with self.subTest(web=web,outcome=outcome),tempfile.TemporaryDirectory() as directory:
+                    bridge=PlayerBridge(0)
+                    bridge._absorb(dict(seq=1,player=dict(objid=1,worldid=2,hp=100,alive=True),
+                        keys=dict(gameplay=False,interact=False),events=[]))
+                    session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=web),
+                        player=bridge.snapshot()[0],bridge=bridge,seed=30,phase='fighting')
+                    recorder=records.BattleRecorder(session,records.RecordStore(directory))
+                    initial=records.parameters(sample()['parameters'])
+                    with mock.patch.object(records,'snapshot',return_value=initial):
+                        recorder.tick(.5)
+                        # Idle actors may fall, heal, get hit, or deal passive
+                        # damage. Editing equipment alone is also not playing.
+                        session.player.xmp=1000;session.player.hp=50
+                        recorder.damage(100,True);recorder.generator_destroyed()
+                        changed=copy.deepcopy(initial);changed['missile_delay_ms']=500
+                        with mock.patch.object(records,'snapshot',return_value=changed):
+                            recorder.tick(1)
+                        self.assertEqual(recorder.store.list(),[])
+                        recorder.finish(outcome)
+                    self.assertTrue(recorder.closed)
+                    self.assertEqual(recorder.store.list(),[])
+
+    def test_first_gameplay_tap_saves_whole_battle_and_starting_configuration(self):
+        for web in (False, True):
+            with self.subTest(web=web),tempfile.TemporaryDirectory() as directory:
+                bridge=PlayerBridge(0)
+                feedback=dict(seq=1,player=dict(objid=1,worldid=2,hp=100,alive=True),keys=dict(gameplay=False),events=[])
+                bridge._absorb(feedback)
+                session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=web),
+                    player=bridge.snapshot()[0],bridge=bridge,seed=30,phase='fighting')
+                recorder=records.BattleRecorder(session,records.RecordStore(directory))
+                initial=records.parameters(sample()['parameters'])
+                with mock.patch.object(records,'snapshot',return_value=initial):
+                    recorder.tick(.5);recorder.damage(17)
+                    self.assertEqual(recorder.store.list(),[])
+                    feedback['keys']['gameplay']=True;bridge._absorb(feedback)
+                    recorder.tick(1)
+                    self.assertEqual(len(recorder.store.list()),1)
+                    # A later room/input reset cannot discard a played battle.
+                    feedback['keys']['gameplay']=False;bridge._absorb(feedback)
+                    recorder.tick(.5);recorder.finish('interrupted')
+                saved=recorder.store.get(recorder.identifier)
+                self.assertEqual(saved['duration'],2)
+                self.assertEqual(saved['metrics']['damage_dealt'],17)
+                self.assertEqual(saved['parameters'],initial)
 
     def test_snapshot_uses_delivered_item_speeds_and_frozen_names(self):
         row=sample()['parameters']['loadout']
@@ -136,7 +214,7 @@ class RecordTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=True),
                 player=PlayerState(objid=1,worldid=2,hp=100,alive=True,battle_metrics={'protocol':'player-metrics-v1','health_packs':2,'ammo_packs':1,'healing':30}),phase='fighting')
-            recorder=records.BattleRecorder(session,records.RecordStore(directory))
+            recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
             with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                 recorder.tick(.1);recorder.tick(.1)
                 self.assertEqual(recorder.document['metrics']['healing'],30)
@@ -146,6 +224,26 @@ class RecordTests(unittest.TestCase):
                 recorder.tick(.1)
                 self.assertEqual(recorder.document['metrics']['health_packs'],3)
                 self.assertEqual(recorder.document['metrics']['healing'],40)
+
+    def test_taken_damage_is_cumulative_survives_reload_and_keeps_legacy_unknown(self):
+        for web in (False,True):
+            with self.subTest(web=web),tempfile.TemporaryDirectory() as directory:
+                player=PlayerState(objid=1,worldid=2,hp=100,alive=True,room_seed=1,
+                    battle_metrics={'protocol':'player-metrics-v1','damage_taken':17,'healing':9})
+                session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=web),player=player,phase='fighting')
+                recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
+                with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
+                    recorder.tick(.1);recorder.tick(.1)
+                    self.assertEqual(recorder.document['metrics']['damage_taken'],17)
+                    # A later room starts a fresh cumulative counter. Even a
+                    # larger initial counter belongs entirely to the new room.
+                    player.raw.update(room_seed=2,battle_metrics={'protocol':'player-metrics-v1','damage_taken':50,'healing':0})
+                    recorder.tick(.1);recorder.finish('interrupted')
+                saved=records.RecordStore(directory).get(recorder.identifier)
+                self.assertEqual(saved['metrics']['damage_taken'],67)
+                self.assertEqual(saved['metrics']['healing'],9)
+                legacy=sample();recorder.store.save(legacy)
+                self.assertIsNone(recorder.store.get(legacy['id'])['metrics']['damage_taken'])
 
     def test_real_full_run_room_transition_keeps_one_battle_and_resets_pickup_baseline(self):
         for map_id in ('egy_run', 'eub_run'):
@@ -167,7 +265,7 @@ class RecordTests(unittest.TestCase):
                         player=dict(objid=1,worldid=2,xmp=x,ymp=y,hp=500,maxhp=500,alive=True,
                             room_seed=context['room_seed'],ammo=12,
                             battle_metrics=dict(protocol='player-metrics-v1',health_packs=count,ammo_packs=0,healing=healing)),
-                        keys=dict(interact=False)))
+                        keys=dict(interact=False,gameplay=True)))
                     session.step(.02)
                 observe(first,2,30)
                 self.assertIsNotNone(recorder.document)
@@ -199,7 +297,7 @@ class RecordTests(unittest.TestCase):
             player=PlayerState(objid=1,worldid=2,hp=100,alive=True)
             def wrapper():
                 return SimpleNamespace(options=options,run=run,instance=SimpleNamespace(role='entry',seed=1,visits=1),
-                    bridge=SimpleNamespace(snapshot=lambda:(player,{}),native_context={}),_ready=True,
+                    bridge=SimpleNamespace(snapshot=lambda:(player,{'gameplay':True}),native_context={}),_ready=True,
                     step=lambda dt:None,stop=lambda **kw:None,log=lambda message:None)
             with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                 first=wrapper();a=records.attach(first);first.step(.1);first.stop(stop_bridge=False)
@@ -220,8 +318,8 @@ class RecordTests(unittest.TestCase):
             bridge=PlayerBridge(0)
             session=SimpleNamespace(options=SimpleNamespace(map='lab_hard',player_type=1),
                 bridge=bridge,player=None,phase='waiting',seed=123)
-            recorder=records.BattleRecorder(session,records.RecordStore(directory))
-            feedback=dict(seq=1,player=dict(objid=1,worldid=2,hp=100,alive=True),keys={},events=[])
+            recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
+            feedback=dict(seq=1,player=dict(objid=1,worldid=2,hp=100,alive=True),keys={'gameplay':True},events=[])
             bridge._absorb(feedback)
             with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                 recorder.tick(.1)
@@ -240,8 +338,8 @@ class RecordTests(unittest.TestCase):
             player=PlayerState(objid=1,worldid=2,hp=100,alive=True)
             session=SimpleNamespace(options=SimpleNamespace(map='egy_run',player_type=1),run=SimpleNamespace(seed=1,completed=False),
                 instance=SimpleNamespace(role='boss',seed=1,visits=1),current=SimpleNamespace(phase='fight'),
-                bridge=SimpleNamespace(snapshot=lambda:(player,{}),native_context={}),_ready=True)
-            recorder=records.BattleRecorder(session,records.RecordStore(directory))
+                bridge=SimpleNamespace(snapshot=lambda:(player,{'gameplay':True}),native_context={}),_ready=True)
+            recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
             with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                 recorder.tick(.1)
                 session.current.phase='death'
@@ -255,7 +353,7 @@ class RecordTests(unittest.TestCase):
             with self.subTest(map=map_id),tempfile.TemporaryDirectory() as directory:
                 session=SimpleNamespace(options=SimpleNamespace(map=map_id,player_type=1),
                     player=PlayerState(objid=1,worldid=2,hp=100,alive=True),phase='fighting',seed=123)
-                recorder=records.BattleRecorder(session,records.RecordStore(directory))
+                recorder=records.BattleRecorder(participating(session),records.RecordStore(directory))
                 with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                     recorder.tick(.1)
                     session.phase='defeated';recorder.tick(.1)

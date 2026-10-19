@@ -27,7 +27,7 @@ OFFLINE_DISABLED_PLUGINS=('combat_recorder','design_recorder','map_export',
     'sb_hardlab_probe','hardlab_delta','hardlab_server','hardlab_spawn')
 
 RUNTIME_PLUGIN_FILES = ('hardlab_live.py', '_hardlab_livebridge.py', '_practice_keybindings.py', '_full_run_inventory.py',
-                        '_native_replay_hooks.py', '_native_replay.py',
+                        '_native_replay_hooks.py', '_native_replay.py', '_native_replay_capture.py', '_native_replay_player.py', '_native_battle_metrics.py',
                         '_full_run_ground.py', '_full_run_egress.py', '_full_run_egress_transport.py',
                         '_full_run_ground_restore.py', '_full_run_ground_restore_transport.py',
                         '_dumb_boss_teleports.py','_dumb_wave_teleports.py',
@@ -940,9 +940,19 @@ def main():
     logs = LAB / 'userdata' / 'logs' / ('session-' + time.strftime('%Y%m%d-%H%M%S'))
     logs.mkdir(parents=True, exist_ok=True)
     server = None
+    native_recording = None
     gear_editor = None
     gear_editor_log = None
     try:
+        from localserver.replay import CLIENT_MAPS
+        if args.map in CLIENT_MAPS and os.environ.get('SB_RECORD_REPLAY','1')=='1':
+            try:
+                from tools.native_recording import NativeRecording
+                from localserver.battle_records import RecordStore
+                native_recording=NativeRecording(RecordStore().directory,client,registry=LAB/'userdata/native-control.json')
+                print('Native replay recording ready.',flush=True)
+            except Exception as error:
+                print('Native replay recording unavailable: '+type(error).__name__,flush=True)
 
         if not args.no_gear_editor:
             editor_python = choose_editor_python()
@@ -1001,7 +1011,11 @@ def main():
             if args.demo:
                 command.extend(['--live-demo-damage', '--live-auto-interact',
                                 '--live-force-demo'])
-            server = subprocess.Popen(command, cwd=str(LAB), stdout=output,
+            server_env=dict(os.environ)
+            server_env.pop('SB_REPLAY_ATTEMPT',None)
+            if native_recording:
+                server_env.update(SB_RECORD_REPLAY='1',SB_REPLAY_ATTEMPT=native_recording.identifier)
+            server = subprocess.Popen(command, cwd=str(LAB), stdout=output,env=server_env,
                 stderr=subprocess.STDOUT,
                 creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
             for _ in range(100):
@@ -1016,14 +1030,16 @@ def main():
             print('Practice server ready. Close the game to stop. Logs: ' + str(logs), flush=True)
 
             client_env = dict(os.environ)
+            if native_recording:client_env['HARDLAB_NATIVE_REPLAY']=json.dumps(native_recording.config,separators=(',',':'))
             client_env['HARDLAB_KEYBINDINGS'] = str(LAB / 'userdata' / 'keybindings.json')
             client_env['PYTHONIOENCODING'] = 'cp936:replace'
             client_env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
             client_log = logs / 'client-launch.log'
             with client_log.open('w', encoding='utf-8', errors='replace') as out:
+                client_port=native_recording.gate(args.port) if native_recording else args.port
                 client_command = [str(py32), str(LAB / 'tools/run_live_client.py'),
                      '--sbpe', str(args.sbpe), '--client', str(client),
-                     '--server', '127.0.0.1:' + str(args.port),
+                     '--server', '127.0.0.1:' + str(client_port),
                      '--runtime-dir', str(runtime), '--keep']
                 if args.stop_file:
                     client_command.extend(['--stop-file', str(args.stop_file)])
@@ -1047,6 +1063,9 @@ def main():
         if server is not None and server.poll() is None:
             server.terminate()
             server.wait(timeout=10)
+        if native_recording is not None:
+            try:native_recording.close()
+            except Exception as error:print('Native recording could not be sealed: '+type(error).__name__,flush=True)
         if finish_direct is not None:
             finish_direct()
 

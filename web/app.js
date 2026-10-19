@@ -2,7 +2,7 @@
   const $=id=>document.getElementById(id);
   let language=localStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
   if(!['en','zh','zh-affixes'].includes(language))language='en';
-  let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false;
+  let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
   const t=(zh,en)=>language.startsWith('zh')?zh:en;
   let loading=null,loadingPercent=0,loadingHide;
   function finishLoading(){if(!loading||loadingHide)return;loadingPercent=100;renderLoading();loadingHide=setTimeout(()=>showLoading(null),220);}
@@ -41,19 +41,51 @@
   }
   addEventListener('starbreak-loading',event=>{const p=event.detail;if(!loading||p.phase==='environment'&&loading.phase!=='environment')return;loadingPercent=Math.max(loadingPercent,p.percent||0);loading={...loading,...p};renderLoading();});
   const editor=new WebEquipment(()=>language,()=>sync());
-  const records=new BattleRecords($('records-page'),()=>language,()=>editor.data?.items||[],startReplay);
-  function playbackControl(action,extra={}){document.querySelector('iframe')?.contentWindow.postMessage({type:'replay-control',action,...extra},location.origin);}
+  const records=new BattleRecords($('records-page'),()=>language,()=>editor.data?.items||[],startReplay,()=>catalogue);
+  function playbackControl(action,extra={}){
+    if(replayRecord?.platform==='native'){
+      void fetch('/api/native/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...extra})}).then(async response=>{if(!response.ok)throw Error((await response.json()).error);}).catch(error=>{$('replay-progress').textContent=error.message;});return;
+    }
+    document.querySelector('iframe')?.contentWindow.postMessage({type:'replay-control',action,...extra},location.origin);
+  }
+  let nativePoll=0;
+  async function pollNativeReplay(){
+    clearTimeout(nativePoll);if(replayRecord?.platform!=='native')return;
+    try{
+      const response=await fetch('/api/native/status',{cache:'no-store'});const value=await response.json();
+      if(!response.ok)throw Error(value.error);
+      if(value.state==='live'){
+        replayRecord=null;$('replay-controls').hidden=true;$('status').textContent=t('已在 Windows 客户端接管','You are in control in the Windows client');return;
+      }
+      replayStatus({...value,state:value.paused&&value.state==='playing'?'paused':value.state,message:value.error||value.message,frame:value.seconds>0?1:0});
+    }catch(error){$('replay-progress').textContent=error.message;}
+    if(replayRecord?.platform==='native')nativePoll=setTimeout(pollNativeReplay,400);
+  }
   function updatePause(){ $('replay-pause').textContent=replayPaused?t('继续','Resume'):t('暂停','Pause'); }
   function replayStatus(data){
     lastReplayState=data;
     const state=data.state;
+    if(replayRecord?.platform==='native'&&state==='preparing'){
+      $('status').textContent=t('正在准备客户端资源','Preparing native-client assets');
+      $('replay-progress').textContent=`${data.assets_loaded||0} / ${data.assets_total||0}`;
+      $('replay-takeover').disabled=true;return;
+    }
+    const seek=$('replay-seek');
+    seek.disabled=state==='taking-over'||state==='failed';
+    if(Number.isFinite(data.duration))seek.max=String(data.duration);
+    if(!seekDragging&&Number.isFinite(data.seconds))seek.value=String(data.seconds);
     $('replay-takeover').disabled=state==='failed'||state==='ended'||state==='taking-over'||!data.takeover;
+    if(state==='seeking'){
+      $('replay-pause').disabled=$('replay-speed').disabled=true;
+      $('replay-progress').textContent=t('正在跳转…','Seeking…')+' '+Math.floor(data.seconds||0)+' / '+Math.floor(data.target||0)+'s';
+      if(data.frame>0)finishLoading();return;
+    }
     if(state==='taking-over'){
       showLoading(null);$('replay-pause').disabled=$('replay-speed').disabled=true;
       $('status').textContent='';
       $('replay-progress').textContent=t('正在接管…','Taking over…')+(Number.isFinite(data.progress)?` ${data.progress}%`:'');return;
     }
-    if(state==='takeover-failed'){showLoading(null);$('replay-pause').disabled=$('replay-speed').disabled=false;$('status').textContent=t('暂时无法接管，可继续回放','Takeover unavailable; replay can continue');$('replay-progress').title=data.message||'';return;}
+    if(state==='takeover-failed'){showLoading(null);$('replay-pause').disabled=$('replay-speed').disabled=false;$('status').textContent=t('暂时无法接管，可继续回放','Takeover unavailable; replay can continue');$('replay-progress').title=data.message||'';$('replay-progress').textContent=data.message||t('接管失败','Takeover failed');return;}
     if(state==='failed'||state==='ended')showLoading(null);else if(data.frame>0)finishLoading();
     $('replay-pause').disabled=$('replay-speed').disabled=state==='failed'||state==='ended';
     if(state==='failed'){
@@ -67,6 +99,14 @@
       if(Number.isFinite(data.seconds))$('replay-progress').textContent=format(data.seconds)+' / '+format(data.duration);
     }
   }
+  $('replay-seek').oninput=event=>{seekDragging=true;$('replay-progress').textContent=Math.floor(Number(event.target.value)/60)+':'+String(Math.floor(Number(event.target.value)%60)).padStart(2,'0');};
+  $('replay-seek').onchange=event=>{
+    seekDragging=false;if(!replayRecord||busy)return;
+    const target=Number(event.target.value),current=lastReplayState?.seconds||0;
+    if(replayRecord.platform==='native')playbackControl('seek',{seconds:target,paused:replayPaused});
+    else if(target<current||lastReplayState?.state==='ended')void startReplay(replayRecord,target,replayPaused,Number($('replay-speed').value));
+    else playbackControl('seek',{seconds:target,paused:replayPaused});
+  };
   $('replay-pause').onclick=()=>{replayPaused=!replayPaused;playbackControl('pause',{paused:replayPaused});updatePause();};
   $('replay-speed').onchange=event=>playbackControl('speed',{speed:Number(event.target.value)});
   $('replay-back').onclick=()=>{replayPaused=true;playbackControl('pause',{paused:true});updatePause();setTab(true);};
@@ -150,19 +190,29 @@
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;$('status').textContent=t('启动失败','Failed');if($('equipment-dialog').open)editor.notice(error.message);}
     finally{setBusy(false);}
   }
-  async function startReplay(record){
+  async function startReplay(record,seek=0,paused=false,speed=1){
     if(busy)return;
     battleEnded=false;
     setBusy(true);setTab(false);$('error').hidden=true;
     showLoading('replay');
     try{
+      if(record.platform==='native'){
+        const response=await fetch('/api/native/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'watch',record:record.id})});
+        if(!response.ok)throw Error((await response.json()).error);
+        replayRecord=record;replayPaused=false;lastReplayState=null;
+        $('arena-title').textContent=record.map_title;$('replay-controls').hidden=false;
+        $('replay-speed').value='1';$('replay-seek').value='0';updatePause();
+        const notice=document.createElement('p');notice.className='record-native-playback';notice.textContent=t('正在 Windows 游戏客户端中回放。可在这里暂停、调整倍速、拖动进度或接管；有效的键盘操作也能直接接管。','Playing in the Windows game client. Pause, change speed, seek or take over here. A valid gameplay keyboard press also takes over.');
+        $('stage').replaceChildren(notice);finishLoading();
+        void pollNativeReplay();window.pywebview?.api?.show_native_game?.();return;
+      }
       const check=await fetch('/api/replay/check?id='+encodeURIComponent(record.replay.id));
       if(!check.ok)throw Error(t('录像无法载入，请确认文件完整且与当前版本兼容。','Could not load replay. Check that it is complete and compatible with this version.'));
       await document.querySelector('iframe')?.contentWindow.Module?.gamePreferences?.flush();
       await document.querySelector('iframe')?.contentWindow.Module?.clientReplay?.finish();
-      replayRecord=record;replayPaused=false;lastReplayState=null;liveMap=runMap=null;
+      replayRecord=record;replayPaused=paused;pendingSeek=seek;seekDragging=false;lastReplayState=null;liveMap=runMap=null;
       $('arena-title').textContent=record.map_title;$('status').textContent=t('加载录像…','Loading replay…');
-      $('replay-controls').hidden=false;$('replay-speed').value='1';$('replay-progress').textContent='';$('replay-progress').title='';$('replay-pause').disabled=$('replay-speed').disabled=false;updatePause();
+      $('replay-controls').hidden=false;$('replay-speed').value=String(speed);$('replay-seek').value='0';$('replay-progress').textContent='';$('replay-progress').title='';$('replay-pause').disabled=$('replay-speed').disabled=false;updatePause();
       const frame=document.createElement('iframe');frame.src=(globalThis.StarBreakBrowser?.assetURL('/game.html')||'/game.html')+'?replay='+encodeURIComponent(record.replay.id)+'&record='+encodeURIComponent(record.id);frame.title=t('StarBreak 录像回放','StarBreak replay');frame.allow='autoplay; fullscreen';
       $('stage').replaceChildren(frame);
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
@@ -191,11 +241,11 @@
     if(event.data.type==='practice-shortcut'){shortcut(event.data.action);return;}
     if(event.data.type==='replay-status'&&replayRecord){
       const state=event.data.state;
-      if(state==='ready'){playbackControl('speed',{speed:Number($('replay-speed').value)});playbackControl('pause',{paused:replayPaused});return;}
+      if(state==='ready'){playbackControl('speed',{speed:Number($('replay-speed').value)});if(pendingSeek>0){playbackControl('seek',{seconds:pendingSeek,paused:replayPaused});pendingSeek=0;}else playbackControl('pause',{paused:replayPaused});return;}
       if(state==='taken-over'){
         showLoading(null);
         liveMap=runMap=replayRecord.map;editor.selectClass(replayRecord.shell);replayRecord=null;lastReplayState=null;
-        $('replay-controls').hidden=true;$('status').textContent=t('已接管','You are in control');return;
+        $('replay-controls').hidden=true;$('status').textContent=t('已接管','You are in control');document.querySelector('iframe')?.contentWindow.focus();return;
       }
       replayStatus(event.data);
       return;
@@ -220,5 +270,8 @@
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
     finally{if(loading?.phase==='environment')finishLoading();setBusy(false);}
   }
-  init();
+  if(new URLSearchParams(location.search).get('desktop')==='1'){
+    $('open-editor').onclick=()=>{void globalThis.pywebview?.api.show_editor();};
+  }
+  void init().then(()=>{if(new URLSearchParams(location.search).get('view')==='records'){showLoading(null);setTab(true);}});
 })();

@@ -33,6 +33,38 @@ def executable():
 
 
 class NativeSymbolTests(unittest.TestCase):
+    def coff_image(self,extra=()):
+        image,symbols=executable();image=bytearray(image);table=len(image)
+        names=list(native_symbols.HOOKS)+list(extra);strings=bytearray(b'\0'*4);rows=bytearray()
+        for index,name in enumerate(names):
+            offset=len(strings);strings.extend(native_symbols.LINKER_NAMES[name].encode()+b'\0')
+            value=symbols[name]-0x401000+(32 if index>=len(native_symbols.HOOKS) else 0)
+            rows.extend(struct.pack('<IIIhHBB',0,offset,value,1,0x20,2,0))
+        struct.pack_into('<I',strings,0,len(strings))
+        struct.pack_into('<II',image,140,table,len(names))
+        return bytes(image+rows+strings),symbols
+
+    def test_direct_coff_resolution_uses_only_known_symbols_and_does_not_execute_a_program(self):
+        image,symbols=self.coff_image()
+        self.assertEqual(native_symbols.coff_symbols(image),symbols)
+        with tempfile.TemporaryDirectory() as directory:
+            game=Path(directory)/'client.exe';game.write_bytes(image)
+            with mock.patch('tools.native_symbols.subprocess.run',side_effect=AssertionError('No executable may run')):
+                self.assertEqual(native_symbols.resolve(game),native_symbols.manifest(image,symbols))
+
+    def test_corrupt_coff_names_counts_auxiliary_records_and_duplicate_addresses_are_rejected(self):
+        image,_=self.coff_image();table=2048;count=len(native_symbols.HOOKS)
+        for changed in ('count','string-size','name','terminator','aux'):
+            bad=bytearray(image)
+            if changed=='count':struct.pack_into('<I',bad,144,2000001)
+            elif changed=='string-size':struct.pack_into('<I',bad,table+count*18,len(image))
+            elif changed=='name':struct.pack_into('<I',bad,table+4,3)
+            elif changed=='terminator':bad[-1]=65
+            else:bad[table+(count-1)*18+17]=1
+            with self.subTest(changed=changed),self.assertRaises(ValueError):native_symbols.coff_symbols(bad)
+        duplicate,_=self.coff_image((native_symbols.HOOKS[0],))
+        with self.assertRaisesRegex(ValueError,'Ambiguous'):native_symbols.coff_symbols(duplicate)
+
     def test_manifest_has_only_typed_code_identities_and_offsets(self):
         image,symbols=executable();doc=native_symbols.manifest(image,symbols)
         self.assertEqual(doc['pointer_bytes'],4)

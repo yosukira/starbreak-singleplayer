@@ -1,8 +1,10 @@
 """Portable battle files: bounded JSON journals, never executable snapshots."""
 import gzip
+import base64
 import io
 import json
 import re
+import struct
 import uuid
 
 from localserver import replay
@@ -10,7 +12,51 @@ from tools.client_replay import ClientJournals, SCHEMA as CLIENT_SCHEMA, operati
 from tools.game_preferences import GamePreferences
 
 MAGIC = b'SBREPLAY1\n'
+MAGIC_COMPACT = b'SBREPLAY2\n'
 MAX_EXPANDED = 272 * 1024 * 1024
+
+
+def transform_wire(client):
+    """Reversible storage transform; runtime packets stay byte-for-byte exact.
+
+    The offline client's fixed transport cipher hides repetitions from gzip.
+    Applying the same stream on write/read exposes them for storage only. Each
+    recorded network chunk keeps its size and boundary, including split Hellos
+    and independent connections. This never changes clocks, inputs or frames.
+    """
+    from localserver.protocol import RC4, random_string
+    if client.get('schema')!=CLIENT_SCHEMA:return client
+    cipher=RC4(random_string(0,64));header=bytearray();remaining=None;rows=[]
+    for row in client['ops']:
+        if row[0]=='open':cipher=RC4(random_string(0,64));header=bytearray();remaining=None
+        if row[0]!='net':rows.append(row);continue
+        data=base64.b64decode(row[1],validate=True);output=bytearray();offset=0
+        if len(header)<5:
+            size=min(5-len(header),len(data));header.extend(data[:size]);output.extend(data[:size]);offset=size
+            if len(header)==5:
+                remaining=struct.unpack('>i',header[1:])[0]
+                if header[0]!=1 or not 0<=remaining<=65536:raise ValueError('Invalid replay Hello boundary')
+        if remaining:
+            size=min(remaining,len(data)-offset);output.extend(data[offset:offset+size]);remaining-=size;offset+=size
+        if offset<len(data):output.extend(cipher.crypt(data[offset:]))
+        rows.append(['net',base64.b64encode(output).decode('ascii')])
+    return dict(client,ops=rows)
+
+
+def pack_battle(value):
+    """Keep legacy files readable; select the lossless codec only when useful."""
+    from localserver.battle_records import encoded
+    raw=encoded(value)
+    if len(raw)>MAX_EXPANDED:raise ValueError('Replay is too large; select fewer battles')
+    standard=MAGIC+gzip.compress(raw,compresslevel=6,mtime=0)
+    if value.get('client',{}).get('schema')!=CLIENT_SCHEMA:return standard,len(raw)
+    try:
+        packed=encoded(dict(value,encoding='wire-clear-v1',client=transform_wire(value['client'])))
+    except (ValueError,TypeError,KeyError,struct.error):return standard,len(raw)
+    if len(packed)>MAX_EXPANDED:return standard,len(raw)
+    compact=MAGIC_COMPACT+gzip.compress(packed,compresslevel=6,mtime=0)
+    if len(standard)-len(compact)<max(1024,len(standard)*.05):return standard,len(raw)
+    return compact,max(len(raw),len(packed))
 
 
 def digest(value):
@@ -116,19 +162,20 @@ def export_battle(store, document):
     if path.is_file():
         try:value['server']=server_document(replay.read_journal(path))
         except ValueError:pass  # A usable client replay does not require takeover data.
-    raw=encoded(value)
-    if len(raw)>MAX_EXPANDED:raise ValueError('Replay is too large; select fewer battles')
-    return MAGIC+gzip.compress(raw,compresslevel=6,mtime=0),len(raw)
+    return pack_battle(value)
 
 
 def read_battle(blob):
     from localserver.battle_records import validate, MAX_RECORD
-    if blob.startswith(MAGIC):
+    if blob.startswith((MAGIC,MAGIC_COMPACT)):
         with gzip.GzipFile(fileobj=io.BytesIO(blob[len(MAGIC):])) as handle:
             raw=handle.read(MAX_EXPANDED+1)
         if len(raw)>MAX_EXPANDED:raise ValueError('Expanded replay is too large')
         value=json.loads(raw)
         record=validate(value['record']);client=client_document(value['client'])
+        if blob.startswith(MAGIC_COMPACT):
+            if value.get('encoding')!='wire-clear-v1':raise ValueError('Unsupported replay compression')
+            client=transform_wire(client)
         from plugins._native_replay import SCHEMA as NATIVE_SCHEMA
         if (client['schema']==NATIVE_SCHEMA)!=(record['platform']=='native'):
             raise ValueError('Battle and recording editions do not match')

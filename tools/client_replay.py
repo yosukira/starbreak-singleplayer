@@ -174,7 +174,7 @@ class ClientJournals:
             operations.extend(document['ops'])
         return dict(header, ops=operations)
 
-    def statuses(self, identifiers, adapter):
+    def statuses(self, identifiers, adapter, client=None, allow_compatible=False):
         result = {}
         with self.connect() as db:
             for start in range(0, len(identifiers), 500):
@@ -184,21 +184,29 @@ class ClientJournals:
                 rows = db.execute('SELECT id,header,complete FROM attempts WHERE id IN ('+','.join('?' for _ in selected)+')', selected)
                 for identifier, header, complete in rows:
                     header=json.loads(header)
-                    matches = header.get('schema')==self.schema and header['adapter'] == adapter
-                    result[identifier] = dict(available=bool(complete and matches),
-                        reason='ready' if complete and matches else 'recording' if not complete else 'incompatible', id=identifier)
+                    same_client=client is None or header.get('client')==client
+                    matches = header.get('schema')==self.schema and header['adapter'] == adapter and same_client
+                    trial=(allow_compatible and client is not None and same_client and self.schema==SCHEMA and header.get('schema')==SCHEMA)
+                    result[identifier] = dict(available=bool(complete and (matches or trial)),
+                        reason='ready' if complete and matches else 'compatible' if complete and trial else 'recording' if not complete else 'incompatible', id=identifier)
         return result
 
-    def fork(self, identifier, cursor):
+    def fork(self, identifier, cursor, source=None):
         """Copy a verified execution prefix into an independent local journal."""
-        source = self.read(identifier)
+        source = self.read(identifier) if source is None else source
+        if source.get('id')!=identifier:raise ValueError('Replay does not belong to this branch')
         if type(cursor) is not int or not 0 < cursor <= len(source['ops']) or source['ops'][cursor-1] != ['loop', 1]:
             raise ValueError('Take over between complete game iterations')
         target = str(uuid.uuid4())
         self.begin(target, source['client'], source['adapter'],
             dict(key='LocalStorage.pb', revision=0, content=source['preferences']), source['viewport'])
-        sequence, rows, size = 0, [], 0
-        for row in source['ops'][:cursor]:
+        branch=dict(id=target,sequence=0)
+        self.extend_fork(branch,source['ops'][:cursor])
+        return branch
+
+    def extend_fork(self, branch, operations):
+        target=branch['id'];sequence=branch['sequence'];rows=[];size=0
+        for row in operations:
             length = len(encode(row))+1
             if rows and (size+length > 450000 or len(rows) >= 1000):
                 self.append(target, dict(sequence=sequence, ops=rows, end=False))
@@ -207,4 +215,5 @@ class ClientJournals:
         if rows:
             self.append(target, dict(sequence=sequence, ops=rows, end=False))
             sequence += 1
-        return dict(id=target, sequence=sequence)
+        branch['sequence']=sequence
+        return branch
