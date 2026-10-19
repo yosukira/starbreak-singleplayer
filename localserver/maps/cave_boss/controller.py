@@ -37,6 +37,7 @@ class CaveBossController(MapController):
         self.body_pos = list(self.pack.scene['body_start'])
         self.mouths = {}; self.actors = {}; self.retired = set(); self._next_id = 2000
         self.hives_due = 1.15; self.hives_spawned = False; self.next_roller = math.inf
+        self.roller_burst_left = 0
         self.next_explosion = 0.; self.roller_started = False
         self.stats = dict(insects=0, rollers=0, sprays=0, pools=0, consumed=0, attacks=0)
 
@@ -86,6 +87,7 @@ class CaveBossController(MapController):
         self.state = 'weak' if number <= self.rules['boss']['weak_rounds'] else 'final_wait'
         chosen = {self.rng.randrange(4), self.rng.randrange(4, 8)} if self.state == 'weak' else set()
         first = number == 1
+        attack_at = self.time + self.rules['mouth']['after_return_launch_s']
         for index, slot in enumerate(self.pack.scene['slots']):
             weak = index in chosen
             hp = self.rules['boss']['first_hp' if first else 'later_hp']
@@ -94,7 +96,8 @@ class CaveBossController(MapController):
             duration = self.rng.uniform(.5, 1.1) if first or not weak else self.rng.uniform(1.7, 2.2)
             mouth = dict(slot, pos=pos, home=[slot['x'], slot['y']], hp=hp, maxhp=hp, armor=armor,
                          weak=weak, action='enter', action_at=self.time, duration=duration, origin=list(pos),
-                         next_sync=self.time + .05, amplitude=self.rng.uniform(10, 110), next_attack=math.inf,
+                         next_sync=self.time + .05, amplitude=self.rng.uniform(10, 110),
+                         next_attack=(math.inf if first else attack_at + self.rng.uniform(0, self.rules['mouth']['wave_spread_s']) - self.rules['mouth']['windup_s']),
                          dead=False, visible=True)
             self.mouths[slot['id']] = mouth
             self.emit('mouth_round', mouth=dict(mouth), initial=first)
@@ -111,6 +114,11 @@ class CaveBossController(MapController):
             for mouth in self.mouths.values():
                 mouth.update(action='hidden', hp=0, visible=False)
                 self.emit('mouth_hide', id=mouth['id'])
+        else:
+            for mouth in self.mouths.values():
+                if mouth['action'] == 'windup':
+                    mouth.update(action='return', action_at=self.time,
+                                 origin=list(mouth['pos']), duration=self.rules['mouth']['return_s'])
         self.emit('body_move', number=self.body_number, up_s=leg,
                   down_s=None if self.body_number == 5 else leg)
 
@@ -140,9 +148,14 @@ class CaveBossController(MapController):
                 elif self.body_number == 4:
                     self.state = 'final_wait_2'; self.body_pos = list(a)
                     self.deadline = self.time + self.rng.uniform(*r['final_wait_after_sweep_s'])
+                    mouth_rules = self.rules['mouth']
+                    for mouth in self.mouths.values():
+                        mouth['next_attack'] = (self.time + mouth_rules['after_fast_return_launch_s']
+                            + self.rng.uniform(0, mouth_rules['wave_spread_s']) - mouth_rules['windup_s'])
                     self.emit('body_return', number=4)
                 else:
                     self.state = 'death'; self.death_at = self.time; self.deadline = self.time + r['death_s']
+                    self.next_roller = math.inf; self.roller_burst_left = 0
                     self.emit('death_start')
         elif self.state in ('final_wait', 'final_wait_2') and self.time >= self.deadline:
             self._body()
@@ -195,13 +208,14 @@ class CaveBossController(MapController):
                         self.emit('mouth_hide', id=mouth['id'])
                     elif action == 'windup':
                         mouth.update(action='attack', action_at=self.time, origin=list(mouth['pos']),
-                                     next_attack=self.time + self.rng.uniform(*r['cooldown_s']))
+                                     next_attack=self.time + r['launch_period_s'] - r['windup_s'])
                         self.stats['attacks'] += 1
                         self.emit('mouth_attack', id=mouth['id'], slot=mouth['slot'], angle=mouth['angle'])
                     else:
                         mouth.update(action='idle', action_at=self.time)
                         if action == 'enter':
-                            mouth['next_attack'] = self.time + self.rng.uniform(2.5, 4.)
+                            if self.weak_round == 1:
+                                mouth['next_attack'] = self.time + self.rng.uniform(*r['first_attack_delay_s'])
                             self.emit('mouth_active', mouth=dict(mouth))
                             if self.weak_round > 1 and self.rng.random() < .65:
                                 for _ in range(self.rng.randint(1, 3)):
@@ -211,7 +225,7 @@ class CaveBossController(MapController):
                 mouth['pos'] = [home[0], home[1] + mouth['amplitude'] * math.sin(elapsed * math.pi / 1.5)]
                 if mouth['slot'] == 'R4':
                     mouth['pos'][1] = min(mouth['pos'][1], self._corner_y(160))
-                if self.time >= mouth['next_attack'] and self.state not in ('transition', 'death', 'done'):
+                if self.time >= mouth['next_attack'] and self.state not in ('body', 'transition', 'death', 'done'):
                     angle = self.rng.uniform(-10, 10) if self.rng.random() < .65 else self.rng.uniform(-r['angle_limit_deg'], r['angle_limit_deg'])
                     if mouth['slot'] == 'R4':
                         angle = -abs(angle)
@@ -258,7 +272,8 @@ class CaveBossController(MapController):
 
     def _spawn_hives(self):
         r = self.rules['hive']
-        for anchor in self.rng.sample(self.pack.scene['hive_anchors'], r['count']):
+        count = min(len(self.pack.scene['hive_anchors']), self.rng.randint(*r['count_range']))
+        for anchor in self.rng.sample(self.pack.scene['hive_anchors'], count):
             row = self._new('hive', anchor['vid'], [anchor['x'], anchor['y']], facing=anchor['facing'])
             row['next_spawn'] = self.time + self.rng.uniform(*r['first_spawn_s'])
         self.hives_spawned = True
@@ -465,10 +480,18 @@ class CaveBossController(MapController):
         if not self.hives_spawned and self.time >= self.hives_due:
             self._spawn_hives()
         if self.time >= self.next_roller:
-            self.next_roller = self.time + self.rng.uniform(*self.rules['roller']['spawn_interval_s'])
-            if sum(a['kind'] == 'roller' for a in self.actors.values()) < self.rules['roller']['cap']:
+            r = self.rules['roller']
+            if not self.roller_burst_left:
+                self.roller_burst_left = (1 if self.rng.random() < r['single_spawn_chance']
+                    else self.rng.randint(2, r['burst_max']))
+            if sum(a['kind'] == 'roller' for a in self.actors.values()) < r['cap']:
                 self._spawn_roller(self.rng.choice(self.pack.scene['roller_spawns']))
                 self.stats['rollers'] += 1
+                self.roller_burst_left -= 1
+            else:
+                self.roller_burst_left = 0
+            interval = r['burst_interval_s'] if self.roller_burst_left else r['spawn_interval_s']
+            self.next_roller = self.time + self.rng.uniform(*interval)
         for row in list(self.actors.values()):
             if row['id'] not in self.actors:
                 continue

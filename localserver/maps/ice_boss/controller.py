@@ -10,6 +10,12 @@ def overlap(a, b):
 def center(a):
     return [a['pos'][0]+a['size'][0]/2, a['pos'][1]+a['size'][1]/2]
 
+def spear_direction(origin, target, level_tolerance):
+    dx, dy = target[0]-origin[0], target[1]-origin[1]
+    if abs(dy) > max(abs(dx), level_tolerance):
+        return ('up', 5) if dy < 0 else ('down', 6)
+    return ('right', 4) if dx >= 0 else ('left', 4)
+
 class IceBossController:
     name = 'ice_boss'
     STEP = 1/120
@@ -31,7 +37,8 @@ class IceBossController:
         self.pending = []; self.fallen = set(); self.spike_wave = 0; self.next_sync = 0.
         self.small = self._static(self.pack.scene['small_id'])
         self.large = self._static(self.pack.scene['large_id'])
-        self.small.update(action='idle', until=0., attack_at=0., throw_at=0., jump_at=0., aggro=False)
+        self.small.update(action='idle', until=0., attack_at=0., throw_at=0., jump_at=0., aggro=False,
+                          first_jump_done=False, ignore_platforms=False)
         self.large.update(action='hidden', until=0., side=-1, on_platform=False)
         self.damage_received = 0; self.shots = 0; self.npc_kills = 0
 
@@ -165,52 +172,57 @@ class IceBossController:
 
     def _small_tick(self, dt):
         a=self.small; p=self.pack.entities['small']
-        target=self.target(a,p['release_px'] if a['aggro'] else p['acquire_px'])
+        target=self.target(a,p['move_range_px'])
+        throw_target=self.target(a,p['throw_range_px'])
         if self.combat_phase == 'approach' and target:
             self._enter_phase('body')
         self._small_phase_tick()
         if self.state != 'small':
             return
-        busy=a['action'] in ('windup','charge','jump','horn') and self.time<a['until']
-        if not busy:
-            a['aggro']=target is not None
+        a['aggro']=target is not None
         if a['aggro']:
             self.engaged+=dt
         if a['action']=='horn':
             a['vel'][0]=0
             if self.time>=a['until']:
                 a['action']='idle'
-        elif a['action']=='windup':
+        elif a['action']=='jump_windup':
             a['vel'][0]=0
             if self.time>=a['until']:
-                a.update(action='charge',until=self.time+p['melee_s'])
-                a['vel'][0]=a['sign']*p['run_px_s'];self.pose(a,6);self.emit('charge',id=a['id'])
-        elif a['action'] in ('charge','jump') and self.time>=a['until']:
-            a['action']='idle';a['vel'][0]=0
-        if not busy and a['action']=='idle':
-            if target:
+                a.update(action='jump',until=math.inf,first_jump_done=True,ignore_platforms=True)
+                a['vel']=[a['sign']*p['run_px_s'],-p['jump_px_s']]
+                self.pose(a,1);self.emit('small_jump',id=a['id'],sign=a['sign'])
+        elif a['action'] in ('charge','landing') and self.time>=a['until']:
+            a['action']='idle';a['vel'][0]=0;self.pose(a,4)
+        if a['action']=='idle':
+            if target and a['grounded']:
                 sign=1 if target[0]>=center(a)[0] else -1;self.facing(a,sign);a['sign']=sign
-                if a['grounded'] and self.time>=a['jump_at'] and (a['pos'][1]+a['size'][1]<self.pack.scene['floor']-10 or target[1]<center(a)[1]-90):
-                    a.update(action='jump',until=self.time+1.25,jump_at=self.time+6.)
-                    a['vel']=[sign*p['run_px_s'],-p['jump_px_s']];self.pose(a,3)
+                if not a['first_jump_done'] or self.time>=a['jump_at']:
+                    a.update(action='jump_windup',until=self.time+p['jump_windup_s'],
+                             jump_at=self.time+p['jump_cd_s'])
+                    a['vel'][0]=0;self.pose(a,4);self.anim(a,2,p['jump_windup_s'])
                 elif self.time>=a['attack_at']:
-                    a.update(action='windup',until=self.time+p['melee_windup_s'],attack_at=self.time+p['melee_cd_s'])
-                    self.anim(a,2,p['melee_windup_s'])
+                    a.update(action='charge',until=self.time+p['melee_s'],attack_at=self.time+p['melee_cd_s'])
+                    a['vel'][0]=sign*p['run_px_s'];self.pose(a,6);self.emit('charge',id=a['id'])
                 else:
                     self.pose(a,4);a['vel'][0]=0
             else:
                 self.pose(a,4);a['vel'][0]=0
 
-        if target and a['action']!='horn' and self.time>=a['throw_at']:
+        if throw_target and a['action'] not in ('horn','jump_windup') and self.time>=a['throw_at']:
             axe=self.rng.random()<.3
             used = sum(row['kind']=='disc' for row in self.actors.values()) + sum(kind=='disc' for _,kind,_ in self.pending)
             if axe or used < self.pack.entities['projectile']['disc_cap']:
+                if a['action'] in ('idle','landing'):
+                    self.facing(a,1 if throw_target[0]>=center(a)[0] else -1)
                 self.anim(a,6 if axe else 5,.99)
                 self.pending.append((self.time+(.462 if axe else p['throw_windup_s']), 'axe' if axe else 'disc',a['id']))
             a['throw_at']=self.time+p['throw_cd_s']
-        self.ground(a,dt,p['gravity_px_s2'])
-        if a['grounded'] and a['action']=='jump' and self.time+1.<a['until']:
-            a['until']=self.time
+        self.ground(a,dt,p['gravity_px_s2'],platforms=not a['ignore_platforms'])
+        if a['grounded'] and a['action']=='jump':
+            a.update(action='landing',until=self.time+p['landing_recover_s'],
+                     attack_at=self.time+p['landing_recover_s'])
+            a['vel'][0]=0;self.pose(a,4);self.emit('small_landed',id=a['id'])
 
     def _wave(self):
         p=self.pack.entities['small'];limit=self.pack.entities['npc']['cap']
@@ -314,12 +326,10 @@ class IceBossController:
                         self.anim(a,3,2.64);a.update(until=self.time+2.64,action='throw')
                         self.pending.append((self.time+1.782,'axe' if vid=='ice.maxethrower' else 'rang',a['id']))
                     elif vid=='ice.msworder':
-                        dx=abs(target[0]-center(a)[0]);dy=target[1]-center(a)[1]
-
-                        angle=0 if abs(dy)<=p['spear_level_tolerance_px'] else math.degrees(math.atan2(dy,dx))
-                        anim=5 if angle < -30 else 6 if angle>30 else 4
+                        direction,anim=spear_direction(center(a),target,p['spear_level_tolerance_px'])
                         self.anim(a,anim,.99);self.emit('sound',id=a['id'],name='ice.msswing')
-                        a.update(until=self.time+.99,action='spear');self.emit('spear',id=a['id'],anim=anim,facing=a['facing'],target=target)
+                        a.update(until=self.time+.99,action='spear');self.emit('spear',id=a['id'],anim=anim,
+                            facing=a['facing'],direction=direction,target=target)
                     elif vid=='ice.mcharger':
                         a.update(until=self.time+p['charge_s'],action='charge');a['vel'][0]=sign*p['charge_px_s'];self.pose(a,5)
         self.ground(a,dt)
@@ -485,7 +495,7 @@ class IceBossController:
         self.time+=dt
         if self.state=='small':self._small_tick(dt)
         elif self.state=='final_horn':
-            self.ground(self.small,dt,self.pack.entities['small']['gravity_px_s2'])
+            self.ground(self.small,dt,self.pack.entities['small']['gravity_px_s2'],platforms=False)
             if self.time+1e-8 >= self.deadline:
                 self.state='center';self.small['action']='idle';self.emit('transition_to_center')
         elif self.state=='center':
