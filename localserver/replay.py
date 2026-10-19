@@ -220,10 +220,15 @@ def engine_fingerprint():
     for base, pattern in (('localserver', '*.py'), ('maps', '*'), ('data/catalogue', '*')):
         for path in sorted((paths.ROOT/base).rglob(pattern)):
             if not path.is_file() or '__pycache__' in path.parts: continue
+            if path.suffix not in ('.py','.json','.jsonl','.hex'):continue
             if path in (paths.ROOT/'localserver/replay_identity.py', paths.ROOT/'localserver/battle_records.py', paths.ROOT/'localserver/battle_metrics.py', paths.ROOT/'localserver/replay.py', paths.ROOT/'localserver/run_replay.py'):
                 continue
             relative = path.relative_to(paths.ROOT).as_posix().encode()
-            digest.update(relative+b'\0'+hashlib.sha256(path.read_bytes()).digest())
+            # These are text runtime inputs. Git packaging and Windows writes
+            # may use different line endings without changing their meaning.
+            # Runtime logs/backups are not encounter inputs.
+            content=path.read_bytes().replace(b'\r\n',b'\n').replace(b'\r',b'\n')
+            digest.update(relative+b'\0'+hashlib.sha256(content).digest())
     return digest.hexdigest()
 
 

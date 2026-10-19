@@ -214,5 +214,18 @@ class ReplayTests(unittest.TestCase):
             ai.write_text('speed = 30')
             self.assertNotEqual(engine_fingerprint(),original)
 
+    def test_runtime_identity_is_portable_across_line_endings_and_ignores_logs(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(paths,'ROOT',Path(directory)):
+            root=Path(directory);rules=root/'maps/test/entities.json';rules.parent.mkdir(parents=True)
+            rules.write_bytes(b'{\n"speed":20\n}\n')
+            catalogue=root/'data/catalogue';catalogue.mkdir(parents=True)
+            original=engine_fingerprint()
+            rules.write_bytes(b'{\r\n"speed":20\r\n}\r\n')
+            (catalogue/'live-client.log').write_text('runtime diagnostics')
+            rules.with_suffix('.json.bak').write_text('old version')
+            self.assertEqual(engine_fingerprint(),original)
+            rules.write_bytes(b'{\n"speed":30\n}\n')
+            self.assertNotEqual(engine_fingerprint(),original)
+
 
 if __name__ == '__main__': unittest.main()
