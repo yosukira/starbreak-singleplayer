@@ -41,6 +41,24 @@ class PortableReplayTests(unittest.TestCase):
     def fixture(self,directory):
         return test_replay_host.ReplayHostTests().documents(directory)
 
+    def test_browser_filesystem_without_hard_links_imports_and_preserves_collisions(self):
+        from localserver.battle_records import publish_replay
+        with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+            store,_,request,ops=self.fixture(source)
+            _,blob=store.export([request['record']]);imported=RecordStore(target)
+            with mock.patch('localserver.battle_records.os.link',None):
+                self.assertEqual(imported.import_bytes(blob)['imported'],1)
+                record=imported.get(request['record'])
+                self.assertEqual(ClientJournals(target).read(record['replay']['id'])['ops'],ops)
+                self.assertTrue((Path(target)/(record['id']+'.server.jsonl.gz')).is_file())
+                original=Path(target)/'existing';original.write_bytes(b'keep')
+                with self.assertRaises(FileExistsError):publish_replay(Path(target)/(record['id']+'.server.jsonl.gz'),original)
+                self.assertEqual(original.read_bytes(),b'keep')
+                destination=Path(target)/'partial'
+                with mock.patch('localserver.battle_records.shutil.copyfileobj',side_effect=OSError('Disk full')):
+                    with self.assertRaises(OSError):publish_replay(original,destination)
+                self.assertFalse(destination.exists())
+
     def test_complete_roundtrip_plays_and_can_take_over_without_original_files(self):
         with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
             store,clients,request,ops=self.fixture(source)

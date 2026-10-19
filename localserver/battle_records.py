@@ -9,6 +9,8 @@ import io
 import json
 import math
 import os
+import errno
+import shutil
 from pathlib import Path
 import re
 import sqlite3
@@ -304,7 +306,7 @@ class RecordStore:
                                 for frame in server['frames']:writer.frame(frame)
                             finally:writer.close()
                             destination=self.directory/(document['id']+'.server.jsonl.gz')
-                            os.link(staged,destination);created.append(destination)
+                            publish_replay(staged,destination);created.append(destination)
                     else:
                         document['replay']=dict(available=False,reason='not-recorded')
                     db.execute('INSERT INTO records VALUES(?,?,?,?,?)',
@@ -314,6 +316,29 @@ class RecordStore:
             for path in created:path.unlink(missing_ok=True)
             raise
         return dict(imported=added, duplicates=len(documents)-added)
+
+
+def publish_replay(staged, destination):
+    """Publish without replacing an existing replay, including on browser FS."""
+    link=getattr(os,'link',None)
+    if link is not None:
+        try:
+            link(staged,destination)
+            return
+        except NotImplementedError:
+            pass
+        except OSError as error:
+            if error.errno not in (errno.ENOSYS,errno.EPERM,errno.EXDEV,errno.EOPNOTSUPP):raise
+    # The index transaction exposes this file only after the copy succeeds.
+    # Exclusive creation and cleanup preserve collision/rollback guarantees.
+    created=False
+    try:
+        with Path(staged).open('rb') as source,Path(destination).open('xb') as target:
+            created=True
+            shutil.copyfileobj(source,target)
+    except BaseException:
+        if created:Path(destination).unlink(missing_ok=True)
+        raise
 
 
 def filename(document):
