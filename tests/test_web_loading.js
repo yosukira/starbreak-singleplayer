@@ -25,7 +25,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
  elements.get('language').onchange({target:{value:'en'}});assert.ok(elements.get('guide-page').innerHTML.includes('Quick start'));
  elements.get('tab-battle').onclick();assert.equal(layout.hidden,false);assert.equal(elements.get('guide-page').hidden,true);assert.equal(frame,running);
  elements.get('tab-records').onclick();assert.equal(layout.hidden,true);
- await nativePlay({id:'owned-native-record',platform:'native',map_title:'Native fixture',replay:{id:'native-attempt'}});
+ await nativePlay({id:'owned-native-record',platform:'web',map_title:'Native fixture',replay:{id:'native-attempt',engine:'native'}});
  assert.equal(nativeWatch,true);assert.equal(frame,null,'Native replays never create a browser game iframe');
  console.log('Continuous world-ready events and loading navigation lock passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
