@@ -15,7 +15,7 @@ import tempfile
 from urllib.request import urlopen
 import zipfile
 
-from runtime_dependencies import install
+from runtime_dependencies import install, verify_sqlite
 
 VERSION = '3.12.10'
 EMBED_URL = 'https://www.python.org/ftp/python/' + VERSION + '/python-' + VERSION + '-embed-amd64.zip'
@@ -74,6 +74,7 @@ def main():
             url = 'https://raw.githubusercontent.com/tcltk/' + name + '/' + tag + '/license.terms'
             (runtime / (name.upper() + '-LICENSE.txt')).write_bytes(download(url))
         install(runtime)
+        verify_sqlite(runtime, windows=True)
         (runtime / 'python312._pth').write_text('python312.zip\n.\n..\n../tools\n', encoding='utf8')
         (runtime / 'SOURCE.txt').write_text(
             'CPython ' + VERSION + ' Windows x64 embeddable distribution\n'
@@ -97,6 +98,7 @@ def build_with_runtime(source, output):
     missing = [name for name in required if not (source / name).exists()]
     if missing:
         raise SystemExit('Portable runtime missing: ' + ', '.join(missing))
+    verify_sqlite(source, windows=True)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as directory:
         staging = Path(directory)

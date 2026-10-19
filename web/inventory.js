@@ -4,6 +4,7 @@
  */
 const StarBreakInventory = (() => {
   const ABI='web-1.14.6-items-v1';
+  let waiting=null;
   function snapshot(world,player,context,control) {
     const heap=Module.HEAP32,bytes=Module.HEAPU8;
     const guard=(pointer,size=4)=>{if(!Number.isInteger(pointer)||pointer<=0||pointer%4||pointer+size>heap.byteLength)throw new Error('Inventory pointer outside client heap');return pointer;};
@@ -49,12 +50,15 @@ const StarBreakInventory = (() => {
     return result;
   }
   function refresh(world,player,context,control){
-    if(!control||!context.room_ready||Date.now()/1000>=control.expires_at)return null;
+    waiting=null;
+    if(!control||!context.room_ready)return null;
+    const now=Date.now()/1000;
+    if(now>=control.expires_at){waiting={reason:'expired',now,expires_at:control.expires_at};return null;}
     const heap=Module.HEAP32,server=heap[(world+628)>>2],nativeTime=server?heap[(server+8)>>2]:-1;
-    if(control.native_t_min!==undefined&&nativeTime<control.native_t_min)return null;
+    if(control.native_t_min!==undefined&&nativeTime<control.native_t_min){waiting={reason:'native-time',native_server_t:nativeTime,required:control.native_t_min};return null;}
     const value=snapshot(world,player,context,control),target=control.scope;
     if(!target||Object.keys(target).some(key=>value.scope[key]!==target[key]))throw new Error('Inventory refresh scope mismatch');
     value.native_server_t=nativeTime;return value;
   }
-  return {snapshot,refresh,ABI};
+  return {snapshot,refresh,ABI,get waiting(){return waiting;}};
 })();

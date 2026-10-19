@@ -872,21 +872,29 @@ class LocalServer(object):
         return make_create_world.wrap_compress(raw2)
 
     def _distinct_player_world_blob(self, blob):
-        """Keep native player IDs separate from server/peer object IDs.
+        """Discard captured peers and keep local and server object IDs apart.
 
         CreateWorld.worldid constructs the client's own NativeSubWorld.
         WorldState.serverworld.ownerid identifies the foreign room objects.
         A generated pack using 1 for both makes local bullet IDs collide
         with scenery IDs in otherwise valid Damage/Destroy feedback.
+
+        Older installed terrain variants may contain captured client worlds.
+        Those peers, their names and their projectiles must never be loaded in
+        a solo encounter. Clean at this boundary as well as in shipped data,
+        covering first load, restart, map changes and legacy terrain files.
         """
         tool = self._import_world_tool()
         message = self.layouts.decode('CreateWorld', tool.unwrap_decompress(blob))
         state = message.get('worldstate_') or {}
-        worlds = [state.get('serverworld_') or {}]+list(state.get('clientworld_') or [])
+        removed = state.pop('clientworld_', None)
+        worlds = [state.get('serverworld_') or {}]
         used = {int(w.get('ownerid_', 0)) for w in worlds}
         if int(message.get('worldid_', 0)) not in used:
-            return blob
-        message['worldid_'] = max(used)+1
+            if removed is None:
+                return blob
+        else:
+            message['worldid_'] = max(used)+1
         return tool.wrap_compress(self.layouts.encode('CreateWorld', message))
 
     def _decoration(self, zone):
@@ -932,6 +940,15 @@ class LocalServer(object):
                 if self.live_session is not None:
                     self.live_session.stop()
                     self.live_session = None
+                # A disconnect may happen between LoadPVid and WorldCreated,
+                # while no room wrapper is attached. Finalize that run too.
+                for name in ('egy_run', 'level_run'):
+                    recorder = getattr(getattr(self, name, None), 'battle_recorder', None)
+                    if recorder is not None:
+                        try:
+                            recorder.finish()
+                        except Exception as error:
+                            log('Battle record finalization unavailable: ' + type(error).__name__)
                 self.tick_thread = None
                 try:
                     client.close()
@@ -940,15 +957,36 @@ class LocalServer(object):
                 log('client disconnected')
 
     def handle_client(self, client):
+        channel = protocol.FrameChannel(client)
+        self._drive_messages(self.connection(channel), channel)
+
+    @staticmethod
+    def _drive_messages(receiver, channel):
+        """Socket host drives the same resumable protocol used by the browser."""
+        try:
+            next(receiver)
+            while True:
+                try:
+                    message = channel.read_frame()
+                except socket.timeout:
+                    receiver.throw(socket.timeout())
+                    continue
+                receiver.send(message)
+        except StopIteration:
+            return
+        finally:
+            receiver.close()
+
+    def connection(self, channel):
+        """Yield for client messages; transport and encounter scheduling are external."""
         self.tick_stop = threading.Event()
         self.tick_thread = None
-        channel = protocol.FrameChannel(client)
         hello = build_hello(self.data_version)
         hello_blob = self.layouts.encode('Hello', hello)
         channel.send_frame(MT_HELLO, hello_blob)
         log('-> HELLO {0}'.format(json.dumps(hello, sort_keys=True)))
 
-        message_type, payload = channel.read_frame()
+        message_type, payload = yield
         log('<- type={0} length={1}'.format(message_type, len(payload)))
         self._record('client', message_type, payload)
         if message_type != MT_CONNECT:
@@ -975,7 +1013,7 @@ class LocalServer(object):
             thread = threading.Thread(target=self._console, args=(channel,))
             thread.daemon = True
             thread.start()
-        self._read_loop(channel)
+        yield from self.messages(channel)
 
     def _send_character_descriptions(self, channel):
         'Local battle simulator runtime.'
@@ -1227,12 +1265,17 @@ class LocalServer(object):
             worldid=player.worldid,objid=player.objid,charid=issued['charid_'],player_type=issued['type_'])
         from .maps.run_common.inventory_handoff import InventoryHandoff
         self._inventory_request_serial=getattr(self,'_inventory_request_serial',0)+1
-        session._inventory_handoff=InventoryHandoff(self._inventory_request_serial,link,scope,time.time())
+        session._inventory_handoff=InventoryHandoff(self._inventory_request_serial,link,scope,self._live_wall_time(session))
         session._inventory_handoff_purpose=purpose
         session._inventory_status=dict(status='pending',id=self._inventory_request_serial)
         session._inventory_effect_epoch_seen=None
 
         return True
+
+    @staticmethod
+    def _live_wall_time(session):
+        recorded=getattr(session,'_recorded_wall_time',None)
+        return time.time() if recorded is None else recorded
 
     @staticmethod
     def _publish_inventory_control(session,control):
@@ -1241,7 +1284,10 @@ class LocalServer(object):
         else:
             previous=context.get('inventory_request') or {}
             control=dict(control)
-            same=all(control.get(k)==previous.get(k) for k in ('id','attempt','issued_at','scope'))
+            # A retry needs a new sample, not a newer TCP clock. Moving this
+            # barrier every 250 ms can outrun a valid client with network or
+            # playback catch-up lag. New inventory effects clear it explicitly.
+            same=all(control.get(k)==previous.get(k) for k in ('id','scope'))
             control['native_t_min']=(previous['native_t_min'] if same and 'native_t_min' in previous
                 else round((session.instance.snapshot.time-session._snapshot_native_origin)*1000)+1)
             context['inventory_request']=control
@@ -1261,7 +1307,8 @@ class LocalServer(object):
         epoch=getattr(session,'_inventory_effect_epoch',0)
         seen=getattr(session,'_inventory_effect_epoch_seen',None)
         if seen is not None and epoch!=seen:
-            pending.restart_after_effect(time.time(),'new loot was sent before handoff')
+            pending.restart_after_effect(self._live_wall_time(session),'new loot was sent before handoff')
+            self._publish_inventory_control(session,None)
         session._inventory_effect_epoch_seen=epoch
         snapshot=player.raw.get('inventory',{}) if player is not None else {}
         if not isinstance(snapshot,dict):snapshot={}
@@ -1269,9 +1316,9 @@ class LocalServer(object):
         if (snapshot.get('request_id')==pending.request_id and snapshot.get('request_attempt')==pending.attempt and
                 (type(snapshot.get('native_server_t')) is not int or
                  snapshot['native_server_t']<control.get('native_t_min',0))):
-            pending.restart_after_effect(time.time(),'native TCP update barrier was not reached')
+            pending.restart_after_effect(self._live_wall_time(session),'native TCP update barrier was not reached')
         issued=self.layouts.decode('Delta',self.player_delta_blob)['createplayer_']
-        outcome=pending.poll(player,issued,time.time())
+        outcome=pending.poll(player,issued,self._live_wall_time(session))
         session._inventory_status={k:v for k,v in outcome.items() if k not in ('create_player','link')}
         if outcome['status']=='pending':
             self._publish_inventory_control(session,pending.control());return False
@@ -1421,6 +1468,7 @@ class LocalServer(object):
             self._restart_in_progress = False
             raise
         session.suppress_send = True
+        session._battle_room_transition = True
         session.stop(stop_bridge=False)
         self.create_world_blob, self.player_delta_blob = blob, player_blob
         self.bootstrap_delta_blob = self._load_bootstrap_delta(self.options)
@@ -1524,6 +1572,7 @@ class LocalServer(object):
         if bridge is not None:
             bridge.native_context = None
         session_class = _map_session_class(map_id)
+        self._live_world_sequence = getattr(self, '_live_world_sequence', 0)+1
         session = session_class(
             self, channel, self.options, room, log=log, bridge=bridge)
         if bridge is not None:
@@ -1536,8 +1585,19 @@ class LocalServer(object):
         self.live_session = session
         self._restart_in_progress = False
         self._restart_player_type = None
-        session.start()
-        self._ensure_map_watch(channel)
+        try:
+            from .battle_records import attach
+            attach(session)
+        except Exception as error:
+            log('Battle records unavailable: ' + type(error).__name__)
+        if getattr(self, 'manual_ticks', False):
+            if hasattr(session, 'prepare'):
+                session.prepare()
+            else:
+                session._stop.clear()
+        else:
+            session.start()
+            self._ensure_map_watch(channel)
         log('live Boss session online (bridge port {0}{1})'.format(
             getattr(self.options, 'bridge_port', 21550),
             '' if requested_type is None else
@@ -1599,6 +1659,9 @@ class LocalServer(object):
         self._send(channel, MT_LOAD_PVID, 'LoadPVid', {'pvid_':self._pending_pvids.pop(0)})
 
     def _read_loop(self, channel):
+        self._drive_messages(self.messages(channel), channel)
+
+    def messages(self, channel):
         deadline = None
         if self.options.duration > 0:
             deadline = time.time() + self.options.duration
@@ -1607,7 +1670,7 @@ class LocalServer(object):
                 log('log duration reached')
                 return
             try:
-                message_type, payload = channel.read_frame()
+                message_type, payload = yield
             except socket.timeout:
                 continue
             log('<- type={0} length={1}'.format(message_type, len(payload)))

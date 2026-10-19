@@ -18,7 +18,12 @@ class SupplyDrops:
     def __init__(self, session, map_id, rng=None):
         self.session = session
         self.map_id = map_id
-        self.rng = rng if rng is not None else random.Random(None)
+        # Keep supplies independent of enemy decisions, while retaining the
+        # actual encounter's roll for replay and continuation. A session with
+        # no combat seed keeps the historical independently seeded behaviour.
+        seed = getattr(session, 'seed', None)
+        self.rng = rng if rng is not None else random.Random(
+            None if seed is None else int(seed) ^ 0x535550504C59)
         self.pending = []
         self._cache_key = None
         self._rates = None

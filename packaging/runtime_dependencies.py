@@ -9,6 +9,43 @@ URL = 'https://files.pythonhosted.org/packages/09/ce/3929538b2b9918f5eee623fbf33
 SHA256 = 'c6be9cba65c65cc76dfa3d4619e359ff02a4476c74e179b215236c11a0b32345'
 
 
+def verify_sqlite(runtime, windows=False):
+    """Battle records and recordings need both SQLite's module and library."""
+    runtime = Path(runtime)
+    if windows:
+        missing = [name for name in ('_sqlite3.pyd', 'sqlite3.dll', 'python312.zip')
+                   if not (runtime / name).is_file()]
+        if missing:
+            raise RuntimeError('Portable runtime missing: ' + ', '.join(missing))
+        with zipfile.ZipFile(runtime / 'python312.zip') as archive:
+            names = set(archive.namelist())
+        modules = all(any('sqlite3/' + name + suffix in names for suffix in ('.py', '.pyc'))
+                      for name in ('__init__', 'dbapi2'))
+    else:
+        library = runtime / 'lib/python3.12'
+        native = any((library / 'lib-dynload').glob('_sqlite3*.so'))
+        if not native:
+            # The pinned macOS standalone builds register SQLite inside
+            # libpython instead of shipping a separate extension. Check the
+            # actual Mach-O implementation, not a text/metadata declaration.
+            binaries = list((runtime / 'lib').glob('libpython3.12*.dylib'))
+            binaries.append(runtime / 'bin/python3.12')
+            magic = (b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
+                     b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca',
+                     b'\xca\xfe\xba\xbf', b'\xbf\xba\xfe\xca')
+            for binary in binaries:
+                if binary.is_file():
+                    data = binary.read_bytes()
+                    if data[:4] in magic and b'PyInit__sqlite3' in data:
+                        native = True
+                        break
+        modules = ((library / 'sqlite3/__init__.py').is_file() and
+                   (library / 'sqlite3/dbapi2.py').is_file() and
+                   native)
+    if not modules:
+        raise RuntimeError('Portable runtime is missing the SQLite standard library')
+
+
 def install(destination):
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)

@@ -4,7 +4,9 @@
 
 StarBreak 的本地单人战斗模拟器 / A local singleplayer battle simulator for StarBreak.
 
-**网页版 / Browser edition:** [使用说明 / Instructions](web/README.md).
+**在线网页预览 / Online browser preview:** [sbre.online](https://sbre.online/singleweb/)。无需安装，战斗在玩家设备上运行；配置、按键和录像保存在此浏览器。
+
+**本地网页版 / Local browser edition:** [使用说明 / Instructions](web/README.md).
 Windows 和 Mac 可以运行本地浏览器战斗；玩家包自带 Python，无需 SBPE 或另装运行环境。
 Windows and Mac browser player packages include Python and run locally without SBPE.
 首次需联网下载原版资源 / Internet access is needed for the initial original-game assets.
@@ -200,17 +202,47 @@ Use **Equipment & settings → Check for updates** for a background version chec
 
 From v20261016-r3 onward, the Windows and macOS player launchers check the public GitHub update channel at startup and install newer simulator files before launching. Player data under `userdata`, downloaded game assets, and the included `python` runtime are retained. Downloads verify HTTPS certificates and SHA-256 checksums. The updater keeps backups and restores interrupted/failed installations on the next launch. Network failures leave the installed version usable. A running launcher prevents a second updater from changing its files. Source checkouts containing `.git` are maintained through Git and skip player updates.
 
-Older player packages need one manual download of v20261016-r3 (or newer) to acquire this updater. Later simulator updates use small downloads in the existing `update-channel` prerelease; a new complete player release is not needed each time. Runtime upgrades still require a complete player package. To disable startup updates, create `userdata/update-settings.json` containing `{"enabled":false}`; remove the file or set it to true to re-enable them. The update service receives ordinary download requests, not equipment, account information or local settings.
+Each release provides both the latest complete Windows/macOS player packages and a small update package. New players can download the latest complete package and start immediately; existing players receive the same version through the `update-channel` prerelease. Older packages need one manual download of v20261016-r3 (or newer) to acquire the updater. Runtime upgrades still require a complete player package. To disable startup updates, create `userdata/update-settings.json` containing `{"enabled":false}`; remove the file or set it to true to re-enable them. The update service receives ordinary download requests, not equipment, account information or local settings.
 
 从 v20261016-r3 起，Windows / Mac 玩家启动器会在启动时检查 GitHub 上的公开更新频道，有新版时先更新模拟器再启动。`userdata` 下的配装、按键、草稿、已下载资源及包内 `python` 环境都会保留。下载校验 HTTPS 证书及 SHA-256；更新会留备份，失败或中断后可恢复。断网时继续使用现有版本；模拟器运行期间不会由另一个启动器替换文件。含 `.git` 的源码目录由 Git 管理，不自动覆盖。
 
-旧版玩家包需要先手动下载一次 v20261016-r3 或之后的完整包，之后模拟器代码更新通过现有 `update-channel` 预发布频道分发小型更新包，不必每次重新发布完整玩家包；运行环境升级仍需完整玩家包。如需关闭启动更新，在 `userdata/update-settings.json` 写入 `{"enabled":false}`，删除文件或改为 true 可恢复。更新服务仅接收下载请求，不上传配装、账号或本地设置。
+每次发布都会同时提供最新版 Windows / Mac 完整玩家包和小型更新包。新玩家直接下载最新完整包即可使用；已有玩家通过 `update-channel` 预发布频道更新到同一版本。旧版玩家包需要先手动下载一次 v20261016-r3 或之后的完整包以获得自动更新功能；运行环境升级仍需完整玩家包。如需关闭启动更新，在 `userdata/update-settings.json` 写入 `{"enabled":false}`，删除文件或改为 true 可恢复。更新服务仅接收下载请求，不上传配装、账号或本地设置。
 
 ### Equipment and browser preferences / 装备与网页偏好
 
 Both editors support item name/ID search, equipment sorting by ID or A–Z, and Chinese/English interface labels. Map, class, equipment and modifier/stat names always retain their original English names. Changing search/sort preserves the selected item and its modifiers. The browser remembers the selected class/slot, language, search/sort, all-class filter, keyboard settings and unsaved equipment drafts in its local data folder. **Save / Save & start** commits a draft; **Reload saved** discards it. Cached assets are reused, and browser HTTP caches revalidate content so an update does not leave stale scripts.
 
 The browser's **Equipment & settings → Keyboard settings** uses the same defaults and validation as the native edition: hold R to restart, hold 7/8/9/0 for WF/DW/FAB/IC, and Backtick/F8 to toggle the editor. Default hold time is 2 seconds; editable from 0.5 to 5 seconds. Short presses, held-key repeats, text inputs, focus loss and hidden tabs do not accidentally repeat hold actions. Movement and attack bindings remain in the original game's Controls menu.
+
+网页游戏内的 **Controls / Graphics / Sound** 也会自动保存：移动与攻击按键、画面选项、音乐和音效音量写入本地数据目录的 `game-preferences.json`，关闭网页、重启服务或更换本地端口后仍保留。第一次会迁移当前浏览器已有的游戏设置；不同 `--data-dir` 代表独立配置。保存只包含设置，不包含账号或登录信息。保存失败时会在“装备与设置”中显示提示，并保留此浏览器的待保存副本，不弹窗打断游戏。
+
+The game's own **Controls / Graphics / Sound** settings are also saved automatically. Movement/attack bindings, graphics options and music/SFX volume are stored in `game-preferences.json` inside the local data directory. They survive closing the page, restarting the server and changing the local port. Existing settings in the current browser migrate on first use; separate `--data-dir` folders remain independent. Only options are retained, excluding account/login fields. A failed save shows an inline notice in Equipment & settings and retains a pending browser copy without interrupting play.
+
+### 战斗记录预览 / Battle records preview
+
+网页顶部新增“战斗记录”；Windows 编辑器保留原装备布局，仅增加同名页签。对局自动保存到本机 `battles/` 目录。日期、角色、结果和地图筛选立即生效；网页地图选择支持搜索、多选和内部滚动。详情包含开局配装、词缀、弹速、战斗参数与对局内的设置变更。可导出单场 `.sbreplay` 或多场 ZIP，再导入另一份安装；文件名使用角色、地图和日期时间，重复导入不会覆盖原记录。
+
+This preview adds **Battle records** to the browser's top navigation and as a tab in the original native gear editor. Records stay in the local `battles/` directory. Date, class, result and map filters apply immediately; the browser's compact map picker supports search and multiple selections. Details preserve the starting equipment, modifiers, projectile speeds, battle parameters and configuration changes. Export one `.sbreplay` file or a ZIP of selected battles, then import it into another installation. Filenames include class, map and date/time; duplicate imports leave existing records intact.
+
+开发预览中，网页端默认录制对局，包括 23 个独立战斗场景和 6 个整关模式。详情中的“回放本场”支持暂停、变速和从头播放；具备匹配服务端录像且角色存活时可点击“接管”，也可直接按游戏按键接管。接管保留当前战场，并另存一场战斗，原录像不变。导出文件包含可用录像、配装和参数；单场 `.sbreplay` 与批量 ZIP 均可导入另一份安装后回放，具备匹配服务端录像的场景还可接管。接管需要兼容的模拟器和地图数据，回放需要兼容的网页客户端与适配器。旧的纯战绩文件仍可导入。录像片段在写入本机录像库之前保留于浏览器本地；离开页面或临时写入失败后，下次打开会自动补存。
+
+In the development preview, the browser records battles by default, including the 23 standalone combat scenes and six full-level modes. **Watch replay** supports pause, playback speed and restart. With a matching server recording, use **Take over** or press a gameplay key while the character is alive to continue the same battlefield. Takeover creates a separate battle without replacing the original. Exports include available replay data, equipment and parameters; single `.sbreplay` files and batch ZIPs can be imported into another installation for playback. Full-level recordings retain visited room state; takeover waits until room loading and inventory transfer finish. Takeover requires compatible simulator/map data; playback requires a compatible browser client and adapter. Older statistics-only files remain importable. Replay chunks are stored locally in the browser before uploading; after leaving a page or a temporary connection failure, opening the app again retries pending chunks automatically.
+
+从原游戏菜单确认退出后，本场记为中断，录像立即封存；正常保存完成后，无需刷新页面即可从战斗记录回放。接管后顶部按键提示同步显示个人绑定。
+
+Confirming **Exit Game** in the original menu ends the battle as interrupted and seals its recording. Once the save completes, it is replayable from Battle records without refreshing the page. After takeover, action hints update to personal bindings.
+
+接管前会在后台校验战场，进度显示在回放区域。较长录像需要更多校验时间；校验期间回放暂停，完成后继续当前战场，不弹窗打断。
+
+Before takeover, the battlefield is verified in the background with progress shown beside the replay. Longer recordings need more verification time. Playback stays paused until the current battlefield is ready to continue; no popup interrupts play.
+
+回放使用录制时的游戏设置，不会改写个人设置。接管时加载个人按键和音量，没有个人配置时使用原游戏默认值；这次切换会保存在接管录像中。之后显式修改游戏选项时，只合并被修改的选项，例如调整音效不会覆盖个人的音乐音量和按键。未写入成功的修改保留在浏览器，重启后重试；提示显示在装备与设置中，不弹窗打断游戏。
+
+Playback uses its recorded game options without changing personal preferences. Taking over loads personal bindings and volume, or original game defaults when no personal configuration exists; the switch is included in the new recording. Only subsequent explicit option edits are merged into personal settings: changing SFX volume leaves personal music volume and bindings intact. Pending saves stay in the browser and retry on a later launch; failures appear inline in Equipment & settings without interrupting play.
+
+原生客户端录像仍在开发中。整关录像与接管已接入开发预览，同一场战斗保留房间历程、暂停房间状态与过门时的装备；换房加载与装备交接期间暂不能接管。网页版 Elite Graveyard 整关的入口与大厅往返、接管后再次过门、接管录像完整回放，以及导入另一份独立安装后再次接管过门，已通过实际客户端验证；其他整关与更长流程仍在验收。伤害和击杀统计目前覆盖全部 23 个独立战斗场景：GY / EGY Boss、Elite Graveyard Mid、Elite Vanquished / Fire Forest / Frozen Blight 的独立 Midboss 与 Boss、Elite Fungus Cave Boss、Elite Underground Base 的 Wave / inf Wave 与 Mid / Boss、Elite Strands Mid / Boss、Elite Temple of the Lost Mid / Boss，以及 Star Cathedral 的 Patriarch、Hive、Bonesaw、普通与精英 Boss。统计按服务端实际接受的伤害与死亡结果计算，阶段回血后可以继续累积伤害；网页端额外记录成功拾取的血包、弹药包及实际恢复生命。六种整关模式也累计换房前后的伤害与击杀，重进房间不会重复计算已有击杀；相关统计已通过控制器与换房检查，EGY 实际录像重建也已验证发生器扣血统计和战斗数据一致性。旧记录中未采集的指标及其他未接入统计显示 `—`，不会当作 0。
+
+Native-client replay is still in development. The full-level replay/takeover preview keeps room visits, paused room state and inventory handoffs in one battle; takeover is unavailable during room loading or inventory transfer. In the browser's Elite Graveyard full run, real-client tests passed for entry/hall round trips, doors after takeover, complete playback of the resulting branch, and importing it into a separate installation before taking over and using a door again. Other full levels and longer routes still need acceptance testing. Damage/kills currently cover all 23 standalone combat scenes: GY / EGY Boss, Elite Graveyard Mid, standalone Elite Vanquished / Fire Forest / Frozen Blight Midboss and Boss encounters, Elite Fungus Cave Boss, Elite Underground Base Wave / inf Wave and Mid / Boss, Elite Strands Mid / Boss, Elite Temple of the Lost Mid / Boss, and Star Cathedral's Patriarch, Hive, Bonesaw, normal Boss and Elite Boss. Counters use accepted server damage and actual deaths; damage can accumulate across phase refills. Browser sessions also record successful health/ammo pickups and actual healing. All six full-level modes also accumulate damage/kills across rooms without recounting earlier kills on revisits; these counters passed controller and room-transition tests. Rebuilding an actual EGY recording also verified shield-generator damage counters with identical battle packets. Metrics not collected in older recordings, or still unsupported, display `—` rather than zero.
 
 两个编辑器均支持物品名称 / ID 搜索、装备按 ID / 名称首字母排序与中英文界面；搜索和排序不会替换当前装备或清空词缀。网页端会在本地数据目录保留职业、槽位、语言、搜索排序、全部职业筛选、按键与未保存配装草稿。点击“保存 / 保存并开始”提交草稿，“载入已保存配装”放弃草稿。游戏资源复用本地下载缓存，浏览器缓存按内容校验，避免升级后仍加载旧脚本。
 

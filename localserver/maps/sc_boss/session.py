@@ -48,6 +48,8 @@ class ScBossLiveSession:
         self.owns_bridge=bridge is None
         self.batch=DeltaBatch(self.layouts,self.worldid)
         self.player_type=1
+        configured_seed=getattr(options,'live_seed',None)
+        self.seed=random.SystemRandom().getrandbits(64) if configured_seed is None else int(configured_seed)
         self._stop=threading.Event()
         self._thread=None
         self.prepare()
@@ -55,7 +57,7 @@ class ScBossLiveSession:
     def prepare(self):
         self.supplies=SupplyDrops(self, self.MAP_ID)
 
-        self._rng=random.Random()
+        self._rng=random.Random(self.seed)
         self.batch.clear()
         self.phase='waiting'
         self.room_time=0.

@@ -20,3 +20,7 @@ try{
   shortcuts.update({restart:'T',hold_seconds:.5});down('KeyR');advance(500);assert.equal(actions.at(-1),'dw');down('KeyT');advance(500);assert.equal(actions.at(-1),'restart');
   console.log('Browser shortcuts: hold threshold, one-shot, release/blur/input cancellation, numpad and rebinding passed.');
 }finally{global.setTimeout=originalSet;global.clearTimeout=originalClear;}
+const zoomActions=[],zoomListeners={};
+new PracticeShortcuts({addEventListener:(key,fn)=>zoomListeners[key]=fn,document:{addEventListener(){}}},{zoom_in:'Equal',zoom_out:'Minus',hold_seconds:2},action=>zoomActions.push(action));
+for(const code of ['Equal','NumpadAdd','Minus','NumpadSubtract']){zoomListeners.keydown({code,preventDefault(){},target:{closest:()=>false}});zoomListeners.keyup({code});}
+assert.deepEqual(zoomActions,['zoom_in','zoom_in','zoom_out','zoom_out']);

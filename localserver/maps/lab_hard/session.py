@@ -113,7 +113,9 @@ class LabHardLiveSession(object):
             log=self.log)
         self.owns_bridge = bridge is None
         seed=getattr(options,'live_seed',None)
-        self.rng = random.Random(None if seed is None else int(seed))
+        self.seed = random.SystemRandom().getrandbits(64) if seed is None else int(seed)
+        self.rng = random.Random(self.seed)
+        self.loot_rng = random.Random(self.seed ^ 0x4C4142)
 
         self.phase = 'waiting'
         self.phase_time = 0.0
@@ -170,7 +172,7 @@ class LabHardLiveSession(object):
         self.frames = 0
 
     def prepare(self):
-        self.supplies = SupplyDrops(self, 'lab_hard')
+        self.supplies = SupplyDrops(self, 'lab_hard', rng=self.loot_rng)
         self.batch.general = []
         self.batch.objects = []
         self.batch.extra = {}
@@ -1075,6 +1077,9 @@ class LabHardLiveSession(object):
 
     def _step_pending_wall_groups(self):
         for key,rows in list(self.pending_wall_groups.items()):
+            if self.controller is not None and key[0] != self.controller.machine.index:
+                del self.pending_wall_groups[key]
+                continue
             expected=len(rows[0].get('group_walls') or rows[0].get('walls') or [rows[0]['wall']])
             claws=[int(row['claw']) for row in rows]
             if len(rows)!=expected or not all(self._wall_claw_idle(claw) for claw in claws):

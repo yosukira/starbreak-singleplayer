@@ -3,6 +3,17 @@ class WebEquipment {
   constructor(language, changed) {
     this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';
     this.$=id=>document.getElementById(id);
+    const tabs=[...document.querySelectorAll('#editor-settings-tabs [role="tab"]')];
+    for(const [index,tab] of tabs.entries()){
+      tab.onclick=()=>this.selectSettingsTab(tab.dataset.panel);
+      tab.onkeydown=event=>{
+        if(tab.disabled||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+        event.preventDefault();
+        const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:
+          (index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+        this.selectSettingsTab(tabs[next].dataset.panel);tabs[next].focus();
+      };
+    }
     this.updateState=null;this.updateTimer=null;
     this.$('check-updates').onclick=()=>this.checkUpdates();
     this.$('open-editor').onclick=()=>{this.render();this.$('equipment-dialog').showModal();};
@@ -46,7 +57,14 @@ class WebEquipment {
       this.notice(this.t('已导入草稿，请检查后保存。','Draft imported. Review it, then save.'));
     });
   }
-  t(zh,en){return this.language()==='zh'?zh:en;}
+  t(zh,en){return this.language().startsWith('zh')?zh:en;}
+  selectSettingsTab(panel){
+    for(const tab of document.querySelectorAll('#editor-settings-tabs [role="tab"]')){
+      const selected=tab.dataset.panel===panel;
+      tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;
+      this.$(tab.dataset.panel).hidden=!selected;
+    }
+  }
   row(){return this.profile.loadouts[this.shell];}
   current(){return this.row().items_.find(item=>item.slotpos_===this.slot);}
   touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
@@ -55,7 +73,7 @@ class WebEquipment {
   flush(){clearTimeout(this.updateTimer);if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
   renderUpdate(){
     const state=this.updateState||{},notice=this.$('update-notice');
-    const message=state.messages?.[this.language()]||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
+    const message=state.messages?.[this.language().startsWith('zh')?'zh':'en']||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
     if(notice.textContent!==message)notice.textContent=message;
     this.$('check-updates').disabled=['checking','installing'].includes(state.state);
     notice.closest('.update-row').dataset.state=state.state||'idle';
@@ -80,12 +98,13 @@ class WebEquipment {
     if(!this.preferences)return;
     this.keyDraft||={...this.preferences.keys};
     const box=this.$('keyboard-settings');box.replaceChildren();
-    const names={interact:['互动键','Interaction key'],editor_toggle:['显示/隐藏编辑器','Show / hide editor'],editor_toggle_alt:['备用编辑器快捷键','Alternate editor shortcut'],restart:['重开当前局','Restart current run'],wf:['切换 WF','Switch to WF'],dw:['切换 DW','Switch to DW'],fab:['切换 FAB','Switch to FAB'],ic:['切换 IC','Switch to IC']};
+    const names={interact:['互动键','Interaction key'],editor_toggle:['显示/隐藏编辑器','Show / hide editor'],editor_toggle_alt:['备用编辑器快捷键','Alternate editor shortcut'],restart:['重开当前局','Restart current run'],wf:['切换 WF','Switch to WF'],dw:['切换 DW','Switch to DW'],fab:['切换 FAB','Switch to FAB'],ic:['切换 IC','Switch to IC'],zoom_in:['放大画面 / 缩小视野','Zoom in / narrower view'],zoom_out:['缩小画面 / 扩大视野','Zoom out / wider view']};
     for(const [key,label]of Object.entries(names)){
       const row=document.createElement('label'),text=document.createElement('span'),select=document.createElement('select');row.className='setting-row';text.textContent=this.t(...label);select.setAttribute('aria-label',text.textContent);
-      const choices=[...(key==='interact'?['Auto']:['None']),...this.data.key_choices];
-      select.append(...choices.map(name=>new Option(name,name)));select.value=this.keyDraft[key];select.onchange=()=>{this.keyDraft[key]=select.value;};row.append(text,select);box.append(row);
+      const choices=[...(key==='interact'?['Auto']:['None']),...this.data.key_choices,...(key.startsWith('zoom_')?this.data.zoom_key_choices||[]:[])];
+      select.append(...choices.map(name=>new Option(({Equal:'+',Minus:'−',NumpadAdd:'Numpad +',NumpadSubtract:'Numpad −'})[name]||name,name)));select.value=this.keyDraft[key];select.onchange=()=>{this.keyDraft[key]=select.value;};row.append(text,select);box.append(row);
     }
+    const zoomRow=document.createElement('label'),zoomText=document.createElement('span'),zoomStep=document.createElement('input');zoomRow.className='setting-row';zoomText.textContent=this.t('每次缩放比例（%）','Zoom step (%)');zoomStep.type='number';zoomStep.min='5';zoomStep.max='50';zoomStep.step='1';zoomStep.value=this.keyDraft.zoom_percent??10;zoomStep.oninput=()=>this.keyDraft.zoom_percent=Number(zoomStep.value);zoomRow.append(zoomText,zoomStep);box.append(zoomRow);
     const row=document.createElement('label'),text=document.createElement('span'),input=document.createElement('input');row.className='setting-row';text.textContent=this.t('长按时间（秒）','Hold duration (seconds)');input.type='number';input.min='.5';input.max='5';input.step='.1';input.value=this.keyDraft.hold_seconds;input.setAttribute('aria-label',text.textContent);input.oninput=()=>{this.keyDraft.hold_seconds=Number(input.value);};row.append(text,input);box.append(row);
   }
   notice(text){this.$('editor-error').hidden=false;this.$('editor-error').textContent=text;}
@@ -117,7 +136,7 @@ class WebEquipment {
     this.$('editor-class').value=this.shell;this.$('editor-mk').value=this.row().mk_;this.$('editor-implants').value=this.row().impslots_;
     this.$('equipment-slots').replaceChildren(...this.data.slots.map(slot=>{
       const button=document.createElement('button'),item=this.row().items_.find(item=>item.slotpos_===slot.id),label=document.createElement('strong'),name=document.createElement('small');
-      label.textContent=slot[this.language()];name.textContent=item?this.catalogue.get(item.type_)?.name||'#'+item.type_:this.t('空','Empty');
+      label.textContent=slot[this.language().startsWith('zh')?'zh':'en'];name.textContent=item?this.catalogue.get(item.type_)?.name||'#'+item.type_:this.t('空','Empty');
       button.append(label,name);button.classList.toggle('selected',slot.id===this.slot);button.onclick=()=>{this.slot=slot.id;this.$('item-search').value='';this.remember();this.render();};return button;
     }));this.itemOptions();this.modifiers();this.projectiles();this.settings();this.keyboard();
   }
@@ -131,13 +150,13 @@ class WebEquipment {
     this.$('editor-item').replaceChildren(...options);this.$('editor-item').value=current?.type_||0;
     const base=this.catalogue.get(current?.type_)?.base||[];this.$('base-stats').textContent=this.t('基础属性：','Base stats: ')+(base.map(boost=>this.statName(boost.stat_)+' '+boost.val_).join(' · ')||'—');
   }
-  statName(id){return this.data.stats.find(stat=>stat.id===id)?.en||'#'+id;}
+  statName(id){return this.data.stats.find(stat=>stat.id===id)?.[this.language()==='zh-affixes'?'zh':'en']||'#'+id;}
   modifiers(){
     const current=this.current(),description=this.catalogue.get(current?.type_);this.$('add-modifier').disabled=!current||current.statboosts_.length>=64;
     this.$('modifier-rows').replaceChildren(...(current?.statboosts_||[]).map((boost,index)=>{
       const row=document.createElement('div'),select=document.createElement('select'),input=document.createElement('input'),remove=document.createElement('button');row.className='modifier-row';
       const stats=[...this.data.stats].sort((a,b)=>Number(!description.suggested.includes(a.id))-Number(!description.suggested.includes(b.id))||a.id-b.id);
-      select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${stat.en} · ${stat.id}`,stat.id)));select.value=boost.stat_;
+      select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${this.statName(stat.id)} · ${stat.id}`,stat.id)));select.value=boost.stat_;
       select.setAttribute('aria-label',this.t('词缀属性','Modifier stat')+' '+(index+1));select.onchange=()=>{boost.stat_=+select.value;this.touch();};
       input.type='number';input.step='1';input.value=boost.val_;input.setAttribute('aria-label',this.t('词缀数值','Modifier value')+' '+(index+1));input.oninput=()=>{boost.val_=Number(input.value);this.touch();};
       remove.textContent=this.t('删除','Remove');remove.className='secondary';remove.onclick=()=>{current.statboosts_.splice(index,1);this.touch();this.modifiers();};row.append(select,input,remove);return row;

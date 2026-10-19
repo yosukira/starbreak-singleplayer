@@ -83,10 +83,11 @@ class LabMidLiveSession(object):
             log=self.log)
         self.owns_bridge = bridge is None
         live_seed = getattr(options, 'live_seed', None)
-        seed = None if live_seed is None else int(live_seed)
+        seed = random.SystemRandom().getrandbits(64) if live_seed is None else int(live_seed)
+        self.seed = seed
 
         self.rng = random.Random(seed)
-        self.loot_rng = random.Random(None if seed is None else seed ^ 0x4D4944)
+        self.loot_rng = random.Random(seed ^ 0x4D4944)
 
         self.phase = 'waiting'
         self.phase_time = 0.0

@@ -1206,6 +1206,17 @@ class LiveSession(object):
                         self.event('damage-other-world', victim=victim,
                                    ownerid=int(ownerid), value=value)
                     continue
+                # Capture HP before applying the accepted hit; overkill and
+                # rejected/retired targets must not inflate battle statistics.
+                recorded_hp = None
+                if victim in self.intro_units and victim not in self.intro_destroyed:
+                    recorded_hp = self.intro_units[victim]['hp']
+                elif victim in self.gens.hp:
+                    recorded_hp = self.gens.hp[victim]
+                else:
+                    recorded_unit = self.enemies.find_unit(victim, alive_only=True) if self.enemies.units else None
+                    if recorded_unit is not None:
+                        recorded_hp = recorded_unit.hp
                 result = self._damage_intro_unit(victim, value)
                 applied='intro_applied'
                 if result is None:
@@ -1246,6 +1257,10 @@ class LiveSession(object):
                         genState=self.gens.gen_state,activeGen=self.gens.active_gen))
                 else:self.damage_feedback_counts[applied]+=1
                 if result is not None:
+                    recorder = getattr(self, 'battle_recorder', None)
+                    if recorder is not None and recorded_hp is not None and applied != 'terrain_applied':
+                        recorder.damage(min(max(0, recorded_hp), value),
+                            killed=result.get('destroyed', False) and applied != 'gen_applied')
 
                     if isinstance(result, dict) and 'hp' in result and\
                             result.get('hp') is not None and not\
@@ -1942,7 +1957,7 @@ class LiveSession(object):
         if state is None:
 
             if self._player_rect_reported:
-                now = time.time()
+                now = self._wall_time()
                 if self._player_missing_since is None:
                     self._player_missing_since = now
                 timeout = float(getattr(self.options, 'live_player_gap', 3.0))
@@ -1998,7 +2013,10 @@ class LiveSession(object):
         self._player_missing_since = None
         self._telemetry_mark = None
         self.event('player-telemetry-restored',
-                   seconds=round(time.time() - since, 2) if since else 0.0)
+                   seconds=round(self._wall_time() - since, 2) if since else 0.0)
+
+    def _wall_time(self):
+        return getattr(self, '_replay_wall_time', None) if hasattr(self, '_replay_wall_time') else time.time()
 
     def _native_damage_active(self):
 

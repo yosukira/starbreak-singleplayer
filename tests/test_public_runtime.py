@@ -64,13 +64,43 @@ class PublicRuntimeTests(unittest.TestCase):
                     walk(json.loads(p.read_text(encoding='utf8')),
                          p == ROOT / 'data/catalogue/class_players.json')
 
+    def test_jsonl_catalogues_have_no_account_payloads(self):
+        forbidden = {'accountid', 'account_id', 'username', 'factionname', 'email',
+                     'password', 'access_token', 'refresh_token', 'slottedcharprops'}
+        def keys(value):
+            if isinstance(value, dict):
+                for name, child in value.items():
+                    yield name.rstrip('_')
+                    yield from keys(child)
+            elif isinstance(value, list):
+                for child in value:
+                    yield from keys(child)
+        for folder in ('data', 'maps', 'localserver/data'):
+            for path in (ROOT / folder).rglob('*.jsonl'):
+                for line, source in enumerate(path.read_text(encoding='utf8').splitlines(), 1):
+                    if not source.strip(): continue
+                    with self.subTest(file=str(path.relative_to(ROOT)), line=line):
+                        # Keep failure output free of any unexpected account value.
+                        found = set(keys(json.loads(source))) & forbidden
+                        self.assertFalse(found, 'Account fields in runtime catalogue: ' + ', '.join(sorted(found)))
+
     def test_compressed_worlds_do_not_include_player_layers(self):
+        forbidden = {'accountid', 'account_id', 'username', 'factionname', 'email',
+                     'password', 'access_token', 'refresh_token', 'slottedcharprops'}
+        def inspect(value):
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    self.assertNotIn(key.rstrip('_'), forbidden)
+                    inspect(child)
+            elif isinstance(value, list):
+                for child in value: inspect(child)
         for folder in ('maps', 'data'):
             for p in (ROOT / folder).rglob('*.hex'):
                 with self.subTest(file=str(p.relative_to(ROOT))):
                     blob = bytes.fromhex(p.read_text(encoding='utf8').strip())
                     doc = pb_layout.default_layouts().decode('CreateWorld', unwrap_decompress(blob))
                     self.assertNotIn('clientworld_', doc.get('worldstate_', {}))
+                    inspect(doc)
 
     def test_first_launch_does_not_replace_user_settings(self):
         with tempfile.TemporaryDirectory() as directory:

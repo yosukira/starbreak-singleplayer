@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict'),createZoom=require('../web/zoom.js');
+const {ClientReplay}=require('../web/replay.js');
+const saved=new Map();let changes=0;
+const engine={};const zoom=createZoom({module:engine,storage:{getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)},resize:()=>changes++});engine.webZoom=zoom;
+assert.deepEqual(zoom.viewport(1200,800),[1200,800]);zoom.setStep(25);zoom.step(1);
+assert.deepEqual(zoom.viewport(1200,800),[960,640]);assert.equal(changes,1);
+const next=createZoom({module:{},storage:{getItem:k=>saved.get(k)},resize(){}});assert.equal(next.level,1.25);
+const recorder=new ClientReplay({module:engine,keepOps:true});engine.clientReplay=recorder;
+assert.deepEqual(recorder.viewport(1200,800),[960,640]);
+const replay=new ClientReplay({module:{webZoom:{viewport(){throw Error('Playback must preserve its recorded field of view');}}},mode:'play',document:{ops:recorder.ops}});
+assert.deepEqual(replay.viewport(1920,1080),[960,640]);
+engine.clientReplay={mode:'play'};zoom.step(-1);assert.equal(zoom.level,1.25);assert.equal(changes,1);
+console.log('Logical view zoom, configurable step, persistence, and recorded viewport playback passed.');

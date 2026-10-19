@@ -241,7 +241,7 @@ class RunLiveSession:
         if not math.isfinite(dt) or not 0<=dt<=1:
             raise ValueError('Invalid full-level tick duration')
         player, keys = self.bridge.snapshot()
-        fresh=player is not None and player.received_at>=self._ready_after and player.age()<=.5
+        fresh=player is not None and player.received_since(self._ready_after) and player.age()<=.5
         if not self._ready and fresh:
             x,y=self.run.destination_spawn(self.run.current,self.run.entry)
             if math.hypot(player.xmp-x,player.ymp-y)<256*256:

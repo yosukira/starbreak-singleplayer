@@ -455,7 +455,7 @@ class Enemy(object):
                 self.state,self.pose='idle',4 if self.motion.grounded else 1
                 return results
             vx=self._patrol_velocity(now)
-            self.motion.step(self,dt,vx,now,avoid_edges='shredder' not in self.vid)
+            self.motion.step(self,dt,vx,now,avoid_edges=(self._deck_support() is not None or 'shredder' not in self.vid))
             self.facing=1 if vx>0 else -1
             self.state='patrol' if self.motion.grounded else 'falling'
             if not self.motion.grounded:
@@ -583,9 +583,11 @@ class Enemy(object):
         if 'shredder' in self.vid:
 
             jump_height=jump_speed(self.vid)**2/(2*self.motion.gravity)
-            if higher > jump_height-24*256 and self.climb_route is None:
+            if self.climb_route is not None and not self._climb_route_reachable(*self.climb_route):
+                self.climb_route = None
+            if higher > jump_height-24*256 and engaged and self.climb_route is None:
                 self.climb_route = self._nearest_climb_route()
-            elif higher <= 40 * 256:
+            elif higher <= 40 * 256 or not engaged:
                 self.climb_route = None
             if self.climb_route is not None:
                 side, wall_x = self.climb_route
@@ -1016,16 +1018,40 @@ class Enemy(object):
         choices = []
         for item in self.motion.room.objects.values():
             x,y,w,h = item.rect()
-            if terrain_type(item)!=1 or h < self.h or w > self.w:
+            if (terrain_type(item)!=1 or h < self.h or w > self.w
+                    or self.y >= y+h or self.y+self.h <= y):
                 continue
-            if x >= self.x+self.w-512:
+            if x >= self.x+self.w-512 and self._climb_route_reachable(1, x):
                 choices.append((abs(x-self.x-self.w),1,x))
-            elif x+w <= self.x+512:
+            elif x+w <= self.x+512 and self._climb_route_reachable(-1, x+w):
                 choices.append((abs(self.x-x-w),-1,x+w))
         if not choices:
             return None
         _, side, wall_x = min(choices)
         return side, wall_x
+
+    def _climb_route_reachable(self, side, wall_x):
+        """A deck patrol cannot walk across a gap to a distant arena wall.
+
+        Use the same contiguous support and center bounds as GroundMotion's
+        edge guard. Otherwise pursuit overrides every patrol turn at the rim.
+        Recheck moving/retracting decks rather than retaining a stale route.
+        """
+        support = self._deck_support()
+        if support is None:
+            return True
+        left, top, width, _ = support.rect()
+        right = left+width
+        changed = True
+        while changed:
+            changed = False
+            for _, (x, y, w, _), _ in self.motion.surfaces():
+                if abs(y-top) <= 1 and x <= right and x+w >= left:
+                    low, high = min(left, x), max(right, x+w)
+                    if (low, high) != (left, right):
+                        left, right, changed = low, high, True
+        center_at_wall = wall_x-side*self.w/2
+        return left+1 <= center_at_wall <= right-1
 
     def _touching_wall(self, side):
         if self.motion.room is None:

@@ -9,6 +9,8 @@ PREFERENCE = Path(__file__).resolve().parents[1] / 'userdata' / 'ui.json'
 LANGUAGES = {'auto': 'System / 跟随系统', 'zh': '简体中文', 'en': 'English'}
 
 EN = {
+    '装备与设置': 'Equipment & settings',
+    '战斗记录': 'Battle records',
     '检查更新': 'Check for updates',
     '按键设置': 'Keyboard settings', '互动键': 'Interaction key',
     '显示/隐藏编辑器': 'Show / hide editor', '备用编辑器快捷键': 'Alternate editor shortcut',
@@ -142,3 +144,15 @@ def translate(text,language):
 def map_title(map_id,title,language):
     """Keep the map's original display name in every interface language."""
     return title
+
+# Opt-in Chinese modifier labels; proper game/item/map names stay unchanged.
+STAT_ZH = {
+    1:'生命',2:'最大生命',3:'弹药',4:'最大弹药',8:'空中跳跃次数',9:'固定伤害',10:'护甲',
+    11:'移动速度',12:'跳跃高度',13:'射程',14:'精准',17:'植入体槽',18:'伤害百分比',
+    19:'基础暴击率',20:'暴击伤害',21:'空中冲刺次数',22:'击退抗性',23:'暴击率',
+    24:'物品暴击率',25:'物品暴击伤害',27:'弹药倍率',32:'穿透',33:'弹跳',34:'爆炸弹药',
+    35:'燃烧',36:'弹体数量',37:'速度百分比',38:'持续时间（毫秒）',39:'追踪',41:'半径',
+    42:'加速度',43:'护甲穿透',45:'同时发射数量',46:'次级弹体数量',47:'倒刺',48:'三分裂',
+    49:'重力百分比',50:'吸血',51:'额外命中',52:'反射',53:'移动时间（毫秒）',54:'物品护甲',
+    55:'快速射击 / 动画速度',56:'护盾',57:'冷却',
+}

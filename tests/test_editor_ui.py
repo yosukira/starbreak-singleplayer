@@ -8,6 +8,32 @@ from tools import i18n
 
 @unittest.skipUnless(os.environ.get('STARBREAK_UI_TESTS') == '1', 'Set STARBREAK_UI_TESTS=1 on a desktop host')
 class EditorWindowTests(unittest.TestCase):
+    def test_records_tab_preserves_original_editor_and_unsaved_values(self):
+        import tkinter as tk
+        import tempfile
+        from tools.gear_editor import GearEditor
+        root = tk.Tk()
+        try:
+            with tempfile.TemporaryDirectory() as directory, mock.patch.dict(os.environ, {'SB_BATTLE_RECORDS_PATH':directory}), mock.patch.object(i18n, 'load_preference', return_value='en'):
+                editor = GearEditor(root, show=False)
+                notebook = editor.battle_panel.master
+                original_page = notebook.select()
+                editor.mk_var.set('MK3')
+                editor._set_affixes([{'stat_':9, 'val_':321}])
+                original_item = editor.item_type
+                notebook.select(editor.battle_panel)
+                root.update()
+                self.assertEqual(editor.battle_panel.summary['text'], 'Battles  0     Win rate  —     Damage  —')
+                notebook.select(original_page)
+                root.update()
+                self.assertEqual(editor.mk_var.get(), 'MK3')
+                self.assertEqual(editor.item_type, original_item)
+                self.assertEqual(editor._current_boosts(), [{'stat_':9, 'val_':321}])
+                editor.close()
+        finally:
+            try:root.destroy()
+            except tk.TclError:pass
+
     def test_search_sort_preserve_selected_item_and_unsaved_modifiers(self):
         import tkinter as tk
         from tools.gear_editor import GearEditor

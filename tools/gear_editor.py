@@ -662,9 +662,16 @@ class GearEditor(object):
         self.update_label = ttk.Label(update_row, wraplength=max(240, min(650, right-left-180)), style='Hint.TLabel')
         self.update_label.pack(side='left', fill='x', expand=True, padx=(12, 0))
         self._render_update_status()
-        actions = ttk.Frame(self.root, padding=(8, 4))
+        notebook = ttk.Notebook(self.root)
+        notebook.pack(fill='both', expand=True)
+        gear_page = ttk.Frame(notebook)
+        notebook.add(gear_page, text=self.tr('装备与设置'))
+        from tools.battle_panel import BattlePanel
+        self.battle_panel = BattlePanel(notebook, self.language)
+        notebook.add(self.battle_panel, text=self.tr('战斗记录'))
+        actions = ttk.Frame(gear_page, padding=(8, 4))
         actions.pack(side='bottom', fill='x')
-        self.viewport = ScrollFrame(self.root)
+        self.viewport = ScrollFrame(gear_page)
         self.viewport.pack(fill='both', expand=True)
         content = self.viewport.content
 

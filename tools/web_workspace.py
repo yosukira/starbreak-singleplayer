@@ -12,6 +12,24 @@ from plugins import _practice_keybindings as keybindings
 
 SCHEMA = 'starbreak-web-loadouts-v1'
 CLASSES = (1, 2, 5, 3)
+WEB_KEYS = dict(keybindings.DEFAULTS, zoom_in='Equal', zoom_out='Minus',zoom_percent=10)
+ZOOM_KEYS = ('Equal', 'Minus', 'NumpadAdd', 'NumpadSubtract')
+
+def normalize_web_keys(value):
+    result = keybindings.normalize(value)
+    used = {key for key in result.values() if isinstance(key, str) and key not in ('None', 'Auto')}
+    for action in ('zoom_in', 'zoom_out'):
+        name = value.get(action, WEB_KEYS[action])
+        if name not in ('None', *keybindings.CHOICES, *ZOOM_KEYS):
+            raise ValueError('Invalid zoom key: ' + str(name))
+        if name != 'None' and name in used:
+            raise ValueError('Duplicate key: ' + name)
+        result[action] = name
+        if name != 'None': used.add(name)
+    percent=value.get('zoom_percent',10)
+    if isinstance(percent,bool) or not isinstance(percent,(int,float)) or not 5<=percent<=50:raise ValueError('Zoom step must be between 5% and 50%')
+    result['zoom_percent']=percent
+    return result
 
 
 def atomic_json(path, document):
@@ -79,12 +97,12 @@ class Workspace:
     def normalize_preferences(self, value):
         if not isinstance(value,dict):raise ValueError('Invalid preferences')
         shell=value.get('shell',1);slot=value.get('slot',256)
-        return dict(language=value.get('language') if value.get('language') in ('en','zh') else None,
+        return dict(language=value.get('language') if value.get('language') in ('en','zh','zh-affixes') else None,
                     shell=shell if type(shell) is int and shell in CLASSES else 1,
                     slot=slot if type(slot) is int and slot in {s for s,_ in equipment.SLOTS} else 256,
                     item_sort='name' if value.get('item_sort')=='name' else 'id',
                     query=str(value.get('query',''))[:100],all_classes=value.get('all_classes') is True,
-                    keys=keybindings.normalize(value.get('keys',keybindings.DEFAULTS)))
+                    keys=normalize_web_keys(value.get('keys',WEB_KEYS)))
 
     def save_preferences(self, value):
         result=self.normalize_preferences(value)
@@ -226,12 +244,12 @@ class Workspace:
     def editor(self):
         profile = self.read()
         return dict(profile=profile, preferences=self.preferences(), draft=self.draft(),
-            key_choices=list(keybindings.CHOICES), key_defaults=dict(keybindings.DEFAULTS),
+            key_choices=list(keybindings.CHOICES), zoom_key_choices=list(ZOOM_KEYS), key_defaults=dict(WEB_KEYS),
             maps=[dict(id=map_id, drops=game_settings.drop_settings(map_id, profile['settings']),
                        balance_limits=game_settings.balance_limits(map_id) if map_id in game_settings.BALANCE_MAPS else {},
                        balance_defaults=game_settings.balance_defaults(map_id))
                   for map_id in game_settings.ordered_maps()],
             slots=[dict(id=slot, zh=name, en=i18n.translate(name, 'en')) for slot, name in equipment.SLOTS],
-            stats=[dict(id=stat, en=name, zh=name) for stat, name in equipment.STAT_NAMES.items()],
+            stats=[dict(id=stat, en=name, zh=i18n.STAT_ZH.get(stat,name)) for stat, name in equipment.STAT_NAMES.items()],
             items=[dict(item, suggested=self.priority['exact'].get(item['type'], []),
                         defaults=self.priority['defaults'].get(item['type'], {})) for item in self.catalogue.values()])

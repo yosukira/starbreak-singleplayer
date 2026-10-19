@@ -10,7 +10,7 @@ import tempfile
 from urllib.request import urlopen
 import zipfile
 
-from runtime_dependencies import install
+from runtime_dependencies import install, verify_sqlite
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIMES = {
@@ -51,6 +51,7 @@ def main():
         with tarfile.open(runtime) as archive:
             archive.extractall(project, filter='data')
         python = project / 'python'
+        verify_sqlite(python)
         # Keep the executable runtime, not SDK headers or package-development tools.
         for path in (python / 'include', python / 'share', python / 'lib/pkgconfig',
                      python / 'lib/python3.12/ensurepip', python / 'lib/python3.12/site-packages/pip'):

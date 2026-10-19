@@ -315,7 +315,7 @@ class EgyRunLiveSession:
         pressed = tuple(consume()) if callable(consume) else None
         if not self._ready:
             spawn = self.run.destination_spawn(self.run.current, self.run.entry)
-            if state is not None and state.received_at >= self._ready_after and\
+            if state is not None and state.received_since(self._ready_after) and\
                     math.hypot(state.xmp - spawn[0], state.ymp - spawn[1]) < 256 * 256:
                 self._ready = True
                 self._publish_input_context()
@@ -326,12 +326,12 @@ class EgyRunLiveSession:
             return
 
         edge = False
-        if state is not None and state.received_at >= self._ready_after and state.age() <= .5:
+        if state is not None and state.received_since(self._ready_after) and state.age() <= .5:
             down = bool(keys.get('interact'))
             if pressed is None:
                 edge = down and not self._interact_down
             else:
-                edge = any(p.received_at >= self._ready_after for p in pressed)
+                edge = any(p.received_since(self._ready_after) for p in pressed)
             self._interact_down = down
             if keys.get('interaction_blocked'):edge=False
         if edge and state is not None:

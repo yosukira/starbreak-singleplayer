@@ -1,10 +1,42 @@
 # Browser edition / 网页版
 
-The original StarBreak 1.14.6 browser client runs against a local Python battle
-service. Windows and macOS can play without SBPE or a Windows game install.
-This is a local, singleplayer browser edition, not a hosted multiplayer service.
+Play the [online browser preview](https://sbre.online/singleweb/) without installing Python,
+SBPE or a game launcher. Encounters run on the player's device in a Web Worker;
+the website server serves resources and explicitly shared replay files only.
+The downloadable local browser packages below remain available.
 
 ## English
+
+### Online preview
+
+Open [sbre.online](https://sbre.online/singleweb/) in a desktop browser. The first visit
+loads runtime resources; later visits reuse cached assets. Equipment, practice
+keys, original game Controls / Graphics / Sound, battle history and recordings
+are saved in this browser on this device. Clearing site data removes those local
+records; export important battles before clearing it. Local player packages and
+the hosted website have separate storage.
+
+Battle records supports replay, takeover and file import/export. **Create sharing
+code** uploads only the selected finished replay and its equipment/parameters.
+No recordings are uploaded automatically. An existing code is reused; **Enter
+sharing code** downloads a replay into your local history. File export remains
+available when sharing is unavailable. An update check reports a new web build
+beside the button; refresh after your battle to use it.
+
+The settings tabs are **Map & loadout**, **Map & enemy parameters**, and **Keys & zoom**.
+The first visit selects Chinese or English from the browser language; a manual
+selection is remembered. **简体中文（包含词缀）** also translates modifier names.
+Map, class and equipment names stay in English. `+` zooms in and `-` zooms out;
+rebind both keys and change the step (5–50%, default 10%) in Keys & zoom.
+The zoom level is saved locally. Playback preserves its recorded view; take
+over to change it.
+
+Creating a sharing code optionally accepts an English ID/nickname, remembered
+for the next share. Leave it blank for **Unknown**. Reserved placeholders such
+as `null`, `unknow`, and `unknown` are rejected, regardless of case. The nickname
+travels with the imported record. Battle records includes **Latest shares** and
+**Popular this week**; the latter counts successful imports in the past seven
+days, without recounting repeat imports into the same local history.
 
 ### Player packages
 
@@ -103,6 +135,29 @@ A first-download error requires connectivity to `starbreak.com`; it is not a
 Python-not-installed error in the complete player package.
 
 ## 中文
+
+设置分为“地图与配装”“地图与敌人参数”“按键与缩放”三个页签。
+首次按浏览器语言选中英文，手动选择会保留；“简体中文（包含词缀）”额外翻译词缀，
+地图、角色和装备名称保持英文。默认 `+` 放大画面、`-` 扩大视野，按键和每次缩放比例
+均可设置（5–50%，默认 10%），缩放状态保存在本机。回放沿用录制时视野，接管后可调整。
+
+生成分享码时可选填英文 ID／昵称，下次自动填入；留空显示 **Unknown**。
+`null`、`unknow`、`unknown` 等占位名不可使用，不区分大小写。昵称会保留在导入的战绩中。
+战斗记录的“最新分享”和“近 7 天热门”可浏览并导入他人的公开分享；热度按成功导入统计，
+同一本地记录重复导入不反复计数。
+
+
+### 在线试玩
+
+直接打开 [sbre.online](https://sbre.online/singleweb/)，无需安装 Python、SBPE 或启动器。
+首次加载会下载运行资源，之后复用浏览器缓存。战斗计算在玩家设备上运行；
+装备配置、练习快捷键、游戏内 Controls / Graphics / Sound、战绩和录像保存在当前浏览器。
+清理网站数据会清除本地记录，重要录像请先导出。网站与本地玩家包各自保存数据。
+
+在战斗记录中可以回放、接管和导入导出。只有点击 **生成分享码** 才上传选中的
+已结束录像及其配装参数，不会自动上传其他录像；已有分享码会复用。
+**输入分享码** 会下载录像并加入本地记录。分享不可用时仍可导出文件。
+检查更新会在按钮旁提示；结束本场后刷新网页即可使用新版本。
 
 ### 玩家启动
 

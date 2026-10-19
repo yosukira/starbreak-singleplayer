@@ -5,11 +5,11 @@
 <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
 <script src="runtime.js"></script>
 <script>
-var Module={arguments:['-s','127.0.0.1:'+STARBREAK_WEB_BOOT.wsPort,'-k'],preRun:[],postRun:[],canvas:document.getElementById('canvas'),
+var Module={arguments:['-s','127.0.0.1:'+STARBREAK_WEB_BOOT.wsPort,'-k'],TOTAL_MEMORY:536870912,preRun:[],postRun:[],canvas:document.getElementById('canvas'),
  websocket:{url:'ws://'+location.hostname+':'+STARBREAK_WEB_BOOT.wsPort+'/game'},
- print:function(t){console.log(t)},printErr:function(t){console.error(t)},
+ print:function(t){console.log(t);if(/^F .*Check failed:/.test(t))parent.postMessage({type:"game-error",message:String(t)},location.origin)},printErr:function(t){console.error(t)},
  setStatus:function(t){document.getElementById('loading').textContent=t},
- onAbort:function(t){parent.postMessage({type:'game-error',message:String(t)},location.origin)}};
+ onAbort:function(t){clearInterval(Module.replayTimerId);Module.clientReplay?.fail(t);console.error(new Error('Game halted: '+String(t)).stack);parent.postMessage({type:'game-error',message:String(t)},location.origin)}};
 </script>
-<script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="client.js"></script>
+<script src="zoom.js"></script><script src="game-preferences.js"></script><script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="replay-storage.js"></script><script src="replay.js"></script><script src="client.js"></script>
 </body></html>

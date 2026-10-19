@@ -20,20 +20,75 @@ import sys
 import tempfile
 import threading
 import time
-from urllib.parse import unquote, urlsplit
+import uuid
+from urllib.parse import unquote, urlsplit, parse_qs
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from localserver import game_settings, paths, pb_layout
-from tools.web_client import CLIENT_FILENAME, ensure_cached_client, patch_client
+from tools.web_client import CLIENT_FILENAME, CLIENT_SHA256, ensure_cached_client, patch_client
+from tools.client_replay import ClientJournals, MAX_CHUNK, SCHEMA as CLIENT_JOURNAL_SCHEMA
 from tools.web_workspace import Workspace, atomic_json
 from tools.web_text import map_names
 from tools import update
+from tools.game_preferences import GamePreferences
+from localserver.battle_records import RecordStore, MAX_IMPORT
 
 # These encounters need inventory/ground handoff adapters before being enabled.
 PENDING_MAPS = {'eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run'}
+
+
+class TakeoverJobs:
+    """Keep long verification off HTTP requests, with bounded local jobs."""
+    def __init__(self):
+        self.lock, self.jobs = threading.Lock(), {}
+
+    def begin(self, prepare, document):
+        with self.lock:
+            now = time.monotonic()
+            for token, job in list(self.jobs.items()):
+                if now - job['created'] > 600:
+                    job['cancel'].set(); del self.jobs[token]
+            if any(not job['done'].is_set() for job in self.jobs.values()):
+                raise ValueError('A takeover is already being verified')
+            if len(self.jobs) >= 8:
+                del self.jobs[min(self.jobs, key=lambda token: self.jobs[token]['created'])]
+            token = str(uuid.uuid4())
+            job = dict(state='pending', current=0, total=0, created=now, cancel=threading.Event(), done=threading.Event())
+            self.jobs[token] = job
+
+        def progress(current, total):
+            with self.lock:
+                if job['cancel'].is_set():raise InterruptedError('Takeover cancelled')
+                job.update(current=current, total=total)
+
+        def worker():
+            try:
+                result = prepare(document, progress=progress)
+                with self.lock:
+                    if job['cancel'].is_set():
+                        job.update(state='failed', error='Takeover cancelled');return
+                    job.update(state='ready', result=result)
+            except Exception as error:
+                with self.lock:
+                    job.update(state='failed', error='Takeover verification failed ('+type(error).__name__+')')
+            finally:job['done'].set()
+
+        threading.Thread(target=worker, daemon=True).start()
+        return dict(job=token)
+
+    def status(self, token):
+        token = str(uuid.UUID(token))
+        with self.lock:
+            job = self.jobs.get(token)
+            if job is None:raise ValueError('Unknown takeover verification')
+            return {key: job[key] for key in ('state', 'current', 'total', 'result', 'error') if key in job}
+
+    def cancel(self):
+        with self.lock:
+            for job in self.jobs.values():job['cancel'].set()
 
 
 def maps():
@@ -77,6 +132,14 @@ class Prototype:
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
         self.workspace = Workspace(self.directory)
+        self.records = RecordStore(self.directory / 'battles')
+        self.client_journals = ClientJournals(self.directory / 'battles')
+        self.takeovers, self.takeover_lock = {}, threading.Lock()
+        self.takeover_jobs = TakeoverJobs()
+        self.game_connections, self.connection_lock = {}, threading.Lock()
+        self.recording_id = None
+        self.recording_error = None
+        self.game_preferences = GamePreferences(self.directory)
         self.update_checker = update.UpdateChecker(ROOT)
         self.prepared_map = 'hulk_mid'
         self.asset_paths = self.required_assets(self.prepared_map)
@@ -106,7 +169,8 @@ class Prototype:
         assets = getattr(self, 'asset_paths', [])
         cached = sum((self.cache / path.lstrip('/')).is_file() or
                      (self.options.client.parent / Path(path).name).is_file() for path in assets)
-        return dict(map=self.map, shell=self.shell, running=bool(self.process and self.process.poll() is None),
+        continuing = any(host.committed and not host.stopped.is_set() for host in getattr(self, 'takeovers', {}).values())
+        return dict(map=self.map, shell=self.shell, running=continuing or bool(self.process and self.process.poll() is None),
                     assets_ready=cached == len(assets), assets_cached=cached, assets_total=len(assets),
                     asset_error=getattr(self, 'asset_error', ''),
                     ws_port=self.options.ws_port, feedback=self.feedback, damage=self.damage,
@@ -137,7 +201,60 @@ class Prototype:
                 threading.Thread(target=work, daemon=True).start()
         return self.info()
 
+    def battle_records(self):
+        rows = self.records.list()
+        identifiers = [row['replay']['id'] for row in rows if row.get('replay', {}).get('id')]
+        adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
+        states = self.client_journals.statuses(identifiers, adapter)
+        for row in rows:
+            identifier = row.get('replay', {}).get('id')
+            if identifier in states:
+                row['replay'] = states[identifier]
+        return rows
+
+    def replay_document(self, identifier):
+        document = self.client_journals.read(identifier)
+        adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
+        if document['client'] != CLIENT_SHA256 or document['adapter'] != adapter:
+            raise ValueError('Replay requires the same browser engine and replay adapter')
+        return document
+
+    def prepare_takeover(self, document, progress=None):
+        from tools.replay_host import Takeover
+        # Verify compatibility before creating any branch files or records.
+        self.replay_document(document.get('id'))
+        preferences=self.game_preferences.read()
+        with self.takeover_lock:
+            for token, old in list(self.takeovers.items()):
+                if old.stopped.is_set() or (not old.committed and time.monotonic()-old.created>60):
+                    old.stop();self.takeovers.pop(token,None)
+            if not document.get('record'):
+                matches=[r['id'] for r in self.records.list() if r.get('replay',{}).get('id')==document['id']]
+                if len(matches)!=1:raise ValueError('Select the battle to take over')
+                document=dict(document,record=matches[0])
+            host=Takeover(self.records,self.client_journals,document,progress=progress)
+            if progress is not None:
+                try:progress(1, 1)
+                except Exception:
+                    host.stop();raise
+            self.takeovers[host.token]=host
+            return dict(host.description(),preferences=preferences)
+
     def stop(self):
+        if getattr(self, 'takeover_jobs', None) is not None:self.takeover_jobs.cancel()
+        # Cancel reconstruction first, then synchronize with its final host
+        # publication so restarting a battle cannot leave an orphan live host.
+        with getattr(self, 'takeover_lock', threading.Lock()):
+            for host in list(getattr(self,'takeovers',{}).values()):host.stop()
+        # Half-close owned game sockets first. The child seals its journal and
+        # battle record before closing its side; only then terminate the idle
+        # listener. This also works on Windows, where terminate skips finally.
+        with getattr(self,'connection_lock',threading.Lock()):
+            connections=list(getattr(self,'game_connections',{}).items())
+        for target,_closed in connections:
+            with contextlib.suppress(OSError):target.shutdown(socket.SHUT_WR)
+        for _target,closed in connections:closed.wait(timeout=2)
+        owner = self.process.pid if self.process else None
         if self.process and self.process.poll() is None:
             self.process.terminate()
             try:
@@ -145,6 +262,12 @@ class Prototype:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait()
+        if owner is not None:
+            try:
+                self.records.finish_owner(owner)
+            except Exception as error:
+                # A recording failure must not prevent closing/restarting play.
+                print('Battle record finalization failed: ' + type(error).__name__, flush=True)
         self.process = None
         if self.log:
             self.log.close()
@@ -164,6 +287,7 @@ class Prototype:
                     raise ValueError('Weapon is not compatible with this shell.')
             self.stop()
             self.map, self.shell = map_id, shell
+            self.begin_recording(map_id)
             self.workspace.materialize(map_id)
             loadout_path = self.directory / 'class_loadouts.json'
             loadouts = json.loads(loadout_path.read_text(encoding='utf8'))
@@ -189,7 +313,10 @@ class Prototype:
                        '--class-loadouts', str(loadout_path),
                        '--projectile-overrides', str(self.directory / 'class_loadout_overrides.json'),
                        '--player-payloads', str(ROOT / 'data/catalogue/class_players.json'), '--no-time-echo']
-            environment = dict(os.environ, SB_GAME_SETTINGS_PATH=str(self.directory / 'game_settings.json'))
+            environment = dict(os.environ, SB_GAME_SETTINGS_PATH=str(self.directory / 'game_settings.json'),
+                               SB_BATTLE_RECORDS_PATH=str(self.directory / 'battles'),
+                               SB_RECORD_REPLAY='1' if self.recording_id else '0',
+                               SB_REPLAY_ATTEMPT=self.recording_id or '')
             self.process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=self.log, stderr=subprocess.STDOUT)
             for _ in range(100):
                 if self.process.poll() is not None:
@@ -202,6 +329,46 @@ class Prototype:
                 time.sleep(.05)
             self.stop()
             raise RuntimeError('Local battle server startup timed out.')
+
+    def begin_recording(self, map_id):
+        from localserver.replay import CLIENT_MAPS
+        self.recording_id = self.recording_error = None
+        if os.environ.get('SB_RECORD_REPLAY', '1') != '1' or map_id not in CLIENT_MAPS:
+            return
+        identifier = str(uuid.uuid4())
+        try:
+            self.client_journals.begin(identifier, CLIENT_SHA256,
+                hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest(),
+                self.game_preferences.read(), [1366, 768])
+        except Exception as error:
+            self.recording_error = type(error).__name__
+            print('Battle replay unavailable: ' + self.recording_error, flush=True)
+        else:
+            self.recording_id = identifier
+
+    def replay_takeover_ready(self, identifier, record=None):
+        """Only offer continuation when matching server state is present."""
+        import gzip
+        from localserver.replay import engine_fingerprint, SUPPORTED_MAPS, SCHEMA
+        from localserver.run_replay import SCHEMA as RUN_SCHEMA
+        from localserver.replay import FULL_RUN_MAPS
+        if record is None:
+            matches=[r for r in self.records.list() if r.get('replay',{}).get('id')==identifier]
+            if len(matches)!=1:return False
+            record=matches[0]['id']
+        try:
+            document=self.records.get(str(uuid.UUID(record)))
+            if document.get('replay',{}).get('id')!=identifier:return False
+            path=self.records.directory/(document['id']+'.server.jsonl.gz')
+            with gzip.open(path,'rb') as stream:
+                row=json.loads(stream.readline(512*1024+1))
+            header=row['header']
+            supported=((header.get('schema')==SCHEMA and header.get('map') in SUPPORTED_MAPS) or
+                       (header.get('schema')==RUN_SCHEMA and header.get('map') in FULL_RUN_MAPS))
+            return (supported and
+                    header.get('attempt')==identifier and header.get('engine')==engine_fingerprint())
+        except (OSError,EOFError,ValueError,KeyError,TypeError):
+            return False
 
     def asset(self, path):
         # No arbitrary paths or URLs can be read through this handler.
@@ -240,7 +407,31 @@ class Prototype:
 
     def websocket(self, ws):
         path = urlsplit(ws.request.path).path
+        if path == '/takeover':
+            token=parse_qs(urlsplit(ws.request.path).query).get('token',[''])[0]
+            host=self.takeovers.get(token)
+            if host is None:
+                ws.close(1008,'Unknown takeover');return
+            try:
+                host.bind(ws)
+                for message in ws:
+                    if isinstance(message,bytes):host.binary(message)
+                    elif isinstance(message,str) and len(message)<60000:
+                        document=json.loads(message)
+                        if document.get('type')=='takeover-commit':host.commit()
+                        else:
+                            acknowledgement=host.telemetry(document)
+                            self.observe_feedback(document)
+                            ws.send(json.dumps(acknowledgement))
+                    else:raise ValueError('Invalid takeover message')
+            except Exception as error:
+                print('Takeover connection ended: '+type(error).__name__,flush=True)
+            finally:
+                host.stop()
+                self.takeovers.pop(token,None)
+            return
         stop = threading.Event()
+        closed = threading.Event()
         if path == '/game':
             try:
                 target = socket.create_connection(('127.0.0.1', self.options.game_port), timeout=10)
@@ -248,6 +439,7 @@ class Prototype:
                 ws.close(1013, 'Start or restart the encounter')
                 return
             target.settimeout(.5)
+            with self.connection_lock:self.game_connections[target]=closed
         elif path == '/telemetry':
             target = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             target.connect(('127.0.0.1', self.options.bridge_port))
@@ -257,6 +449,7 @@ class Prototype:
             return
 
         def receive():
+            deliver=True
             try:
                 while not stop.is_set():
                     try:
@@ -271,8 +464,13 @@ class Prototype:
                             continue
                         raise
                     if not data:
+                        closed.set()
                         break
-                    ws.send(data.decode('utf8') if path == '/telemetry' else data)
+                    if deliver:
+                        try:ws.send(data.decode('utf8') if path == '/telemetry' else data)
+                        except Exception:
+                            if path != '/game':raise
+                            deliver=False
             except Exception:
                 pass
             finally:
@@ -287,35 +485,43 @@ class Prototype:
                     if not isinstance(message, str) or len(message) > 60000:
                         break
                     document = json.loads(message)
-                    self.latest_player = document.get('player') or {}
-                    if self.latest_player.get('inventory_preview'):
-                        self.latest_inventory = self.latest_player['inventory_preview']
-                        self.inventory_error = None
-                    if self.latest_player.get('inventory_error'):
-                        self.inventory_error = self.latest_player['inventory_error']
-                    self.feedback += 1
-                    for event in document.get('events', []):
-                        if event.get('kind') == 'damage':
-                            if event.get('ownerid') == self.latest_player.get('worldid') and event.get('victim') == self.latest_player.get('objid'):
-                                self.received_damage += int(event.get('value', 0))
-                            else:
-                                self.damage += int(event.get('value', 0))
+                    self.observe_feedback(document)
                     try:
                         target.send(message.encode('utf8'))
                     except (ConnectionRefusedError, ConnectionResetError):
-                        # An early UDP error may surface on send as well as recv.
-                        # Telemetry is a snapshot; the next frame replaces it.
+                        # Windows can report an early UDP port error on send.
+                        # The next player snapshot retries after bridge startup.
                         continue
                 elif isinstance(message, bytes):
                     target.sendall(message)
         except Exception:
             pass
         finally:
+            if path == '/game':
+                with contextlib.suppress(OSError):target.shutdown(socket.SHUT_WR)
+                closed.wait(timeout=2)
+                with self.connection_lock:self.game_connections.pop(target,None)
             stop.set()
             target.close()
             with contextlib.suppress(Exception):
                 ws.close()
             thread.join(timeout=2)
+
+    def observe_feedback(self, document):
+        """The editor follows the active character after either kind of start."""
+        self.latest_player = document.get('player') or {}
+        if self.latest_player.get('inventory_preview'):
+            self.latest_inventory = self.latest_player['inventory_preview']
+            self.inventory_error = None
+        if self.latest_player.get('inventory_error'):
+            self.inventory_error = self.latest_player['inventory_error']
+        self.feedback += 1
+        for event in document.get('events', []):
+            if event.get('kind') == 'damage':
+                if event.get('ownerid') == self.latest_player.get('worldid') and event.get('victim') == self.latest_player.get('objid'):
+                    self.received_damage += int(event.get('value', 0))
+                else:
+                    self.damage += int(event.get('value', 0))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -352,18 +558,59 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/editor':
                 return self.send(dict(self.server.prototype.workspace.editor(),
                                       update=update.public_status(self.server.prototype.update_checker.status())))
+            if path == '/api/item-icons':
+                prototype = self.server.prototype
+                if not hasattr(prototype, 'item_icons'):
+                    from tools.item_icons import catalogue
+                    prototype.item_icons = catalogue(prototype.version, prototype.items, prototype.asset)
+                return self.send(prototype.item_icons, cache=True)
             if path == '/api/update':
                 return self.send(update.public_status(self.server.prototype.update_checker.status()))
+            if path == '/api/records/shared':
+                from tools.replay_sharing import ShareClient
+                order=parse_qs(urlsplit(self.path).query).get('sort',['latest'])[0]
+                return self.send(ShareClient(self.server.prototype.directory).listings(order))
+            if path == '/api/records':
+                return self.send(dict(records=self.server.prototype.battle_records()))
+            if path == '/api/replay/check':
+                identifier = parse_qs(urlsplit(self.path).query).get('id', [''])[0]
+                self.server.prototype.replay_document(identifier)
+                return self.send(dict(ready=True))
+            if path == '/api/replay/takeover':
+                token = parse_qs(urlsplit(self.path).query).get('job', [''])[0]
+                return self.send(self.server.prototype.takeover_jobs.status(token))
+            if path == '/api/game-preferences':
+                return self.send(self.server.prototype.game_preferences.read())
             if path == '/api/inventory':
                 return self.send(dict(inventory=self.server.prototype.latest_inventory, error=self.server.prototype.inventory_error))
             if path == '/client.js':
                 return self.send(self.server.prototype.client, 'text/javascript',cache=True)
             if path == '/runtime.js':
-                data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=self.server.prototype.options.ws_port,keybindings=self.server.prototype.workspace.preferences()['keys'])) + ';'
+                prototype = self.server.prototype
+                recording = getattr(prototype, 'recording_id', None)
+                preferences = prototype.game_preferences.read()
+                replay = dict(id=recording,mode='record') if isinstance(recording,str) else None
+                identifier = parse_qs(urlsplit(self.path).query).get('replay', [None])[0]
+                if identifier:
+                    document = prototype.replay_document(identifier)
+                    record=parse_qs(urlsplit(self.path).query).get('record',[None])[0]
+                    if record is not None:record=str(uuid.UUID(record))
+                    replay = dict(id=document['id'], mode='play', document=document, record=record,
+                                  takeover=prototype.replay_takeover_ready(identifier,record))
+                    preferences = dict(key='LocalStorage.pb', revision=0, content=document['preferences'])
+                data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=prototype.options.ws_port,keybindings=prototype.workspace.preferences()['keys'],gamePreferences=preferences,replay=replay)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/replay.js', '/replay-storage.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
-                return self.send((ROOT / 'web' / filename).read_bytes(), mimetypes.guess_type(filename)[0] or 'text/plain',cache=True)
+                data = (ROOT / 'web' / filename).read_bytes()
+                if path == '/game.html':
+                    identifier = parse_qs(urlsplit(self.path).query).get('replay', [None])[0]
+                    if identifier:
+                        identifier = str(uuid.UUID(identifier))
+                        record=parse_qs(urlsplit(self.path).query).get('record',[None])[0]
+                        suffix='&amp;record='+str(uuid.UUID(record)) if record else ''
+                        data = data.replace(b'src="runtime.js"', ('src="runtime.js?replay='+identifier+suffix+'"').encode())
+                return self.send(data, mimetypes.guess_type(filename)[0] or 'text/plain',cache=True)
             data = self.server.prototype.asset(path)
             return self.send(data, mimetypes.guess_type(path)[0] or 'application/octet-stream',cache=True)
         except Exception as error:
@@ -372,7 +619,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update', '/api/records/import', '/api/records/export', '/api/records/share', '/api/records/redeem', '/api/game-preferences', '/api/replay/client', '/api/replay/takeover'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -380,15 +627,46 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(dict(error='Origin rejected'), status=403)
         try:
             length = int(self.headers.get('Content-Length', 0))
-            if not 0 < length <= (512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft') else 4096):
+            if self.path == '/api/records/import':
+                if not 0 < length <= MAX_IMPORT:
+                    raise ValueError('Battle import exceeds 256 MB')
+                return self.send(self.server.prototype.records.import_bytes(self.rfile.read(length)))
+            limit = 512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft', '/api/game-preferences') else 4096
+            if self.path == '/api/replay/client':
+                limit = MAX_CHUNK
+            if self.path == '/api/records/export':
+                limit = 16*1024  # Up to 128 UUIDs plus JSON delimiters.
+            if not 0 < length <= limit:
                 raise ValueError('Invalid request size')
             document = json.loads(self.rfile.read(length))
             if not isinstance(document, dict):
                 raise ValueError('Expected a settings object')
+            if self.path == '/api/replay/client':
+                return self.send(self.server.prototype.client_journals.append(document.get('id'), document))
+            if self.path == '/api/replay/takeover':
+                prototype = self.server.prototype
+                return self.send(prototype.takeover_jobs.begin(prototype.prepare_takeover, document))
+            if self.path == '/api/records/export':
+                import base64
+                name, data = self.server.prototype.records.export(document.get('ids'))
+                return self.send(dict(filename=name, content=base64.b64encode(data).decode('ascii')))
+            if self.path in ('/api/records/share', '/api/records/redeem'):
+                from tools.replay_sharing import ShareClient
+                service = ShareClient(self.server.prototype.directory)
+                if self.path.endswith('/share'):
+                    identifier = str(uuid.UUID(document['id']))
+                    _name, data = self.server.prototype.records.export([identifier])
+                    return self.send(service.upload(data,document.get('nickname','')))
+                data = service.download(document.get('code'))
+                result=self.server.prototype.records.import_bytes(data)
+                if result['imported']:service.acknowledge(document.get('code'))
+                return self.send(result)
             if self.path == '/api/update':
                 return self.send(update.public_status(self.server.prototype.update_checker.start()))
             if self.path == '/api/preferences':
                 return self.send(self.server.prototype.workspace.save_preferences(document))
+            if self.path == '/api/game-preferences':
+                return self.send(self.server.prototype.game_preferences.save(document))
             if self.path == '/api/draft':
                 return self.send(self.server.prototype.workspace.save_draft(document))
             if self.path == '/api/editor':

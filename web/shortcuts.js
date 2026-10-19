@@ -14,11 +14,12 @@
     down(event){
       if(event.repeat||this.held.has(event.code)||this.blocked()||event.ctrlKey||event.metaKey||event.altKey)return;
       if(event.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
-      for(const name of ['editor_toggle','editor_toggle_alt','restart','wf','dw','fab','ic']){
+      for(const name of ['editor_toggle','editor_toggle_alt','restart','wf','dw','fab','ic','zoom_in','zoom_out']){
         const key=this.code(this.bindings[name]);
-        if(!key||!(key===event.code||key.startsWith('Digit')&&event.code==='Numpad'+key.slice(5)))continue;
+        if(!key||!(key===event.code||key.startsWith('Digit')&&event.code==='Numpad'+key.slice(5)||key==='Equal'&&event.code==='NumpadAdd'||key==='Minus'&&event.code==='NumpadSubtract'))continue;
         event.preventDefault();
-        if(name.startsWith('editor_toggle')){this.held.set(event.code,null);this.action('editor');}
+        if(name.startsWith('zoom_')){this.held.set(event.code,null);this.action(name);}
+        else if(name.startsWith('editor_toggle')){this.held.set(event.code,null);this.action('editor');}
         else this.held.set(event.code,setTimeout(()=>{if(!this.blocked())this.action(name);this.held.set(event.code,null);},this.bindings.hold_seconds*1000));
         break;
       }

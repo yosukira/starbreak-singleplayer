@@ -5,10 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const heap = new ArrayBuffer(32768), i32 = new Int32Array(heap), u8 = new Uint8Array(heap);
 const sent = [], messages = [];
-let now = 0, currentSocket;
+let now = 0, currentSocket, socketsCreated=0;
+const timers=[];
 const listeners={};
 class Socket {
-  constructor(){currentSocket=this;}
+  constructor(){currentSocket=this;socketsCreated++;}
   static OPEN = 1;
   readyState = 1;
   bufferedAmount = 0;
@@ -19,6 +20,7 @@ const context = {
   location: {hostname: '127.0.0.1', origin: 'http://127.0.0.1:8765'},
   Module: {HEAP32: i32, HEAPU8: u8},
   performance: {now: () => now += 20}, Date,
+  setTimeout(callback,delay){timers.push({callback,delay});return timers.length;},
   parent: {postMessage: value => messages.push(value)},
   addEventListener(name, callback) {listeners[name]=callback;}, document: {getElementById: () => ({focus() {}, hidden: false})},
   console: {error: error => { throw error; }},
@@ -67,3 +69,62 @@ assert.equal(sent.length,oldCount,'Do not report previous-room death before new 
 set(world,672,player);set(damage,36,1);context.Module.webUpdates(world,update);context.Module.webFrame(world);
 assert.equal(sent.at(-1).events[0].native_seed,0xf1234567);
 console.log('Browser ABI: state, damage ownership, unsigned seed, death, room reset and player bindings passed.');
+// Successful pickup observers count consumed packs, not spawned loot. Healing
+// uses the central clamped health operation, including non-pickup healing.
+const loot=20000,description=22000,list=24000,boost=26000;
+set(loot,356,description);set(description,128,list);set(description,132,1);set(list,0,boost);set(boost,4,1);
+set(player,64,100);context.Module.webFrame(world);
+context.Module.webLoot(loot,player,0);context.Module.webHealth(player,0);set(player,64,150);context.Module.webHealth(player,1);context.Module.webLoot(loot,player,1);
+context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.health_packs,1);
+assert.equal(sent.at(-1).player.battle_metrics.healing,50);
+context.Module.webHealth(player,0);context.Module.webHealth(player,1);context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.healing,50,'Full-health overheal counts as zero');
+set(boost,4,3);context.Module.webLoot(loot,player,0);context.Module.webLoot(loot,player,1);context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.ammo_packs,1);
+context.Module.webLoot(loot,player,1);context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.ammo_packs,1,'No completed pickup without its successful entry');
+set(world,200,123);context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.battle_metrics.health_packs,0,'Counters are scoped to one battle');
+console.log('Pickup counts and actual clamped healing passed');
+
+// The takeover transport must still deliver room controls to the same real
+// inventory reader. A passed time barrier returns a fresh scoped inventory.
+const ordinarySocket=currentSocket;
+ordinarySocket.onclose();
+assert.equal(timers.length,1);assert.equal(timers[0].delay,500);
+timers.shift().callback();
+const replacementSocket=currentSocket;
+assert.notEqual(replacementSocket,ordinarySocket,'Ordinary telemetry reconnects after a startup disconnect');
+ordinarySocket.onclose();
+assert.equal(timers.length,0,'A retired socket cannot schedule a second reconnect');
+replacementSocket.onclose();
+const pendingReconnect=timers.shift().callback;
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../web/inventory.js'),'utf8'),context);
+set(world,628,subworld);set(player,468,1);set(player,472,28000);set(28000,4,1);
+const branchSocket=new Socket();context.Module.webStartLiveTelemetry(branchSocket);
+const branchSocketCount=socketsCreated;
+pendingReconnect();
+assert.equal(socketsCreated,branchSocketCount,'A pending ordinary reconnect cannot replace the takeover transport');
+assert.equal(replacementSocket.onmessage,null,'Old acknowledgements cannot replace the takeover room context');
+const scope={map:'egy_run',room_token:3,room_seed:123,worldid:2,objid:1,charid:1,player_type:1};
+branchSocket.onmessage({data:JSON.stringify({...scope,room_ready:true,inventory_request:{id:3,attempt:1,
+  scope,expires_at:Date.now()/1000+10,native_t_min:123450}})});
+context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.inventory.request_id,3);
+assert.equal(sent.at(-1).player.inventory.native_server_t,123456);
+assert.equal(sent.at(-1).player.inventory.scope.room_token,3);
+assert.equal(sent.at(-1).room_context.map,'egy_run');
+set(subworld,8,123000);context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.inventory,undefined,'Never bypass the native time barrier');
+assert.equal(sent.at(-1).player.inventory_wait.reason,'native-time');
+assert.equal(sent.at(-1).player.inventory_wait.required,123450);
+console.log('Takeover transport preserves scoped inventory handoff and native time barrier');
+
+const playbackContext={...context,Module:{HEAP32:i32,HEAPU8:u8},
+  STARBREAK_WEB_BOOT:{wsPort:8766,keybindings:{interact:'Auto'},replay:{mode:'play'}}};
+playbackContext.window=playbackContext;
+const beforePlayback=socketsCreated;
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../web/bridge.js'),'utf8'),playbackContext);
+assert.equal(socketsCreated,beforePlayback,'Playback must never open ordinary live telemetry');
+console.log('Startup reconnect, stale socket isolation and replay telemetry isolation passed');

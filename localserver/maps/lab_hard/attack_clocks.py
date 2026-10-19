@@ -1,7 +1,7 @@
 """Action clocks that survive phase changes, measured from ETL commands."""
 import bisect
 import copy
-from .scheduling import arm_layout, remap_pull_row
+from .scheduling import arm_layout, remap_pull_row, phase_wall_pulls
 
 class WallPullClock(object):
     """Draw walls afresh; wait from the previous live release, across phases."""
@@ -15,7 +15,7 @@ class WallPullClock(object):
 
         starts = [float(row.get('start', 0.0)) - float(pack.fight_start)
                   for row in (pack.phase_doc.get('phases') or [])]
-        for row in pack.arm_motion.get('wall_pulls') or []:
+        for row in phase_wall_pulls(pack):
             phase = row.get('phase_index')
             if phase is None:
                 at = float(row.get('at') or 0.0)

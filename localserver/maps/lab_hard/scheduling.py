@@ -4,6 +4,31 @@ import bisect
 
 ANIM_LEAD_S = {'single': 1.01, 'triple': 0.56, 'ring': 0.205}
 
+def phase_wall_pulls(pack):
+    """Keep complete pulls matching the phase's one/two/three/four hands.
+
+    Captured phase boundaries can include the tail of an earlier action. Those
+    rows are useful motion examples, but are not new actions for the next phase.
+    In particular the first captured P5 group contains only three wall hands.
+    """
+    starts = [float(p['start'])-pack.fight_start for p in pack.phase_doc['phases']]
+    groups = {}
+    for original in pack.arm_motion.get('wall_pulls') or []:
+        row = dict(original)
+        phase = row.get('phase_index')
+        if phase is None:
+            phase = bisect.bisect_right(starts, float(row.get('at', 0))) - 1
+            row['phase_index'] = phase
+        key = (phase, row.get('group_at', row.get('at')))
+        groups.setdefault(key, []).append(row)
+    rows = []
+    for (phase, _), group in groups.items():
+        if (1 <= phase <= 4 and len(group) == phase
+                and len({r['wall'] for r in group}) == phase
+                and len({r['claw'] for r in group}) == phase):
+            rows.extend(group)
+    return rows
+
 def arm_layout(pack):
     'base objid <-> claw objid <-> the wall that claw pulls, from capture.'
     claws = {}
@@ -25,7 +50,7 @@ def randomised_pull_plan(pack, rng):
     '[USER] every pull picks its own direction.'
     pool = sorted(int(w) for w in pack.wall_ids)
     groups = {}
-    for row in pack.arm_motion.get('wall_pulls') or []:
+    for row in phase_wall_pulls(pack):
         key = (row.get('phase_index'), row.get('group_at'))
         groups.setdefault(key, []).append(int(row['wall']))
     plan = {}
@@ -157,7 +182,7 @@ def encounter_schedules(pack, cadence, pull_plan=None,rng=None):
         if 'phase_index' in wave:event.update(phase_index=wave['phase_index'],phase_at=wave['phase_at'])
         structures.append((wave['at'],event))
 
-    pulls = list(pack.arm_motion.get('wall_pulls') or [])
+    pulls = phase_wall_pulls(pack)
     groups = {}
     for row in pulls:
         key = (row.get('phase_index'), row.get('group_at'))

@@ -47,6 +47,12 @@ class PlayerState(object):
     def age(self):
         return time.time() - self.received_at
 
+    def received_since(self, boundary):
+        # Replay uses the observation made at the original room boundary,
+        # rather than comparing the recording's timestamp with today's clock.
+        recorded = getattr(self, '_replay_entry_ready', None)
+        return self.received_at >= boundary if recorded is None else recorded
+
 class PlayerBridge(object):
     def __init__(self, port, host='127.0.0.1', log=None):
         self.port = int(port)

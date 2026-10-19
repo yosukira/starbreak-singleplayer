@@ -60,6 +60,7 @@ class ScHiveLiveSession(object):
         self.bridge = bridge or PlayerBridge(int(getattr(options, 'bridge_port', 21550) or 21550), log=self.log)
         self.owns_bridge = bridge is None
         self.player_type = 1
+        self.seed = 0x5C1B
         self._stop = threading.Event()
         self._thread = None
         self.prepare()

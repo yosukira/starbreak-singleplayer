@@ -269,6 +269,7 @@ class TurretBattery(object):
         self.ammo = ammo
         self.period = float(period)
         self.first_phase = float(first_phase)
+        self.next_volley = self.first_phase
         self.acquire_phase = (self.rules.TURRET_ACQUIRE_DELAY
                               if acquire_phase is None else acquire_phase)
         self.fixed = dict((slot.objid, slot.fixed_forward)
@@ -294,6 +295,16 @@ class TurretBattery(object):
         candidates = active_players(players if players is not None else (player,))
         live = {identity(p): p for p in candidates}
         max_delta = self.rules.TURRET_TURN_PER_SECOND * dt
+        synchronized = self.ammo == 'csbullet'
+        volley_due = synchronized and phase >= self.next_volley
+        if volley_due:
+            # Ordinary guns share the ship's clock, including while inactive.
+            # A newly acquired target joins the next charge; missed cycles do
+            # not become off-beat shots or a burst of catch-up volleys.
+            missed = int(math.floor((phase - self.next_volley) / self.period)) + 1
+            self.next_volley += missed * self.period
+            if self.next_volley <= phase:  # Float rounding at an exact boundary.
+                self.next_volley += self.period
         fired = 0
         for turret_id in self.turret_ids:
             fixed = self.fixed[turret_id]
@@ -331,11 +342,11 @@ class TurretBattery(object):
             if self.next_fire[turret_id] is None:
                 self.next_fire[turret_id] = self.first_phase
             if (self.preparing_until[turret_id] is None
-                    and phase >= self.next_fire[turret_id]):
+                    and (volley_due if synchronized else phase >= self.next_fire[turret_id])):
                 emit(turret_id, self.ammo, self.facing[turret_id], 'prepare')
                 self.preparing_until[turret_id] = (
                     phase + self.rules.TURRET_CHARGE_SECONDS[self.ammo])
-                self.next_fire[turret_id] = max(
+                self.next_fire[turret_id] = self.next_volley if synchronized else max(
                     self.next_fire[turret_id] + self.period,
                     phase + self.period)
         return fired

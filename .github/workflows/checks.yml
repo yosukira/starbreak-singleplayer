@@ -19,6 +19,8 @@ jobs:
       - name: Install Tk on Linux
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y python3-tk
+      - name: Install x86 CPU verification dependency
+        run: python -m pip install unicorn==2.1.4
       - name: Check anonymous runtime and language tables
         run: python -m unittest discover -s tests -v
       - uses: actions/setup-node@v4
@@ -29,6 +31,12 @@ jobs:
           node tests/test_web_bridge.js
           node tests/test_web_inventory.js
           node tests/test_web_shortcuts.js
+          node tests/test_web_zoom.js
+          node tests/test_browser_host.js
+          node tests/test_battle_records.js
+          node tests/test_game_preferences.js
+          node tests/test_client_replay.js
+          node tests/test_replay_storage.js
       - name: Build both editor languages
         if: runner.os == 'Windows'
         env:
