@@ -371,6 +371,7 @@ class Prototype:
             return False
 
     def asset(self, path):
+        if path=='/client/data/sfx/soldierhit.ogg':path='/client/data/sfx/pc/wildfire/hit.ogg'
         # No arbitrary paths or URLs can be read through this handler.
         if any(part in ('.', '..') for part in path.split('/')) or not re.fullmatch(r'/(?:client/data|data|texture|sfx|music)/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.(?:bpb|png|ogg|mp3|ttf|woff)', path):
             raise FileNotFoundError(path)
@@ -561,11 +562,18 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/item-icons':
                 prototype = self.server.prototype
                 if not hasattr(prototype, 'item_icons'):
-                    from tools.item_icons import catalogue
-                    prototype.item_icons = catalogue(prototype.version, prototype.items, prototype.asset)
+                    from tools.item_icons import all_icons
+                    prototype.item_icons = all_icons(prototype.version, prototype.items, prototype.asset)
                 return self.send(prototype.item_icons, cache=True)
             if path == '/api/update':
                 return self.send(update.public_status(self.server.prototype.update_checker.status()))
+            if path == '/api/records/transfer':
+                token=parse_qs(urlsplit(self.path).query).get('id',[''])[0]
+                return self.send(getattr(self.server.prototype,'transfer_progress',{}).get(token,dict(stage='connecting')))
+            if path == '/api/records/shared-detail':
+                from tools.replay_sharing import ShareClient
+                identifier=parse_qs(urlsplit(self.path).query).get('code',[''])[0]
+                return self.send(ShareClient(self.server.prototype.directory).details(identifier))
             if path == '/api/records/shared':
                 from tools.replay_sharing import ShareClient
                 order=parse_qs(urlsplit(self.path).query).get('sort',['latest'])[0]
@@ -657,8 +665,16 @@ class Handler(BaseHTTPRequestHandler):
                     identifier = str(uuid.UUID(document['id']))
                     _name, data = self.server.prototype.records.export([identifier])
                     return self.send(service.upload(data,document.get('nickname','')))
-                data = service.download(document.get('code'))
+                token=str(uuid.UUID(document.get('transfer_id',str(uuid.uuid4()))))
+                prototype=self.server.prototype
+                if not hasattr(prototype,'transfer_progress'):prototype.transfer_progress={}
+                if len(prototype.transfer_progress)>32:prototype.transfer_progress.clear()
+                def progress(stage,loaded=0,total=0):prototype.transfer_progress[token]=dict(stage=stage,loaded=loaded,total=total)
+                progress('connecting')
+                data = service.download(document.get('code'),progress)
+                progress('validate',len(data),len(data))
                 result=self.server.prototype.records.import_bytes(data)
+                progress('saved',len(data),len(data))
                 if result['imported']:service.acknowledge(document.get('code'))
                 return self.send(result)
             if self.path == '/api/update':

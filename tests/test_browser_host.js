@@ -19,7 +19,7 @@ const {webcrypto}=require('node:crypto');
     if(url==='/replays/ABCDEFGHJKMN')return new Response('downloaded replay');
     throw Error('Unexpected external request '+url);
   };
-  const context={fetch:original,Worker,URL,Response,Uint8Array,crypto:webcrypto,atob,btoa,console,
+  const context={fetch:original,Worker,URL,Response,Uint8Array,crypto:webcrypto,atob,btoa,console,AbortSignal,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},dispatchEvent:()=>{},
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},
     navigator:{sendBeacon:()=>true},location:{href:'https://example.test/singleweb/',origin:'https://example.test'},
     document:{currentScript:{src:'https://example.test/singleweb/browser/host.js'},getElementById:()=>null},addEventListener:()=>{}};

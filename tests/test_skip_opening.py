@@ -71,6 +71,13 @@ class SkipOpeningTests(unittest.TestCase):
                 self.assertEqual(session.phase,'fighting')
                 self.assertEqual(session.ship_controller.state,'home-hold')
 
+    def test_new_profiles_skip_both_openings_without_rewriting_explicit_choices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace=Workspace(Path(directory)/'web',Path(directory)/'none')
+            self.assertEqual(workspace.read()['settings']['skip_intro'],{'egy_hulk':True,'hulk_normal':True})
+        # Historical replay snapshots without this field keep their old behavior.
+        self.assertFalse(game_settings.skip_intro('egy_hulk',{}))
+
     def test_settings_are_strict_per_map_and_round_trip_with_browser_profile(self):
         self.assertFalse(game_settings.skip_intro('egy_hulk',{}))
         normalized = game_settings.normalize({'skip_intro':{'egy_hulk':'false','hulk_normal':True,'hulk_mid':True}})
@@ -86,4 +93,4 @@ class SkipOpeningTests(unittest.TestCase):
             self.assertTrue(game_settings.skip_intro('egy_hulk',game_settings.load(str(workspace.directory/'game_settings.json'))))
             self.assertEqual(workspace.read()['settings']['skip_intro'],saved['settings']['skip_intro'])
             restored = workspace.restore_defaults(saved['revision'])
-            self.assertFalse(game_settings.skip_intro('egy_hulk',restored['settings']))
+            self.assertTrue(game_settings.skip_intro('egy_hulk',restored['settings']))

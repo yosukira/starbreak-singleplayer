@@ -47,7 +47,7 @@ def fit_window(root, width=None, height=None):
 class ScrollFrame(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0)
+        self.canvas = tk.Canvas(self, highlightthickness=0, borderwidth=0, background='#101923')
         vertical = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
         horizontal = ttk.Scrollbar(self, orient='horizontal', command=self.canvas.xview)
         self.canvas.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
@@ -93,6 +93,7 @@ def key_dialog(editor, path):
     tr = editor.tr
     dialog = tk.Toplevel(editor.root)
     dialog.withdraw()
+    dialog.configure(background='#101923')
     dialog.title(tr('按键设置'))
     dialog.transient(editor.root)
     dialog.attributes('-topmost', True)
@@ -103,25 +104,26 @@ def key_dialog(editor, path):
     body = ttk.Frame(area.content, padding=12)
     body.pack(fill='x', expand=True)
     ttk.Label(body, text=tr('互动键默认跟随游戏绑定；识别不正确时，选择与游戏设置相同的键。'),
-              wraplength=430, justify='left').grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+              wraplength=630, justify='left').grid(row=0, column=0, columnspan=4, sticky='w', pady=(0, 10))
     document = keybindings.load(path)
     variables = {}
     labels = ('互动键', '显示/隐藏编辑器', '备用编辑器快捷键', '重开当前局',
               '切换 WF', '切换 DW', '切换 FAB', '切换 IC')
-    for row, (action, label) in enumerate(zip(keybindings.ACTIONS, labels), 1):
-        ttk.Label(body, text=tr(label)).grid(row=row, column=0, sticky='w', padx=(0, 12), pady=3)
+    for index, (action, label) in enumerate(zip(keybindings.ACTIONS, labels)):
+        row,column=index//2+1,(index%2)*2
+        ttk.Label(body, text=tr(label)).grid(row=row, column=column, sticky='w', padx=(0, 10), pady=6)
         values = (('Auto',) if action == 'interact' else ('None',)) + keybindings.CHOICES
         variables[action] = tk.StringVar(value=document[action])
         ttk.Combobox(body, textvariable=variables[action], state='readonly', values=values,
-                     width=16, height=12).grid(row=row, column=1, sticky='ew', pady=3)
+                     width=14, height=12).grid(row=row, column=column+1, sticky='ew', padx=(0,18), pady=6)
     duration = tk.StringVar(value=str(document['hold_seconds']))
-    ttk.Label(body, text=tr('长按时间（秒）')).grid(row=9, column=0, sticky='w', pady=3)
+    ttk.Label(body, text=tr('长按时间（秒）')).grid(row=5, column=0, sticky='w', pady=3)
     ttk.Spinbox(body, from_=.5, to=5, increment=.5, textvariable=duration, width=16).grid(
-        row=9, column=1, sticky='ew', pady=3)
+        row=5, column=1, sticky='ew', pady=3)
     ttk.Label(body, text=tr('Auto = 跟随游戏；None = 关闭快捷键。移动和攻击等操作使用游戏内的按键设置。'),
-              wraplength=430, justify='left').grid(row=10, column=0, columnspan=2, sticky='w', pady=(10, 0))
+              wraplength=630, justify='left').grid(row=6, column=0, columnspan=4, sticky='w', pady=(10, 0))
     ttk.Label(body, text=tr('编辑器快捷键为全局按键，建议使用 F 键。'),
-              wraplength=430, justify='left').grid(row=11, column=0, columnspan=2, sticky='w', pady=(4, 0))
+              wraplength=630, justify='left').grid(row=7, column=0, columnspan=4, sticky='w', pady=(4, 0))
 
     def defaults():
         for action, variable in variables.items():
@@ -153,6 +155,6 @@ def key_dialog(editor, path):
     ttk.Button(controls, text=tr('保存设置'), command=save).pack(side='left')
     ttk.Button(controls, text=tr('恢复默认按键'), command=defaults).pack(side='left', padx=6)
     ttk.Button(controls, text=tr('关闭'), command=dialog.destroy).pack(side='right')
-    fit_window(dialog, 490, 570)
+    fit_window(dialog, 700, 390)
     dialog.deiconify()
     dialog.grab_set()

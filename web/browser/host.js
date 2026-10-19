@@ -32,8 +32,10 @@
   const ready=request('ready');
   function from64(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0));}
   function to64(value){let text='';for(let i=0;i<value.length;i+=8192)text+=String.fromCharCode(...value.subarray(i,i+8192));return btoa(text);}
+  function transfer(stage,loaded=0,total=0){globalThis.dispatchEvent(new CustomEvent('starbreak-transfer',{detail:{stage,loaded,total}}));}
+  async function remote(url,options={}){return originalFetch(url,{...options,signal:AbortSignal.timeout(90000)});}
   let sharingConfig;
-  async function sharing(){sharingConfig||=originalFetch(assetURL('/sharing-config.json')).then(r=>{if(!r.ok)throw Error('Replay sharing unavailable');return r.json();}).then(value=>({...value,url:value.url||base.replace(/\/$/,'')}));return sharingConfig;}
+  async function sharing(){sharingConfig||=remote(assetURL('/sharing-config.json')).then(r=>{if(!r.ok)throw Error('Replay sharing unavailable');return r.json();}).then(value=>({...value,url:value.url||base.replace(/\/$/,'')})).catch(error=>{sharingConfig=null;throw error;});return sharingConfig;}
   async function share(id,nickname=''){
     const settings=await sharing();
     const file=await request('api',{method:'POST',url:'/api/records/export',document:{ids:[id]}});
@@ -41,7 +43,7 @@
     let cache;try{cache=JSON.parse(localStorage.getItem(cacheKey)||'{}');}catch(_){cache={};}
     const key=settings.url+'|'+nickname+'|'+hash;
     if(cache[key])return cache[key];
-    const response=await originalFetch(settings.url+'/replays',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Replay-Nickname':nickname},body:data});
+    const response=await remote(settings.url+'/replays',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Replay-Nickname':nickname},body:data});
     if(!response.ok)throw Error('Replay upload failed');
     const result=await response.json();
     if(!/^[A-HJKMNP-Z2-9]{4}(?:-[A-HJKMNP-Z2-9]{4}){2}$/.test(result.code))throw Error('Invalid sharing response');
@@ -49,18 +51,18 @@
   }
   async function redeem(value){
     const code=value.replace(/[-\s]/g,'').toUpperCase();if(!/^[A-HJKMNP-Z2-9]{12}$/.test(code))throw Error('Invalid sharing code');
-    const settings=await sharing(),response=await originalFetch(settings.url+'/replays/'+code);
+    transfer('connecting');const settings=await sharing(),response=await remote(settings.url+'/replays/'+code);
     if(!response.ok)throw Error('Sharing code not found');
     const size=Number(response.headers.get('content-length'));if(size>32*1024*1024)throw Error('Replay exceeds sharing limit');
-    const reader=response.body.getReader(),chunks=[];let total=0;
-    while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>32*1024*1024){await reader.cancel();throw Error('Replay exceeds sharing limit');}chunks.push(value);}
+    transfer('download',0,size);const reader=response.body.getReader(),chunks=[];let total=0;
+    while(true){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>32*1024*1024){await reader.cancel();throw Error('Replay exceeds sharing limit');}chunks.push(value);transfer('download',total,size);}
     const data=new Uint8Array(total);let offset=0;for(const part of chunks){data.set(part,offset);offset+=part.length;}
-    const result=await request('api',{method:'POST',url:'/api/records/import',document:{content:to64(data)}});
+    transfer('validate',total,total);const result=await request('api',{method:'POST',url:'/api/records/import',document:{content:to64(data)}});
     if(result.imported){
       let viewer=localStorage.getItem('starbreak-sharing-viewer');if(!viewer){viewer=crypto.randomUUID();localStorage.setItem('starbreak-sharing-viewer',viewer);}
       void originalFetch(settings.url+'/replays/'+code+'/imported',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({viewer,token:response.headers.get('X-Replay-Import-Token')})}).catch(()=>{});
     }
-    return result;
+    transfer('saved',total,total);return result;
   }
   async function fetchLocal(url,options={}){
     const target=new URL(typeof url==='string'?url:url.url,location.href);
@@ -73,7 +75,8 @@
       if(options.body){if(route==='/api/records/import'){const bytes=new Uint8Array(await new Response(options.body).arrayBuffer());value={content:to64(bytes)};}else value=JSON.parse(await new Response(options.body).text());}
       let result;
       if(route==='/api/records/share'&&method==='POST')result=await share(value.id,value.nickname||'');
-      else if(route==='/api/records/shared'){const settings=await sharing();const response=await originalFetch(settings.url+'/replays/feed'+target.search);if(!response.ok)throw Error('Sharing list unavailable');result=await response.json();}
+      else if(route==='/api/records/shared'){const settings=await sharing();const response=await remote(settings.url+'/replays/feed'+target.search);if(!response.ok)throw Error('Sharing list unavailable');result=await response.json();}
+      else if(route==='/api/records/shared-detail'){const settings=await sharing();const code=(target.searchParams.get('code')||'').replace(/[-\s]/g,'').toUpperCase();if(!/^[A-HJKMNP-Z2-9]{12}$/.test(code))throw Error('Invalid sharing code');const response=await remote(settings.url+'/replays/'+code+'/details');if(!response.ok)throw Error('Replay details unavailable');result=await response.json();}
       else if(route==='/api/records/redeem'&&method==='POST')result=await redeem(value.code);
       else if(route==='/api/update'){
         const current=await ready,latest=await originalFetch(assetURL('/browser-manifest.json'),{cache:'no-store'}).then(r=>r.json());

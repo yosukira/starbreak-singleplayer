@@ -74,7 +74,7 @@ class WebEquipment {
   renderUpdate(){
     const state=this.updateState||{},notice=this.$('update-notice');
     const message=state.messages?.[this.language().startsWith('zh')?'zh':'en']||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
-    if(notice.textContent!==message)notice.textContent=message;
+    if(notice.textContent!==message)notice.textContent=message;notice.title=message;
     this.$('check-updates').disabled=['checking','installing'].includes(state.state);
     notice.closest('.update-row').dataset.state=state.state||'idle';
   }
@@ -190,9 +190,9 @@ class WebEquipment {
       caption.textContent=this.t('跳过开局','Skip opening');
       check.onchange=()=>{const rows=this.profile.settings.skip_intro||={};rows[this.map]=check.checked;this.touch();};
       toggle.append(check,caption);container.append(toggle);
-      const hint=document.createElement('p');hint.className='hint';hint.textContent=this.t('新一局生效；直接从首领飞船停稳后开始','Applies to the next attempt; start with the boss ship in position');container.append(hint);
+      const hint=document.createElement('p');hint.className='hint';hint.textContent=this.t('新一局生效；直接从首领飞船停稳后开始','Applies to the next attempt; start with the boss ship in position');toggle.title=hint.textContent;
       field(this.t('追踪弹延迟 (ms)','Homing missile delay (ms)'),this.profile.settings.missile_delay_ms?.[this.map]??275,0,500,value=>{const delays=this.profile.settings.missile_delay_ms||={};delays[this.map]=value===''?275:Number(value);},'1');
-      const delayHint=document.createElement('p');delayHint.className='hint';delayHint.textContent=this.t('首领与小怪共用；瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms','Shared by boss and enemy missiles; aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms');container.append(delayHint);
+      const delayHint=document.createElement('p');delayHint.className='hint';delayHint.textContent=this.t('首领与小怪共用；瞄准玩家多少毫秒前的位置；0 = 当前位置，默认 275ms','Shared by boss and enemy missiles; aim at the player’s position this many milliseconds ago; 0 = current position, default 275ms');container.lastElementChild.title=delayHint.textContent;
       const rows={front:['前面炮台','Front turrets'],upper:['上面炮台','Upper turrets'],lower:['下面炮台','Lower turrets']};
       for(const [key,names]of Object.entries(rows))field(this.t(...names),this.profile.turrets[key],0,key==='front'?10:20,value=>this.profile.turrets[key]=value===''?null:Number(value),'1');
       for(const key of ['upper','lower'])field(this.t(key==='upper'?'上方追踪炮台':'下方追踪炮台',key==='upper'?'Upper seeking turrets':'Lower seeking turrets'),this.profile.missiles[key],0,20,value=>this.profile.missiles[key]=value===''?null:Number(value),'1');

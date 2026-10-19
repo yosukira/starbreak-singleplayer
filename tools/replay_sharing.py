@@ -96,10 +96,20 @@ class ShareClient:
         atomic_json(path, cache)
         return entry
 
-    def download(self, identifier):
+    def download(self, identifier, progress=None):
         with urlopen(self.url + '/replays/' + code(identifier), timeout=60) as response:
             self.import_token = response.headers.get('X-Replay-Import-Token', '')
-            blob = response.read(MAX_FILE + 1)
+            total=int(response.headers.get('Content-Length','0'));chunks=[];received=0
+            if total>MAX_FILE:raise ValueError('Replay exceeds sharing limit')
+            while True:
+                chunk=response.read(128*1024)
+                if not chunk:break
+                received+=len(chunk)
+                if received>MAX_FILE:raise ValueError('Replay exceeds sharing limit')
+                chunks.append(chunk)
+                if progress:progress('download',received,total)
+            blob=b''.join(chunks)
+        if progress:progress('validate',received,total)
         return clean_replay(blob)
 
 
@@ -117,6 +127,12 @@ class ShareClient:
         try:
             with urlopen(Request(self.url+'/replays/'+code(identifier)+'/imported',data=data,headers={'Content-Type':'application/json'}),timeout=10) as response:response.read(4096)
         except (OSError,ValueError):pass  # Import stays successful if counting is offline.
+
+    def details(self, identifier):
+        with urlopen(self.url+'/replays/'+code(identifier)+'/details',timeout=30) as response:
+            data=response.read(2*1024*1024+1)
+        if len(data)>2*1024*1024:raise ValueError('Replay details are too large')
+        return json.loads(data)
 
     def listings(self, order='latest'):
         order='popular' if order=='popular' else 'latest'

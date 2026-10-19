@@ -5,13 +5,13 @@ import struct
 from localserver import pb_layout
 
 
-def catalogue(manifest, items, asset):
-    pack = next(p for p in manifest['pvid_'] if p['name_'] == 'base')
-    descriptor = asset('/texture/base.' + pack['descid_'] + '.bpb')
+def catalogue(manifest, items, asset, pack_name='base'):
+    pack = next(p for p in manifest['pvid_'] if p['name_'] == pack_name)
+    descriptor = asset('/texture/'+pack_name+'.' + pack['descid_'] + '.bpb')
     document = pb_layout.default_layouts().decode('ImageFileDescription', descriptor)
     images = []
     for index, sheet in enumerate(document['sheetdef_']):
-        url = '/texture/base.' + pack['imageids_'][index] + '.png'
+        url = '/texture/'+pack_name+'.' + pack['imageids_'][index] + '.png'
         png = asset(url)
         if png[:8] != b'\x89PNG\r\n\x1a\n':
             raise ValueError('Invalid original item sprite sheet')
@@ -51,4 +51,12 @@ def catalogue(manifest, items, asset):
             left, top = min(p[0] for p in corners), min(p[1] for p in corners)
             right, bottom = max(p[0] for p in corners), max(p[1] for p in corners)
             result[str(item['type_'])] = dict(viewbox=[left, top, max(1, right-left), max(1, bottom-top)], parts=parts)
+    return result
+
+
+def all_icons(manifest, items, asset):
+    result=catalogue(manifest,items,asset)
+    portraits={f'portrait-{shell}':dict(type_=f'portrait-{shell}',lootvid_='ui.port'+name)
+              for shell,name in ((1,'wildfire'),(2,'duskwing'),(3,'ironclad'),(5,'fabricator'))}
+    result.update(catalogue(manifest,portraits,asset,'ui'))
     return result

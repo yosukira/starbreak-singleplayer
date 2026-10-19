@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {create,KEY,CACHE,optionsOnly}=require('../web/game-preferences.js');
+const {create,KEY,CACHE,optionsOnly,freshDefaults}=require('../web/game-preferences.js');
 const storage=()=>{const values=new Map();return {getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};};
 (async()=>{
   const vi=value=>{const out=[];do{out.push((value&127)|(value>=128?128:0));value=Math.floor(value/128);}while(value);return Buffer.from(out);};
@@ -13,7 +13,7 @@ const storage=()=>{const values=new Map();return {getItem:k=>values.get(k)||null
   let disk={key:KEY,revision:0,content:null};const local=storage();
   const request=async row=>{assert.equal(row.revision,disk.revision);disk={...row,revision:row.revision+1};return disk;};
   let game=create(disk,{storage:local,request});
-  assert.equal(game.load(KEY),null);
+  assert.equal(game.load(KEY),atob(freshDefaults()));assert.ok(atob(game.load(KEY)).includes('2560'));assert.ok(atob(game.load(KEY)).includes('1600'));
   game.save(KEY,'\x00\x80\xff controls');await game.flush();
   assert.equal(disk.content,btoa('\x00\x80\xff controls'));
   // A different port/browser has no localStorage, but receives the same file.

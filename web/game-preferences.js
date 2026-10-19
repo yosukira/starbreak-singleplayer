@@ -26,6 +26,12 @@
     let binary='';for(const wire of kept)for(let i=0;i<wire.length;i+=8192)binary+=String.fromCharCode(...wire.subarray(i,i+8192));
     return btoa(btoa(binary));
   }
+  function freshDefaults(){
+    // Original string-map protobuf. Only absent profiles receive these values.
+    const field=(tag,value)=>String.fromCharCode(tag*8+2,value.length)+value;
+    const rows=[['windowWidth','2560'],['windowHeight','1600'],['gq','4']];
+    return btoa(btoa(rows.map(([name,value])=>field(1,field(1,name)+field(2,value))).join('')));
+  }
   function create(boot,environment){
     const {storage,request,beacon,status=()=>{}}=environment;
     let revision=boot.revision||0,stored=boot.content??null,content=stored,busy=null,inflight=null;
@@ -44,6 +50,7 @@
       }
       if(content===null&&!queue.length){const legacy=storage.getItem(KEY);if(typeof legacy==='string'&&legacy.length<=LIMIT){content=encode(legacy);queue=[{content}];}}
     }catch(_){}
+    if(content===null&&!queue.length)content=freshDefaults();
     async function flush(){
       if(busy)return busy;
       if(!queue.length)return true;
@@ -97,7 +104,7 @@
     if(queue.length)queueMicrotask(flush);
     return api;
   }
-  if(typeof module!=='undefined')module.exports={create,KEY,CACHE,optionsOnly};
+  if(typeof module!=='undefined')module.exports={create,KEY,CACHE,optionsOnly,freshDefaults};
   if(typeof window==='undefined')return;
   function liveEnvironment(){
     let storage;try{storage=localStorage;}catch(_){storage={getItem:()=>null,setItem:()=>{}};}

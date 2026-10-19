@@ -610,16 +610,33 @@ class GearEditor(object):
 
         style = ttk.Style(self.root)
         try:
-            style.theme_use('vista')
+            style.theme_use('clam')
         except tk.TclError:
             pass
-        style.configure('.', font=self.ui_font)
+        self.root.configure(background='#101923')
+        style.configure('.', font=self.ui_font, background='#101923', foreground='#d6e4ed', bordercolor='#304657', lightcolor='#304657', darkcolor='#0b131b', troughcolor='#0b131b', selectbackground='#35513a', selectforeground='#d7f5b7')
+        style.configure('TFrame', background='#101923')
+        style.configure('TLabel', background='#101923', foreground='#b9ccd9')
+        style.configure('TButton', background='#1b3040', foreground='#d6e4ed', borderwidth=1)
+        style.map('TButton', background=[('active','#2d4543'),('pressed','#35513a')], foreground=[('disabled','#617582')])
+        style.configure('TEntry', fieldbackground='#0d1b26', foreground='#e0ebf1', insertcolor='#c0e975')
+        style.configure('TCombobox', fieldbackground='#0d1b26', background='#1b3040', foreground='#e0ebf1', arrowcolor='#c0e975')
+        style.map('TCombobox', fieldbackground=[('readonly','#0d1b26')], foreground=[('readonly','#e0ebf1')], selectbackground=[('readonly','#0d1b26')], selectforeground=[('readonly','#e0ebf1')])
+        style.configure('TNotebook', background='#0b131b', borderwidth=0)
+        style.configure('TNotebook.Tab', background='#152633', foreground='#91a9b9', padding=(18,8))
+        style.map('TNotebook.Tab', background=[('selected','#263e31')], foreground=[('selected','#c0e975')])
+        style.configure('TLabelframe', background='#101923', bordercolor='#304657')
+        style.configure('TLabelframe.Label', background='#101923', foreground='#c0e975')
+        style.configure('Treeview', background='#122330', fieldbackground='#122330', foreground='#d6e4ed')
+        style.configure('Treeview.Heading', background='#1b3040', foreground='#91a9b9')
+        self.root.option_add('*TCombobox*Listbox.background','#0d1b26')
+        self.root.option_add('*TCombobox*Listbox.foreground','#d6e4ed')
         style.configure('TLabel', font=self.ui_font)
         style.configure('TButton', font=self.ui_font, padding=(6, 3) if self.compact else (10, 6))
         style.configure('TCombobox', font=self.ui_font, padding=(4, 4))
         style.configure('TEntry', font=self.ui_font, padding=(4, 4))
         style.configure('Title.TLabel', font=(self.ui_font[0], ui_size + 4, 'bold'))
-        style.configure('Hint.TLabel', foreground='#444444')
+        style.configure('Hint.TLabel', foreground='#91a9b9')
         try:
             self.root.option_add('*TCombobox*Listbox.font', self.ui_font)
         except tk.TclError:
@@ -798,7 +815,7 @@ class GearEditor(object):
         ttk.Label(left, text=self.tr('槽位')).pack(anchor='w', pady=(0, 6))
         self.slot_list = tk.Listbox(
             left, width=24, exportselection=False, font=self.ui_font,
-            activestyle='dotbox', selectborderwidth=0, highlightthickness=1)
+            activestyle='dotbox', selectborderwidth=0, highlightthickness=1, background='#122330', foreground='#b9ccd9', selectbackground='#35513a', selectforeground='#d7f5b7', highlightbackground='#304657')
         for slotpos, label in SLOTS:
             self.slot_list.insert('end', '{0}  {1}'.format(slotpos, self.tr(label)))
         self.slot_list.pack(fill='y', expand=True)

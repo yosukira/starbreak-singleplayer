@@ -33,6 +33,8 @@ jobs:
           node tests/test_web_shortcuts.js
           node tests/test_web_zoom.js
           node tests/test_browser_host.js
+          node tests/test_browser_cache.js
+          node tests/test_web_loading.js
           node tests/test_battle_records.js
           node tests/test_game_preferences.js
           node tests/test_client_replay.js

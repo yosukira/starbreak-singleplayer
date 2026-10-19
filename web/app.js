@@ -5,13 +5,14 @@
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false;
   const t=(zh,en)=>language.startsWith('zh')?zh:en;
   let loading=null,loadingPercent=0,loadingHide;
-  function finishLoading(){if(!loading)return;loadingPercent=100;renderLoading();clearTimeout(loadingHide);loadingHide=setTimeout(()=>showLoading(null),220);}
+  function finishLoading(){if(!loading||loadingHide)return;loadingPercent=100;renderLoading();loadingHide=setTimeout(()=>showLoading(null),220);}
   function showLoading(phase,current=null,total=null){
-    clearTimeout(loadingHide);if(!loading)loadingPercent=0;
+    clearTimeout(loadingHide);loadingHide=null;if(!loading)loadingPercent=0;
     const defaults={environment:0,starting:0,assets:5,client:70,replay:0};
     const computed=Number.isFinite(current)&&total>0?(phase==='assets'?5+60*current/total:current/total*100):defaults[phase]||0;
     loadingPercent=Math.max(loadingPercent,computed);
     loading=phase?{phase,current,total}:null;
+    updateLocks();
     renderLoading();
   }
   function renderLoading(){
@@ -72,6 +73,7 @@
   $('replay-restart').onclick=()=>{if(replayRecord)startReplay(replayRecord);};
   $('replay-takeover').onclick=()=>playbackControl('takeover');
   function setTab(history){
+    if(loading)return;
     if(history&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
     document.querySelector('.game-layout').hidden=history;
     $('tab-battle').classList.toggle('selected',!history);$('tab-records').classList.toggle('selected',history);
@@ -97,11 +99,11 @@
     renderLoading();
   }
   let shortcutFingerprint='';
-  const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy);
+  const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy||!!loading);
   function shortcut(action){
     if(action.startsWith('zoom_')){if(!records.visible&&!$('equipment-dialog').open)document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(action==='zoom_in'?1:-1);return;}
     if(action==='editor'){if($('equipment-dialog').open)$('equipment-dialog').close();else $('open-editor').click();return;}
-    if(busy||records.visible||$('equipment-dialog').open||!liveMap)return;
+    if(busy||loading||records.visible||$('equipment-dialog').open||!liveMap)return;
     const shell={wf:1,dw:2,fab:5,ic:3}[action]||editor.shell;
     editor.selectClass(shell);startEncounter(runMap||editor.map,shell,false);
   }
@@ -115,8 +117,14 @@
   $('map').onchange=()=>{const row=catalogue.find(map=>map.id===$('map').value);editor.mapTitle=title(row);editor.setMap(row.id);if(!liveMap)$('arena-title').textContent=title(row);};
   function setBusy(value){
     busy=value;for(const element of document.querySelectorAll('dialog input,dialog select,dialog button'))if(element.id!=='close-editor')element.disabled=value;
-    $('open-editor').disabled=value;
+    updateLocks();
     if(!value)editor.render();
+  }
+  function updateLocks(){
+    const locked=busy||!!loading;
+    for(const id of ['open-editor','tab-battle','tab-records','language','start','close-editor','replay-back','replay-restart'])$(id).disabled=locked;
+    document.querySelector('header')?.setAttribute('aria-busy',String(locked));
+    for(const id of ['equipment-dialog','replay-controls','stage'])$(id).inert=locked;
   }
   $('start').onclick=()=>startEncounter($('map').value,editor.shell,true);
   async function startEncounter(map,shell,saveDraft){

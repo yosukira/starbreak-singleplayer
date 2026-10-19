@@ -1,8 +1,8 @@
 {
  "map": "egy_hulk",
  "skip_intro": {
-  "egy_hulk": false,
-  "hulk_normal": false
+  "egy_hulk": true,
+  "hulk_normal": true
  },
  "missile_delay_ms": {
   "egy_hulk": 275,
