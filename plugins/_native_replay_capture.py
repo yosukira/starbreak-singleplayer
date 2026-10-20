@@ -249,7 +249,7 @@ class NativeCapture:
         self.ffi,self.refs=ffi,refs;self.frames=0;self.owner=threading.get_ident();self.engine_elapsed=0
         self.player=None;self.driving=False;self.clock_offset=0;self.functions={};self.keyboard_depth=0
         self.serial=0;self.branch=None;self.packet_buffer=bytearray();self.control_error=None
-        self.live_call_depth=0
+        self.live_call_depth=0;self.draining=False
         self.descriptions=set()
         self.recording=True
         self.input_observer=None
@@ -289,6 +289,7 @@ class NativeCapture:
                     finally:self.live_call_depth-=1
             if kind in ('inventory-ctor','inventory-dtor'):return original(*args)
             player=self.player
+            if self.draining and kind=='message' and int(args[1]) in MESSAGES:return None
             if kind=='sound':
                 cursor=self.tape.cursor
                 result=original(*args)
@@ -327,7 +328,13 @@ class NativeCapture:
             if player is None and getattr(self,'awaiting_created',False):
                 if kind=='message' and int(args[1])==10:self.awaiting_created=False
                 elif kind not in ('read','message','clock','random32','random64'):return original(*args)
-            if player is not None and kind=='read' and not self.driving:return True
+            if player is not None and kind=='read' and not self.driving:
+                # Keep the original connection's cipher/socket drained, but
+                # never apply its old practice packets to the replay world.
+                self.draining=True
+                try:original(*args)
+                finally:self.draining=False
+                return True
             if player is not None and player.blocked() and not self.driving and kind not in ('clock','random32','random64'):
                 if kind=='input' and self.keyboard_depth:player.keyboard_input(int(args[1]),bool(args[2]))
                 return True if kind=='read' else 0 if kind in ('clock','random32','random64','player-input') else None
@@ -487,6 +494,12 @@ class NativeCapture:
             if value.get('serial',0)<self.serial:continue
             if value.get('resume'):
                 resume=value['resume']
+                if self.player is not None:
+                    game=self.refs.GameClient
+                    if game is not None and game!=self.ffi.NULL:
+                        self.draining=True
+                        try:self.functions['read'].original(game.serverConnection)
+                        finally:self.draining=False
                 if (self.recording or self.player is not None) and not self.tape.finished:self.tape.finish()
                 self.player=None;self.branch=None;self.serial=resume['serial'];self.recording=resume['recording']
                 self.delivery.attempt=resume['id'];self.tape=NativeTape(save=self.delivery.put)

@@ -85,6 +85,18 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_original_socket_is_drained_without_applying_stale_world_packets(self):
+        engine=Engine();player=engine.play(Engine().record(30))
+        player.control(dict(action='seek',seconds=.17,paused=True));player.update()
+        original=mock.Mock(side_effect=lambda *_:engine.call('message',engine.game.serverConnection.messageHandlers,12,b'99',2))
+        for phase in ('playing','live'):
+            player.phase=phase;hp=engine.props.hitpoints;cursor=engine.capture.tape.cursor
+            self.assertTrue(engine.capture.replacement('read')(original,engine.game.serverConnection))
+            self.assertEqual(engine.props.hitpoints,hp)
+            self.assertEqual(engine.capture.tape.cursor,cursor)
+            self.assertFalse(engine.capture.draining)
+        self.assertEqual(original.call_count,2)
+
     def test_live_recording_failure_keeps_simulation_clock_and_physics_running(self):
         target=Engine();player=target.play(Engine().record(30))
         player.control(dict(action='seek',seconds=.17,paused=True));player.update()
