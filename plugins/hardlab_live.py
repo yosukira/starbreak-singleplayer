@@ -363,9 +363,34 @@ class Plugin(PluginBase):
                 'source': source, 'destination': destination}
 
     def onPresent(self):
-        if not self.session or not bool(self.config.hud_visible):
+        if not self.session:
             return
         try:
+            capture=self.native_capture
+            player=capture.player if capture is not None else None
+            delivery=capture.delivery if capture is not None else None
+            message=None
+            if delivery is not None and delivery.loading_serial is not None:
+                stage,loaded,total=getattr(delivery,'loading_status',('download',0,1))
+                message=('Preparing replay' if stage=='indexing' else 'Loading replay')+'  {0:.0f}%'.format(100.*loaded/max(1,total))
+            elif player is not None:
+                state=player.status()
+                if state['state'] in ('preparing','seeking'):
+                    message=('Seeking' if state['state']=='seeking' else 'Preparing replay start')+'  {0:.0f}%'.format(100.*(state.get('progress') or 0))
+                elif state['state']=='failed':message='Replay stopped. See equipment window for details.'
+            if message:
+                width,height=self.refs.windowW,self.refs.windowH
+                previous=(self.refs.canvasW_[0],self.refs.canvasH_[0],self.txt.screenCoords)
+                try:
+                    self.refs.canvasW_[0]=width;self.refs.canvasH_[0]=height
+                    self.refs.XDL_FillRect(0,0,width,height,0xff0b141d,lib.BLENDMODE_BLEND)
+                    self.txt.text=message;self.txt.size=24;self.txt.color=0xffc0e975
+                    self.txt.screenCoords=True
+                    self.txt.draw(width/2,height/2,anchorX=.5)
+                finally:
+                    self.refs.canvasW_[0],self.refs.canvasH_[0],self.txt.screenCoords=previous
+                return
+            if not bool(self.config.hud_visible):return
             self.txt.text = self.status
             self.txt.size = int(self.config.hud_size)
             self.txt.color = self.config.hud_color

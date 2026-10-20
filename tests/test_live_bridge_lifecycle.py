@@ -51,3 +51,14 @@ class LiveBridgeLifecycleTests(unittest.TestCase):
         plugin=self.plugin();plugin.native_capture=mock.Mock()
         plugin.onUnload();plugin.native_capture.close.assert_called_once();plugin.bridge.uninstall.assert_called_once()
         ast.parse(Path('plugins/hardlab_live.py').read_text(),feature_version=(3,5))
+
+    def test_replay_progress_covers_reconstruction_and_restores_canvas_coordinates(self):
+        plugin=object.__new__(hardlab_live.Plugin);plugin.session=True
+        plugin.config=NS(hud_visible=False)
+        plugin.native_capture=NS(delivery=None,player=NS(status=lambda:dict(state='preparing',progress=.4)))
+        plugin.refs=NS(windowW=1920,windowH=1080,canvasW_=[1366],canvasH_=[768],XDL_FillRect=mock.Mock())
+        plugin.txt=NS(screenCoords=False,draw=mock.Mock(side_effect=RuntimeError('draw failed')))
+        with mock.patch.object(hardlab_live,'lib',NS(BLENDMODE_BLEND=1)):plugin.onPresent()
+        plugin.refs.XDL_FillRect.assert_called_once_with(0,0,1920,1080,0xff0b141d,1)
+        self.assertIn('40%',plugin.txt.text)
+        self.assertEqual((plugin.refs.canvasW_[0],plugin.refs.canvasH_[0],plugin.txt.screenCoords),(1366,768,False))

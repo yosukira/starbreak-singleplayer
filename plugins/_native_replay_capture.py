@@ -46,6 +46,9 @@ ABI=(
     ('WorldClient::handleModifyInv','void',('void *',),'thiscall','inventory'),
     ('ModifyInv::ModifyInv','void',(),'thiscall','inventory-ctor'),
     ('ModifyInv::~ModifyInv','void',(),'thiscall','inventory-dtor'),
+    # ObjKey and the two doubles are forwarded as their original stack words.
+    ('SoundMixer::play','void',('const char *','int','unsigned int','unsigned int',
+        'unsigned int','unsigned int','unsigned int','unsigned int'),'thiscall','sound'),
 )
 
 
@@ -149,6 +152,7 @@ class ChunkDelivery:
         self.control_error=None
 
     def report_load(self,stage,loaded,total,error=None):
+        self.loading_status=(stage,loaded,total)
         now=time.monotonic()
         if error is None and loaded!=total and now-self.progress_at<.15:return
         self.progress_at=now
@@ -266,6 +270,19 @@ class NativeCapture:
         def observe(original,*args):
             if kind in ('inventory-ctor','inventory-dtor'):return original(*args)
             player=self.player
+            if kind=='sound':
+                cursor=self.tape.cursor
+                result=original(*args)
+                # Legacy tapes included the camera-dependent SoundMixer clock.
+                # A culled sound reaches this verified boundary but never calls
+                # NowMS. Retire its scalar only at the enclosing call's return.
+                if (player is not None and player.legacy_sound_clocks and self.driving
+                        and self.sound_clock_caller and self.tape.cursor==cursor
+                        and self.tape.stack and cursor+1<len(self.tape.ops)
+                        and self.tape.ops[cursor][0]=='clock'
+                        and self.tape.ops[cursor+1]==['return',self.tape.stack[-1]]):
+                    self.tape.take('clock')
+                return result
             if kind=='keyboard':
                 mapping=getattr(self,'keyboard_mask',None)
                 if player is not None and player.blocked() and mapping is not None:

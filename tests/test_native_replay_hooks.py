@@ -29,6 +29,9 @@ def executable():
         offset=512+index*32
         image[offset:offset+16]=b'\x55\x89\xe5\x83\xec\x48\xb8'+bytes([index])+b'\x12\x34\x56\x78\x90\xc9\xc3\x90'
         symbols[name]=0x401000+index*32
+    call=symbols['SoundMixer::play']+0x79
+    offset=512+call-0x401000
+    image[offset:offset+5]=b'\xe8'+struct.pack('<i',symbols['TimeUtil::NowMS']-call-5)
     return bytes(image),symbols
 
 
@@ -95,7 +98,7 @@ class NativeSymbolTests(unittest.TestCase):
     def test_native_hook_refuses_the_host_64_bit_abi_before_allocating(self):
         ffi=mock.Mock();ffi.sizeof.return_value=8
         with self.assertRaisesRegex(ValueError,'32-bit'):NativeHook(ffi,mock.Mock(),0x401000,b'12345678')
-        for bad in (-1,True,7):
+        for bad in (-1,True,9):
             with self.assertRaises(ValueError):thiscall_original(0x401000,bad)
 
     def test_recording_callback_failures_pass_through_exactly_once(self):
@@ -173,7 +176,7 @@ class NativeAdapterCPUTests(unittest.TestCase):
         return bytes(code)
 
     def test_thiscall_callback_preserves_arguments_return_registers_and_callee_pop(self):
-        for count in range(7):
+        for count in range(9):
             with self.subTest(arguments=count):
                 arguments=list(range(100,100+count))
                 uc,stack=self.machine(thiscall_callback(0x101000,count),arguments)
@@ -195,7 +198,7 @@ class NativeAdapterCPUTests(unittest.TestCase):
         self.assert_preserved(uc)
 
     def test_callback_can_call_original_once_with_both_call_conventions_balanced(self):
-        for count in range(7):
+        for count in range(9):
             with self.subTest(arguments=count):
                 arguments=list(range(100,100+count))
                 uc,stack=self.machine(thiscall_callback(0x101000,count),arguments)

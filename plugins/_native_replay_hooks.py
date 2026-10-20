@@ -25,7 +25,7 @@ def uint32(value):
 
 
 def argument_count(value):
-    if type(value) is not int or not 0 <= value <= 6:
+    if type(value) is not int or not 0 <= value <= 8:
         raise ValueError('Unsupported native argument count')
     return value
 

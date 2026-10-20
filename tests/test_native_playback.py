@@ -85,6 +85,42 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_culled_legacy_input_sound_retires_only_its_verified_clock_tail(self):
+        def sound(engine,audible):
+            engine.hooks['clock'].caller=0
+            hook=engine.hooks['input'];original=hook.original
+            def press(*args):
+                result=original(*args)
+                engine.call('sound')
+                return result
+            hook.original=press
+            def play():
+                if audible:
+                    engine.hooks['clock'].caller=123
+                    try:engine.call('clock')
+                    finally:engine.hooks['clock'].caller=0
+            engine.hooks['sound'].original=play
+        source=Engine();sound(source,True);document=source.record(8)
+        for audible in (False,True):
+            target=Engine();sound(target,audible);target.capture.sound_clock_caller=123
+            player=target.play(document);target.mono=2;player.update()
+            self.assertEqual(player.phase,'ended');self.assertIsNone(target.capture.tape.error)
+            self.assertEqual(target.capture.state(),source.capture.state())
+        target=Engine();player=target.play(document);target.mono=2;player.update()
+        self.assertEqual(player.phase,'failed','A missing unclassified clock must still fail')
+
+    def test_playback_does_not_catch_up_a_stalled_window(self):
+        document=Engine().record(200);target=Engine();player=target.play(document)
+        target.mono=.1;player.update();before=player.seconds
+        target.mono=8;player.update()
+        self.assertLess(player.seconds-before,.1)
+        target.now=999999
+        self.assertEqual(target.call('clock'),999999,'Outer window scheduling keeps its real clock')
+        player.control(dict(action='pause',paused=True));before=player.seconds
+        target.mono=10;player.update();self.assertEqual(player.seconds,before)
+        player.control(dict(action='pause',paused=False));target.mono+=.1;player.update()
+        self.assertGreater(player.seconds,before)
+
     def test_verified_audio_clock_count_can_vary_without_relaxing_game_clocks(self):
         def audio(engine,count,verified=True):
             engine.capture.sound_clock_caller=123 if verified else None

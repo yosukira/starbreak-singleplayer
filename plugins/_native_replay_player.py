@@ -69,6 +69,7 @@ class NativePlayer:
         self.capture.engine_elapsed=0;self.world_created=False
         self.cursor=0;self.seconds=0.;self.phase='playing' if self.preloaded else 'preparing';self.requested=False
         self.anchor=self.clock();self.anchor_seconds=0.
+        self.last_update=None
         self.priming=bool(self.document.get('view'))
 
     def read_body(self):
@@ -117,6 +118,10 @@ class NativePlayer:
             return
         if self.phase!='playing' or self.capture.tape.error:return
         now=self.clock()
+        if self.last_update is not None and not self.priming and not self.seeking:
+            gap=now-self.last_update
+            if gap>.5:self.anchor+=gap-.05
+        self.last_update=now
         if self.paused and not self.seeking and not self.priming:
             self.anchor=now;self.anchor_seconds=self.seconds;return
         target=self.target if self.seeking else self.anchor_seconds+(now-self.anchor)*self.speed
@@ -179,6 +184,7 @@ class NativePlayer:
         elif action=='stop':self.phase='stopped'
         else:raise ValueError('Unsupported native replay control')
         self.anchor=self.clock();self.anchor_seconds=self.seconds
+        self.last_update=self.anchor
 
     def checkpoint(self):
         if not self.can_takeover():raise ValueError('Native player has not reached a verified takeover boundary')
