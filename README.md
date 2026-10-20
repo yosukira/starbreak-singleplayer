@@ -272,3 +272,7 @@ The **Guide** tab to the left of Battle provides a nine-part tutorial for setup,
 Windows Equipment & settings and Battle records share one window. Opening the editor or history no longer downloads the browser game engine; browser replay playback loads it when needed. If the window does not appear, run `tools/open-editor.cmd` or `start.cmd --editor`. Startup details are in `userdata/desktop-records/window-status.json` and the latest session’s `gear-editor.log`. The equipment page also shows the native game feedback connection.
 
 **Record replays** is enabled by default under Equipment & settings → Battle setup. Turning it off applies to new practice battles, preserves existing replays and history, and does not prevent playing or taking over an existing replay. Taking over saves a separate branch. Each edition remembers its local preference.
+
+Windows 客户端也提供“使用说明”标签，涵盖安装、配装、游戏按键、原生录像与接管、分享及本地数据备份。说明页与编辑器共用语言选择；SBRE Discord 对所有语言显示，QQ 群 684496559 仅在中文版显示。客户端与网页版共用最新分享、热门榜、分享码和评论，本地战绩各自保存。
+
+The Windows client also includes a Guide tab covering installation, equipment, native controls, replay/takeover, sharing and backups. It follows the editor language. SBRE Discord is available in both languages; the QQ group appears in Chinese. Desktop and web share the same latest/popular lists, sharing codes and comments; local history remains separate.

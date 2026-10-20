@@ -25,7 +25,7 @@
         <p>“装备与设置 → 战斗配置”中的“录制录像”默认开启；关闭后新开的练习局不录制，已有录像和战绩保留。接管录像仍会保存新分支。</p>
         <ol><li><strong>回放：</strong>可暂停 / 继续，选择 0.25、0.5、1、2、4 倍速，或拖动时间条跳转。向后跳转需要从开局重建状态，复杂场景可能需要等待进度。</li><li><strong>接管：</strong>角色存活、状态校验通过且不在换房交接时，可点“接管”，也可按一个游戏实际接受的操作键。单纯点击鼠标不会自动接管。</li><li><strong>继续练习：</strong>接管后由你控制当前战场，另存一场战绩与录像，原录像保留。切到说明或战绩会暂停正在播放的录像；返回后可点“继续”。</li></ol>
         <p class="guide-note">“接管”置灰时，先等待加载或换房完成，并确认角色仍存活。兼容版本可尝试回放；状态不一致会停止，未经校验的版本不能接管。桌面和网页可以导入同一个 .sbreplay 文件。原生录像可在网页播放、校验后接管；接管录像也可返回客户端。旧录像缺少开局消息时需重新录制。</p>`},
-      {id:'sharing',title:'分享码、最新与热门',intro:'分享只在你主动操作时发生；浏览别人的详情不等于导入。',body:()=>`
+      {id:'sharing',title:'分享码、最新与热门',intro:'客户端与网页版共用分享服务：最新分享、热门榜、分享码和评论互通。本地战绩各自保存；浏览别人的详情不等于导入。',body:()=>`
         <div class="guide-columns"><div><h3>分享自己的一场</h3><ol><li>进入详情，点击“生成分享码”。</li><li>按需填写英文 ID / 昵称；不填显示 Unknown。填写后，下次会自动带入。</li><li>确认生成，等待上传及服务器处理完成，复制分享码发给朋友。</li></ol><p>只有这一场的录像、开局配装与参数被上传；其他本地记录不会一起上传。昵称会随分享公开。</p></div>
         <div><h3>导入与发现</h3><ul><li>点击“输入分享码”，粘贴代码并等待下载、校验和导入完成。</li><li>也可导入 .sbreplay 文件；批量导出的 ZIP 用于搬运多场战绩。</li><li>别人分享的录像显示原分享码，不会再次上传成新的分享。</li><li>“最新分享”按分享时间排序；“近 7 天热门”按成功导入数排序，同一浏览器重复导入同一录像不重复计数。</li><li>两个分享榜都可筛选地图和职业；选 GY / EGY 后，可继续筛选前、上、下炮台数量，留空表示不限。</li></ul></div></div>`},
       {id:'comments',title:'分享录像的评论',intro:'有分享码的录像，使用同一个公开评论区。',body:()=>`
@@ -64,7 +64,7 @@
         <p>Record replays is on by default in Equipment & settings → Battle setup. Turning it off applies to new practice battles and keeps existing replays and history. Taking over a replay still saves a new branch.</p>
         <ol><li><strong>Watch:</strong> pause/resume, choose 0.25, 0.5, 1, 2 or 4 speed, or drag the timeline. Seeking backwards rebuilds the state from the start; complex scenes may take a moment.</li><li><strong>Take over:</strong> when the character is alive, state checks pass and no room handoff is underway, select Take over or press a gameplay key accepted by the game. A mouse click alone does not trigger automatic takeover.</li><li><strong>Continue practicing:</strong> control the current battle and save it as a separate run. The source replay stays unchanged. Switching to Guide or Battle records pauses replay playback; use Resume when you return.</li></ol>
         <p class="guide-note">If Take over is disabled, wait for loading or room transfer to finish and check that the character is alive. Compatible versions may attempt playback; a state mismatch stops it, and unverified versions cannot take over. Desktop and browser accept the same .sbreplay file. Native recordings can play and be taken over in the browser after verification; the branch can return to the native client. Older recordings without bootstrap messages need to be recorded again.</p>`},
-      {id:'sharing',title:'Codes & shared replays',intro:'Sharing is explicit. Viewing someone’s details does not import their replay.',body:()=>`
+      {id:'sharing',title:'Codes & shared replays',intro:'Desktop and web share the same latest/popular lists, sharing codes and comments. Local history stays on each device. Viewing details does not import a replay.',body:()=>`
         <div class="guide-columns"><div><h3>Share one of your battles</h3><ol><li>Open its details and select Create sharing code.</li><li>Optionally enter an English ID/nickname; blank displays Unknown. Your browser remembers it for next time.</li><li>Confirm, wait for upload and processing to finish, then copy the code to a friend.</li></ol><p>Only this replay and its starting setup/parameters are uploaded. Other local records stay on your device. Your chosen nickname is public with the replay.</p></div>
         <div><h3>Import and discover</h3><ul><li>Use Enter sharing code, paste a code and wait for downloading, validation and import.</li><li>You can also import a .sbreplay file. Batch ZIP exports move multiple battles together.</li><li>Someone else’s shared replay keeps its original sharing code instead of being uploaded as a new share.</li><li>Latest shares sorts by publication time. Popular this week ranks successful imports over seven days; repeated imports of the same replay in one browser do not add more counts.</li><li>Both lists support map and class filters. For GY / EGY, add exact front/upper/lower turret counts; leave them blank for any count.</li></ul></div></div>`},
       {id:'comments',title:'Comments on shared replays',intro:'A sharing code has one public comment thread.',body:()=>`
@@ -81,6 +81,72 @@
         <details><summary>Pointer, shortcut or view behavior seems wrong</summary><p>Click the game to restore focus and check both the original game’s Controls and the practice Keys & zoom settings. Reset browser page zoom to 100% and check again. If resizing still leaves a problem, refresh after the current battle.</p></details></div>`}
     ]}
   };
+  const desktopContent={
+    zh:{
+      subtitle:'Windows 客户端：配装、练习、录像与分享。',
+      intro:'战斗在 StarBreak 游戏客户端中运行；装备编辑、使用说明和战斗记录共用这个窗口。配装与战绩保存在当前安装目录，分享和评论需要联网。',
+      steps:[['启动客户端','先确认 SBPE 能正常启动 StarBreak。将完整解压的 starbreak-singleplayer 文件夹放入 SBPE 目录，再双击 start.cmd。'],['配置并开始','在“装备与设置”选择地图、职业和配装，点击“保存并开始”。正常练习时会在游戏内重新开局，不需要关闭再启动游戏。'],['查看与复盘','打开“战斗记录”查看详情和录像；原生录像在游戏窗口播放，符合接管条件时按游戏操作键继续练习。']],
+      sections:{
+        keys:{title:'游戏按键与练习快捷键',intro:'在“装备与设置 → 按键设置”中修改练习快捷键；下表是默认值。',body:()=>`
+          <div class="guide-table-wrap"><table class="guide-table"><thead><tr><th>功能</th><th>默认按键</th><th>使用方式</th></tr></thead><tbody>
+          <tr><td>显示 / 隐藏装备与战绩窗口</td><td><kbd>\u0060</kbd> 或 <kbd>F8</kbd></td><td>回到游戏窗口按键；\u0060 是数字 1 左侧的键。</td></tr>
+          <tr><td>重开当前局</td><td><kbd>R</kbd></td><td>默认长按 2 秒。</td></tr>
+          <tr><td>切换 WF / DW / FAB / IC</td><td><kbd>7</kbd> / <kbd>8</kbd> / <kbd>9</kbd> / <kbd>0</kbd></td><td>默认长按 2 秒，在游戏内切换职业并重新开局。</td></tr>
+          <tr><td>互动 / 开 Gen</td><td>Auto</td><td>跟随游戏本体互动绑定，支持键盘和手柄；也可指定练习器的键盘互动键。</td></tr>
+          </tbody></table></div><p>长按时间可改为 0.5–5 秒。移动、跳跃、攻击、机动和手柄绑定在原游戏的 Controls 中设置。练习快捷键与原游戏绑定分别保存，按键操作时请让游戏窗口获得焦点。</p>`},
+        replay:{intro:'在战绩详情点击“回放本场”；Windows 原生录像会在原游戏窗口播放。',body:()=>`
+          <p>“战斗配置 → 录制录像”默认开启。关闭后新开的练习不录制，已有战绩与录像保留；接管仍会保存新分支。修改录制开关后开始新局时会重新初始化游戏。</p>
+          <ol><li><strong>播放：</strong>打开原生录像后回到游戏窗口观看；需要暂停、倍速、跳转或从头播放时，回到装备与战绩窗口的“战斗”页操作播放栏。原生游戏底部目前没有单独的进度条。</li><li><strong>接管：</strong>角色存活且校验通过后，在游戏窗口按一个实际生效的游戏操作键，或在播放栏点击“接管”。鼠标点击本身不会自动接管。</li><li><strong>继续练习：</strong>接管会另存战绩与录像，原记录保留。结束复盘后可从“装备与设置”保存并开始新局；从回放返回全新练习会重新初始化游戏。</li></ol>
+          <p class="guide-note">客户端与网页可导入同一个 .sbreplay 文件；原生录像在游戏客户端播放，导入的网页录像使用窗口内的网页引擎播放。能否回放和接管取决于录像版本及状态校验。统计记录可能没有录像；缺少开局数据或版本不兼容的旧录像需重新录制。</p>`},
+        storage:{intro:'本地数据跟随这份安装保存，换一份目录不会自动同步。',body:()=>`
+          <div class="guide-columns"><div><h3>保存与备份</h3><ul><li>自己的配装、地图参数、练习按键、战绩、录像和日志保存在 userdata 文件夹中。重新解压完整包时请保留这份文件夹。</li><li>配装使用编辑器的“导出 / 导入”；录像使用战斗记录里的导出 / 导入。也可在关闭模拟器后备份整个 userdata。</li><li>本地练习不依赖网页服务；首次准备编辑窗口组件、检查更新、分享、导入分享码和评论需要网络。</li></ul></div>
+          <div><h3>语言与更新</h3><ul><li>使用说明和编辑器共用语言选择；中文版显示 Discord 与 QQ 群，英文版显示 Discord。</li><li>“简体中文（包含词缀）”会翻译词缀；普通“简体中文”保留词缀原文。</li><li>编辑器中可以查看版本并“检查更新”。退出游戏及启动器后再次运行 start.cmd 应用更新；进行中的对局不会被强制更新。</li><li>更新后日常切图、切职业和修改配装使用游戏内重开，不需要每次退出游戏。</li></ul></div></div>`},
+        faq:{intro:'先看窗口连接提示和启动器输出，再检查对应项目。',body:()=>`
+          <div class="guide-faq"><details><summary>装备编辑器没有出现</summary><p>先回到游戏按 \u0060 或 F8。仍未显示时，双击 tools/open-editor.cmd 单独打开窗口。启动状态在 userdata/desktop-records/window-status.json，详细日志在 userdata/logs 下最近一场的 gear-editor.log。</p></details>
+          <details><summary>提示找不到客户端，或玩家包文件缺失</summary><p>先确认同一份 SBPE 本身能启动 StarBreak，config.ini 指向正确的游戏目录。完整解压 Windows 玩家包并将整个项目文件夹放在 SBPE 内；不要只复制 start.cmd，也不要用 GitHub 的 Source code 包代替玩家包。</p></details>
+          <details><summary>怪物不受伤、炮台不索敌或 Gen 无反应</summary><p>检查“装备与设置”顶部的游戏反馈状态。若未连接或提示组件异常，关闭游戏后从 start.cmd 重新启动，并检查本次日志。反馈正常时，确认发生器已进入可互动阶段；检查游戏 Controls 的互动键或手柄绑定。</p></details>
+          <details><summary>回放不能接管</summary><p>先让游戏窗口获得焦点，确认角色存活，等待资源加载或换房交接完成。状态不一致或版本不兼容时会停止回放并禁用接管；缺少必要数据的旧录像需要重新录制。</p></details>
+          <details><summary>配置或战绩不见了，分享失败</summary><p>确认启动的是原来的安装目录，userdata 仍在；配装与录像分别从对应入口导入备份。分享或分享码导入失败时检查网络与提示，等待传输完成后再试；失败不会删除原本的本地录像。</p></details></div>`}
+      }
+    },
+    en:{
+      subtitle:'Windows client: equipment, practice, replays and sharing.',
+      intro:'Battles run in the StarBreak game client. Equipment, this guide and battle records share this window. Loadouts and history belong to this installation; sharing and comments need a connection.',
+      steps:[['Launch the client','First confirm that SBPE can launch StarBreak. Extract the complete player package into a starbreak-singleplayer folder inside SBPE, then run start.cmd.'],['Configure and start','Choose a map, class and equipment in Equipment & settings, then select Save and start. Normal practice changes reload the battle in-game without closing the game process.'],['Review your practice','Open Battle records for details and replays. Native recordings play in the game window; press an accepted gameplay key when takeover is ready to continue practicing.']],
+      sections:{
+        keys:{title:'Game controls & practice shortcuts',intro:'Change practice shortcuts in Equipment & settings → Keys. These are the defaults.',body:()=>`
+          <div class="guide-table-wrap"><table class="guide-table"><thead><tr><th>Action</th><th>Default</th><th>How to use</th></tr></thead><tbody>
+          <tr><td>Show / hide equipment and records</td><td><kbd>\u0060</kbd> or <kbd>F8</kbd></td><td>Press in the game window; \u0060 is the key beside 1.</td></tr>
+          <tr><td>Restart the current practice</td><td><kbd>R</kbd></td><td>Hold for 2 seconds.</td></tr>
+          <tr><td>Switch WF / DW / FAB / IC</td><td><kbd>7</kbd> / <kbd>8</kbd> / <kbd>9</kbd> / <kbd>0</kbd></td><td>Hold for 2 seconds to restart in-game as that class.</td></tr>
+          <tr><td>Interact / open a Gen</td><td>Auto</td><td>Follow the original keyboard/controller interaction binding, or assign a practice keyboard key.</td></tr>
+          </tbody></table></div><p>The hold duration is adjustable from 0.5 to 5 seconds. Set movement, jump, attacks, mobility and controller bindings in the original game's Controls. Practice shortcuts are saved separately. Focus the game window before using gameplay keys.</p>`},
+        replay:{intro:'Select Watch replay in battle details. Windows native recordings play in the original game window.',body:()=>`
+          <p>Record replays is enabled by default under Battle setup. Disabling it stops recording new practices and preserves existing history and recordings. Takeover still saves a new branch. Starting a battle after changing this switch reinitializes the game.</p>
+          <ol><li><strong>Watch:</strong> return to the game window for native playback. Use the Battle tab in this equipment/records window for pause, speed, seeking or replaying from the beginning. There is currently no separate timeline at the bottom of the native game.</li><li><strong>Take over:</strong> with a living character and a verified state, press an accepted gameplay key in the game window, or select Take over on the playback bar. A mouse click alone does not take over.</li><li><strong>Continue practicing:</strong> takeover saves a separate battle and recording, preserving the source. Use Equipment & settings → Save and start for a fresh practice after replay; this reinitializes the game.</li></ol>
+          <p class="guide-note">Desktop and web import the same .sbreplay files. Native recordings play in the game client; imported browser recordings use the embedded browser engine. Playback and takeover require compatible versions and state checks. Some statistics have no recording. Older recordings missing bootstrap data must be recorded again.</p>`},
+        storage:{intro:'Local data belongs to this installation and does not automatically follow a different folder.',body:()=>`
+          <div class="guide-columns"><div><h3>Saving and backups</h3><ul><li>Your loadouts, map parameters, practice keys, history, recordings and logs are stored in userdata. Keep this folder when extracting a complete replacement package.</li><li>Use the editor's Export / Import for equipment and Battle records export / import for recordings. You can also close the simulator and back up the entire userdata folder.</li><li>Local practice does not require the website. First-time editor component preparation, update checks, sharing, sharing codes and comments require a connection.</li></ul></div>
+          <div><h3>Language and updates</h3><ul><li>This guide and the editor use the same language preference. Chinese shows Discord and the QQ group; English shows Discord.</li><li>简体中文（包含词缀） also translates item modifiers; the standard Chinese option retains modifier text in English.</li><li>Use Check for updates in the editor. Close the game and launcher, then run start.cmd again to apply updates. An active battle is not forcibly updated.</li><li>Normal map, class and equipment changes restart the practice in-game, without relaunching the game process.</li></ul></div></div>`},
+        faq:{intro:'Check the connection notice and launcher output first.',body:()=>`
+          <div class="guide-faq"><details><summary>The equipment window did not appear</summary><p>Return to the game and press \u0060 or F8. If it remains hidden, run tools/open-editor.cmd to open it separately. Startup status is in userdata/desktop-records/window-status.json; details are in the latest userdata/logs session's gear-editor.log.</p></details>
+          <details><summary>Client not found or player files missing</summary><p>Confirm that this SBPE installation can launch StarBreak and its config.ini points to the correct game directory. Extract the complete Windows player package inside SBPE. Copying only start.cmd, or using GitHub's Source code package, does not provide the player runtime.</p></details>
+          <details><summary>Enemies ignore damage, turrets do not aim, or a Gen will not open</summary><p>Check game feedback in Equipment & settings. If disconnected or unavailable, close the game, restart through start.cmd and inspect this session's logs. With healthy feedback, wait for the generator's interaction stage and check keyboard/controller bindings in the game's Controls.</p></details>
+          <details><summary>Replay takeover is unavailable</summary><p>Focus the game window, confirm the character is alive and wait for resources or room handoff. State or version mismatches stop playback and disable takeover. Older recordings missing required data must be recorded again.</p></details>
+          <details><summary>Missing local data or failed sharing</summary><p>Check that you launched the original installation and retained its userdata folder. Import equipment and replay backups through their respective entries. For sharing/code failures, check the connection and wait for the transfer; failures do not delete your original local replay.</p></details></div>`}
+      }
+    }
+  };
+  function guideContent(language,desktop=false){
+    const key=language.startsWith('zh')?'zh':'en',base=content[key];
+    if(!desktop)return base;
+    const copy=desktopContent[key];
+    return {...base,...copy,sections:base.sections.map(section=>{
+      const result={...section,...copy.sections[section.id]};
+      if(['sharing','comments'].includes(section.id))result.body=()=>section.body().replaceAll('浏览器','客户端').replaceAll('browser','installation');
+      return result;
+    })};
+  }
   class BattleGuide{
     constructor(root,language,actions={}){
       this.root=root;this.language=language;this.actions=actions;
@@ -88,13 +154,13 @@
       root.onchange=event=>{if(event.target?.matches?.('[data-guide-language]'))this.actions.language?.(event.target.value);};
     }
     render(){
-      const language=this.language(),copy=content[language.startsWith('zh')?'zh':'en'];
+      const language=this.language(),copy=guideContent(language,this.actions.desktop);
       this.root.setAttribute('aria-label',copy.title);
       this.root.innerHTML=`<div class="guide-heading"><div><span class="guide-eyebrow">STARBREAK / FIELD MANUAL</span><h1>${copy.title}</h1><p class="guide-subtitle">${copy.subtitle}</p><p>${copy.intro}</p>${copy.community}</div><label class="guide-language">${copy.language}<select data-guide-language aria-label="${copy.language}">${[['zh','简体中文'],['zh-affixes','简体中文（包含词缀）'],['en','English']].map(([value,label])=>`<option value="${value}" ${value===language?'selected':''}>${label}</option>`).join('')}</select></label></div>
         <div class="guide-layout"><aside class="guide-contents"><h2>${copy.contents}</h2><nav aria-label="${copy.contents}">${copy.sections.map((section,i)=>`<a href="#guide-${section.id}"><span>${String(i+1).padStart(2,'0')}</span>${section.title}</a>`).join('')}</nav></aside>
         <div class="guide-chapters">${copy.sections.map((section,i)=>`<section id="guide-${section.id}" class="guide-chapter" aria-labelledby="guide-title-${section.id}"><div class="guide-chapter-title"><span>${String(i+1).padStart(2,'0')}</span><h2 id="guide-title-${section.id}">${section.title}</h2></div><p class="guide-lead">${section.intro}</p>${section.id==='start'?`<ol class="guide-steps">${copy.steps.map(([title,description])=>`<li><h3>${title}</h3><p>${description}</p></li>`).join('')}</ol><div class="guide-actions"><button class="primary" data-guide-action="configure">${copy.configure}</button><button class="secondary" data-guide-action="records">${copy.records}</button></div>`:section.body()}</section>`).join('')}</div></div>`;
     }
   }
-  if(typeof module!=='undefined')module.exports={content,BattleGuide};
+  if(typeof module!=='undefined')module.exports={content,BattleGuide,guideContent};
   else globalThis.BattleGuide=BattleGuide;
 })();

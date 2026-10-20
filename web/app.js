@@ -4,7 +4,8 @@
   if(desktop){
     document.body.classList.add('desktop-workspace');
     document.querySelector('.main-tabs').prepend($('tab-equipment'));
-    $('tab-equipment').hidden=false;$('tab-guide').hidden=true;$('tab-battle').hidden=true;$('open-editor').hidden=true;
+    $('tab-equipment').hidden=false;$('tab-guide').hidden=false;$('tab-battle').hidden=true;$('open-editor').hidden=true;
+    $('editor-keys-tab').dataset.en='Keys';$('editor-keys-tab').dataset.zh='按键设置';
     $('tab-equipment').onclick=()=>setTab('equipment');
     $('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
   }
@@ -76,7 +77,7 @@
   const editor=new WebEquipment(()=>language,()=>sync());
   const records=new BattleRecords($('records-page'),()=>language,()=>editor.data?.items||[],startReplay,()=>catalogue);
   const guide=new BattleGuide($('guide-page'),()=>language,{
-    configure:()=>$('open-editor').click(),records:()=>setTab(true),battle:()=>setTab(false),language:setLanguage
+    desktop,configure:()=>desktop?setTab('equipment'):$('open-editor').click(),records:()=>setTab(true),battle:()=>setTab(false),language:setLanguage
   });
   function playbackControl(action,extra={}){
     if(replayRecord?.replay?.engine==='native'){
@@ -345,5 +346,5 @@
     finally{if(loading?.phase==='environment')finishLoading();setBusy(false);}
   }
   if(desktop)$('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
-  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:'equipment');else if(view==='records'||view==='guide')setTab(view==='records'?true:'guide');});
+  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:view==='guide'?'guide':'equipment');else if(view==='records'||view==='guide')setTab(view==='records'?true:'guide');});
 })();
