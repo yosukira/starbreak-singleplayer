@@ -146,7 +146,7 @@ class WebEquipment {
     else {clearTimeout(this.draftTimer);await this.post('/api/draft',{discard:true,revision:this.profile.revision});localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;}
   }
   async save(){clearTimeout(this.draftTimer);if(this.dirty){this.profile=await this.post('/api/editor',this.profile);this.dirty=false;localStorage.removeItem('starbreak-web-draft');this.changed();}}
-  selectClass(shell){this.shell=shell;this.remember();this.render();}
+  selectClass(shell){this.shell=Number(shell);this.$('item-search').value='';this.remember();this.render();}
   setMap(map){this.map=map;this.profile.settings.map=map;this.touch();this.settings();}
   replaceItem(type,slot=this.slot){
     if(this.row().items_.find(item=>item.slotpos_===slot)?.type_===type)return;
@@ -169,11 +169,16 @@ class WebEquipment {
   itemOptions(){
     const current=this.current(),query=this.$('item-search').value.toLowerCase().trim(),all=this.$('all-classes').checked;
     const values=[...this.catalogue.values()].filter(item=>(this.slot>=3840||item.slot===this.slot)&&
-      (item.type===current?.type_||((!query||(item.type+' '+item.name).toLowerCase().includes(query))&&(all||!item.usableby.length||item.usableby.includes(this.shell)))));
-    values.sort(this.itemSort==='name'?(a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),'en')||a.type-b.type:(a,b)=>a.type-b.type);
+      (!query||(item.type+' '+item.name).toLowerCase().includes(query))&&(all||!item.usableby.length||item.usableby.includes(this.shell)));
+    const compatible=item=>!item.usableby.length||item.usableby.includes(this.shell);
+    const order=this.itemSort==='name'?(a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),'en')||a.type-b.type:(a,b)=>a.type-b.type;
+    values.sort((a,b)=>Number(!compatible(a))-Number(!compatible(b))||order(a,b));
     this.$('sort-items').textContent=this.itemSort==='name'?this.t('装备排序：首字母','Equipment sort: A–Z'):this.t('装备排序：ID','Equipment sort: ID');
     const options=values.map(item=>new Option(`${item.name} · #${item.type}`,item.type));if(this.slot!==256)options.unshift(new Option(this.t('— 空槽位 —','— Empty slot —'),0));
-    this.$('editor-item').replaceChildren(...options);this.$('editor-item').value=current?.type_||0;
+    const visible=values.some(item=>item.type===current?.type_);
+    if(!visible&&current){const prompt=new Option(values.length?this.t('— 请选择匹配装备 —','— Choose a matching item —'):this.t('— 没有匹配装备 —','— No matching items —'),'');prompt.disabled=true;options.unshift(prompt);}
+    this.$('editor-item').replaceChildren(...options);this.$('editor-item').value=visible?current.type_:current?'':0;
+    const result=this.$('item-results');if(result)result.textContent=this.t(`匹配 ${values.length} 件；当前职业装备优先。`,`Matching items: ${values.length}. Current class first.`);
     const base=this.catalogue.get(current?.type_)?.base||[];this.$('base-stats').textContent=this.t('基础属性：','Base stats: ')+(base.map(boost=>this.statName(boost.stat_)+' '+boost.val_).join(' · ')||'—');
   }
   statName(id){return this.data.stats.find(stat=>stat.id===id)?.[this.language()==='zh-affixes'?'zh':'en']||'#'+id;}

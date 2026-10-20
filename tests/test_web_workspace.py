@@ -9,6 +9,18 @@ from tools.web_workspace import Workspace
 
 
 class WorkspaceTests(unittest.TestCase):
+    def test_editor_lists_equipment_only_and_keeps_all_captured_types(self):
+        items={item['type']:item for item in self.workspace.editor()['items']}
+        expected={209,311,217,312,5,195,197,47,191,196,277,150,187,46,200,194,111,198,105,188,16}
+        self.assertTrue(expected.issubset(items))
+        self.assertTrue({14,55,247,248,249}.issubset(items))
+        self.assertTrue(all(item['slot'] in (256,512,768,1024,1280,1536) for item in items.values()))
+        from localserver.equipment import candidate_items
+        candidates=candidate_items(self.workspace.catalogue,1,3840)
+        self.assertEqual(set(items),{item['type'] for item in candidates})
+        compatible=[not item['usableby'] or 1 in item['usableby'] for item in candidates]
+        self.assertEqual(compatible,sorted(compatible,reverse=True))
+
     def test_large_modifier_list_preserves_order_and_duplicates_in_saved_and_materialized_profile(self):
         document=self.workspace.read()
         expected=[dict(stat_=9,val_=i-75) for i in range(150)]

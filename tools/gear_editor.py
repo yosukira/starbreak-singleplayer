@@ -967,13 +967,15 @@ class GearEditor(object):
     def _refresh_item_options(self, _event=None):
         query = self.item_search_var.get().strip().casefold()
         def visible(item):
-            return item['type'] == self.item_type or (
+            return (
                 (not query or query in (str(item['type'])+' '+item.get('name','')).casefold())
-                and (self.all_classes_var.get() or self.slotpos >= 3840
+                and (self.all_classes_var.get()
                      or not item.get('usableby') or self.char_type in item['usableby']))
         values = [item for item in candidate_items(self.catalogue, self.char_type, self.slotpos) if visible(item)]
-        values.sort(key=(lambda item:(item.get('name','').casefold(), int(item['type'])))
-                    if self.item_sort == 'name' else (lambda item:int(item['type'])))
+        def priority(item):
+            compatible = not item.get('usableby') or self.char_type in item['usableby']
+            return (not compatible, item.get('name','').casefold() if self.item_sort == 'name' else '', int(item['type']))
+        values.sort(key=priority)
         self.item_box['values'] = ['{0}  {1}'.format(item['type'],item['name']) for item in values]
 
     def toggle_item_sort(self):

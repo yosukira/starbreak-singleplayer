@@ -78,6 +78,8 @@ def candidate_items(catalogue, char_type, slotpos):
         return cached
     result = []
     for item in catalogue.values():
+        if item.get('slot') not in (256, 512, 768, 1024, 1280, 1536):
+            continue
         if int(slotpos) < 3840 and item.get('slot') != int(slotpos):
             continue
         result.append(item)

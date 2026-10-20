@@ -257,4 +257,5 @@ class Workspace:
             slots=[dict(id=slot, zh=name, en=i18n.translate(name, 'en')) for slot, name in equipment.SLOTS],
             stats=[dict(id=stat, en=name, zh=i18n.STAT_ZH.get(stat,name)) for stat, name in equipment.STAT_NAMES.items()],
             items=[dict(item, suggested=self.priority['exact'].get(item['type'], []),
-                        defaults=self.priority['defaults'].get(item['type'], {})) for item in self.catalogue.values()])
+                        defaults=self.priority['defaults'].get(item['type'], {})) for item in self.catalogue.values()
+                   if item.get('slot') in (256, 512, 768, 1024, 1280, 1536)])
