@@ -12,6 +12,29 @@ from tools.browser_runtime import BrowserRuntime,MemoryChannel,PENDING_MAPS
 
 
 class BrowserRuntimeTests(unittest.TestCase):
+    def test_recording_switch_defaults_on_and_applies_to_new_battles_only(self):
+        app=self.app()
+        self.assertTrue(app.workspace.preferences()['record_replays'])
+        app.start(dict(map='egy_hulk',shell=1))
+        original=app.attempt
+        app.clients.append(original,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))
+        prefs=app.workspace.preferences();prefs['record_replays']=False
+        app.workspace.save_preferences(prefs)
+        self.assertEqual(app.attempt,original,'Do not interrupt an existing recording')
+        app.start(dict(map='egy_hulk',shell=1))
+        self.assertIsNone(app.attempt)
+        self.assertIsNone(app.boot('')['replay'])
+        self.assertEqual(os.environ['SB_RECORD_REPLAY'],'0')
+        self.assertNotIn('SB_REPLAY_ATTEMPT',os.environ)
+        self.assertEqual(app.boot('?replay='+original)['replay']['mode'],'play')
+        app.stop()
+        reopened=BrowserRuntime(app.directory,app.manifest);self.addCleanup(reopened.stop)
+        self.assertFalse(reopened.workspace.preferences()['record_replays'])
+        prefs['record_replays']=True;app.workspace.save_preferences(prefs)
+        app.start(dict(map='egy_hulk',shell=1))
+        self.assertNotEqual(app.attempt,original)
+        self.assertEqual(os.environ['SB_RECORD_REPLAY'],'1')
+
     def app(self):
         directory=self.enterContext(tempfile.TemporaryDirectory())
         self.enterContext(mock.patch.dict(os.environ))

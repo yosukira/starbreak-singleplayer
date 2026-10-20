@@ -1,16 +1,25 @@
 /* All encounter computation and persistent files stay on the player's device. */
 import {loadPyodide} from '../pyodide/pyodide.mjs';
-let py, runtime, profileReady=false, flushing=false, dirty=false, lastTick=0;
+let py, runtime, profileReady=false, lastTick=0;
 const encode=value=>JSON.stringify(value);
 function run(source){return py.runPython(source);}
-let flushChain=Promise.resolve();
+let revision=1,saved=0,syncing=false,waiters=[];
+function changed(){revision++;}
+function synchronize(){
+  if(syncing||!waiters.length)return;
+  syncing=true;const snapshot=revision;
+  py.FS.syncfs(false,error=>{
+    syncing=false;
+    if(error){const pending=waiters;waiters=[];postMessage({type:'storage-error'});for(const waiter of pending)waiter.reject(error);return;}
+    saved=snapshot;
+    const pending=waiters;waiters=[];
+    for(const waiter of pending){if(waiter.revision<=saved)waiter.resolve();else waiters.push(waiter);}
+    synchronize();
+  });
+}
 function flush(){
-  if(!profileReady)return Promise.resolve();
-  dirty=false;
-  const task=flushChain.then(()=>new Promise((resolve,reject)=>py.FS.syncfs(false,error=>{
-    if(error){postMessage({type:'storage-error'});reject(error);}else resolve();
-  })));
-  flushChain=task.catch(()=>{});return task;
+  if(!profileReady||revision<=saved)return Promise.resolve();
+  return new Promise((resolve,reject)=>{waiters.push({revision,resolve,reject});synchronize();});
 }
 function events(){const rows=JSON.parse(run('json.dumps(runtime.drain())'));for(const row of rows)postMessage({type:'network',...row});}
 const nativeFetch=globalThis.fetch.bind(globalThis);
@@ -50,10 +59,10 @@ async function initialize(){
   lastTick=performance.now();
   setInterval(()=>{
     const now=performance.now(),dt=Math.min(.05,Math.max(1/60,(now-lastTick)/1000));lastTick=now;
-    try{py.globals.set('browser_dt',dt);run('runtime.tick(browser_dt)');events();dirty=true;}
+    try{py.globals.set('browser_dt',dt);if(run('runtime.tick(browser_dt)'))changed();events();}
     catch(error){postMessage({type:'runtime-error',message:String(error)});}
   },1000/60);
-  setInterval(()=>{if(dirty)void flush().catch(()=>{});},2000);
+  setInterval(()=>{if(revision>saved)void flush().catch(()=>{});},2000);
   return manifest;
 }
 let queue=Promise.resolve(),ready=initialize();
@@ -65,14 +74,18 @@ globalThis.onmessage=event=>{queue=queue.then(async()=>{
     py.globals.set('browser_request',encode(message));
     let result;
     if(message.kind==='ready')result={version:manifest.version,build:manifest.build};
-    else if(message.kind==='flush'){await flush();result={saved:true};}
+    else if(message.kind==='flush')result={saved:true};
     else {
       const source={api:"runtime.api(req['method'],req['url'],req.get('document'))",boot:"runtime.boot(req['query'])",open:"runtime.open(req['socket'],req['url'])",send:"runtime.send(req['socket'],req['url'],req['data'],req.get('binary',False))",close:"runtime.close_socket(req['socket'],req['url'])"}[message.kind];
       if(!source)throw Error('Unknown browser request');
       result=JSON.parse(run(`req=json.loads(browser_request)\njson.dumps(${source})`));
       events();
-      if(message.kind==='close'||message.kind==='api'&&message.method==='POST'&&message.url!=='/api/replay/warm')await flush();
     }
-    postMessage({id:message.id,result});
+    const persist=message.kind==='close'||message.kind==='api'&&message.method==='POST'&&message.url!=='/api/replay/warm';
+    if(persist)changed();
+    // Python requests remain ordered, but an IndexedDB write must not block
+    // gameplay socket input behind a recording upload. ACK only after durable.
+    if(persist||message.kind==='flush')void flush().then(()=>postMessage({id:message.id,result}),error=>postMessage({id:message.id,error:String(error.message||error)}));
+    else postMessage({id:message.id,result});
   }catch(error){postMessage({id:message.id,error:String(error.message||error)});}
 });};

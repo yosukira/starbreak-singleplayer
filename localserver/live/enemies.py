@@ -1438,6 +1438,15 @@ class EnemyManager(object):
 
         return next((u for u in self._unit_index.get(objid,())if not alive_only or u.alive),None)
 
+    def reap(self):
+        retained = [unit for unit in self.units if unit.alive or getattr(unit, 'emitted', False)]
+        if len(retained) != len(self.units):
+            self.units[:] = retained
+            # The lazy lookup otherwise keeps strong references to dead units
+            # until the next damage lookup, including while a room is idle.
+            self._unit_index = {}
+            self._unit_index_version = None
+
     def big_robot_counts(self):
         """(total, per portal) live+queued big robots, aircraft excluded."""
         total = 0
@@ -1612,6 +1621,9 @@ class EnemyManager(object):
         return self.queue_spawn(vid, portal, delay)
 
     def step(self, dt, player, events, players=None):
+        # Keep deaths until the normal render pass has emitted their destroy
+        # packet. Afterwards they must not accumulate across endless waves.
+        self.reap()
         from ..participants import active_players, ActiveTargetIndex
         candidates = active_players(players if players is not None else (player,))
         targets = ActiveTargetIndex(candidates)

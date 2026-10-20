@@ -72,11 +72,15 @@ class DesktopWorkspace(Workspace):
         if path.is_file():
             from tools.web_workspace import normalize_web_keys
             result['keys'] = normalize_web_keys(dict(result['keys'], **json.loads(path.read_text(encoding='utf-8-sig'))))
+        recording = self.source / 'recording.json'
+        if recording.is_file():
+            result['record_replays'] = json.loads(recording.read_text(encoding='utf-8-sig')).get('record_replays', True) is not False
         return result
 
     def save_preferences(self, value):
         result = super().save_preferences(value)
         atomic_json(self.source / 'keybindings.json', result['keys'])
+        atomic_json(self.source / 'recording.json', dict(record_replays=result['record_replays']))
         return result
 
     def start(self, document):

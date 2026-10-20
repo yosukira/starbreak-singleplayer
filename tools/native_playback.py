@@ -7,7 +7,7 @@ import threading
 import uuid
 
 from localserver.battle_records import RecordStore
-from tools.native_replay import NativeJournals,adapter_digest
+from tools.native_replay import NativeJournals,adapter_digest,compatible_adapter
 from tools.replay_host import WarmTakeovers
 
 
@@ -32,7 +32,7 @@ class NativePlayback:
                 document=self.clients.read(record['replay']['id'])
                 from tools.portable_replay import supported_runners
                 supported_runners(document)
-                if document['client']!=self.client or document['adapter']!=adapter_digest():
+                if document['client']!=self.client or not compatible_adapter(document['adapter']):
                     raise ValueError('Native replay requires the matching checked client and replay adapter')
                 if not any(row[0]=='message' and row[1]==10 for row in document['ops']):
                     raise ValueError('This older recording has no native world bootstrap; record a new battle')

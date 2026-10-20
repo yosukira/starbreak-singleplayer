@@ -109,9 +109,27 @@ class Plugin(PluginBase):
             try:
                 recorder=importlib.import_module('_native_replay_capture')
                 self.native_capture=recorder.create(ffi,lib,self.refs)
-                if self.native_capture is not None:self.bridge.feedback_sink=self.native_capture.divert_feedback
+                if self.native_capture is not None:
+                    self.bridge.feedback_sink=self.native_capture.divert_feedback
+                    self.native_capture.input_observer=self.bridge.observe_input
             except Exception as error:
                 LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)
+        self._report_health()
+
+    def _report_health(self):
+        path=os.environ.get('HARDLAB_BRIDGE_STATUS')
+        now=time.time()
+        if not path or now<getattr(self,'_next_health',0):return
+        self._next_health=now+1
+        try:
+            import json
+            value=dict(at=now,active=self.active,connected=self.bridge.link_ok(),sent=self.bridge.sent,
+                hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
+                replay_ready=self.native_capture is not None)
+            temporary=path+'.part'
+            with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
+            os.replace(temporary,path)
+        except (OSError,ValueError,AttributeError):pass
 
     def _enable(self):
         try:
@@ -174,9 +192,11 @@ class Plugin(PluginBase):
     def afterUpdate(self):
         try:self._after_update_live()
         finally:
-            if self.native_capture is not None:
-                try:self.native_capture.after()
-                except Exception as error:self.native_capture.tape.fail(error)
+            try:
+                if self.native_capture is not None:
+                    try:self.native_capture.after()
+                    except Exception as error:self.native_capture.tape.fail(error)
+            finally:self._report_health()
 
     def _replay_post_frame(self):
         if bool(self.config.keep_time_reserve):self.bridge.top_up_reserve()

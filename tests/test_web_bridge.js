@@ -63,6 +63,15 @@ assert.equal(sent.at(-1).keys.interact,true);assert.equal(sent.at(-1).keys.inter
 context.Module.webFrame(world);assert.equal(sent.at(-1).keys.interact_edge,false);
 set(world,668,0);listeners.keydown({code:'KeyL',preventDefault(){}});context.Module.webFrame(world);
 assert.equal(sent.at(-1).keys.interact,false,'Hard-coded L cannot override original bindings');
+// A press and release during backpressure must survive until the next send.
+currentSocket.bufferedAmount=60001;const beforePress=sent.length;
+set(world,668,128);context.Module.webFrame(world);
+set(world,668,0);context.Module.webFrame(world);
+assert.equal(sent.length,beforePress);
+currentSocket.bufferedAmount=0;context.Module.webFrame(world);
+assert.equal(sent.at(-1).keys.interact,false);
+assert.equal(sent.at(-1).keys.interact_edge,true,'Do not lose the panel press between feedback frames');
+context.Module.webFrame(world);assert.equal(sent.at(-1).keys.interact_edge,false,'Deliver the latched edge once');
 // A new room cannot inherit a destroyed previous player or old damage events.
 set(world,200,0xf1234567);set(world,672,0);const oldCount=sent.length;context.Module.webFrame(world);
 assert.equal(sent.length,oldCount,'Do not report previous-room death before new player arrives');

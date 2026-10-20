@@ -11,6 +11,8 @@ import math
 import re
 from pathlib import Path
 import sqlite3
+import sys
+import tempfile
 from contextlib import contextmanager
 import uuid
 import zlib
@@ -21,6 +23,7 @@ SCHEMA = 'starbreak-client-journal-v1'
 MAX_BYTES = 128 * 1024 * 1024
 MAX_CHUNK = 512 * 1024
 MAX_OPS = 4096
+CHUNK_FILE = b'SBJC1:'
 
 
 def encode(value):
@@ -90,13 +93,69 @@ def operation(row):
 class ClientJournals:
     schema = SCHEMA
     operation = staticmethod(operation)
-    def __init__(self, directory):
+    def __init__(self, directory, *, chunk_files=None):
         self.path = Path(directory) / 'client-journals.sqlite3'
+        self.chunk_files = sys.platform == 'emscripten' if chunk_files is None else chunk_files
+        self.chunk_directory = self.path.parent / 'client-chunks'
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.execute('PRAGMA journal_mode=WAL')
             db.execute('CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, header TEXT, sequence INTEGER, size INTEGER, complete INTEGER)')
             db.execute('CREATE TABLE IF NOT EXISTS chunks (id TEXT, sequence INTEGER, digest TEXT, data BLOB, PRIMARY KEY(id,sequence))')
+
+    def pack_chunk(self, data):
+        compressed = zlib.compress(data, 3)
+        if not self.chunk_files:
+            return compressed
+        digest = hashlib.sha256(data).hexdigest()
+        self.chunk_directory.mkdir(exist_ok=True)
+        target = self.chunk_directory / (digest + '.z')
+        if target.exists():
+            if zlib.decompress(target.read_bytes()) != data:
+                raise ValueError('Client replay chunk file is damaged')
+        else:
+            with tempfile.NamedTemporaryFile(dir=self.chunk_directory, delete=False) as output:
+                temporary = Path(output.name)
+                output.write(compressed)
+            try:
+                temporary.replace(target)
+            finally:
+                temporary.unlink(missing_ok=True)
+        return CHUNK_FILE + digest.encode('ascii')
+
+    def unpack_chunk(self, compressed):
+        if compressed.startswith(CHUNK_FILE):
+            digest = compressed[len(CHUNK_FILE):].decode('ascii')
+            if not re.fullmatch('[0-9a-f]{64}', digest):
+                raise ValueError('Invalid client replay chunk reference')
+            try: compressed = (self.chunk_directory / (digest + '.z')).read_bytes()
+            except OSError as error: raise ValueError('Client replay chunk file is missing') from error
+        return zlib.decompress(compressed)
+
+    def migrate_chunks(self):
+        """Move legacy browser payloads once; native stores remain unchanged.
+
+        IDBFS saves whole changed files. Immutable payloads keep subsequent
+        saves proportional to new recording data rather than its full history.
+        Files precede their index entries; the worker persists both before ACK.
+        """
+        if not self.chunk_files: return 0
+        converted = 0
+        with self.connect() as db:
+            rows = db.execute('SELECT id,sequence,digest,data FROM chunks')
+            while batch := rows.fetchmany(64):
+                for identifier, sequence, digest, compressed in batch:
+                    if compressed.startswith(CHUNK_FILE): continue
+                    data = self.unpack_chunk(compressed)
+                    if hashlib.sha256(data).hexdigest() != digest:
+                        raise ValueError('Client replay is damaged')
+                    db.execute('UPDATE chunks SET data=? WHERE id=? AND sequence=?',
+                               (self.pack_chunk(data), identifier, sequence))
+                    converted += 1
+        if converted:
+            # Reclaim the old BLOB pages before the next IndexedDB snapshot.
+            with self.connect() as db: db.execute('VACUUM')
+        return converted
 
     @contextmanager
     def connect(self):
@@ -148,7 +207,7 @@ class ClientJournals:
                 raise ValueError('Client replay sequence changed')
             if row[1]+len(data) > MAX_BYTES:
                 raise ValueError('Client replay exceeds 128 MB')
-            db.execute('INSERT INTO chunks VALUES(?,?,?,?)', (identifier, sequence, digest, zlib.compress(data, 3)))
+            db.execute('INSERT INTO chunks VALUES(?,?,?,?)', (identifier, sequence, digest, self.pack_chunk(data)))
             db.execute('UPDATE attempts SET sequence=?,size=?,complete=? WHERE id=?',
                        (sequence+1, row[1]+len(data), int(end), identifier))
         return dict(sequence=sequence+1, complete=end)
@@ -167,7 +226,7 @@ class ClientJournals:
             raise ValueError('Client recording belongs to another edition')
         operations = []
         for expected, (sequence, digest, compressed) in enumerate(chunks):
-            data = zlib.decompress(compressed)
+            data = self.unpack_chunk(compressed)
             if sequence != expected or hashlib.sha256(data).hexdigest() != digest:
                 raise ValueError('Client replay is damaged')
             document = json.loads(data)

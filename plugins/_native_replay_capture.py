@@ -152,6 +152,8 @@ class NativeCapture:
         self.player=None;self.driving=False;self.clock_offset=0;self.functions={};self.keyboard_depth=0
         self.serial=0;self.branch=None;self.packet_buffer=bytearray();self.control_error=None
         self.descriptions=set()
+        self.recording=True
+        self.input_observer=None
         self.last_ack=None;self.bridge_documents=[]
         self.resource_depth=0;self.pending_assets=0
         self.tape=NativeTape(save=save,notice=notice)
@@ -183,6 +185,17 @@ class NativeCapture:
             if player is not None and player.blocked() and not self.driving and kind not in ('clock','random32','random64'):
                 if kind=='input' and self.keyboard_depth:player.keyboard_input(int(args[1]),bool(args[2]))
                 return True if kind=='read' else 0 if kind in ('clock','random32','random64','player-input') else None
+            if (kind=='input' and self.input_observer is not None and threading.get_ident()==self.owner
+                    and (player is None or player.phase=='live')):
+                self.input_observer(int(args[1]),bool(args[2]))
+            if player is None and not self.recording:
+                # Keep bootstrap descriptions for playback, but no per-frame
+                # clocks, input, world checks or journal writes in live play.
+                if kind=='message' and threading.get_ident()==self.owner and int(args[1]) in (16,17):
+                    size=int(args[3])
+                    if not 0<size<=262144:raise ValueError('Invalid native message size')
+                    self.descriptions.add((int(args[1]),bytes(self.ffi.buffer(args[2],size))))
+                return original(*args)
             # The client's IO worker may run while the UI thread is updating.
             # Never mix its clocks/call stack into the simulation journal.
             if threading.get_ident()!=self.owner or not self.tape.in_loop or self.tape.error:return original(*args)
@@ -293,7 +306,7 @@ class NativeCapture:
             except queue.Empty:break
             if value.get('serial',0)<self.serial:continue
             if value.get('play'):
-                if self.tape.mode=='record':self.tape.finish()
+                if self.tape.mode=='record' and (self.recording or self.player is not None):self.tape.finish()
                 try:from ._native_replay_player import NativePlayer
                 except (ImportError,ValueError,SystemError):from _native_replay_player import NativePlayer
                 request=value['play'];self.serial=request['serial'];self.branch=None
@@ -319,7 +332,9 @@ class NativeCapture:
                 self.branch=branch;self.reset_inputs=True
 
     def before(self):
-        if self.player is None:self.tape.loop(0);return
+        if self.player is None:
+            if self.recording:self.tape.loop(0)
+            return
         if self.player.phase!='live':
             if not self.player.requested:self.player.update()
             return
@@ -339,7 +354,7 @@ class NativeCapture:
         self.player.pending_keys=[]
 
     def after(self):
-        if self.player is None or self.player.phase=='live':
+        if (self.player is None and self.recording) or (self.player is not None and self.player.phase=='live'):
             self.tape.loop(1,self.state());self.frames+=1
             if self.frames%30==0:self.tape.flush()
         self.feedback()
@@ -365,7 +380,8 @@ class NativeCapture:
         return True
 
     def close(self):
-        self.tape.finish();self.hooks.remove()
+        if self.recording or self.player is not None:self.tape.finish()
+        self.hooks.remove()
 
     def invoke(self,row):
         """Use only checked functions and current game-owned objects."""
@@ -414,6 +430,7 @@ def create(ffi,lib,refs,environ=None):
     delivery=ChunkDelivery(config,control=False)
     try:
         capture=NativeCapture(ffi,lib,refs,config['manifest'],delivery.put,int(base))
+        capture.recording=config.get('recording',True)
         capture.hooks.install();capture.delivery=delivery
         delivery.control_enabled=True
         _ACTIVE_CAPTURE=capture

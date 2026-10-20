@@ -74,6 +74,7 @@ class BrowserRuntime:
                 row['result']='interrupted'
                 self.records.save(row)
         self.clients = ClientJournals(self.directory/'battles')
+        self.clients.migrate_chunks()
         self.preferences = GamePreferences(self.directory)
         self.manifest = manifest
         self.server = self.receiver = self.channel = self.attempt = None
@@ -104,9 +105,14 @@ class BrowserRuntime:
         self.stop()
         self.map, self.shell, self.player = map_id, shell, {}
         self.workspace.materialize(map_id)
-        self.attempt = str(uuid.uuid4())
-        self.clients.begin(self.attempt, self.manifest['client'], self.manifest['adapter'], self.preferences.read(), [1366,768])
-        os.environ['SB_REPLAY_ATTEMPT'] = self.attempt
+        recording = self.workspace.preferences()['record_replays']
+        os.environ['SB_RECORD_REPLAY'] = '1' if recording else '0'
+        os.environ.pop('SB_REPLAY_ATTEMPT', None)
+        self.attempt = None
+        if recording:
+            self.attempt = str(uuid.uuid4())
+            self.clients.begin(self.attempt, self.manifest['client'], self.manifest['adapter'], self.preferences.read(), [1366,768])
+            os.environ['SB_REPLAY_ATTEMPT'] = self.attempt
         info = game_settings.map_info(map_id)
         world = paths.ROOT/('data/catalogue/real_hulkboss_createworld_flags.hex' if map_id == game_settings.ORIGINAL_MAP else f'maps/{map_id}/createworld.hex')
         version = self.directory/'dataVersion.bpb'
@@ -189,6 +195,7 @@ class BrowserRuntime:
         host = getattr(self,'active_takeover',None)
         if host and host.committed and not host.stopped.is_set():host.step(dt)
         elif self.server and self.server.live_session:self.server.live_session.step(dt)
+        return bool(self.server or host and host.committed and not host.stopped.is_set())
 
     def replay_document(self, identifier, require_exact=False):
         try:value=self.clients.read(identifier)
@@ -215,7 +222,7 @@ class BrowserRuntime:
                 try:
                     header = read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
                     self.replay_document(attempt,require_exact=True)
-                    replay['takeover'] = compatible_engine(header['engine'])
+                    replay['takeover'] = compatible_engine(header['engine'],header.get('map'))
                 except (ValueError,OSError):pass
             prefs = dict(key='LocalStorage.pb',revision=0,content=document['preferences'])
         return dict(wsPort=0,keybindings=self.workspace.preferences()['keys'],gamePreferences=prefs,replay=replay)

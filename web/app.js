@@ -13,6 +13,30 @@
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
   let activeTab='battle';
   const t=(zh,en)=>language.startsWith('zh')?zh:en;
+  if(desktop){
+    async function health(){
+      const box=$('native-connection-notice');
+      try{
+        const response=await fetch('/api/native/health',{cache:'no-store'});if(!response.ok)throw Error('unavailable');
+        const value=await response.json();
+        const labels={
+          connected:t('游戏反馈已连接','Game feedback connected'),
+          starting:t('正在连接游戏反馈…','Connecting game feedback…'),
+          waiting:t('尚未收到游戏反馈。若怪物不受伤或 Gen 无响应，请重新运行 start.cmd。','No game feedback yet. If enemies cannot be damaged or panels do not respond, restart start.cmd.'),
+          missing:t('游戏插件未启动，请重新运行 start.cmd，并查看本次启动日志。','The game plugin did not start. Restart start.cmd and check this session’s logs.'),
+          stale:t('游戏反馈已中断，请重新运行 start.cmd。','Game feedback stopped. Restart start.cmd.'),
+          disabled:t('游戏反馈已关闭，回到游戏按 F6 恢复。','Game feedback is disabled. Press F6 in the game to enable it.'),
+          error:t('游戏反馈启动失败，请查看本次启动日志。','Game feedback failed to start. Check this session’s logs.'),
+          degraded:t('伤害反馈不可用，可能有插件冲突；请查看本次启动日志。','Damage feedback is unavailable; another plugin may conflict. Check this session’s logs.')
+        };
+        box.textContent=labels[value.state]||labels.waiting;
+        if(value.state==='connected'&&!value.replay_ready)box.textContent+=t('；原生录像组件未能启动。','; native replay is unavailable.');
+        box.hidden=false;
+      }catch(_){box.textContent=t('尚未连接原生游戏，请从 start.cmd 启动。','Native game not connected. Launch it with start.cmd.');box.hidden=false;}
+      setTimeout(health,2000);
+    }
+    void health();
+  }
   let loading=null,loadingPercent=0,loadingHide;
   function finishLoading(){if(!loading||loadingHide)return;loadingPercent=100;renderLoading();loadingHide=setTimeout(()=>showLoading(null),220);}
   function showLoading(phase,current=null,total=null){

@@ -11,12 +11,12 @@
   let maximumDependencies=0;
   Module.monitorRunDependencies=count=>{maximumDependencies=Math.max(maximumDependencies,count);parent.postMessage({type:'loading-progress',percent:75+(maximumDependencies?15*(1-count/maximumDependencies):0),step:'engine'},location.origin);};
   (Module.preRun||=[]).push(()=>parent.postMessage({type:'loading-progress',percent:92,step:'world'},location.origin));
-  let frame = 0, seq = 0, last = 0, wasInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false;
+  let frame = 0, seq = 0, last = 0, wasInteract = false, pendingInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false;
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
   addEventListener('keyup', e => keys.delete(e.code));
-  addEventListener('blur', () => keys.clear());
+  addEventListener('blur', () => {keys.clear();wasInteract=false;pendingInteract=false;});
   const acknowledge = e => {
     try { const ack = JSON.parse(e.data); if(ack.map)context=ack; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
@@ -36,7 +36,7 @@
     reconnectTelemetry=false;
     socket.onmessage=null;
     socket=transport;socket.onmessage=acknowledge;
-    seq=0;last=0;wasInteract=false;events=[];lastPlayer=null;keys.clear();gameplay=false;
+    seq=0;last=0;wasInteract=false;pendingInteract=false;events=[];lastPlayer=null;keys.clear();gameplay=false;
     pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};pickups.clear();healthBefore.clear();
   };
   Module.webFrame = world => {
@@ -44,7 +44,7 @@
       frame++;
       const pointer = read(world, 672), subworld = read(world, 664);
       const key=world+'/'+(read(world,200)>>>0);
-      if(key!==worldKey){worldKey=key;lastPlayer=null;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
+      if(key!==worldKey){worldKey=key;lastPlayer=null;wasInteract=false;pendingInteract=false;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
       activePlayer=valid(pointer)?pointer:0;
       // Engine input uses the game's own remapped keyboard/controller binds.
       // Sample every frame, before rate limiting; menu clicks do not set it.
@@ -53,6 +53,12 @@
         if(valid(pointer)&&read(pointer,64)>0&&((read(world,668)&0x2ff)||customInteract))gameplay=true;
       }
       const now = performance.now();
+      // Keep a short press even when this frame cannot send feedback. The
+      // engine mask includes its configured keyboard and controller bindings.
+      const interact = !!(read(world,668)&128) ||
+        (practiceKeys.interact!=='Auto' && keys.has(shortcuts.code(practiceKeys.interact)));
+      if(valid(pointer)&&read(pointer,64)>0&&interact&&!wasInteract)pendingInteract=true;
+      wasInteract=interact;
       if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 60000) return;
       last = now;
       if ((!valid(pointer) || !valid(subworld)) && !lastPlayer) return;
@@ -63,9 +69,6 @@
       lastPlayer = player;activePlayer=valid(pointer)?pointer:0;
       player.room_seed=read(world,200)>>>0;
       player.battle_metrics={protocol:'player-metrics-v1',...pickupTotals};
-      // ClientWorld.totalInput already reflects the player's own game bindings.
-      const interact = !!(read(world,668)&128) ||
-        (practiceKeys.interact!=='Auto' && keys.has(shortcuts.code(practiceKeys.interact)));
       const documentState={};
       if(context.map){
         documentState.room_context={map:context.map,room_token:context.room_token,room_seed:read(world,200)>>>0};
@@ -80,8 +83,8 @@
         }
       }
       socket.send(JSON.stringify({seq:++seq,t:Date.now()/1000,player,
-        keys:{interact,interact_edge:interact&&!wasInteract,interaction_blocked:false,attack:keys.has('KeyD'),gameplay},events,...documentState}));
-      wasInteract = interact; events = [];
+        keys:{interact,interact_edge:pendingInteract,interaction_blocked:false,attack:keys.has('KeyD'),gameplay},events,...documentState}));
+      pendingInteract = false; events = [];
       document.getElementById('loading').hidden = true;
       if (seq % 30 === 0) parent.postMessage({type:'player-state',player,frame,world,pointer},location.origin);
     } catch (e) { console.error('Browser bridge:',e); }

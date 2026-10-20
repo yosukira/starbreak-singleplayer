@@ -102,6 +102,7 @@ class Workspace:
                     slot=slot if type(slot) is int and slot in {s for s,_ in equipment.SLOTS} else 256,
                     item_sort='name' if value.get('item_sort')=='name' else 'id',
                     query=str(value.get('query',''))[:100],all_classes=value.get('all_classes') is True,
+                    record_replays=value.get('record_replays', True) is not False,
                     keys=normalize_web_keys(value.get('keys',WEB_KEYS)))
 
     def save_preferences(self, value):

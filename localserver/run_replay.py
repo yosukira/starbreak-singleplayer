@@ -266,7 +266,7 @@ class RunReplay:
     def __init__(self,document):
         from .server import LocalServer,parse_args
         document=validate(document)
-        if not compatible_engine(document['engine']):raise ValueError('Replay requires the same simulator engine and map data')
+        if not compatible_engine(document['engine'],document['map']):raise ValueError('Replay requires the same simulator engine and map data')
         self.document=document;self.frames=document['frames'];self.index=0;self.failed=False
         self.settings=document['settings'];self.session=None;self.bridge=RunBridge()
         self.bridge._teleport_serial=document['teleport_serial']

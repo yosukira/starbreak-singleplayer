@@ -453,13 +453,13 @@ class LocalServer(object):
             player_type, ','.join(applied) or 'nothing'))
 
     def _fill_loadout_vitals(self, message, loadout, player_type):
-        """Spawn an MK preset full after equipped item bonuses are applied.
+        """Spawn a class preset full after equipped item bonuses are applied.
 
         Max HP/ammo fields remain the base stats: the client adds equipment
         itself.  Only current HP/ammo include those bonuses here.  Explicit
         current values in a practice/editor loadout remain authoritative.
         """
-        if (not loadout or loadout.get('mk_') is None
+        if (not loadout
                 or int(loadout.get('type_', player_type) or player_type)
                 != player_type
                 or not (getattr(self, 'character_library', None) or {}).get(

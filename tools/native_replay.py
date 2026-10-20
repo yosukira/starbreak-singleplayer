@@ -12,8 +12,18 @@ def adapter_digest():
     root=Path(__file__).resolve().parents[1]
     value=hashlib.sha256()
     for name in ('_native_replay.py','_native_replay_hooks.py','_native_replay_capture.py','_native_replay_player.py'):
-        value.update((root/'plugins'/name).read_bytes())
+        value.update((root/'plugins'/name).read_bytes().replace(b'\r\n',b'\n').replace(b'\r',b'\n'))
     return value.hexdigest()
+
+
+def compatible_adapter(recorded, current=None):
+    current=adapter_digest() if current is None else current
+    if recorded==current:return True
+    import json
+    try:
+        aliases=json.loads((Path(__file__).resolve().parents[1]/'data/mechanics/native_replay_compatibility.json').read_text(encoding='utf8'))
+        return recorded in aliases.get(current,[])
+    except (OSError,ValueError,TypeError):return False
 
 
 def document(value):
@@ -75,4 +85,7 @@ class NativeJournals(ClientJournals):
             for identifier,row in result.items():
                 header=json.loads(db.execute('SELECT header FROM attempts WHERE id=?',(identifier,)).fetchone()[0])
                 if header.get('client')!=client:row.update(available=False,reason='incompatible')
+                elif header.get('schema')==self.schema and compatible_adapter(header.get('adapter'),adapter):
+                    complete=row['reason']!='recording'
+                    row.update(available=complete,reason='ready' if complete else 'recording')
         return result

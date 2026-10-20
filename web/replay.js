@@ -271,6 +271,9 @@
     }
     setPaused(value) {
       if(this.mode!=='play'||this.finished||this.error||this.handoffPending)return;
+      // A newer play/pause request also owns the state after an in-flight seek.
+      // Otherwise completion can silently restore the seek's older pause flag.
+      if(this.seekTarget!==null)this.seekPaused=value===true;
       // Initial UI/network/texture callbacks must reach a real player frame
       // before pausing. Otherwise seeking back to 0 while paused deadlocks the
       // loading overlay and leaves its navigation permanently disabled.

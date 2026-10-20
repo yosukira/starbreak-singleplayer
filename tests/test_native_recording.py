@@ -19,6 +19,23 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_recording_disabled_keeps_gameplay_and_playback_descriptions_without_a_tape(self):
+        chunks=[];capture,_world,hooks=self.environment(chunks.append)
+        capture.recording=False
+        for _ in range(90):
+            capture.before()
+            clock=mock.Mock(return_value=123)
+            self.assertEqual(hooks['TimeUtil::NowMS'].replace(clock),123)
+            clock.assert_called_once()
+            message=mock.Mock()
+            hooks['MessageHandlers::run'].replace(message,1,16,b'description',11)
+            message.assert_called_once()
+            capture.after()
+        self.assertEqual(capture.descriptions,{(16,b'description')})
+        self.assertEqual(capture.tape.pending,[])
+        self.assertEqual(chunks,[])
+        self.assertEqual(capture.frames,0)
+
     def test_control_poll_streams_small_reads_and_decodes_json_for_python35(self):
         import io
         import queue
@@ -140,6 +157,34 @@ class NativeCaptureTests(unittest.TestCase):
 
 
 class NativeRecordingEndpointTests(unittest.TestCase):
+    def test_connection_health_reports_missing_disabled_degraded_and_connected(self):
+        import time
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'bridge-status.json'
+            with mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
+                recording=NativeRecording(directory,'owned-client.exe',recording=False,health_path=path)
+            try:
+                self.assertEqual(recording.health()['state'],'starting')
+                recording.started-=30;self.assertEqual(recording.health()['state'],'missing')
+                for state,changes in [('disabled',dict(active=False)),('degraded',dict(hook_error=True)),('waiting',dict(connected=False)),('connected',{})]:
+                    path.write_text(json.dumps(dict(dict(at=time.time(),active=True,connected=True,replay_ready=True),**changes)),encoding='utf8')
+                    request=Request(recording.config['url'].replace('/chunks','/health'),headers={'Authorization':'Bearer '+recording.token})
+                    with urlopen(request) as response:self.assertEqual(json.load(response)['state'],state)
+                path.write_text('[]',encoding='utf8');self.assertEqual(recording.health()['state'],'missing')
+            finally:recording.close()
+
+    def test_disabled_recording_retains_the_owned_restart_endpoint_without_an_empty_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
+                recording=NativeRecording(directory,'owned-client.exe',recording=False)
+            try:
+                with recording.journals.connect() as db:self.assertEqual(db.execute('SELECT id FROM attempts').fetchall(),[])
+                self.assertFalse(recording.config['recording'])
+                request=Request(recording.config['url'].replace('/chunks','/command'),data=json.dumps(dict(action='practice',map='hulk_mid',shell=2)).encode(),headers={'Authorization':'Bearer '+recording.token})
+                with urlopen(request) as response:self.assertTrue(json.load(response)['starting'])
+                self.assertEqual(recording.restart_request,dict(map='hulk_mid',shell=2))
+            finally:recording.close()
+
     def test_practice_restarts_only_the_owned_launcher_with_a_valid_map_and_class(self):
         with tempfile.TemporaryDirectory() as directory:
             recording=self.recording(directory)

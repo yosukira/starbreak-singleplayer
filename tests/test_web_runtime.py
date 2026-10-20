@@ -20,6 +20,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WebRuntimeTests(unittest.TestCase):
+    def test_native_editor_and_history_need_no_browser_engine_download(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(paths,'USERDATA',Path(directory)/'native'):
+            paths.ensure_user_data()
+            options=SimpleNamespace(desktop=True,client=Path(directory)/'never-downloaded.js',data_dir=Path(directory)/'web',
+                records_dir=Path(directory)/'battles',ws_port=8766)
+            with mock.patch('tools.web_app.ensure_cached_client',side_effect=OSError('Network unavailable')) as download:
+                app=Prototype(options)
+                try:
+                    self.assertTrue(app.workspace.editor()['desktop'])
+                    self.assertEqual(app.battle_records(),[])
+                    self.assertGreater(len(app.info()['maps']),10)
+                    self.assertIsNone(app._client)
+                    download.assert_not_called()
+                    with self.assertRaisesRegex(OSError,'Network unavailable'):_=app.client
+                finally:app.stop()
+
     def test_telemetry_recovers_windows_udp_startup_errors_on_receive_and_send(self):
         app=Prototype.__new__(Prototype)
         app.options=SimpleNamespace(bridge_port=21551)
@@ -157,6 +173,7 @@ class WebRuntimeTests(unittest.TestCase):
     def test_browser_records_by_default_and_storage_failure_does_not_block_play(self):
         app=Prototype.__new__(Prototype)
         app.client=b'compatible original client';app.client_journals=mock.Mock();app.game_preferences=mock.Mock()
+        app.workspace=mock.Mock();app.workspace.preferences.return_value=dict(record_replays=True)
         with mock.patch.dict(os.environ):
             os.environ.pop('SB_RECORD_REPLAY',None)
             app.begin_recording('city_mid')
@@ -287,6 +304,7 @@ class WebRuntimeTests(unittest.TestCase):
             app.lock, app.process, app.log = threading.Lock(), None, None
             app.items = {100: dict(slot_=256, usableby_=[1], name_='Test weapon')}
             app.workspace = mock.Mock()
+            app.workspace.preferences.return_value=dict(record_replays=True)
             app.records = mock.Mock()
             app.client=b'compatible original client'
             app.client_journals=mock.Mock();app.game_preferences=mock.Mock()

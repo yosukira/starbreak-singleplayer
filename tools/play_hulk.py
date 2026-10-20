@@ -450,8 +450,10 @@ class InstalledSbpeRuntime(object):
         self.original = self.config_path.read_bytes()
         text = decode_config(self.original)[0]
         text = ini_set(text, 'plugin_hardlab_live', 'enabled', 'yes')
+        text = ini_set(text, 'plugin_hardlab_live', 'host', '127.0.0.1')
         text = ini_set(text, 'plugin_hardlab_live', 'port', str(self.bridge_port))
         text = ini_set(text, 'plugin_hardlab_live', 'interact_scancode', '0')
+        text = ini_set(text, 'plugin_hardlab_live', 'diagnostics_file',str(self.root/'native-state.jsonl') if self.diagnostics else '')
 
         squid_plugin = self.root / 'plugins' / 'squid_prediction3.py'
         self.squid_option_patched = False
@@ -547,6 +549,7 @@ def prepare_runtime(sbpe, diagnostics=False, runtime=None, bridge_port=21550,
     config['general']['mipmaps']='no'
     if not config.has_section('plugin_hardlab_live'):config.add_section('plugin_hardlab_live')
     config['plugin_hardlab_live']['enabled']='yes'
+    config['plugin_hardlab_live']['host']='127.0.0.1'
     config['plugin_hardlab_live'].setdefault('hud_visible','yes')
     config['plugin_hardlab_live']['port'] = str(bridge_port)
     config['plugin_hardlab_live']['interact_scancode'] = '0'
@@ -946,12 +949,16 @@ def session(argv=None,show_editor=True):
     restart=None
     try:
         from localserver.replay import CLIENT_MAPS
-        if args.map in CLIENT_MAPS and os.environ.get('SB_RECORD_REPLAY','1')=='1':
+        recording_settings=LAB/'userdata/recording.json'
+        recording_enabled=os.environ.get('SB_RECORD_REPLAY','1')=='1'
+        if recording_settings.is_file():
+            recording_enabled=recording_enabled and json.loads(recording_settings.read_text(encoding='utf-8-sig')).get('record_replays',True) is not False
+        if args.map in CLIENT_MAPS:
             try:
                 from tools.native_recording import NativeRecording
                 from localserver.battle_records import RecordStore
-                native_recording=NativeRecording(RecordStore().directory,client,registry=LAB/'userdata/native-control.json')
-                print('Native replay recording ready.',flush=True)
+                native_recording=NativeRecording(RecordStore().directory,client,registry=LAB/'userdata/native-control.json',recording=recording_enabled,health_path=logs/'bridge-status.json')
+                print('Native replay recording ready.' if recording_enabled else 'Native controls ready; replay recording disabled.',flush=True)
             except Exception as error:
                 print('Native replay recording unavailable: '+type(error).__name__,flush=True)
 
@@ -1003,7 +1010,6 @@ def session(argv=None,show_editor=True):
                 '--create-world-hex', str(create_world),
                 '--characters', str(required[4]), '--items', str(required[5]),
                 '--data-version', str(game_dir / 'data' / 'texture' / 'dataVersion.bpb'),
-                '--loadout', str(required[6]),
                 '--class-loadouts', str(required[7]),
                 '--player-type', str(args.player_type),
                 '--player-payloads', str(required[8]),
@@ -1015,7 +1021,8 @@ def session(argv=None,show_editor=True):
                                 '--live-force-demo'])
             server_env=dict(os.environ)
             server_env.pop('SB_REPLAY_ATTEMPT',None)
-            if native_recording:
+            server_env['SB_RECORD_REPLAY']='0'
+            if native_recording and recording_enabled:
                 server_env.update(SB_RECORD_REPLAY='1',SB_REPLAY_ATTEMPT=native_recording.identifier)
             server = subprocess.Popen(command, cwd=str(LAB), stdout=output,env=server_env,
                 stderr=subprocess.STDOUT,
@@ -1034,6 +1041,7 @@ def session(argv=None,show_editor=True):
             client_env = dict(os.environ)
             if native_recording:client_env['HARDLAB_NATIVE_REPLAY']=json.dumps(native_recording.config,separators=(',',':'))
             client_env['HARDLAB_KEYBINDINGS'] = str(LAB / 'userdata' / 'keybindings.json')
+            client_env['HARDLAB_BRIDGE_STATUS'] = str(logs / 'bridge-status.json')
             client_env['PYTHONIOENCODING'] = 'cp936:replace'
             client_env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
             client_log = logs / 'client-launch.log'
@@ -1043,6 +1051,7 @@ def session(argv=None,show_editor=True):
                      '--sbpe', str(args.sbpe), '--client', str(client),
                      '--server', '127.0.0.1:' + str(client_port),
                      '--runtime-dir', str(runtime), '--keep']
+                client_command.extend(['--log-file',str(logs/'live-client.log')])
                 owned_stop=logs/'stop-owned-client'
                 client_command.extend(['--stop-file',str(owned_stop)])
                 result = subprocess.Popen(client_command,

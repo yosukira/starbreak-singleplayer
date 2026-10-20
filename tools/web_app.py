@@ -105,7 +105,12 @@ def checked_map(map_id):
 class Prototype:
     def __init__(self, options):
         self.options = options
-        self.client = patch_client(options.client.read_bytes())
+        self._client = None
+        self.client_lock = threading.Lock()
+        self._browser_manifest = json.loads((ROOT/'data/mechanics/browser-editor-client.json').read_text(encoding='utf8'))
+        if self._browser_manifest['client'] != CLIENT_SHA256:raise ValueError('Editor client manifest is outdated')
+        desktop = getattr(options, 'desktop', False)
+        if not desktop:self.client = patch_client(options.client.read_bytes())
         self.process = None
         self.log = None
         self.lock = threading.Lock()
@@ -122,12 +127,15 @@ class Prototype:
         self.directory.mkdir(parents=True, exist_ok=True)
         # Use this client's own embedded version manifest for required HELLO
         # fields and texture identifiers, rather than a missing native install.
-        manifest = re.search(rb'var fileData0=\[\];fileData0.push.apply\(fileData0,(\[[0-9,]+\])\)',
-                             options.client.read_bytes())
-        if not manifest:
-            raise ValueError('Client data-version manifest signature missing.')
+        if desktop:
+            import base64
+            version_bytes=base64.b64decode(self._browser_manifest['data_version'],validate=True)
+        else:
+            manifest = re.search(rb'var fileData0=\[\];fileData0.push.apply\(fileData0,(\[[0-9,]+\])\)',options.client.read_bytes())
+            if not manifest:raise ValueError('Client data-version manifest signature missing.')
+            version_bytes=bytes(json.loads(manifest.group(1)))
         self.version_file = self.directory / 'dataVersion.bpb'
-        self.version_file.write_bytes(bytes(json.loads(manifest.group(1))))
+        self.version_file.write_bytes(version_bytes)
         self.cache = self.directory / 'assets'
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
@@ -153,6 +161,27 @@ class Prototype:
             row = json.loads(line)
             item = pb_layout.default_layouts().decode('ItemDescription', base64.b64decode(row['payloadBase64']))
             self.items[int(item['type_'])] = item
+
+    @property
+    def client(self):
+        # Native equipment/history needs only the small frozen data manifest.
+        # Download the original browser engine only when actually playing it.
+        if self._client is None:
+            with self.client_lock:
+                if self._client is None:
+                    data=patch_client(ensure_cached_client(self.options.client).read_bytes())
+                    if hashlib.sha256(data+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()!=self._browser_manifest['adapter']:
+                        raise ValueError('Editor replay adapter manifest is outdated')
+                    self._client=data
+        return self._client
+
+    @client.setter
+    def client(self, value):self._client=value
+
+    @property
+    def client_adapter(self):
+        if self._client is None:return self._browser_manifest['adapter']
+        return hashlib.sha256(self._client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
 
     def required_assets(self, map_id):
         info = game_settings.map_info(map_id)
@@ -208,7 +237,7 @@ class Prototype:
     def battle_records(self):
         rows = self.records.list()
         identifiers = [row['replay']['id'] for row in rows if row.get('replay', {}).get('id')]
-        adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
+        adapter = self.client_adapter
         states = self.client_journals.statuses(identifiers, adapter, client=CLIENT_SHA256, allow_compatible=True)
         from tools.portable_replay import availability
         states.update(availability(self.records.directory,identifiers))
@@ -233,7 +262,7 @@ class Prototype:
         except ValueError:
             from tools.portable_replay import browser_document
             return browser_document(self.records.directory,identifier,self.version,require_exact=require_exact)
-        adapter = hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest()
+        adapter = self.client_adapter
         if document['client'] != CLIENT_SHA256:
             raise ValueError('Replay requires a supported original game client')
         if require_exact and document['adapter'] != adapter:
@@ -378,12 +407,13 @@ class Prototype:
     def begin_recording(self, map_id):
         from localserver.replay import CLIENT_MAPS
         self.recording_id = self.recording_error = None
-        if os.environ.get('SB_RECORD_REPLAY', '1') != '1' or map_id not in CLIENT_MAPS:
+        if (os.environ.get('SB_RECORD_REPLAY', '1') != '1' or map_id not in CLIENT_MAPS
+                or not self.workspace.preferences()['record_replays']):
             return
         identifier = str(uuid.uuid4())
         try:
             self.client_journals.begin(identifier, CLIENT_SHA256,
-                hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest(),
+                self.client_adapter,
                 self.game_preferences.read(), [1366, 768])
         except Exception as error:
             self.recording_error = type(error).__name__
@@ -401,7 +431,7 @@ class Prototype:
             if client_document['schema']=='starbreak-native-journal-v1':
                 try:self.replay_document(identifier,require_exact=True)
                 except (OSError,ValueError):return False
-            elif client_document['adapter']!=hashlib.sha256(self.client+CLIENT_JOURNAL_SCHEMA.encode()).hexdigest():return False
+            elif client_document['adapter']!=self.client_adapter:return False
         if record is None:
             matches=[r for r in self.records.list() if r.get('replay',{}).get('id')==identifier]
             if len(matches)!=1:return False
@@ -416,7 +446,7 @@ class Prototype:
             supported=((header.get('schema')==SCHEMA and header.get('map') in SUPPORTED_MAPS) or
                        (header.get('schema')==RUN_SCHEMA and header.get('map') in FULL_RUN_MAPS))
             return (supported and
-                    header.get('attempt')==identifier and compatible_engine(header.get('engine')))
+                    header.get('attempt')==identifier and compatible_engine(header.get('engine'),header.get('map')))
         except (OSError,EOFError,ValueError,KeyError,TypeError):
             return False
 
@@ -606,9 +636,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ('/api/info', '/api/status'):
                 return self.send(self.server.prototype.info())
-            if path=='/api/native/status':
+            if path in ('/api/native/status','/api/native/health'):
                 from tools.native_playback import NativeControlClient
-                return self.send(NativeControlClient().call('/status'))
+                return self.send(NativeControlClient().call('/health' if path.endswith('/health') else '/status'))
             if path == '/api/editor':
                 return self.send(dict(self.server.prototype.workspace.editor(),
                                       update=update.public_status(self.server.prototype.update_checker.status())))
@@ -816,7 +846,8 @@ def main():
         return
     if options.client is None:
         directory = options.data_dir or ROOT / 'userdata/web'
-        options.client = ensure_cached_client(directory / CLIENT_FILENAME)
+        options.client = directory / CLIENT_FILENAME
+        if not options.desktop:options.client=ensure_cached_client(options.client)
     paths.ensure_user_data()
     prototype = Prototype(options)
     http = ThreadingHTTPServer(('127.0.0.1', options.port), Handler)

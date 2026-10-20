@@ -1,3 +1,6 @@
 #!/bin/bash
 cd -- "$(dirname -- "$0")" || exit 1
-python3 tools/gear_editor.py --show
+if [ -x "python/bin/python3" ]; then
+  exec python/bin/python3 -m tools.desktop_view --standalone --show
+fi
+exec python3 -m tools.desktop_view --standalone --show

@@ -66,12 +66,16 @@ SBPE/
 
 1. 选择地图、职业、MK 和植入体槽数。
 2. 在左侧选择槽位，在右侧选择物品并编辑词缀。物品和关卡名称保留原来的名字；界面和属性标签随语言切换。
-3. 点击 **应用/保存**。服务器检测到配装变化后会重开当前局。地图、掉落率等设置通过 **保存设置** 保存。
-4. 右上角选择 **System / 跟随系统**、**简体中文** 或 **English**。首次默认跟随系统：Windows 中文界面使用中文，其他语言使用英文；选择会在本机保存。
-5. **导出 / 导入** 用于分享 JSON 配装；导入后点击应用/保存才会写入配装。
+3. 点击 **保存** 保存配装，或点击 **保存并开始** 启动新一局并应用地图、掉落率等设置。
+4. 右上角选择中文或 English；首次按系统语言选择，之后记住你的选择。
+5. **导出 / 导入** 用于分享 JSON 配装；导入后检查草稿，再点击保存。
 6. **恢复默认配置** 立即重置四职业配装、弹速与战斗设置，原配置先备份到 `userdata/before-restore-defaults-*`；语言与按键不变。
 
 编辑器适配 1366×768 等低分辨率屏幕：内容区支持滚动，底部操作按钮固定显示；按住 Shift 滚动可左右查看较宽的控件。
+
+Windows 装备与战绩共用一个窗口。首次打开装备编辑与战绩列表不需要下载网页版游戏引擎；播放网页版录像时才加载该引擎。若窗口未出现，可双击 `tools/open-editor.cmd` 单独打开，或运行 `start.cmd --editor`；也可检查 `userdata/desktop-records/window-status.json` 和最近一场 `userdata/logs/session-*/gear-editor.log`。窗口会显示准备状态或启动错误；游戏反馈是否已连接也会显示在装备页。
+
+**录制录像** 位于“装备与设置 → 战斗配置”，默认开启。关闭后新开的练习局不再录制，已有录像和战绩保留；接管旧录像仍保存一个新分支。网页版和客户端分别记住本机设置。
 
 GY（Graveyard Boss）与 EGY（Elite Graveyard Boss）的 **跳过开局** 开关默认关闭，两图分别保存。开启并保存后，新一局直接从首领飞船停稳、平台就绪的阶段开始，跳过大机器人与飞船进场。恢复默认配置会关闭此开关。
 
@@ -89,7 +93,7 @@ GY（Graveyard Boss）与 EGY（Elite Graveyard Boss）的 **跳过开局** 开�
 | 重开当前局 | 长按 `R` |
 | 切职业 WF / DW / FAB / IC | 分别长按 `7` / `8` / `9` / `0` |
 
-Mac 编辑器预览：安装带 Tk 的 Python 3.10+ 后，在项目目录运行 `python3 tools/gear_editor.py --show`，或运行 `preview-editor.command`。Mac 预览的保存会写入本机配置，Windows 全局热键及游戏效果不在预览范围内。
+Mac 装备与战绩窗口可用玩家包中的 `preview-editor.command` 打开；首次准备窗口组件可能需要网络。Mac 游戏请使用网页版。
 
 ### 本地数据与常见问题
 
@@ -264,3 +268,7 @@ Replay exports and sharing support lossless compact files that retain every inpu
 The **Guide** tab to the left of Battle provides a nine-part tutorial for setup, controls, history, replay/takeover, sharing, comments, local data and troubleshooting. It follows the same saved Chinese/English language preference as the editor. Open it directly at [the web guide](https://sbre.online/singleweb/?view=guide).
 
 “战斗”左侧的“使用说明”提供九个章节的系统教程，覆盖开局配装、操控缩放、战绩、回放接管、分享、评论、本地数据与常见问题。教程跟随编辑器共用的中英文语言设置，也可在说明页切换；[直接打开说明](https://sbre.online/singleweb/?view=guide)。
+
+Windows Equipment & settings and Battle records share one window. Opening the editor or history no longer downloads the browser game engine; browser replay playback loads it when needed. If the window does not appear, run `tools/open-editor.cmd` or `start.cmd --editor`. Startup details are in `userdata/desktop-records/window-status.json` and the latest session’s `gear-editor.log`. The equipment page also shows the native game feedback connection.
+
+**Record replays** is enabled by default under Equipment & settings → Battle setup. Turning it off applies to new practice battles, preserves existing replays and history, and does not prevent playing or taking over an existing replay. Taking over saves a separate branch. Each edition remembers its local preference.

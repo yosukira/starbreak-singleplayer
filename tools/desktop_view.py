@@ -7,6 +7,7 @@ the native player's existing configuration files.
 import argparse
 import hashlib
 import io
+import html
 import json
 import os
 from pathlib import Path
@@ -103,12 +104,16 @@ def ports():
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--owner-pid',type=int,required=True)
+    parser.add_argument('--owner-pid',type=int)
+    parser.add_argument('--standalone',action='store_true',help='Open equipment and records without starting the game')
     parser.add_argument('--directory',type=Path,default=ROOT/'userdata/desktop-records')
     parser.add_argument('--records-dir',type=Path,default=ROOT/'userdata/battles')
     parser.add_argument('--check-runtime',action='store_true')
     parser.add_argument('--show',action='store_true')
     options=parser.parse_args(argv)
+    if options.owner_pid is None:
+        if not options.standalone:parser.error('--owner-pid or --standalone is required')
+        options.owner_pid=os.getpid()
     folder=options.directory;folder.mkdir(parents=True,exist_ok=True)
     from tools.web_workspace import atomic_json
     status=folder/'window-status.json'
@@ -129,24 +134,11 @@ def main(argv=None):
         if options.check_runtime:
             report(state='checked');print('Native record window runtime OK');return
         report(state='starting')
-        http,ws,game,bridge=ports()
-        log=(folder/'web.log').open('ab')
-        from tools.web_client import CLIENT_FILENAME,ensure_cached_client
-        shared_client=ROOT/'userdata/web'/CLIENT_FILENAME
-        client=ensure_cached_client(shared_client if shared_client.is_file() else folder/'web'/CLIENT_FILENAME)
-        command=[sys.executable,'-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
-        process=subprocess.Popen(command,cwd=ROOT,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
-        url='http://127.0.0.1:'+str(http)
-        deadline=time.monotonic()+120
-        while True:
-            if process.poll() is not None:raise RuntimeError('Local records service could not start')
-            if not alive(options.owner_pid):return
-            try:
-                with urlopen(url+'/api/status',timeout=1) as response:response.read(1024)
-                break
-            except OSError:
-                if time.monotonic()>deadline:raise RuntimeError('Local records service timed out')
-                time.sleep(.2)
+        def startup_page(message, failed=False):
+            title='Could not open equipment & records / 装备与战绩窗口启动失败' if failed else 'Equipment & records / 装备与战绩'
+            return ('<!doctype html><html><meta charset="utf-8"><title>StarBreak</title>'
+                '<style>body{background:#0b141d;color:#e1edf5;font:16px system-ui;padding:40px;line-height:1.7}p{max-width:65em;white-space:pre-wrap}</style>'
+                '<h2>'+title+'</h2><p id="startup-message">'+html.escape(message)+'</p></html>')
         class Bridge:
             def show_native_game(self):
                 nonlocal visible
@@ -166,9 +158,38 @@ def main(argv=None):
             bounds=wintypes.RECT()
             if ctypes.windll.user32.SystemParametersInfoW(48,0,ctypes.byref(bounds),0):
                 width=min(width,max(640,bounds.right-bounds.left-40));height=min(height,max(480,bounds.bottom-bounds.top-50))
-        window=webview.create_window('StarBreak',url+'/?desktop=1',js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d')
+        window=webview.create_window('StarBreak',html=startup_page('Preparing equipment and records…\n正在准备装备与战绩…'),js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d')
         stopped=threading.Event()
         visible=options.show
+        def prepare():
+            nonlocal process,url
+            try:
+                http,ws,game,bridge=ports()
+                from tools.web_client import CLIENT_FILENAME
+                shared_client=ROOT/'userdata/web'/CLIENT_FILENAME
+                client=shared_client if shared_client.is_file() else folder/'web'/CLIENT_FILENAME
+                if stopped.is_set() or not alive(options.owner_pid):return
+                command=[sys.executable,'-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
+                with (folder/'web.log').open('ab') as log:
+                    process=subprocess.Popen(command,cwd=ROOT,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+                url='http://127.0.0.1:'+str(http)
+                deadline=time.monotonic()+120
+                while not stopped.is_set():
+                    if process.poll() is not None:raise RuntimeError('Local records service could not start')
+                    if not alive(options.owner_pid):return
+                    try:
+                        with urlopen(url+'/api/status',timeout=1) as response:response.read(1024)
+                        break
+                    except OSError:
+                        if time.monotonic()>deadline:raise RuntimeError('Local records service timed out')
+                        time.sleep(.2)
+                if stopped.is_set():return
+                window.load_url(url+'/?desktop=1');report(state='ready')
+            except Exception as error:
+                report(state='failed',error=str(error)[:250])
+                if not stopped.is_set():window.load_html(startup_page(
+                    'Check your connection, then restart the game. Details are in '+str(folder/'web.log')+
+                    '\n请检查网络后重启游戏，详情见上述日志。\n'+str(error)[:250],failed=True))
         def toggle():
             nonlocal visible
             visible=not visible
@@ -176,17 +197,19 @@ def main(argv=None):
             else:window.hide()
         def closing():
             nonlocal visible
+            if options.standalone:stopped.set();return
             if not stopped.is_set():
                 visible=False;window.hide();return False
         window.events.closing+=closing
         def monitor():
             nonlocal visible
+            threading.Thread(target=prepare,daemon=True).start()
             stamp=0;held={};next_keys=0;keys=()
             while not stopped.wait(.04):
                 if not alive(options.owner_pid):stopped.set();window.destroy();return
                 control=folder/'show.json'
                 if control.is_file() and control.stat().st_mtime_ns!=stamp:
-                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore();report(state='ready')
+                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore()
                 if os.name=='nt':
                     from plugins import _practice_keybindings as bindings
                     if time.monotonic()>=next_keys:
@@ -196,11 +219,17 @@ def main(argv=None):
                         if down and not held.get(key):toggle()
                         held[key]=down
         window.events.closed+=lambda:stopped.set()
-        report(state='ready')
         webview.start(monitor,private_mode=False,storage_path=str(folder/'browser'))
         report(state='closed')
-    except Exception as error:
-        report(state='failed',error=str(error)[:250]);raise
+    except (Exception,SystemExit) as error:
+        report(state='failed',error=str(error)[:250])
+        if os.name=='nt' and not options.check_runtime and alive(options.owner_pid):
+            import ctypes
+            message=('Equipment & records could not start.\n装备与战绩窗口启动失败。\n\n'+str(error)[:300]+
+                '\n\nDetails / 日志: '+str(folder/'window-status.json')+
+                '\nRetry / 重试: tools\\open-editor.cmd')
+            ctypes.windll.user32.MessageBoxW(None,message,'StarBreak',0x10)
+        raise
     finally:
         if process and process.poll() is None:
             if url:

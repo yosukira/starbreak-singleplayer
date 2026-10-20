@@ -232,14 +232,20 @@ def engine_fingerprint():
     return digest.hexdigest()
 
 
-def compatible_engine(recorded):
+def compatible_engine(recorded, map_id=None):
     current=engine_fingerprint()
     if recorded==current:return True
     # Exact, audited recorder-only migrations; a future mechanics edit changes
     # the current digest and automatically stops accepting these aliases.
     try:
         aliases=json.loads((paths.ROOT/'data/mechanics/replay_compatibility.json').read_text())
-        return recorded in aliases.get(current,[])
+        if recorded in aliases.get(current,[]):return True
+        # A correction to one encounter need not invalidate unrelated maps.
+        # These identities are still exact and continuation verifies packets.
+        if map_id is not None:
+            scoped=json.loads((paths.ROOT/'data/mechanics/replay_map_compatibility.json').read_text())
+            return recorded in scoped.get(current,{}).get(map_id,[])
+        return False
     except (OSError,ValueError,TypeError):return False
 
 
@@ -419,7 +425,7 @@ class ServerReplay:
     """Rebuild and verify, leaving the real controller alive for continuation."""
     def __init__(self, document, wire=None):
         self.wire=wire
-        if document.get('schema') != SCHEMA or not compatible_engine(document.get('engine')):
+        if document.get('schema') != SCHEMA or not compatible_engine(document.get('engine'),document.get('map')):
             raise ValueError('Replay requires the same simulator engine and map data')
         map_id = document.get('map')
         if map_id not in SUPPORTED_MAPS: raise ValueError('Unsupported replay map')

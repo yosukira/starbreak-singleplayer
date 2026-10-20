@@ -1052,7 +1052,7 @@ class LiveSession(object):
         self.event('loader-emit', objid=int(objid), emit=flame_id,
                    vid=table['vid'], x=int(x), y=int(y))
 
-    def _damage_intro_unit(self, objid, value):
+    def _damage_intro_unit(self, objid, value, native=False):
         unit = self.intro_units.get(int(objid))
         if unit is None:
             return None
@@ -1062,7 +1062,7 @@ class LiveSession(object):
         self.event('intro-damage', objid=int(objid), hp=unit['hp'])
         if unit['hp'] <= 0:
             self.intro_destroyed.append(int(objid))
-            self.batch.destroy(int(objid), ownerid=1, reason='HITPOINTS')
+            if not native:self.batch.destroy(int(objid), ownerid=1, reason='HITPOINTS')
             self._spawn_loader_survivor(unit['x'], unit['y'], unit['w'],
                                         unit['facing'])
             if self.room.object(int(objid)) is not None:
@@ -1177,6 +1177,25 @@ class LiveSession(object):
             kind = item.get('kind')
             if kind == 'destroy' and int(item.get('ownerid') or 0) == self.worldid:
                 victim = int(item.get('victim') or 0)
+                if item.get('reason') in (2,'HITPOINTS'):
+                    # The client owns the mech's final HP death, as in full
+                    # rooms. Delayed/lost damage feedback must not leave a
+                    # removed mech attacking or occupying a portal slot.
+                    intro=self.intro_units.get(victim)
+                    unit=self.enemies.find_unit(victim,alive_only=True) if self.enemies.units else None
+                    retired=False
+                    if (intro is not None and victim not in self.intro_destroyed
+                            and intro['vid'] in self.rules.BIG_ROBOT_VIDS):
+                        retired=bool(self._damage_intro_unit(victim,max(1,intro['hp']),native=True))
+                    elif unit is not None and unit.emitted and unit.vid in self.rules.BIG_ROBOT_VIDS:
+                        result=self.enemies.apply_damage(victim,max(1,unit.hp))
+                        if result and result.get('destroyed'):
+                            self._finish_enemy_death(unit,native=True);retired=True
+                    if retired:
+                        recorder=getattr(self,'battle_recorder',None)
+                        if recorder is not None:recorder.damage(0,killed=True)
+                        self.event('client-mech-destroyed',objid=victim)
+                        continue
                 if victim in self.destructible_terrain_hp:
                     self._retire_destructible_terrain(victim)
                     continue
@@ -1227,17 +1246,7 @@ class LiveSession(object):
                     applied='enemy_applied'
                     if result is not None and result.get('destroyed'):
                         unit = result.get('unit')
-                        self.batch.destroy(unit.objid, ownerid=1,
-                                           reason='HITPOINTS')
-                        unit.emitted = False
-                        self.unit_render_state.pop(unit.objid, None)
-                        x, y = unit.center()
-
-                        if not getattr(unit, 'flying', False):
-                            self._maybe_drop_supply(x, y)
-                        if unit.vid in ('hulk.scavengerloader', 'hulk.eloader'):
-                            self._spawn_loader_survivor(unit.x, unit.y,
-                                                        unit.w, unit.facing, parent=unit)
+                        self._finish_enemy_death(unit)
                 if result is None:
                     result=self._damage_destructible_terrain(victim,value)
                     applied='terrain_applied'
@@ -1269,6 +1278,15 @@ class LiveSession(object):
                                           intval=int(result['hp']))
                 events.append({'kind': 'client-damage', 'victim': victim,
                                'value': value})
+
+    def _finish_enemy_death(self, unit, native=False):
+        if not native:self.batch.destroy(unit.objid,ownerid=1,reason='HITPOINTS')
+        unit.emitted=False
+        self.unit_render_state.pop(unit.objid,None)
+        x,y=unit.center()
+        if not getattr(unit,'flying',False):self._maybe_drop_supply(x,y)
+        if unit.vid in ('hulk.scavengerloader','hulk.eloader'):
+            self._spawn_loader_survivor(unit.x,unit.y,unit.w,unit.facing,parent=unit)
 
     def _spawn_barrel_explosion(self,item):
         'Barrel death creates the runtime ``hulk.barrelx`` blast.'

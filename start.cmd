@@ -35,6 +35,7 @@ goto finish
 exit /b %errorlevel%
 
 :run
+if /i "%~1"=="--editor" goto editor
 "%SIMULATOR_PYTHON%" %SIMULATOR_PYTHON_ARGS% tools\check_runtime.py
 if errorlevel 1 (
   echo Runtime check failed. Re-extract the complete Windows player ZIP.
@@ -47,6 +48,11 @@ if /i "%~1"=="--check-runtime" (
   goto finish
 )
 "%SIMULATOR_PYTHON%" %SIMULATOR_PYTHON_ARGS% tools\launch.py native --sbpe "%~dp0.." --sbpe-direct %*
+set "SIMULATOR_EXIT=%errorlevel%"
+goto finish
+
+:editor
+"%SIMULATOR_PYTHON%" %SIMULATOR_PYTHON_ARGS% -m tools.desktop_view --standalone --show
 set "SIMULATOR_EXIT=%errorlevel%"
 
 :finish

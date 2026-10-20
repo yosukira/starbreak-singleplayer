@@ -347,6 +347,8 @@ class LiveBridge(object):
         self.enabled = False
         self._key_states = None
         self._old_interact = False
+        self._input_interact_down = False
+        self._input_interact_edge = False
 
         self._hold_since = {}
         self._hold_fired = set()
@@ -467,9 +469,19 @@ class LiveBridge(object):
         states, count = self.key_states()
         return states != self.ffi.NULL and 0 < scancode < count and bool(states[scancode])
 
+    def observe_input(self, mask, pressed):
+        # Sample keyboard/controller input before the native action consumes
+        # its interaction bit. Repeated downs must still require a release.
+        if not int(mask) & (1 << INTERACT_INPUT):return
+        down=bool(pressed)
+        if down and not self._input_interact_down:self._input_interact_edge=True
+        self._input_interact_down=down
+
     def interact_edge(self, scancode=0):
         down = self.interact_down(scancode)
-        edge = down and not self._old_interact
+        edge = (getattr(self,'_input_interact_edge',False) or
+                down and not self._old_interact and not getattr(self,'_input_interact_down',False))
+        self._input_interact_edge=False
         self._old_interact = down
         return down, edge
 

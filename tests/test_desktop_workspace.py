@@ -50,8 +50,12 @@ class DesktopWorkspaceTests(unittest.TestCase):
 
     def test_preferences_and_reset_use_native_settings(self):
         preferences = self.workspace.preferences()
+        self.assertTrue(preferences['record_replays'])
+        preferences['record_replays'] = False
         preferences['keys']['editor_toggle_alt'] = 'F9'
         self.workspace.save_preferences(preferences)
+        self.assertEqual(json.loads((self.source/'recording.json').read_text()),dict(record_replays=False))
+        self.assertFalse(DesktopWorkspace(self.root/'ui',self.source).preferences()['record_replays'])
         self.assertEqual(json.loads((self.source / 'keybindings.json').read_text())['editor_toggle_alt'], 'F9')
         original = self.workspace.read()
         original['loadouts']['2']['mk_'] = 2

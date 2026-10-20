@@ -10,6 +10,27 @@ from tools.client_replay import ClientJournals, operation
 
 
 class ClientJournalTests(unittest.TestCase):
+    def test_immutable_browser_chunks_migrate_reopen_retry_and_fork(self):
+        with tempfile.TemporaryDirectory() as directory:
+            legacy, identifier = self.begin(directory)
+            operations = [['loop',0],['clock',123],['loop',1]]
+            legacy.append(identifier,dict(sequence=0,ops=operations,end=False))
+            legacy.append(identifier,dict(sequence=1,ops=[['close']],end=True))
+            before = legacy.read(identifier)
+            browser = ClientJournals(directory,chunk_files=True)
+            self.assertEqual(browser.migrate_chunks(),2)
+            self.assertEqual(browser.migrate_chunks(),0)
+            self.assertEqual(browser.read(identifier),before)
+            files = {path.name:path.read_bytes() for path in browser.chunk_directory.iterdir()}
+            browser.append(identifier,dict(sequence=1,ops=[['close']],end=True))
+            self.assertEqual(files,{path.name:path.read_bytes() for path in browser.chunk_directory.iterdir()})
+            branch = browser.fork(identifier,3)
+            browser.append(branch['id'],dict(sequence=branch['sequence'],ops=[['close']],end=True))
+            self.assertEqual(ClientJournals(directory).read(branch['id'])['ops'],before['ops'])
+            # A missing payload must be reported; never return a partial replay.
+            next(browser.chunk_directory.iterdir()).unlink()
+            with self.assertRaisesRegex(ValueError,'missing'):browser.read(identifier)
+
     def begin(self, directory):
         store=ClientJournals(directory)
         identifier=str(uuid.uuid4())

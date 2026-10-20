@@ -44,8 +44,8 @@ def browser_document(directory, identifier, version, adapter=None, require_exact
     if value['client'] not in CLIENTS:
         raise ValueError('Unsupported original native client version')
     if require_exact:
-        from tools.native_replay import adapter_digest as native_adapter
-        if value['adapter']!=native_adapter():raise ValueError('Portable takeover requires the matching native replay adapter')
+        from tools.native_replay import compatible_adapter
+        if not compatible_adapter(value['adapter']):raise ValueError('Portable takeover requires the matching native replay adapter')
         supported_runners(value,adapter)
     hello = build_hello(dict(id=version.get('id_',version.get('id')), timestamp=version.get('timestamp_',version.get('timestamp'))))
     # The browser executable's protobuf uses the same version data, with a

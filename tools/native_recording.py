@@ -12,6 +12,7 @@ from pathlib import Path
 import socket
 import select
 import threading
+import time
 import uuid
 
 from plugins._native_replay_capture import CLIENTS
@@ -20,16 +21,19 @@ from tools import native_symbols
 
 
 class NativeRecording:
-    def __init__(self,directory,executable,viewport=(1366,768),registry=None):
+    def __init__(self,directory,executable,viewport=(1366,768),registry=None,recording=True,health_path=None):
         manifest=native_symbols.resolve(executable)
         if manifest['client'] not in CLIENTS:raise ValueError('The native replay adapter does not match this executable')
         self.identifier=str(uuid.uuid4());self.token=secrets.token_hex(32)
         self.journals=NativeJournals(directory);self.lock=threading.RLock();self.closed=False
         self.restart_request=None
+        self.health_path=Path(health_path) if health_path else None
+        self.started=time.monotonic()
         from tools.native_playback import NativePlayback
         self.playback=NativePlayback(directory,manifest['client']);self.ready=threading.Event();self.proxy=None
         self.registry=Path(registry) if registry else None
-        self.journals.begin(self.identifier,manifest['client'],adapter_digest(),dict(content=None),viewport)
+        self.recording=recording
+        if recording:self.journals.begin(self.identifier,manifest['client'],adapter_digest(),dict(content=None),viewport)
         owner=self
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args):pass
@@ -42,6 +46,7 @@ class NativeRecording:
                 if not self.authorized():return self.send_error(403)
                 from urllib.parse import urlsplit,parse_qs
                 url=urlsplit(self.path)
+                if url.path=='/health':return self.result(owner.health())
                 if url.path=='/status':return self.result(dict(owner.playback.status,serial=owner.playback.serial,error=owner.playback.error or owner.playback.status.get('error')))
                 if url.path!='/control':return self.send_error(404)
                 try:
@@ -84,12 +89,26 @@ class NativeRecording:
                 except (ValueError,TypeError,KeyError):self.send_error(400,'Invalid native recording chunk')
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         self.server.daemon_threads=True
-        self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest)
+        self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest,recording=recording)
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
         if self.registry:
             from tools.web_workspace import atomic_json
             atomic_json(self.registry,dict(url=self.config['url'],token=self.token,pid=os.getpid()))
             self.registry.chmod(0o600)
+
+    def health(self):
+        value={}
+        try:
+            if self.health_path:value=json.loads(self.health_path.read_text(encoding='utf8'))
+        except (OSError,ValueError):pass
+        if not isinstance(value,dict) or type(value.get('at')) not in (int,float):value={}
+        if not value:return dict(state='starting' if time.monotonic()-self.started<20 else 'missing')
+        if time.time()-value.get('at',0)>4:return dict(state='stale')
+        if not value.get('active'):state='error' if value.get('error') else 'disabled'
+        elif value.get('hook_error'):state='degraded'
+        elif not value.get('connected'):state='waiting'
+        else:state='connected'
+        return dict(state=state,replay_ready=value.get('replay_ready',False))
 
     def gate(self,upstream):
         """Delay only this owned connection until the capture hooks are ready."""
@@ -140,7 +159,7 @@ class NativeRecording:
         # A game process can close without running a plugin destructor. Retain
         # only a fully delivered and validated frame boundary, never a half
         # native call. Pending/in-flight chunks are not guessed or synthesized.
-        for identifier in [self.identifier]+list(self.playback.branches):
+        for identifier in ([self.identifier] if self.recording else [])+list(self.playback.branches):
             self.seal(identifier)
 
     def seal(self,identifier):

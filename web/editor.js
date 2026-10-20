@@ -24,6 +24,12 @@ class WebEquipment {
     this.$('item-search').oninput=()=>{this.itemOptions();this.remember();};
     this.$('sort-items').onclick=()=>{this.itemSort=this.itemSort==='id'?'name':'id';localStorage.setItem('starbreak-item-sort',this.itemSort);this.itemOptions();this.remember();};
     this.$('all-classes').onchange=()=>{this.itemOptions();this.remember();};
+    this.$('record-replays').onchange=()=>this.action(async()=>{
+      const input=this.$('record-replays'),enabled=input.checked;input.disabled=true;
+      clearTimeout(this.preferenceTimer);
+      try{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),record_replays:enabled});this.changed();}
+      finally{input.checked=this.preferences.record_replays!==false;input.disabled=false;}
+    });
     this.$('reset-keys').onclick=()=>{this.keyDraft={...this.data.key_defaults};this.keyboard();};
     this.$('save-keys').onclick=()=>this.action(async()=>{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),keys:this.keyDraft});this.keyDraft={...this.preferences.keys};this.changed();this.$('keyboard-notice').textContent=this.t('按键已保存，立即生效。','Keyboard settings saved and applied.');});
     this.$('editor-item').onchange=event=>{this.replaceItem(+event.target.value);this.render();};
@@ -144,6 +150,7 @@ class WebEquipment {
   render(){
     if(!this.profile)return;
     this.renderUpdate();
+    this.$('record-replays').checked=this.preferences?.record_replays!==false;
     this.$('editor-class').value=this.shell;this.$('editor-mk').value=this.row().mk_;this.$('editor-implants').value=this.row().impslots_;
     this.$('equipment-slots').replaceChildren(...this.data.slots.map(slot=>{
       const button=document.createElement('button'),item=this.row().items_.find(item=>item.slotpos_===slot.id),label=document.createElement('strong'),name=document.createElement('small');
