@@ -149,6 +149,22 @@ class NativePlayerTests(unittest.TestCase):
         self.assertEqual(target.props.hitpoints,133);self.assertEqual(target.props.xmp,610)
         self.assertEqual(player.seconds,.51);self.assertEqual(document,before)
 
+    def test_selected_world_primes_verified_prefix_then_uses_relative_replay_time(self):
+        from tools.native_playback import native_battle_view
+        document=Engine().record(10);document['ops']+=Engine().record(10)['ops']
+        document['view']=native_battle_view(document['ops'],2)
+        target=Engine();player=target.play(document)
+        self.assertFalse(player.can_takeover())
+        player.control(dict(action='pause',paused=True));player.update()
+        self.assertFalse(player.priming);self.assertTrue(player.can_takeover())
+        self.assertAlmostEqual(player.status()['seconds'],0)
+        player.control(dict(action='seek',seconds=.085));player.update()
+        self.assertFalse(player.seeking);self.assertAlmostEqual(player.status()['seconds'],.085)
+        player.control(dict(action='seek',seconds=.017));player.update();player.update()
+        self.assertFalse(player.priming);self.assertFalse(player.seeking)
+        self.assertAlmostEqual(player.status()['seconds'],.017)
+        self.assertIsNone(target.capture.tape.error)
+
     def test_pause_quarter_speed_seek_and_original_keyboard_only_takeover(self):
         document=Engine().record();target=Engine();player=target.play(document)
         player.control(dict(action='speed',speed=.25));target.mono=.4;player.update()
@@ -278,7 +294,10 @@ class NativeHostTests(unittest.TestCase):
             records,native,request,document=native_fixture(directory);service=NativePlayback(directory,'a'*64)
             try:
                 service.action(dict(action='watch',record=request['record']))
-                initial=service.poll(0);self.assertEqual(initial['play']['document'],document)
+                initial=service.poll(0)
+                selected=initial['play']['document']
+                self.assertEqual({k:v for k,v in selected.items() if k!='view'},document)
+                self.assertEqual(selected['view']['end'],len(document['ops']))
                 self.assertNotIn('play',service.poll(initial['serial']))
                 service.action(dict(action='speed',speed=.25));self.assertEqual(service.poll(service.serial)['controls'][0]['speed'],.25)
                 service.feedback(dict(serial=service.serial-1,status=dict(state='live')))

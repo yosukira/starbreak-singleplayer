@@ -158,9 +158,16 @@ class NativeCapture:
         self.resource_depth=0;self.pending_assets=0
         self.tape=NativeTape(save=save,notice=notice)
         hooks=[]
+        self.shared_hook_owners=[]
         for name,result,arguments,convention,kind in ABI:
             row=manifest['hooks'][name]
-            hooks.append(hook(ffi,lib,base+row['rva'],bytes.fromhex(row['signature']),
+            target,signature=base+row['rva'],bytes.fromhex(row['signature'])
+            if hook is NativeHook:
+                try:from ._native_replay_hooks import shared_hook_target
+                except (ImportError,ValueError,SystemError):from _native_replay_hooks import shared_hook_target
+                target,signature,owner=shared_hook_target(ffi,lib,refs,name,target,signature)
+                if owner is not None:self.shared_hook_owners.append(owner)
+            hooks.append(hook(ffi,lib,target,signature,
                 result=result,arguments=arguments,convention=convention,replace=self.replacement(kind)))
             self.functions[kind]=hooks[-1]
         self.hooks=NativeHookGroup(hooks)
@@ -187,7 +194,7 @@ class NativeCapture:
                 return True if kind=='read' else 0 if kind in ('clock','random32','random64','player-input') else None
             if (kind=='input' and self.input_observer is not None and threading.get_ident()==self.owner
                     and (player is None or player.phase=='live')):
-                self.input_observer(int(args[1]),bool(args[2]))
+                self.input_observer(int(args[1]),bool(args[2]),self.keyboard_depth>0)
             if player is None and not self.recording:
                 # Keep bootstrap descriptions for playback, but no per-frame
                 # clocks, input, world checks or journal writes in live play.

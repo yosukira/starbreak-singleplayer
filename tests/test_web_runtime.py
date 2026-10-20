@@ -20,6 +20,18 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WebRuntimeTests(unittest.TestCase):
+    def test_desktop_native_recordings_never_fall_back_to_browser_on_adapter_failure(self):
+        app=Prototype.__new__(Prototype);app.client=b'original-browser-client'
+        app.options=SimpleNamespace(desktop=True)
+        app.records=mock.Mock();app.records.directory=Path('unused-native-route-fixture')
+        app.records.list.return_value=[dict(id='battle',platform='native',replay=dict(id='attempt'))]
+        app.client_journals=mock.Mock();app.client_journals.statuses.return_value={}
+        unavailable=dict(id='attempt',available=False,format='native',engine='browser',reason='incompatible')
+        with mock.patch('tools.portable_replay.availability',return_value={'attempt':unavailable}),mock.patch('tools.native_playback.NativeControlClient',side_effect=OSError('not running')):
+            result=app.battle_records()[0]['replay']
+        self.assertEqual(result['engine'],'native')
+        self.assertFalse(result['available'])
+
     def test_native_editor_and_history_need_no_browser_engine_download(self):
         with tempfile.TemporaryDirectory() as directory, mock.patch.object(paths,'USERDATA',Path(directory)/'native'):
             paths.ensure_user_data()

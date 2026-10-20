@@ -273,13 +273,22 @@
       if(this.mode!=='play'||this.finished||this.error||this.handoffPending)return;
       // A newer play/pause request also owns the state after an in-flight seek.
       // Otherwise completion can silently restore the seek's older pause flag.
-      if(this.seekTarget!==null)this.seekPaused=value===true;
+      if(this.seekTarget!==null){
+        this.seekPaused=value===true;
+        if(value===true)this.cancelSeek(true);
+      }
       // Initial UI/network/texture callbacks must reach a real player frame
       // before pausing. Otherwise seeking back to 0 while paused deadlocks the
       // loading overlay and leaves its navigation permanently disabled.
       this.pauseWhenReady=value===true&&!this.worldReady&&this.hasPlayerFrames;
       this.paused=value===true&&!this.pauseWhenReady;this.wall=null;
       if(!this.pauseWhenReady)this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
+    }
+    cancelSeek(paused=false){
+      if(this.mode!=='play'||this.seekTarget===null||this.handoffPending)return;
+      this.seekTarget=null;this.seekPaused=paused;this.paused=paused;this.wall=null;
+      this.playTime=this.schedule.find(row=>row.cursor>=this.cursor)?.time??this.elapsed;
+      this.notice({state:paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
     }
     setSpeed(value) {
       if([.25,.5,1,2,4].includes(value)){this.speed=value;this.wall=null;}
@@ -449,6 +458,7 @@
   },400):null;
   async function takeOver(tap=null){
     if(pendingTakeover)return;
+    if(replay.takeoverAllowed)replay.cancelSeek(false);
     if(!replay.canTakeOver()){
       if(replay.seekTarget===null&&replay.takeoverAllowed&&replay.mode==='play'&&!replay.error&&!replay.finished&&replay.world)queuedTakeover=tap;
       return;

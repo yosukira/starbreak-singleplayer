@@ -114,6 +114,7 @@ class Plugin(PluginBase):
                     self.native_capture.input_observer=self.bridge.observe_input
             except Exception as error:
                 LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)
+        self.replay_initialized=True
         self._report_health()
 
     def _report_health(self):
@@ -125,7 +126,7 @@ class Plugin(PluginBase):
             import json
             value=dict(at=now,active=self.active,connected=self.bridge.link_ok(),sent=self.bridge.sent,
                 hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
-                replay_ready=self.native_capture is not None)
+                replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False))
             temporary=path+'.part'
             with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
             os.replace(temporary,path)

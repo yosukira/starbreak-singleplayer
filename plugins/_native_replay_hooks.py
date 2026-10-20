@@ -30,6 +30,37 @@ def argument_count(value):
     return value
 
 
+def shared_hook_target(ffi,lib,refs,name,target,expected):
+    """Observe the verified original trampoline of two known SBPE hooks.
+
+    Their callbacks remain installed. Unknown patches still fail closed; a
+    known owner's trampoline must contain the original prologue followed by
+    a jump back to this exact executable entry.
+    """
+    actual=bytes(ffi.buffer(ffi.cast('const char *',target),len(expected)))
+    if actual==expected:return target,expected,None
+    active=getattr(getattr(refs,'manager',None),'_active',{})
+    owner=None;handle=None
+    if name=='WorldClient::updateInput':
+        owner=getattr(active.get('plugin_combat_assist'),'native',None)
+        handle=getattr(owner,'update_input_hook',None)
+    elif name=='MessageHandlers::run':
+        owner=getattr(active.get('plugin_combat_recorder'),'_net',None)
+        handle=getattr(owner,'_hook',None)
+    if (actual[:1]!=b'\xe9' or owner is None or handle is None or handle==ffi.NULL
+            or not lib.subhook_is_installed(handle)):
+        raise ValueError('Native replay conflicts with another code patch: '+name)
+    pointer=lib.subhook_get_trampoline(handle)
+    if pointer==ffi.NULL:raise ValueError('Existing native hook has no original trampoline: '+name)
+    address=int(ffi.cast('uintptr_t',pointer))
+    code=bytes(ffi.buffer(ffi.cast('const char *',pointer),len(expected)+5))
+    for size in range(5,len(expected)+1):
+        if code[:size]!=expected[:size] or code[size:size+1]!=b'\xe9':continue
+        destination=(address+size+5+struct.unpack('<i',code[size+1:size+5])[0])&0xffffffff
+        if destination==(target+size)&0xffffffff:return address,code[:size+5],owner
+    raise ValueError('Existing native hook does not preserve verified code: '+name)
+
+
 def thiscall_callback(callback, count):
     """thiscall -> cdecl callback(this, arguments...), including callee pop."""
     count = argument_count(count)

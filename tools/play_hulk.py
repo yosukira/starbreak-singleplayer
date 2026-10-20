@@ -957,7 +957,7 @@ def session(argv=None,show_editor=True):
             try:
                 from tools.native_recording import NativeRecording
                 from localserver.battle_records import RecordStore
-                native_recording=NativeRecording(RecordStore().directory,client,registry=LAB/'userdata/native-control.json',recording=recording_enabled,health_path=logs/'bridge-status.json')
+                native_recording=NativeRecording(RecordStore().directory,client,registry=LAB/'userdata/native-control.json',recording=recording_enabled,health_path=logs/'bridge-status.json',practice_path=logs/'practice-request.json')
                 print('Native replay recording ready.' if recording_enabled else 'Native controls ready; replay recording disabled.',flush=True)
             except Exception as error:
                 print('Native replay recording unavailable: '+type(error).__name__,flush=True)
@@ -1020,6 +1020,7 @@ def session(argv=None,show_editor=True):
                 command.extend(['--live-demo-damage', '--live-auto-interact',
                                 '--live-force-demo'])
             server_env=dict(os.environ)
+            if native_recording:server_env['SB_NATIVE_PRACTICE_PATH']=str(native_recording.practice_path)
             server_env.pop('SB_REPLAY_ATTEMPT',None)
             server_env['SB_RECORD_REPLAY']='0'
             if native_recording and recording_enabled:

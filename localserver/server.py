@@ -1210,6 +1210,10 @@ class LocalServer(object):
             session = self.live_session
             if session is None:
                 continue
+            if os.environ.get('SB_NATIVE_PRACTICE_PATH'):
+                if self._apply_native_practice(channel,session):continue
+                self._apply_bridge_restart(channel,session)
+                continue
             if self._apply_bridge_restart(channel, session):
                 continue
             current = (getattr(self.options, 'map', None)
@@ -1221,6 +1225,22 @@ class LocalServer(object):
                 continue
             if self.request_live_map_switch(channel, session, changed):
                 self._map_settings_mtime = mtime
+
+    def _apply_native_practice(self,channel,session):
+        """The desktop editor uses the same zone reload as R/class shortcuts."""
+        try:
+            with open(os.environ['SB_NATIVE_PRACTICE_PATH'],encoding='utf8') as handle:request=json.load(handle)
+            serial=request['id'];map_id=request['map'];shell=request['shell']
+            if (not isinstance(serial,str) or serial==getattr(self,'_native_practice_applied',None)
+                    or map_id not in game_settings.available_maps() or type(shell) is not int or shell not in (1,2,3,5)):
+                return False
+        except (OSError,ValueError,KeyError,TypeError):return False
+        if self._restart_in_progress or not self._ground_ack_ready(session.bridge):return True
+        if map_id!=(getattr(self.options,'map',None) or game_settings.ORIGINAL_MAP):
+            if not self.request_live_map_switch(channel,session,map_id,player_type=shell):return True
+        else:self.request_live_restart(channel,session,shell)
+        if self._restart_in_progress:self._native_practice_applied=serial
+        return True
 
     def request_live_room_transition(self, channel, session, link, player):
         """Accept a door intent; commit only after its native inventory refresh."""
@@ -1484,7 +1504,7 @@ class LocalServer(object):
         self._request_pvid_loads(channel)
         return True
 
-    def request_live_map_switch(self, channel, session, map_id):
+    def request_live_map_switch(self, channel, session, map_id, player_type=None):
         """Reload the zone into another map pack (editor map switch).
 
         The CreateWorld and bootstrap blobs are built once in ``__init__``,
@@ -1531,7 +1551,7 @@ class LocalServer(object):
         log('map switch: {0} -> {1} (pvid {2}, zone {3})'.format(
             current, map_id, self.options.pvid, self.options.zone))
         self.request_live_restart(channel, session,
-                                  getattr(session, 'player_type', 1) or 1)
+                                  player_type if player_type is not None else (getattr(session, 'player_type', 1) or 1))
         return True
 
     def _new_ground_restore_host(self,egress,destination,checkpoint):

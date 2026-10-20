@@ -11,6 +11,25 @@ from tools.native_replay import NativeJournals,adapter_digest,compatible_adapter
 from tools.replay_host import WarmTakeovers
 
 
+def native_battle_view(operations,world_sequence):
+    """Keep the verified prefix, but present only the selected practice world."""
+    sequence=0;boundary=0;elapsed=0.;start=None;offset=0.;end=len(operations);duration=0.;transition=None
+    for index,row in enumerate(operations):
+        if row[0]=='message' and row[1]==21 and sequence and transition is None:transition=(boundary,elapsed)
+        if row[0]=='message' and row[1]==10:
+            sequence+=1
+            if sequence==world_sequence:start=boundary;offset=elapsed
+            elif sequence==world_sequence+1:
+                end,end_time=transition if transition is not None else (boundary,elapsed)
+                duration=end_time-offset;break
+            transition=None
+        if row[0]=='step':elapsed+=row[1]/1000.
+        if row==['loop',1]:boundary=index+1
+    else:duration=elapsed-offset
+    if start is None or end<=start:raise ValueError('The selected battle is missing from this native recording')
+    return dict(start=start,end=end,offset=offset,duration=duration)
+
+
 class NativePlayback:
     def __init__(self,directory,client):
         self.records=RecordStore(directory);self.clients=NativeJournals(directory);self.client=client
@@ -36,6 +55,10 @@ class NativePlayback:
                     raise ValueError('Native replay requires the matching checked client and replay adapter')
                 if not any(row[0]=='message' and row[1]==10 for row in document['ops']):
                     raise ValueError('This older recording has no native world bootstrap; record a new battle')
+                from localserver.replay import read_journal,SUPPORTED_MAPS
+                if record['map'] in SUPPORTED_MAPS:
+                    journal=read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
+                    document=dict(document,view=native_battle_view(document['ops'],journal.get('world_sequence',1)))
                 old_host,old_warm=self.host,self.warm
                 self.host=None;self.warm=WarmTakeovers();self.source=record;self.serial+=1;self.error=None
                 self.command=dict(serial=self.serial,record=record['id'],document=document)

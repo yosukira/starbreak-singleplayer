@@ -469,9 +469,15 @@ class LiveBridge(object):
         states, count = self.key_states()
         return states != self.ffi.NULL and 0 < scancode < count and bool(states[scancode])
 
-    def observe_input(self, mask, pressed):
+    def observe_input(self, mask, pressed, keyboard=False):
         # Sample keyboard/controller input before the native action consumes
         # its interaction bit. Repeated downs must still require a release.
+        if pressed and int(mask)&0x2ff and not self._overlay_open():
+            manual=bool(keyboard)
+            if not manual:
+                try:manual=bool(self.physical_input_mask()&int(mask))
+                except (AttributeError,RuntimeError,OSError):pass
+            if manual:self.sample_battle_activity(True)
         if not int(mask) & (1 << INTERACT_INPUT):return
         down=bool(pressed)
         if down and not self._input_interact_down:self._input_interact_edge=True

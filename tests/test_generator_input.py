@@ -8,6 +8,19 @@ from test_replay import encounter
 
 
 class GeneratorInputTests(unittest.TestCase):
+    def test_manual_native_input_counts_activity_before_its_mask_is_consumed(self):
+        from unittest import mock
+        bridge=LiveBridge.__new__(LiveBridge)
+        bridge._overlay_open=lambda:False;bridge.physical_input_mask=lambda:0
+        bridge.sample_battle_activity=mock.Mock()
+        bridge.observe_input(32,True)
+        bridge.sample_battle_activity.assert_not_called()
+        bridge.observe_input(32,True,keyboard=True)
+        bridge.sample_battle_activity.assert_called_once_with(True)
+        bridge.sample_battle_activity.reset_mock();bridge.physical_input_mask=lambda:2
+        bridge.observe_input(2,True)
+        bridge.sample_battle_activity.assert_called_once_with(True)
+
     def test_consumed_controller_bit_survives_once_until_release(self):
         bridge=LiveBridge.__new__(LiveBridge)
         bridge._input_interact_down=False;bridge._input_interact_edge=False;bridge._old_interact=False

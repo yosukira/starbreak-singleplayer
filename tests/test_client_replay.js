@@ -106,6 +106,11 @@ function engine(){
   seeking.seek(.8,true);seeking.setPaused(false);
   seeking.iterate(()=>{seeking.loop(0);seeking.value('tick',0);seeking.frame(seekEngine.world,99);seeking.frameEnd(seekEngine.world);seeking.loop(1);});
   assert.equal(seeking.elapsed,800);assert.equal(seeking.paused,false,'Resume during a seek must not be undone when seeking finishes');
+  seeking.seek(.95,true);seeking.setSpeed(2);seeking.setPaused(true);
+  assert.equal(seeking.seekTarget,null,'Pause must cancel a pending seek at the current verified frame');
+  assert.equal(seeking.paused,true);assert.equal(seeking.speed,2);assert.equal(seeking.elapsed,800);
+  seeking.setPaused(false);seeking.seek(.95);seeking.cancelSeek(false);
+  assert.equal(seeking.seekTarget,null);assert.equal(seeking.paused,false,'Keyboard takeover can cancel seeking without discarding the verified checkpoint');
   const initializeOps=[['loop',0],['tick',0],['loop',1],['loop',0],['tick',5000],['loop',1],
     ['loop',0],['tick',6000],['frame',17],['state',seekState],['loop',1]];
   const initialize=new ClientReplay({module:seekEngine.module,mode:'play',document:{ops:initializeOps},now:()=>0});

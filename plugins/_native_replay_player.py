@@ -27,7 +27,7 @@ class NativePlayer:
         self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[]
         self.world_created=False;self.phase='playing';self.speed=1.;self.paused=False
         self.preload=[];seen=set()
-        for row in ops:
+        for row in ops[:int((document.get('view') or {}).get('end',len(ops)))]:
             if row[0]=='message' and row[1]==21 and row[2]not in seen:self.preload.append(row);seen.add(row[2])
         self.preloaded=not self.preload;self.preloading=False
         self.target=None;self.seeking=False;self.cursor=0;self.seconds=0.;self.acks=[]
@@ -37,6 +37,10 @@ class NativePlayer:
             if row==['loop',1]:self.ends.append(index+1);self.times.append(elapsed)
         if not self.ends:raise ValueError('Native recording has no completed game frames')
         self.duration=elapsed;self.anchor=clock();self.anchor_seconds=0.;self.reset()
+        view=document.get('view') or {}
+        self.view_start=int(view.get('start',0));self.view_end=int(view.get('end',len(ops)))
+        self.view_offset=float(view.get('offset',0));self.view_duration=float(view.get('duration',self.duration))
+        self.priming=bool(view)
 
     def blocked(self):return self.phase!='live'
 
@@ -45,6 +49,7 @@ class NativePlayer:
         self.capture.engine_elapsed=0;self.world_created=False
         self.cursor=0;self.seconds=0.;self.phase='playing' if self.preloaded else 'preparing';self.requested=False
         self.anchor=self.clock();self.anchor_seconds=0.
+        self.priming=bool(self.document.get('view'))
 
     def read_body(self):
         tape=self.capture.tape
@@ -83,28 +88,30 @@ class NativePlayer:
             return
         if self.phase!='playing' or self.capture.tape.error:return
         now=self.clock()
-        if self.paused and not self.seeking:
+        if self.paused and not self.seeking and not self.priming:
             self.anchor=now;self.anchor_seconds=self.seconds;return
         target=self.target if self.seeking else self.anchor_seconds+(now-self.anchor)*self.speed
         deadline=now+.008;count=0
         try:
             self.capture.driving=True
-            while self.capture.tape.cursor<len(self.capture.tape.ops):
+            while self.capture.tape.cursor<self.view_end:
                 index=bisect.bisect_right(self.ends,self.capture.tape.cursor)
                 if index>=len(self.ends):break
-                if self.times[index]>target+1e-7:break
+                if not self.priming and self.times[index]>target+1e-7:break
                 self.frame();count+=1
+                if self.priming and self.cursor>self.view_start and self.world_created and len(self.capture.state())==14:
+                    self.priming=False;self.anchor=self.clock();self.anchor_seconds=self.seconds;break
                 if self.requested and self.can_takeover():break
                 if count>=2048 or self.clock()>=deadline:break
             if self.seeking and (bisect.bisect_right(self.times,target)<=bisect.bisect_right(self.ends,self.cursor)):
                 self.seeking=False;self.anchor=self.clock();self.anchor_seconds=self.seconds
-            if self.cursor==len(self.capture.tape.ops):self.phase='ended'
+            if self.cursor>=self.view_end:self.phase='ended'
         except Exception as error:
             self.capture.tape.fail(error);self.phase='failed'
         finally:self.capture.driving=False
 
     def can_takeover(self):
-        return bool(self.phase=='playing' and not self.seeking and self.world_created and self.capture.tape.can_takeover())
+        return bool(self.phase=='playing' and not self.priming and not self.seeking and self.world_created and self.capture.tape.can_takeover())
 
     def keyboard_input(self,mask,pressed):
         # Called only inside the checked original keyboard-event dispatcher.
@@ -126,7 +133,8 @@ class NativePlayer:
             self.speed=float(value['speed'])
         elif action=='seek':
             target=value.get('seconds')
-            if type(target)not in(int,float) or not 0<=target<=self.duration:raise ValueError('Invalid native seek target')
+            if type(target)not in(int,float) or not 0<=target<=self.view_duration:raise ValueError('Invalid native seek target')
+            target+=self.view_offset
             if target<self.seconds or self.phase=='ended':self.reset()
             self.target=float(target);self.seeking=True
         elif action=='takeover':
@@ -152,8 +160,8 @@ class NativePlayer:
         return checkpoint
 
     def status(self):
-        return dict(state='failed' if self.capture.tape.error and self.capture.tape.mode=='play' else 'seeking' if self.seeking else self.phase,
-            cursor=self.cursor,seconds=self.seconds,duration=self.duration,paused=self.paused,
+        return dict(state='failed' if self.capture.tape.error and self.capture.tape.mode=='play' else 'preparing' if self.priming else 'seeking' if self.seeking else self.phase,
+            cursor=self.cursor,seconds=max(0,self.seconds-self.view_offset),duration=self.view_duration,paused=self.paused,
             speed=self.speed,takeover=self.can_takeover(),error=self.capture.tape.error,
-            target=self.target if self.seeking else None,
+            target=max(0,self.target-self.view_offset) if self.seeking else None,
             assets_loaded=max(0,len(self.preload)-self.capture.pending_assets),assets_total=len(self.preload))

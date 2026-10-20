@@ -21,12 +21,13 @@ from tools import native_symbols
 
 
 class NativeRecording:
-    def __init__(self,directory,executable,viewport=(1366,768),registry=None,recording=True,health_path=None):
+    def __init__(self,directory,executable,viewport=(1366,768),registry=None,recording=True,health_path=None,practice_path=None):
         manifest=native_symbols.resolve(executable)
         if manifest['client'] not in CLIENTS:raise ValueError('The native replay adapter does not match this executable')
         self.identifier=str(uuid.uuid4());self.token=secrets.token_hex(32)
         self.journals=NativeJournals(directory);self.lock=threading.RLock();self.closed=False
         self.restart_request=None
+        self.practice_path=Path(practice_path) if practice_path else None
         self.health_path=Path(health_path) if health_path else None
         self.started=time.monotonic()
         from tools.native_playback import NativePlayback
@@ -70,7 +71,15 @@ class NativeRecording:
                                 raise ValueError('Invalid practice encounter')
                             with owner.lock:
                                 if owner.closed:raise ValueError('Native launcher has closed')
-                                owner.restart_request=dict(map=map_id,shell=shell)
+                                recording_changed=False
+                                try:
+                                    if owner.registry:
+                                        recording_changed=(json.loads((owner.registry.parent/'recording.json').read_text()).get('record_replays',True) is not False)!=owner.recording
+                                except (OSError,ValueError,TypeError):pass
+                                if owner.practice_path and not owner.playback.source and not recording_changed:
+                                    from tools.web_workspace import atomic_json
+                                    atomic_json(owner.practice_path,dict(id=str(uuid.uuid4()),map=map_id,shell=shell))
+                                else:owner.restart_request=dict(map=map_id,shell=shell)
                             return self.result(dict(starting=True,map=map_id,shell=shell))
                         return self.result(owner.playback.action(value))
                     if self.path=='/feedback':owner.playback.feedback(value);return self.result(dict(accepted=True))
@@ -123,7 +132,16 @@ class NativeRecording:
                 connections.append(client)
                 target=socket.create_connection(('127.0.0.1',upstream),timeout=5);connections.append(target)
                 # Missing/unsupported hooks must not prevent ordinary practice.
-                self.ready.wait(15)
+                deadline=time.monotonic()+15
+                while not self.ready.wait(.05):
+                    # A completed, failed recorder initialization is decisive;
+                    # ordinary practice must not wait for a control poll that
+                    # can never arrive.
+                    try:
+                        status=json.loads(self.health_path.read_text(encoding='utf8')) if self.health_path else {}
+                        if status.get('replay_initialized') and not status.get('replay_ready'):break
+                    except (OSError,ValueError):pass
+                    if stopped.is_set() or time.monotonic()>=deadline:break
                 for stream in connections:stream.setblocking(False)
                 while not stopped.is_set():
                     ready,_,_=select.select(connections,[],[],.2)

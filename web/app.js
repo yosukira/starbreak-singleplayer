@@ -112,7 +112,7 @@
     if(!seekDragging&&Number.isFinite(data.seconds))seek.value=String(data.seconds);
     $('replay-takeover').disabled=state==='failed'||state==='ended'||state==='taking-over'||!data.takeover;
     if(state==='seeking'){
-      $('replay-pause').disabled=$('replay-speed').disabled=true;
+      $('replay-pause').disabled=$('replay-speed').disabled=false;
       $('replay-progress').textContent=t('正在跳转…','Seeking…')+' '+Math.floor(data.seconds||0)+' / '+Math.floor(data.target||0)+'s';
       if(data.frame>0)finishLoading();return;
     }

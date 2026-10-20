@@ -252,9 +252,13 @@ class Prototype:
                 control=NativeControlClient();native_states={}
                 for offset in range(0,len(native_ids),500):native_states.update(control.call('/availability',dict(ids=native_ids[offset:offset+500])))
                 for row in rows:
-                    if native_states.get(row.get('replay',{}).get('id'),{}).get('available'):
-                        row['replay']=dict(native_states[row['replay']['id']],engine='native')
+                    if row.get('replay',{}).get('id') in native_ids:
+                        state=native_states.get(row['replay']['id'],dict(available=False,reason='native-unavailable'))
+                        row['replay']=dict(state,engine='native',format='native')
             except (OSError,ValueError,KeyError):pass
+        if getattr(self.options,'desktop',False):
+            for row in rows:
+                if row.get('replay',{}).get('format',row.get('platform'))=='native':row['replay']['engine']='native'
         return rows
 
     def replay_document(self, identifier, require_exact=False):
