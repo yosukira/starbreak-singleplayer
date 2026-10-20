@@ -850,6 +850,7 @@ def main():
     parser.add_argument('--data-dir', type=Path, help='Separate browser profile and asset cache directory')
     parser.add_argument('--records-dir', type=Path, help='Use an existing battle history without moving or copying records')
     parser.add_argument('--desktop', action='store_true', help='Shared UI backed by native equipment, settings and launch controls')
+    parser.add_argument('--owner-pid', type=int, help='Close the local desktop service when its window exits')
     parser.add_argument('--no-browser', action='store_true', help='Print the address without opening a browser')
     parser.add_argument('--check-runtime', action='store_true', help='Verify the bundled browser runtime and exit')
     options = parser.parse_args()
@@ -866,6 +867,12 @@ def main():
     prototype = Prototype(options)
     http = ThreadingHTTPServer(('127.0.0.1', options.port), Handler)
     http.prototype = prototype
+    if options.desktop and options.owner_pid:
+        def watch_owner():
+            from tools.desktop_view import alive
+            while alive(options.owner_pid):time.sleep(.5)
+            http.shutdown()
+        threading.Thread(target=watch_owner,daemon=True).start()
     origins = ['http://127.0.0.1:' + str(options.port), 'http://localhost:' + str(options.port)]
     with serve(prototype.websocket, '127.0.0.1', options.ws_port, subprotocols=['binary'],
                origins=origins, max_size=1024*1024) as websocket:

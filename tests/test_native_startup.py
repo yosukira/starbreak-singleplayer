@@ -45,6 +45,21 @@ class NativeStartupTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'does not preserve'):shared_hook_target(ffi,lib,refs,'WorldClient::updateInput',target,expected)
         with self.assertRaisesRegex(ValueError,'conflicts'):shared_hook_target(ffi,lib,NS(),'WorldClient::updateInput',target,expected)
 
+    def test_existing_send_observer_keeps_both_hooks_and_selects_the_exact_trampoline(self):
+        target,address=0x400000,0x700000
+        expected=bytes.fromhex('5589e583ec788d45f88b550c')
+        original=expected[:6]+b'\xe9'+struct.pack('<i',target+6-(address+11))+b'\x90'*6
+        unrelated=expected[:6]+b'\xe9'+struct.pack('<i',target+7-(address+111))+b'\x90'*6
+        memory={target:b'\xe9'+b'\x00'*11,address:original,address+100:unrelated}
+        ffi=NS(NULL=None,cast=lambda kind,value:value,buffer=lambda p,n:memory[p][:n])
+        owner=NS(hooks=[1,2]);refs=NS(manager=NS(_active={'plugin_combat_assist':NS(research_wire=owner)}))
+        lib=mock.Mock();lib.subhook_is_installed.return_value=True
+        lib.subhook_get_trampoline.side_effect=lambda handle:address+100 if handle==1 else address
+        self.assertEqual(shared_hook_target(ffi,lib,refs,'ServerConnection::sendMessage',target,expected),(address,original[:11],owner))
+        lib.subhook_remove.assert_not_called();lib.subhook_install.assert_not_called()
+        owner.hooks=[1]
+        with self.assertRaisesRegex(ValueError,'conflicts'):shared_hook_target(ffi,lib,refs,'ServerConnection::sendMessage',target,expected)
+
     def test_editor_practice_queues_a_zone_reload_without_a_launcher_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'practice.json'

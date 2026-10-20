@@ -2,6 +2,7 @@
 import argparse
 from contextlib import contextmanager
 import hashlib
+import http.client
 import io
 import json
 import os
@@ -73,9 +74,13 @@ def fetch(path, limit, progress=None):
     with opener.open(download_url(UPDATE_CHANNEL+'/'+path),timeout=10) as response:
         download_url(response.geturl())
         total=int(response.headers.get('Content-Length') or 0);chunks=[];received=0
+        reader=response.read1 if isinstance(response,http.client.HTTPResponse) else response.read
         if progress:progress(0,total)
         while True:
-            chunk=response.read(min(64*1024,limit+1-received))
+            # Return available bytes promptly instead of waiting for a whole
+            # 64 KB block before the download display can move.
+            chunk=reader(min(16*1024,limit+1-received))
+            if not isinstance(chunk,(bytes,bytearray)):raise ValueError('Invalid update download data')
             if not chunk:break
             received+=len(chunk)
             if received>limit:raise ValueError('Update download too large')
@@ -123,14 +128,17 @@ def recover(root=ROOT):
     journal.unlink()
 
 
-def apply_update(data, info, root=ROOT):
+def apply_update(data, info, root=ROOT, progress=None):
+    report=lambda state,current,total:progress(state,current,total,info['version']) if progress else None
+    report('verifying',0,1)
     if len(data)!=info['size'] or hashlib.sha256(data).hexdigest()!=info['sha256']:
         raise ValueError('Update checksum mismatch')
     recover(root)
     payload={}
     with zipfile.ZipFile(io.BytesIO(data)) as archive:
         total=0
-        for item in archive.infolist():
+        entries=archive.infolist()
+        for index,item in enumerate(entries,1):
             if item.is_dir():continue
             if not item.filename.startswith('starbreak-singleplayer/'):
                 raise ValueError('Invalid update root')
@@ -142,6 +150,7 @@ def apply_update(data, info, root=ROOT):
             content=archive.read(item)
             if name.endswith('.py'):compile(content,name,'exec')
             payload[name]=(content,(item.external_attr>>16)&0o777)
+            report('verifying',index,len(entries))
     embedded=json.loads(payload['data/version.json'][0])
     if (embedded.get('sequence'),embedded.get('version'))!=(info['sequence'],info['version']):
         raise ValueError('Update version mismatch')
@@ -150,16 +159,19 @@ def apply_update(data, info, root=ROOT):
     state=root/'userdata/updates';state.mkdir(parents=True,exist_ok=True)
     backup=Path(tempfile.mkdtemp(prefix='backup-',dir=state))
     originals=[]
-    for name in payload:
+    report('backing_up',0,len(payload))
+    for index,name in enumerate(payload,1):
         target=destination(root,name)
         if target.exists() and not target.is_file():raise ValueError('Update target is not a file')
         if target.is_file():
             copy=backup/name;copy.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(target,copy)
             originals.append(name)
+        report('backing_up',index,len(payload))
     journal=state/'pending.json'
     atomic_json(journal,dict(backup=backup.name,files=list(payload),originals=originals))
     try:
-        for name in sorted(payload,key=lambda name:name=='data/version.json'):
+        report('installing',0,len(payload))
+        for index,name in enumerate(sorted(payload,key=lambda name:name=='data/version.json'),1):
             content,mode=payload[name];target=destination(root,name)
             target.parent.mkdir(parents=True,exist_ok=True)
             with tempfile.NamedTemporaryFile(dir=target.parent,delete=False) as stream:
@@ -168,6 +180,7 @@ def apply_update(data, info, root=ROOT):
                 if mode:temporary.chmod(mode)
                 os.replace(temporary,target)
             finally:temporary.unlink(missing_ok=True)
+            report('installing',index,len(payload))
         journal.unlink()
     except BaseException:
         recover(root)
@@ -314,6 +327,7 @@ def auto_update(root=ROOT, check_only=False, progress=None):
             record_status('disabled',root,operation='auto')
             return 'Automatic updates disabled / 已关闭自动更新'
         record_status('checking',root,operation='auto')
+        if progress:progress('checking',0,0,'')
         info=manifest()
         if info['sequence']<=version(root).get('sequence',0):
             record_status('ahead' if info['sequence']<version(root).get('sequence',0) else 'current',
@@ -324,7 +338,8 @@ def auto_update(root=ROOT, check_only=False, progress=None):
         if check_only:
             record_status('available',root,latest_version=info['version'],operation='auto')
             return 'Update available / 可更新: '+info['version']
-        record_status('installing',root,latest_version=info['version'],operation='auto')
+        record_status('downloading',root,latest_version=info['version'],operation='auto',current=0,total=info['size'])
+        if progress:progress('downloading',0,info['size'],info['version'])
         last_report=[0.]
         def downloading(current,total):
             now=time.monotonic()
@@ -333,8 +348,8 @@ def auto_update(root=ROOT, check_only=False, progress=None):
             if progress:progress('downloading',current,info['size'],info['version'])
         data=fetch(info['file'],MAX_DOWNLOAD,downloading) if progress else fetch(info['file'],MAX_DOWNLOAD)
         record_status('installing',root,latest_version=info['version'],operation='auto')
-        if progress:progress('installing',len(data),info['size'],info['version'])
-        apply_update(data,info,root)
+        if progress:apply_update(data,info,root,progress=progress)
+        else:apply_update(data,info,root)
         record_status('updated',root,latest_version=info['version'],operation='auto')
         return 'Updated / 已更新: '+info['version']
     except Exception as error:

@@ -31,7 +31,7 @@
           degraded:t('伤害反馈不可用，可能有插件冲突；请查看本次启动日志。','Damage feedback is unavailable; another plugin may conflict. Check this session’s logs.')
         };
         box.textContent=labels[value.state]||labels.waiting;
-        if(value.state==='connected'&&!value.replay_ready)box.textContent+=t('；原生录像组件未能启动。','; native replay is unavailable.');
+        if(value.state==='connected'&&!value.replay_ready)box.textContent+=t('；原生录像组件未能启动。','; native replay is unavailable.')+(value.recording_error?' '+value.recording_error:'');
         if(value.state==='connected'&&value.replay_ready){
           box.textContent+=value.recording_error?t('；录制失败：','; recording failed: ')+value.recording_error:
             value.recording===false?t('；当前未录制（开启后需保存并开始新局）。','; not recording this attempt (enable recording, then Save and start).'):

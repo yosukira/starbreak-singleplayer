@@ -26,9 +26,12 @@ def main():
                 print(run(lambda progress:auto_update(ROOT,progress=progress)),flush=True)
             except Exception as error:
                 print('Update unavailable; using installed version / 暂时无法更新，使用现有版本: '+str(error),flush=True)
+            print('Starting game / 正在启动游戏…',flush=True)
             return subprocess.call(command,cwd=ROOT)
     except (OSError,BlockingIOError) as error:
         print('Another instance is running, or this folder is not writable. / 模拟器已在运行，或目录无法写入。',flush=True)
         return 1
 
-if __name__=='__main__':raise SystemExit(main())
+if __name__=='__main__':
+    from startup_progress import console_selection_guard
+    with console_selection_guard():raise SystemExit(main())

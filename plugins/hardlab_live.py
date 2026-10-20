@@ -105,6 +105,7 @@ class Plugin(PluginBase):
         elif bool(self.config.enabled):
             self._enable()
         self.native_capture=None
+        self.native_capture_error=None
         if self.session:
             try:
                 recorder=importlib.import_module('_native_replay_capture')
@@ -115,6 +116,7 @@ class Plugin(PluginBase):
                     self.native_capture.keyboard_mask=self.bridge.keyboard_input_mask
                     self.native_capture.replay_start=lambda: self.bridge.death_observer.prepare_replay() if getattr(self.bridge,'death_observer',None) is not None else None
             except Exception as error:
+                self.native_capture_error=type(error).__name__+': '+str(error)
                 LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)
         self.replay_initialized=True
         self._report_health()
@@ -130,7 +132,7 @@ class Plugin(PluginBase):
                 hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
                 replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
                 recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None,
-                recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else None)
+                recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else self.native_capture_error)
             temporary=path+'.part'
             with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
             os.replace(temporary,path)

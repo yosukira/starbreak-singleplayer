@@ -117,6 +117,32 @@ def service_failure(path, offset, code):
     return 'Local equipment service exited ('+str(code)+').\n'+detail
 
 
+class WindowActions:
+    """Post native changes to their owning UI thread without waiting on it."""
+    def __init__(self,window):self.window=window
+
+    def post(self,action):
+        window=self.window
+        if os.name=='nt':
+            from System import Action
+            native=window.native
+            if native is None or native.IsDisposed:return
+            def apply():
+                if native.IsDisposed:return
+                if action=='hide':native.Hide()
+                elif action=='close':native.Close()
+                else:
+                    native.TopMost=True
+                    if action=='show':
+                        from System.Windows.Forms import FormWindowState
+                        native.Show();native.WindowState=FormWindowState.Normal;native.Activate()
+            native.BeginInvoke(Action(apply))
+        elif action=='hide':window.hide()
+        elif action=='close':window.destroy()
+        elif action=='show':window.show();window.restore();window.on_top=True
+        else:window.on_top=True
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--owner-pid',type=int)
@@ -157,10 +183,10 @@ def main(argv=None):
         class Bridge:
             def show_native_game(self):
                 nonlocal visible
-                visible=False;window.hide()
+                visible=False;actions.post('hide')
             def hide_window(self):
                 nonlocal visible
-                visible=False;window.hide()
+                visible=False;actions.post('hide')
         webview.settings['ALLOW_DOWNLOADS']=True
         width,height=1280,800
         if sys.platform=='darwin':
@@ -174,13 +200,8 @@ def main(argv=None):
             if ctypes.windll.user32.SystemParametersInfoW(48,0,ctypes.byref(bounds),0):
                 width=min(width,max(640,bounds.right-bounds.left-40));height=min(height,max(480,bounds.bottom-bounds.top-50))
         window=webview.create_window('StarBreak',html=startup_page('Preparing equipment and records…\n正在准备装备与战绩…'),js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d',on_top=True)
-        def pin_window():
-            window.on_top=True
-            if os.name=='nt' and window.native is not None:
-                import ctypes
-                user=ctypes.windll.user32
-                user.SetWindowPos.argtypes=(ctypes.c_void_p,ctypes.c_void_p,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_uint)
-                user.SetWindowPos(int(window.native.Handle.ToInt64()),ctypes.c_void_p(-1),0,0,0,0,0x13)
+        actions=WindowActions(window)
+        def pin_window():actions.post('pin')
         stopped=threading.Event()
         pin_pending=threading.Event()
         window.events.loaded+=pin_pending.set
@@ -194,7 +215,7 @@ def main(argv=None):
                 shared_client=ROOT/'userdata/web'/CLIENT_FILENAME
                 client=shared_client if shared_client.is_file() else folder/'web'/CLIENT_FILENAME
                 if stopped.is_set() or not alive(options.owner_pid):return
-                command=[sys.executable,'-X','utf8','-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
+                command=[sys.executable,'-X','utf8','-u','-m','tools.web_app','--desktop','--owner-pid',str(os.getpid()),'--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
                 with (folder/'web.log').open('ab') as log:
                     offset=log.tell()
                     process=subprocess.Popen(command,cwd=ROOT,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -219,13 +240,12 @@ def main(argv=None):
         def toggle():
             nonlocal visible
             visible=not visible
-            if visible:window.show();window.restore();pin_window()
-            else:window.hide()
+            actions.post('show' if visible else 'hide')
         def closing():
             nonlocal visible
             if options.standalone:stopped.set();return
             if not stopped.is_set():
-                visible=False;window.hide();return False
+                visible=False;actions.post('hide');return False
         window.events.closing+=closing
         def monitor():
             nonlocal visible
@@ -234,10 +254,10 @@ def main(argv=None):
             stamp=0;held={};next_keys=0;keys=()
             while not stopped.wait(.04):
                 if pin_pending.is_set():pin_pending.clear();pin_window()
-                if not alive(options.owner_pid):stopped.set();window.destroy();return
+                if not alive(options.owner_pid):stopped.set();actions.post('close');return
                 control=folder/'show.json'
                 if control.is_file() and control.stat().st_mtime_ns!=stamp:
-                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore();pin_window()
+                    stamp=control.stat().st_mtime_ns;visible=True;actions.post('show')
                 if os.name=='nt':
                     from plugins import _practice_keybindings as bindings
                     if time.monotonic()>=next_keys:
@@ -266,7 +286,7 @@ def main(argv=None):
                     with open_local(Request(url+'/api/quit',data=b'{}',headers={'Content-Type':'application/json'}),timeout=2) as response:response.read()
                 except OSError:pass
             try:process.wait(timeout=5)
-            except subprocess.TimeoutExpired:process.kill()
+            except subprocess.TimeoutExpired:process.kill();process.wait(timeout=5)
 
 
 if __name__=='__main__':main()

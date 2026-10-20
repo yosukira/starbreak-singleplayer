@@ -9,13 +9,28 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
 from unittest import mock
 
-from tools.desktop_view import open_local, service_failure
+from tools.desktop_view import open_local, service_failure, WindowActions
 from tools import web_dependencies
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
 class DesktopStartupTests(unittest.TestCase):
+    def test_native_window_changes_are_posted_without_synchronous_gui_calls(self):
+        from types import SimpleNamespace as NS
+        native=mock.Mock(IsDisposed=False);queued=[]
+        native.BeginInvoke.side_effect=queued.append
+        window=mock.Mock(native=native)
+        with mock.patch('tools.desktop_view.os.name','nt'),mock.patch.dict(sys.modules,{'System':NS(Action=lambda callback:callback)}):
+            actions=WindowActions(window)
+            actions.post('pin');actions.post('hide');actions.post('close')
+            native.Hide.assert_not_called();native.Close.assert_not_called()
+            self.assertEqual(len(queued),3)
+            for callback in queued:callback()
+        self.assertTrue(native.TopMost)
+        native.Hide.assert_called_once();native.Close.assert_called_once()
+        window.hide.assert_not_called();window.destroy.assert_not_called()
+
     def test_websocket_library_loads_offline_without_site_packages(self):
         code=('import sys;sys.path.insert(0,'+repr(str(ROOT))+');'
               'from tools.web_dependencies import websocket_server;'

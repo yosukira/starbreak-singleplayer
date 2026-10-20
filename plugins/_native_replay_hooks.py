@@ -31,7 +31,7 @@ def argument_count(value):
 
 
 def shared_hook_target(ffi,lib,refs,name,target,expected):
-    """Observe the verified original trampoline of two known SBPE hooks.
+    """Observe the verified original trampoline of known SBPE hooks.
 
     Their callbacks remain installed. Unknown patches still fail closed; a
     known owner's trampoline must contain the original prologue followed by
@@ -47,6 +47,17 @@ def shared_hook_target(ffi,lib,refs,name,target,expected):
     elif name=='MessageHandlers::run':
         owner=getattr(active.get('plugin_combat_recorder'),'_net',None)
         handle=getattr(owner,'_hook',None)
+    elif name=='ServerConnection::sendMessage':
+        owner=getattr(active.get('plugin_combat_assist'),'research_wire',None)
+        for candidate in getattr(owner,'hooks',[]):
+            if candidate==ffi.NULL or not lib.subhook_is_installed(candidate):continue
+            pointer=lib.subhook_get_trampoline(candidate)
+            if pointer==ffi.NULL:continue
+            address=int(ffi.cast('uintptr_t',pointer));code=bytes(ffi.buffer(ffi.cast('const char *',pointer),len(expected)+5))
+            for size in range(5,len(expected)+1):
+                if code[:size]==expected[:size] and code[size:size+1]==b'\xe9':
+                    destination=(address+size+5+struct.unpack('<i',code[size+1:size+5])[0])&0xffffffff
+                    if destination==(target+size)&0xffffffff:return address,code[:size+5],owner
     elif name=='WorldClient::handlePlayerCharacterKilled':
         owner=getattr(active.get('plugin_combat_assist'),'native',None)
         for candidate in getattr(owner,'lifecycle_hooks',[]):
