@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from plugins._native_replay_hooks import thiscall_callback,thiscall_original,NativeHook,NativeHookGroup
+from plugins._native_replay_hooks import thiscall_callback,thiscall_original,clock_callback,NativeHook,NativeHookGroup
 from tools import native_symbols
 
 try:
@@ -183,6 +183,16 @@ class NativeAdapterCPUTests(unittest.TestCase):
                 self.assertEqual(actual,(0x778899aa,*arguments))
                 self.assertEqual(uc.reg_read(UC_X86_REG_ESP),stack+4+count*4)
                 self.assert_preserved(uc)
+
+    def test_clock_callback_passes_return_site_without_changing_cdecl_stack_or_result(self):
+        uc,stack=self.machine(clock_callback(0x101000),[])
+        # Save the sole callback argument, then return the expected 64-bit
+        # register pair used by assert_preserved.
+        uc.mem_write(0x101000,b'\x8b\x44\x24\x04\xa3\x08\x11\x11\x00\xb8\xef\xcd\xab\x89\xba\x67\x45\x23\x01\xc3')
+        uc.emu_start(0x100000,0x110000,count=1000)
+        self.assertEqual(struct.unpack('<I',bytes(uc.mem_read(0x111108,4)))[0],0x110000)
+        self.assertEqual(uc.reg_read(UC_X86_REG_ESP),stack+4)
+        self.assert_preserved(uc)
 
     def test_callback_can_call_original_once_with_both_call_conventions_balanced(self):
         for count in range(7):

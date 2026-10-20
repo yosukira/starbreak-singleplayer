@@ -52,6 +52,11 @@ class NativeRecording:
                 url=urlsplit(self.path)
                 if url.path=='/health':return self.result(owner.health())
                 if url.path=='/status':return self.result(dict(owner.playback.status,serial=owner.playback.serial,error=owner.playback.error or owner.playback.status.get('error')))
+                if url.path=='/replay':
+                    try:
+                        query=parse_qs(url.query)
+                        return self.result(owner.playback.page(int(query['serial'][0]),int(query['offset'][0])))
+                    except (ValueError,TypeError,KeyError):return self.send_error(409,'Native replay selection changed')
                 if url.path!='/control':return self.send_error(404)
                 try:
                     serial=int(parse_qs(url.query).get('serial',['0'])[0]);owner.ready.set()
@@ -105,7 +110,8 @@ class NativeRecording:
                         if identifier not in allowed:raise ValueError('Native recording is not owned by this launcher')
                         result=owner.journals.append(identifier,value)
                     return self.result(result)
-                except (ValueError,TypeError,KeyError):self.send_error(400,'Invalid native recording chunk')
+                except (ValueError,TypeError,KeyError) as error:
+                    self.send_error(400,str(error)[:200] if self.path=='/command' else 'Invalid native recording chunk')
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         self.server.daemon_threads=True
         self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest,recording=recording,attempt=self.identifier)

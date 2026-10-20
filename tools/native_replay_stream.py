@@ -1,11 +1,10 @@
 """Match decoded native messages to the same verified encounter journal.
 
-Only the local controller uses the synthetic cipher for packet indexing. The
-native bridge receives plaintext, typed frames through its owned loopback
+Packet indexing uses the original plaintext frames directly. The native
+bridge receives plaintext, typed frames through its owned loopback
 channel; no game socket, cipher state or executable memory is transplanted.
 """
 import base64
-from localserver.protocol import RC4,random_string
 from tools.replay_stream import ReplayStream,framed
 
 
@@ -18,14 +17,15 @@ class NativeReplayStream(ReplayStream):
         rows=client['ops']
         if not any(row[0]=='message' and row[1]==10 for row in rows):
             raise ValueError('Native recording has no original world bootstrap')
-        cipher=RC4(random_string(0,64))
-        virtual=[['open'],['net',base64.b64encode(framed(1,b'')).decode()]]
+        virtual=[['open'],['net',framed(1,b'')]]
         for row in rows:
             if row[0]=='message':
                 data=framed(row[1],base64.b64decode(row[2],validate=True))
-                virtual.append(['net',base64.b64encode(cipher.crypt(data)).decode()])
+                virtual.append(['net',data])
             else:virtual.append(['timer'])
-        super().__init__(dict(ops=virtual),server)
+        # This is an internal typed-byte path, never a flag read from a file.
+        # Keep the shared packet bounds, world anchor and controller digests.
+        super().__init__(dict(ops=virtual),server,plaintext=True)
 
     def progress(self,cursor):return super().progress(cursor+2)
     def transmitter(self,received):return Identity()

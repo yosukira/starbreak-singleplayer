@@ -69,12 +69,30 @@ class VerifiedOperations(list):
     pass
 
 
-def validate_operations(rows,complete=True):
-    if not isinstance(rows,list) or len(rows)>MAX_OPERATIONS:
-        raise ValueError('Native replay is too long')
-    output=[];stack=[];in_loop=False;checked=False
-    for row in rows:
+class OperationValidator:
+    """Validate bounded transport pages without losing cross-page call state."""
+    def __init__(self):
+        self.output=VerifiedOperations();self.stack=[];self.in_loop=False;self.checked=False
+        self.output.complete=False
+        self.kinds={kind:kind for kind in CALLS+('loop','return','clock','random32','random64','step','state','engine-state')}
+        self.packets={}
+
+    def append(self,rows):
+        if not isinstance(rows,list) or len(self.output)+len(rows)>MAX_OPERATIONS:
+            raise ValueError('Native replay is too long')
+        for row in rows:self.add(row)
+
+    def add(self,row):
+        output=self.output;stack=self.stack;in_loop=self.in_loop;checked=self.checked
         row=operation(row);kind=row[0]
+        row[0]=self.kinds[kind]
+        if kind=='return':row[1]=self.kinds[row[1]]
+        if kind in ('message','delta'):
+            # Nested message/delta hooks record the same payload twice.
+            # A bounded pool removes that duplicate without retaining a
+            # second full-tape dictionary in the 32-bit process.
+            row[2]=self.packets.setdefault(row[2],row[2])
+            if len(self.packets)>256:self.packets.clear()
         if kind=='loop':
             if stack or bool(row[1])!=in_loop:raise ValueError('Invalid native replay loop boundary')
             if row[1]and not checked:raise ValueError('Native replay frame has no player check')
@@ -95,9 +113,17 @@ def validate_operations(rows,complete=True):
         if checked and kind not in ('state','loop'):
             raise ValueError('Native frame continued after its final player check')
         output.append(row)
-    if complete and (in_loop or stack):raise ValueError('Native replay ends inside a game call')
-    result=VerifiedOperations(output);result.complete=complete
-    return result
+        self.in_loop,self.checked=in_loop,checked
+
+    def finish(self,complete=True):
+        if complete and (self.in_loop or self.stack):raise ValueError('Native replay ends inside a game call')
+        self.output.complete=complete;self.packets.clear()
+        return self.output
+
+
+def validate_operations(rows,complete=True):
+    validator=OperationValidator();validator.append(rows)
+    return validator.finish(complete)
 
 
 class NativeTape:
@@ -148,7 +174,8 @@ class NativeTape:
     def take(self,kind):
         if self.error or self.finished:raise ValueError('Native playback is stopped')
         if self.cursor>=len(self.ops)or self.ops[self.cursor][0]!=kind:
-            raise ValueError('Native replay call sequence changed')
+            expected=self.ops[self.cursor][0] if self.cursor<len(self.ops) else 'end'
+            raise ValueError('Native replay call sequence changed at '+str(self.cursor)+': expected '+expected+', received '+kind)
         row=self.ops[self.cursor];self.cursor+=1
         return row
 

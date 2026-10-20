@@ -10,7 +10,7 @@
   }
   function virtualPath(path){return path.startsWith(base)?'/'+path.slice(base.length):path;}
   const worker=new Worker(assetURL('/browser/worker.js'),{type:'module'}),pending=new Map(),sockets=new Map();
-  let serial=0,socketSerial=0,progress={phase:'environment',percent:0,step:'download'};
+  let serial=0,socketSerial=0,progress={phase:'environment',percent:0,step:'checking'};
   function report(value){progress=value;globalThis.dispatchEvent(new CustomEvent('starbreak-loading',{detail:value}));}
   function request(kind,value={}){return new Promise((resolve,reject)=>{const id=++serial;pending.set(id,{resolve,reject});worker.postMessage({id,kind,...value});});}
   worker.onmessage=event=>{

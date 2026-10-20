@@ -16,12 +16,92 @@ import socket
 import subprocess
 import sys
 import tarfile
+import tempfile
 import threading
 import time
+import traceback
 from urllib.request import urlopen, build_opener, ProxyHandler
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def viewer_files(target):
+    """Hashes derived from the archives pinned in desktop-view-runtime.json."""
+    path=ROOT/'data/desktop-view-integrity.json'
+    return json.loads(path.read_text(encoding='utf8')).get(target,{}) if path.is_file() else {}
+
+
+def verify_viewer(path,target,digest):
+    try:
+        if json.loads((path/'.ready').read_text())['digest']!=digest:return False
+        if not (path/'webview/__init__.py').is_file():return False
+        files=viewer_files(target)
+        if target=='windows-x64' and not files:return False
+        root=path.resolve()
+        for name,expected in files.items():
+            file=path/name
+            if not file.resolve().is_relative_to(root) or hashlib.sha256(file.read_bytes()).hexdigest()!=expected:return False
+        return True
+    except (OSError,ValueError,KeyError,TypeError):return False
+
+
+def prepare_windows_viewer(library,folder,diagnostics):
+    """Unblock only hash-checked bundled binaries, with a local-copy fallback."""
+    files=viewer_files('windows-x64')
+    if not files:raise RuntimeError('The viewer integrity manifest is missing; install the complete player package')
+    root=library.resolve()
+    for name,expected in files.items():
+        path=library/name
+        if not path.resolve().is_relative_to(root) or hashlib.sha256(path.read_bytes()).hexdigest()!=expected:
+            raise RuntimeError('Viewer dependency checksum mismatch: '+name)
+    diagnostics['verified_files']=len(files)
+    import ctypes
+    remote=ctypes.windll.kernel32.GetDriveTypeW(str(root.anchor))==4
+    blocked=[];copy_required=remote
+    for name in files:
+        if Path(name).suffix.lower() not in ('.dll','.pyd'):continue
+        stream=Path(str(library/name)+':Zone.Identifier')
+        if not stream.exists():continue
+        blocked.append(name)
+        try:stream.unlink()
+        except OSError:copy_required=True
+    diagnostics.update(blocked_binaries=blocked,remote_library=remote)
+    if copy_required:
+        # A network location or read-only downloaded file can remain in a
+        # restricted CLR zone. Copy verified bytes, never NTFS streams or
+        # arbitrary extra files, into this user's local application cache.
+        cache=Path(os.environ.get('LOCALAPPDATA') or tempfile.gettempdir())/'StarBreak'/'viewer'/library.name
+        cache.mkdir(parents=True,exist_ok=True)
+        for name,expected in files.items():
+            target=cache/name
+            if target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest()==expected:
+                stream=Path(str(target)+':Zone.Identifier')
+                if stream.exists():stream.unlink()
+                continue
+            target.parent.mkdir(parents=True,exist_ok=True)
+            temporary=target.with_name(target.name+'.part')
+            temporary.write_bytes((library/name).read_bytes());temporary.replace(target)
+        (cache/'.ready').write_bytes((library/'.ready').read_bytes())
+        diagnostics['copied_runtime']=True
+        return cache
+    return library
+
+
+def initialize_windows_viewer():
+    # This application ships the NetFX WinForms backend. Do not inherit an
+    # unrelated application's PYTHONNET_RUNTIME/configuration or CoreCLR.
+    inherited={name:value for name,value in os.environ.items() if name.upper().startswith('PYTHONNET_')}
+    try:
+        for name in inherited:os.environ.pop(name,None)
+        import clr_loader
+        import pythonnet
+        pythonnet.load(clr_loader.get_netfx())
+        import clr
+        clr.AddReference('System.Windows.Forms')
+        clr.AddReference('System.Drawing')
+        return str(pythonnet.get_runtime_info())
+    finally:os.environ.update(inherited)
 
 
 def open_local(request, timeout=1):
@@ -47,21 +127,32 @@ def alive(pid):
 
 def install(directory, progress=lambda *_:None, target=None, check_python=True, bundled=True):
     if check_python and sys.version_info[:2]!=(3,12):raise ValueError('The native records window requires the bundled Python 3.12 runtime')
+    if check_python and sys.maxsize<=2**32:raise ValueError('The native records window requires the bundled 64-bit Python runtime')
     if target is None:
         target=('windows-x64' if os.name=='nt' else 'macos-arm64' if platform.machine()=='arm64' else 'macos-x64')
         if os.name!='nt' and sys.platform!='darwin':raise ValueError('Native records window supports Windows and macOS')
+    if target=='windows-x64' and not viewer_files(target):
+        raise RuntimeError('The viewer integrity manifest is missing; install the complete player package')
     manifest=json.loads((ROOT/'data/desktop-view-runtime.json').read_text())[target]
     digest=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest()[:16]
     packaged=ROOT/'python/desktop-view'/('runtime-'+target+'-'+digest)
-    if bundled and (packaged/'.ready').is_file() and (packaged/'webview/__init__.py').is_file():return packaged
+    if bundled and verify_viewer(packaged,target,digest):return packaged
     destination=Path(directory)/('runtime-'+target+'-'+digest)
-    if (destination/'.ready').is_file():return destination
+    if verify_viewer(destination,target,digest):return destination
     from tools.web_workspace import atomic_json
-    destination.mkdir(parents=True,exist_ok=True)
+    Path(directory).mkdir(parents=True,exist_ok=True)
+    # Retain a damaged extraction for diagnosis; build a complete replacement
+    # separately so a failed download never turns a .ready cache into a mix.
+    if destination.exists():
+        destination.rename(destination.with_name(destination.name+'.incomplete-'+str(time.time_ns())))
+    destination.mkdir(parents=True,exist_ok=False)
     completed=0;total=sum(row['size'] for row in manifest)
     for row in manifest:
         cache=Path(directory)/(row['sha256']+'.download')
         data=cache.read_bytes() if cache.is_file() else b''
+        if hashlib.sha256(data).hexdigest()!=row['sha256'] and bundled:
+            packaged_cache=packaged.parent/cache.name
+            data=packaged_cache.read_bytes() if packaged_cache.is_file() else b''
         if hashlib.sha256(data).hexdigest()!=row['sha256']:
             chunks=[];received=0
             with urlopen(row['url'],timeout=60) as response:
@@ -93,6 +184,8 @@ def install(directory, progress=lambda *_:None, target=None, check_python=True, 
                     target_path.write_bytes(archive.extractfile(entry).read())
         completed+=row['size'];progress(completed,total)
     atomic_json(destination/'.ready',{'digest':digest})
+    if not verify_viewer(destination,target,digest):
+        raise RuntimeError('Extracted viewer dependencies failed their integrity check')
     return destination
 
 
@@ -166,11 +259,18 @@ def main(argv=None):
                 return
         except (OSError,ValueError):pass
     def report(**value):atomic_json(status,dict(pid=os.getpid(),**value))
-    process=None;url=None
+    process=None;url=None;diagnostics=dict(python=sys.version,executable=sys.executable,bits=64 if sys.maxsize>2**32 else 32)
     try:
         report(state='preparing',current=0,total=1)
         library=install(folder,lambda current,total:report(state='preparing',current=current,total=total))
+        diagnostics['library']=str(library)
+        if os.name=='nt':
+            diagnostics['ignored_pythonnet_environment']=[name for name in os.environ if name.upper().startswith('PYTHONNET_')]
+            library=prepare_windows_viewer(library,folder,diagnostics)
+        diagnostics['loaded_library']=str(library)
         sys.path.insert(0,str(library))
+        if os.name=='nt':diagnostics['clr']=initialize_windows_viewer()
+        atomic_json(folder/'runtime-diagnostics.json',diagnostics)
         import webview
         if options.check_runtime:
             report(state='checked');print('Native record window runtime OK');return
@@ -270,7 +370,10 @@ def main(argv=None):
         webview.start(monitor,private_mode=False,storage_path=str(folder/'browser'))
         report(state='closed')
     except (Exception,SystemExit) as error:
-        report(state='failed',error=str(error)[:250])
+        diagnostics['error']=str(error)
+        (folder/'startup-error.log').write_text(traceback.format_exc(),encoding='utf8')
+        atomic_json(folder/'runtime-diagnostics.json',diagnostics)
+        report(state='failed',error=str(error)[:2000],details=str(folder/'startup-error.log'))
         if os.name=='nt' and not options.check_runtime and alive(options.owner_pid):
             import ctypes
             message=('Equipment & records could not start.\n装备与战绩窗口启动失败。\n\n'+str(error)[:300]+

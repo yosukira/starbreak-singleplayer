@@ -19,6 +19,26 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_failed_transfer_reports_reason_and_acknowledges_selection_once(self):
+        import io
+        from plugins import _native_replay_capture as module
+        feedback=[];downloads=[]
+        def request(value,timeout=3):
+            if '/feedback' in value.full_url:
+                feedback.append(json.loads(value.data));return io.BytesIO(b'{}')
+            if '/replay?' in value.full_url:downloads.append(value.full_url);raise MemoryError('bounded page allocation')
+            if 'serial=0' in value.full_url:
+                return io.BytesIO(json.dumps(dict(serial=1,controls=[],play=dict(serial=1,document={},operations=10,transport='pages-v1'))).encode())
+            return io.BytesIO(b'{"serial":1,"controls":[]}')
+        with mock.patch.object(module.threading.Thread,'start'),mock.patch.object(module,'urlopen',side_effect=request):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64))
+            delivery.poll_control();delivery.last_poll=0;delivery.poll_control()
+        self.assertEqual(len(downloads),1)
+        self.assertEqual(feedback[0]['status']['state'],'failed')
+        self.assertEqual(feedback[0]['status']['error'],'MemoryError')
+        self.assertIn('allocation',feedback[0]['status']['message'])
+        self.assertEqual(delivery.serial,1)
+
     def test_slow_playback_download_does_not_block_recording_delivery(self):
         import io
         import threading

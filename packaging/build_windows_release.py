@@ -6,6 +6,7 @@ always taken from Git HEAD, excluding untracked settings and development files.
 """
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
@@ -28,7 +29,14 @@ def install_viewer(runtime):
     from tools.desktop_view import install as viewer
     directory=runtime/'desktop-view'
     viewer(directory,target='windows-x64',check_python=False,bundled=False)
-    for cache in directory.glob('*.download'):cache.unlink()
+    # Keep the small, hash-pinned archives for offline repair of an incomplete
+    # extraction. No package manager is needed on the player's computer.
+    for row in json.loads((ROOT/'data/desktop-view-runtime.json').read_text())['windows-x64']:
+        cache=directory/(row['sha256']+'.download')
+        if cache.is_file() and hashlib.sha256(cache.read_bytes()).hexdigest()==row['sha256']:continue
+        data=download(row['url'],row['sha256'])
+        if len(data)!=row['size']:raise RuntimeError('Viewer repair archive size mismatch')
+        cache.write_bytes(data)
 
 
 def download(url, digest=None):

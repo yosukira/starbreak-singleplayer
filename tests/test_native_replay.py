@@ -44,6 +44,17 @@ def tape_document(directory,frames=2):
 
 
 class NativeExecutionTests(unittest.TestCase):
+    def test_streamed_validation_preserves_nesting_across_every_page_boundary(self):
+        from plugins._native_replay import OperationValidator
+        tape=NativeTape(keep_ops=True);frame(tape);frame(tape);tape.finish()
+        for offset in range(1,len(tape.ops)):
+            validator=OperationValidator()
+            validator.append(tape.ops[:offset]);validator.append(tape.ops[offset:])
+            self.assertEqual(validator.finish(),validate_operations(tape.ops))
+        validator=OperationValidator();validator.append([['loop',0],['read']])
+        with self.assertRaisesRegex(ValueError,'order'):validator.append([['return','frame']])
+        with self.assertRaisesRegex(ValueError,'inside'):validator.finish()
+
     def test_original_call_order_scalar_replay_and_player_checks(self):
         recorded=NativeTape(keep_ops=True);expected=frame(recorded);recorded.finish()
         played=NativeTape(mode='play',ops=recorded.ops)
@@ -100,6 +111,51 @@ class NativeExecutionTests(unittest.TestCase):
 
 
 class NativeJournalTests(unittest.TestCase):
+    def test_export_import_preserves_legacy_or_game_clock_scope_and_runner_history(self):
+        for scoped in (False,True):
+            for portable in (False,True):
+                with self.subTest(scoped=scoped,portable=portable),tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+                    native,identifier,tape=tape_document(source)
+                    if not scoped:
+                        with native.connect() as db:
+                            header=json.loads(db.execute('SELECT header FROM attempts WHERE id=?',(identifier,)).fetchone()[0])
+                            header.pop('clock_scope')
+                            db.execute('UPDATE attempts SET header=? WHERE id=?',(json.dumps(header),identifier))
+                    if portable:
+                        original=native.read(identifier)
+                        cursor=original['ops'].index(['loop',1])+1
+                        native.mark_runner(identifier,original,cursor,dict(client='c'*64,adapter='d'*64))
+                    original=native.read(identifier)
+                    records=RecordStore(source);entry=sample()
+                    entry.update(platform='web' if portable else 'native',
+                                 replay=dict(id=identifier,**({'format':'native'} if portable else {})))
+                    records.save(entry);_,blob=records.export([entry['id']])
+                    exported=read_battle(blob)[1]
+                    self.assertEqual('clock_scope' in exported,scoped)
+                    dest=RecordStore(target);self.assertEqual(dest.import_bytes(blob)['imported'],1)
+                    imported_id=dest.get(entry['id'])['replay']['id'];imported=NativeJournals(target)
+                    with imported.connect() as db:
+                        raw_header=json.loads(db.execute('SELECT header FROM attempts WHERE id=?',(imported_id,)).fetchone()[0])
+                    self.assertEqual('clock_scope' in raw_header,scoped,'Import must not relabel a legacy tape as game-v1')
+                    self.assertEqual(raw_header.get('clock_scope'),original.get('clock_scope'))
+                    self.assertEqual(raw_header.get('runners'),original.get('runners'))
+                    _,again=dest.export([entry['id']]);roundtrip=read_battle(again)[1]
+                    self.assertEqual(roundtrip,dict(original,id=imported_id))
+                    header,_=imported.page_header(imported_id)
+                    self.assertEqual(header,{k:v for k,v in roundtrip.items() if k!='ops'})
+                    self.assertEqual([op for page in imported.read_pages(imported_id) for op in page['ops']],tape.ops)
+
+    def test_fork_preserves_source_clock_scope_instead_of_relabeling_legacy_prefix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store,identifier,tape=tape_document(directory)
+            source=store.read(identifier)
+            self.assertEqual(source['clock_scope'],'game-v1')
+            new=store.fork(identifier,len(source['ops']),source)
+            self.assertEqual(store.read(new['id'],require_complete=False)['clock_scope'],'game-v1')
+            source.pop('clock_scope')
+            old=store.fork(identifier,len(source['ops']),source)
+            self.assertNotIn('clock_scope',store.read(old['id'],require_complete=False))
+
     def test_portable_branch_preserves_engine_history_and_cross_end_bundle(self):
         with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
             native,identifier,tape=tape_document(source)
@@ -118,6 +174,31 @@ class NativeJournalTests(unittest.TestCase):
             self.assertEqual(read_battle(again)[1]['runners'],document['runners'])
             altered=copy.deepcopy(document);altered['runners'][0]['cursor']-=1
             with self.assertRaises(ValueError):globals()['document'](altered)
+
+    def test_verified_portable_alias_applies_to_explicit_browser_manifest(self):
+        from tools.portable_replay import check_runner
+        from tools.web_client import CLIENT_SHA256
+        current='c'*64;previous='d'*64
+        with mock.patch.object(Path,'read_text',return_value=json.dumps({current:[previous]})):
+            check_runner(dict(client=CLIENT_SHA256,adapter=previous),current)
+            with self.assertRaises(ValueError):check_runner(dict(client=CLIENT_SHA256,adapter='e'*64),current)
+            with self.assertRaises(ValueError):check_runner(dict(client='f'*64,adapter=previous),current)
+
+    def test_browser_then_native_history_survives_export_and_paged_import(self):
+        with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+            native,identifier,tape=tape_document(source,frames=3)
+            value=native.read(identifier);cuts=[i+1 for i,row in enumerate(value['ops']) if row==['loop',1]]
+            native.mark_runner(identifier,value,cuts[0],dict(client='c'*64,adapter='d'*64))
+            value=native.read(identifier)
+            native.mark_runner(identifier,value,cuts[1],dict(client='a'*64,adapter='b'*64),engine='native')
+            value=native.read(identifier)
+            self.assertEqual([row['engine'] for row in value['runners']],['browser','native'])
+            records=RecordStore(source);entry=sample();entry.update(platform='native',replay=dict(id=identifier))
+            records.save(entry);_,blob=records.export([entry['id']]);dest=RecordStore(target);dest.import_bytes(blob)
+            identifier=dest.get(entry['id'])['replay']['id'];imported=NativeJournals(target)
+            self.assertEqual(imported.read(identifier)['runners'],value['runners'])
+            self.assertEqual(imported.page_header(identifier)[0]['runners'],value['runners'])
+            self.assertEqual([row for page in imported.read_pages(identifier) for row in page['ops']],value['ops'])
 
     def test_atomic_chunks_native_web_isolation_and_forked_continuation(self):
         with tempfile.TemporaryDirectory()as directory:

@@ -11,12 +11,16 @@ def patch(text):
 
     replace('var webFrame=env.webFrame;',
         'var webNativeContext=env.webNativeContext;var webNativeEnter=env.webNativeEnter;var webNativeExit=env.webNativeExit;var webNativeClock=env.webNativeClock;var webNativeSeed=env.webNativeSeed;var webFrame=env.webFrame;')
+    replace('"_usleep":_usleep,',
+        '"_usleep":function(useconds){return Module.nativeJournal?Module.nativeJournal.wallSleep(useconds,_usleep):_usleep(useconds)},')
     replace('Module.asmLibraryArg={', 'Module.asmLibraryArg={'
         '"webNativeEnter":function(k,o,a,b,c){return Module.nativeJournal?Module.nativeJournal.enter(k,o,a,b,c):1},'
         '"webNativeExit":function(k,o){if(Module.nativeJournal)Module.nativeJournal.leave(k,o)},'
         '"webNativeClock":function(v){return Module.nativeJournal?Module.nativeJournal.clock(v):v},'
         '"webNativeSeed":function(v){return Module.nativeJournal?Module.nativeJournal.seed(v):v},')
     replace('Module.asmLibraryArg={','Module.asmLibraryArg={"webNativeContext":function(s){if(Module.nativeJournal)Module.nativeJournal.nativeServer=s},')
+    replace('"webVisualContext":function(p){if(Module.visualContext)Module.visualContext(p)}',
+        '"webVisualContext":function(p){if(Module.nativeJournal)Module.nativeJournal.clientContext(p);if(Module.visualContext)Module.visualContext(p)}')
     signature=re.search(r'function HM\([^)]*\)\{.*?var [^;]+;',text).group(0)
     replace(signature,signature+'webNativeContext(d|0);')
     # Objects and pointers come only from this installed engine. A recording

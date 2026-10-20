@@ -23,3 +23,27 @@ inventory.stack=[];inventory.world=100;inventory.module={HEAPU8:bytes,HEAP32:hea
 }}};
 inventory.invoke(inventory.ops[0]);assert.equal(inventory.cursor,2);
 console.log('Portable inventory operations and platform clock boundaries passed.');
+
+// The native adapter resets reserve/targetBuffer at loop end. Foreign-world
+// interpolation uses that buffer, so missing this changes moving collisions.
+const timing=driver([]);timing.world=64;timing.module={HEAP32:new Int32Array(256)};timing.document={};
+const reserve=(timing.world+688)>>2;timing.module.HEAP32[reserve]=987;timing.module.HEAP32[reserve+1]=150;
+timing.restoreTimeCredit();assert.equal(timing.module.HEAP32[reserve],1000);assert.equal(timing.module.HEAP32[reserve+1],0);
+timing.module.HEAP32[reserve+1]=150;timing.restoreTimeCredit();assert.equal(timing.module.HEAP32[reserve+1],150);
+timing.document.runners=[{cursor:10,engine:'browser'},{cursor:20,engine:'native'}];timing.cursor=10;timing.module.HEAP32[reserve]=987;
+timing.restoreTimeCredit();assert.equal(timing.module.HEAP32[reserve],987);assert.equal(timing.module.HEAP32[reserve+1],150);
+timing.cursor=9;timing.restoreTimeCredit();assert.equal(timing.module.HEAP32[reserve],1000);
+timing.cursor=20;timing.module.HEAP32[reserve]=987;timing.restoreTimeCredit();assert.equal(timing.module.HEAP32[reserve],1000);
+// WorldClient destruction and replacement cannot leave a freed world pointer.
+timing.nativeClient=16;timing.module.HEAP32[(16+72)>>2]=64;timing.syncWorld();assert.equal(timing.world,64);
+timing.worldReady=true;timing.clientContext(0);assert.equal(timing.world,0);assert.equal(timing.worldReady,false);
+timing.clientContext(32);timing.module.HEAP32[(32+72)>>2]=128;timing.syncWorld();assert.equal(timing.world,128);
+console.log('Native time-credit and WorldClient lifetime boundaries passed.');
+
+// Replaying source clocks must not busy-wait the old display cadence. The
+// ordinary game and a live continuation still call the original wait.
+const waits=driver([]);let slept=0;const sleep=value=>{slept+=value;return 7;};
+assert.equal(waits.wallSleep(6000,sleep),0);assert.equal(slept,0);assert.equal(waits.cursor,0);
+waits.driving=false;assert.equal(waits.wallSleep(6000,sleep),7);assert.equal(slept,6000);
+waits.driving=true;waits.mode='record';assert.equal(waits.wallSleep(3000,sleep),7);assert.equal(slept,9000);
+console.log('Replay wall waits stay separate from recorded simulation time.');

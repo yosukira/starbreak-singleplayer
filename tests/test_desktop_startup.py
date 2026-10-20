@@ -1,4 +1,6 @@
 import json
+import hashlib
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -7,15 +9,90 @@ import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
+import zipfile
 from unittest import mock
 
 from tools.desktop_view import open_local, service_failure, WindowActions
+from tools import desktop_view
 from tools import web_dependencies
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
 class DesktopStartupTests(unittest.TestCase):
+    def viewer_fixture(self,root):
+        files={'webview/__init__.py':b'# viewer\n','pythonnet/runtime/Python.Runtime.dll':b'pinned assembly'}
+        stream=io.BytesIO()
+        with zipfile.ZipFile(stream,'w') as archive:
+            for name,data in files.items():archive.writestr(name,data)
+        raw=stream.getvalue();sha=hashlib.sha256(raw).hexdigest()
+        manifest=[dict(name='fixture',size=len(raw),sha256=sha,url='https://invalid.example/viewer.whl')]
+        (root/'data').mkdir()
+        (root/'data/desktop-view-runtime.json').write_text(json.dumps({'windows-x64':manifest}))
+        (root/'data/desktop-view-integrity.json').write_text(json.dumps({'windows-x64':{name:hashlib.sha256(data).hexdigest() for name,data in files.items()}}))
+        digest=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest()[:16]
+        packaged=root/'python/desktop-view'/('runtime-windows-x64-'+digest)
+        packaged.mkdir(parents=True)
+        (packaged/'.ready').write_text(json.dumps(dict(digest=digest)))
+        for name,data in files.items():
+            path=packaged/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+        (packaged.parent/(sha+'.download')).write_bytes(raw)
+        return packaged,files,digest
+
+    def test_incomplete_packaged_viewer_repairs_from_verified_archives_offline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);packaged,files,digest=self.viewer_fixture(root)
+            dll=packaged/'pythonnet/runtime/Python.Runtime.dll';dll.write_bytes(b'incomplete')
+            with mock.patch.object(desktop_view,'ROOT',root),mock.patch.object(desktop_view,'urlopen',side_effect=AssertionError('Must remain offline')):
+                repaired=desktop_view.install(root/'cache',target='windows-x64',check_python=False)
+                self.assertNotEqual(repaired,packaged)
+                self.assertTrue(desktop_view.verify_viewer(repaired,'windows-x64',digest))
+                self.assertEqual((repaired/'pythonnet/runtime/Python.Runtime.dll').read_bytes(),files['pythonnet/runtime/Python.Runtime.dll'])
+                self.assertEqual(dll.read_bytes(),b'incomplete','Keep the damaged package for diagnosis')
+
+    @unittest.skipUnless(os.name=='nt','NTFS download origin streams')
+    def test_unblocking_is_limited_to_verified_runtime_binaries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);packaged,files,digest=self.viewer_fixture(root)
+            dll=packaged/'pythonnet/runtime/Python.Runtime.dll';zone=Path(str(dll)+':Zone.Identifier')
+            extra=packaged/'unrelated.dll';extra.write_bytes(b'unknown')
+            unrelated=Path(str(extra)+':Zone.Identifier')
+            zone.write_text('[ZoneTransfer]\nZoneId=3\n');unrelated.write_text('[ZoneTransfer]\nZoneId=3\n')
+            with mock.patch.object(desktop_view,'ROOT',root):
+                diagnostics={}
+                self.assertEqual(desktop_view.prepare_windows_viewer(packaged,root/'cache',diagnostics),packaged)
+                self.assertFalse(zone.exists());self.assertTrue(unrelated.exists())
+                self.assertEqual(diagnostics['blocked_binaries'],['pythonnet/runtime/Python.Runtime.dll'])
+                dll.write_bytes(b'changed');zone.write_text('[ZoneTransfer]\nZoneId=3\n')
+                with self.assertRaisesRegex(RuntimeError,'checksum mismatch'):
+                    desktop_view.prepare_windows_viewer(packaged,root/'cache',{})
+                self.assertTrue(zone.exists(),'Never unblock a file that failed its pinned checksum')
+
+    def test_windows_clr_selection_ignores_then_restores_external_pythonnet_settings(self):
+        from types import SimpleNamespace as NS
+        observed=[];runtime=object()
+        def load(value):
+            self.assertIs(value,runtime)
+            observed.append([key for key in os.environ if key.startswith('PYTHONNET_')])
+        modules={'clr_loader':NS(get_netfx=lambda:runtime),'pythonnet':NS(load=load,get_runtime_info=lambda:'NetFX'),'clr':NS(AddReference=lambda _:None)}
+        with mock.patch.dict(sys.modules,modules),mock.patch.dict(os.environ,dict(PYTHONNET_RUNTIME='coreclr',PYTHONNET_PYDLL='unrelated.dll')):
+            self.assertEqual(desktop_view.initialize_windows_viewer(),'NetFX')
+            self.assertEqual(observed,[[]])
+            self.assertEqual(os.environ['PYTHONNET_RUNTIME'],'coreclr')
+            self.assertEqual(os.environ['PYTHONNET_PYDLL'],'unrelated.dll')
+
+    def test_runtime_check_records_full_failure_without_opening_a_dialog(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder=Path(directory)
+            with mock.patch.object(desktop_view,'install',side_effect=RuntimeError('verified runtime initialization failed')):
+                with self.assertRaisesRegex(RuntimeError,'initialization failed'):
+                    desktop_view.main(['--standalone','--check-runtime','--directory',str(folder)])
+            value=json.loads((folder/'window-status.json').read_text(encoding='utf8'))
+            self.assertEqual(value['state'],'failed')
+            self.assertEqual(value['details'],str(folder/'startup-error.log'))
+            self.assertIn('Traceback',(folder/'startup-error.log').read_text(encoding='utf8'))
+            self.assertIn('initialization failed',json.loads((folder/'runtime-diagnostics.json').read_text(encoding='utf8'))['error'])
+
     def test_native_window_changes_are_posted_without_synchronous_gui_calls(self):
         from types import SimpleNamespace as NS
         native=mock.Mock(IsDisposed=False);queued=[]

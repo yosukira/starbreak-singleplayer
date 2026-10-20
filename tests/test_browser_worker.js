@@ -6,7 +6,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
   const context={fakePy:py,fetch:async()=>{},postMessage:value=>messages.push(value),JSON,Promise,Error,console};
   vm.createContext(context);
   const source=fs.readFileSync('web/browser/worker.js','utf8')
-    .replace(/^import .*\n/m,'')
+    .replace(/^import .*\n/gm,'')
     .replace('let queue=Promise.resolve(),ready=initialize();','let queue=Promise.resolve(),ready=Promise.resolve({version:"test"});py=globalThis.fakePy;profileReady=true;');
   vm.runInContext(source,context);
   const drain=()=>new Promise(resolve=>setImmediate(resolve));

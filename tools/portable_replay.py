@@ -22,7 +22,7 @@ def check_runner(runner,adapter=None):
     from tools.web_client import CLIENT_SHA256
     expected=adapter or adapter_digest()
     compatible=runner=={'client':CLIENT_SHA256,'adapter':expected}
-    if not compatible and adapter is None and runner.get('client')==CLIENT_SHA256:
+    if not compatible and runner.get('client')==CLIENT_SHA256:
         import json
         try:
             aliases=json.loads((Path(__file__).resolve().parents[1]/'data/mechanics/portable_replay_compatibility.json').read_text(encoding='utf8'))
@@ -33,7 +33,13 @@ def check_runner(runner,adapter=None):
 
 
 def supported_runners(value,adapter=None):
-    for row in value.get('runners',[]):check_runner({k:row[k] for k in ('client','adapter')},adapter)
+    for row in value.get('runners',[]):
+        if row['engine']=='native':
+            from plugins._native_replay_capture import CLIENTS
+            from tools.native_replay import compatible_adapter
+            if row['client'] not in CLIENTS or not compatible_adapter(row['adapter']):
+                raise ValueError('Portable takeover requires the matching native continuation adapter')
+        else:check_runner({k:row[k] for k in ('client','adapter')},adapter)
 
 
 def append_runner(host,request,clients,source,adapter=None):
@@ -46,8 +52,8 @@ def append_runner(host,request,clients,source,adapter=None):
         host.session.options.web_client=True
 
 
-def browser_document(directory, identifier, version, adapter=None, require_exact=False):
-    value = NativeJournals(directory).read(identifier)
+def browser_document(directory, identifier, version, adapter=None, require_exact=False, source=None):
+    value = NativeJournals(directory).read(identifier) if source is None else source
     from plugins._native_replay_capture import CLIENTS
     if value['client'] not in CLIENTS:
         raise ValueError('Unsupported original native client version')

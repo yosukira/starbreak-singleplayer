@@ -166,12 +166,13 @@ def export_battle(store, document):
     return pack_battle(value)
 
 
-def read_battle(blob):
+def read_battle(blob, max_expanded=None):
     from localserver.battle_records import validate, MAX_RECORD
+    if max_expanded is None:max_expanded=MAX_EXPANDED
     if blob.startswith((MAGIC,MAGIC_COMPACT)):
         with gzip.GzipFile(fileobj=io.BytesIO(blob[len(MAGIC):])) as handle:
-            raw=handle.read(MAX_EXPANDED+1)
-        if len(raw)>MAX_EXPANDED:raise ValueError('Expanded replay is too large')
+            raw=handle.read(max_expanded+1)
+        if len(raw)>max_expanded:raise ValueError('Expanded replay is too large')
         value=json.loads(raw)
         record=validate(value['record']);client=client_document(value['client'])
         if blob.startswith(MAGIC_COMPACT):

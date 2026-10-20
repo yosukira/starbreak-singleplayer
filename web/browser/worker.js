@@ -1,5 +1,6 @@
 /* All encounter computation and persistent files stay on the player's device. */
 import {loadPyodide} from '../pyodide/pyodide.mjs';
+import {runtimeCache} from './runtime-cache.js';
 let py, runtime, profileReady=false, lastTick=0;
 const encode=value=>JSON.stringify(value);
 function run(source){return py.runPython(source);}
@@ -23,7 +24,7 @@ function flush(){
 }
 function events(){const rows=JSON.parse(run('json.dumps(runtime.drain())'));for(const row of rows)postMessage({type:'network',...row});}
 const nativeFetch=globalThis.fetch.bind(globalThis);
-function progress(percent,step){postMessage({type:'loading-progress',phase:'environment',percent,step});}
+function progress(percent,step,updating=false){postMessage({type:'loading-progress',phase:'environment',percent,step,updating});}
 async function readProgress(response,total,update){
   if(!response.ok)throw Error('Runtime download failed');
   if(!response.body)return new Uint8Array(await response.arrayBuffer());
@@ -32,29 +33,32 @@ async function readProgress(response,total,update){
   const bytes=new Uint8Array(received);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}update(1);return bytes;
 }
 async function initialize(){
-  progress(0,'download');
-  const manifest=await nativeFetch('../browser-manifest.json').then(r=>r.json());
+  progress(0,'checking');
+  const manifest=await nativeFetch('../browser-manifest.json',{cache:'no-cache'}).then(r=>r.json());
   const sizes=manifest.runtime_files||{},downloaded={};let lastPercent=-1;
+  const cache=runtimeCache({base:new URL('../',location.href).href,fetch:nativeFetch});
+  const {updating}=await cache.open(manifest);
   globalThis.fetch=async(input,options)=>{
-    const response=await nativeFetch(input,options),name=new URL(typeof input==='string'?input:input.url,location.href).pathname.split('/').pop();
-    if(!sizes[name])return response;
-    const data=await readProgress(response,sizes[name],fraction=>{
+    const url=new URL(typeof input==='string'?input:input.url||input.href,location.href),name=url.pathname.split('/').pop();
+    if(!sizes[name]||url.origin!==location.origin)return nativeFetch(input,options);
+    const response=await cache.read('pyodide/'+name,sizes[name],(fraction,step)=>{
       downloaded[name]=fraction*sizes[name];const total=Object.values(sizes).reduce((a,b)=>a+b,0),percent=Math.floor(55*Object.values(downloaded).reduce((a,b)=>a+b,0)/total);
-      if(percent!==lastPercent){lastPercent=percent;progress(percent,'download');}
+      if(percent!==lastPercent||fraction===0){lastPercent=percent;progress(percent,step,updating);}
     });
-    return new Response(data,{status:response.status,headers:response.headers});
+    progress(Math.max(0,lastPercent),'initialize',updating);return response;
   };
   py=await loadPyodide({stdout:()=>{},indexURL:new URL('../pyodide/',location.href).href});
-  globalThis.fetch=nativeFetch;progress(60,'storage');
+  globalThis.fetch=nativeFetch;progress(60,'storage',updating);
   py.FS.mkdirTree('/profile');py.FS.mount(py.FS.filesystems.IDBFS,{},'/profile');
   await new Promise((resolve,reject)=>py.FS.syncfs(true,error=>error?reject(error):resolve()));
   profileReady=true;
-  const bundle=await readProgress(await nativeFetch('../runtime.zip'),manifest.runtime_size||0,fraction=>progress(65+25*fraction,'download'));
-  progress(92,'initialize');
+  const bundle=await (await cache.read('runtime.zip',manifest.runtime_size||0,(fraction,step)=>progress(65+25*fraction,step,updating))).arrayBuffer();
+  progress(92,'initialize',updating);
   py.unpackArchive(new Uint8Array(bundle),'zip',{extractDir:'/app'});
   py.globals.set('browser_manifest',encode(manifest));
   run("import sys, os, json\nsys.path.insert(0, '/app')\nos.environ['SB_GAME_SETTINGS_PATH']='/profile/game_settings.json'\nfrom tools.browser_runtime import BrowserRuntime\nruntime=BrowserRuntime('/profile',json.loads(browser_manifest))");
   await flush();
+  await cache.commit();
   progress(100,'ready');
   lastTick=performance.now();
   setInterval(()=>{

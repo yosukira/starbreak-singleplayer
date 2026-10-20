@@ -7,9 +7,38 @@
     constructor(key){this.s=Uint8Array.from({length:256},(_,i)=>i);let j=0;for(let i=0;i<256;i++){j=(j+this.s[i]+key[i%key.length])&255;[this.s[i],this.s[j]]=[this.s[j],this.s[i]];}this.i=this.j=0;}
     crypt(bytes){return Uint8Array.from(bytes,b=>{this.i=(this.i+1)&255;this.j=(this.j+this.s[this.i])&255;[this.s[this.i],this.s[this.j]]=[this.s[this.j],this.s[this.i]];return b^this.s[(this.s[this.i]+this.s[this.j])&255];});}
   }
+  function nativeView(ops,world){
+    if(!world)return null;
+    let sequence=0,boundary=0,elapsed=0,start=null,offset=0,end=ops.length,duration=0,transition=null;
+    for(let index=0;index<ops.length;index++){
+      const row=ops[index];
+      if(row[0]==='message'&&row[1]===21&&sequence&&transition===null)transition={boundary,elapsed};
+      if(row[0]==='message'&&row[1]===10){
+        sequence++;
+        if(sequence===world){start=boundary;offset=elapsed;}
+        else if(sequence===world+1){end=transition?.boundary??boundary;duration=(transition?.elapsed??elapsed)-offset;break;}
+        transition=null;
+      }
+      if(row[0]==='step')elapsed+=row[1];
+      if(row[0]==='loop'&&row[1]===1)boundary=index+1;
+    }
+    if(!duration)duration=elapsed-offset;
+    if(start===null||end<=start)throw Error('The selected battle is missing from this native recording');
+    return {start,end,offset,duration};
+  }
   const factory=Base=>class NativeClientReplay extends Base{
     constructor(options){
-      super({...options,document:{ops:[]}});
+      const view=nativeView(options.document.ops,options.document.view_world);let owner;
+      super({...options,document:{ops:[]},notice:status=>{
+        if(view){
+          status={...status};
+          if(Number.isFinite(status.seconds))status.seconds=Math.max(0,status.seconds-view.offset/1000);
+          if(Number.isFinite(status.target))status.target=Math.max(0,status.target-view.offset/1000);
+          status.duration=view.duration/1000;
+          if(owner?.priming&&['playing','paused','seeking'].includes(status.state))status={...status,state:'preparing',frame:0,stage:'reconstructing',progress:Math.min(1,owner.cursor/Math.max(1,view.start))};
+        }
+        options.notice?.(status);
+      }});owner=this;this.view=view;this.priming=!!view;
       this.ops=options.document.ops;this.document=options.document;this.cursor=0;this.stack=[];this.driving=false;
       this.nativeClient=0;this.nativeServer=0;this.world=0;this.joined=false;this.pendingAssets=0;this.engineElapsed=0;
       this.elapsed=0;this.totalDuration=this.ops.reduce((n,r)=>n+(r[0]==='step'?r[1]:0),0);
@@ -20,6 +49,24 @@
       this.save=chunk=>options.save?.({...chunk,native:true});this.stage=chunk=>options.stage?.({...chunk,native:true});
       if(!this.bootstrap)throw Error('Portable replay bootstrap is missing');
       this.module.nativeJournal=this;
+    }
+    clientContext(client){
+      this.nativeClient=client;
+      if(!client){this.world=0;this.worldReady=false;}
+    }
+    syncWorld(){
+      this.world=this.nativeClient?this.module.HEAP32[(this.nativeClient+72)>>2]:0;
+      if(!this.world)this.worldReady=false;
+    }
+    restoreTimeCredit(){
+      // Native local sessions restore credit after each loop. The buffer
+      // also controls moving-platform interpolation, not just frame pacing.
+      // A browser continuation retains its own recorded scheduling policy.
+      let engine='native';
+      for(const row of this.document.runners||[]){if(row.cursor>this.cursor)break;engine=row.engine;}
+      if(!this.world||engine!=='native')return;
+      const h=this.module.HEAP32,reserve=(this.world+688)>>2;
+      if(h[reserve]>=0&&h[reserve]<1000){h[reserve+1]=0;h[reserve]=1000;}
     }
     write(row){if(this.mode==='record'&&row[0]!=='close')super.write(row);}
     flush(end=false){return this.mode==='record'?super.flush(end):Promise.resolve();}
@@ -41,6 +88,11 @@
     }
     control(_kind,_values,callback){if(this.mode==='record'){if(this.liveControls.length>=256){this.fail('Portable input queue is full');return;}this.liveControls.push(callback);}}
     timer(callback){if(!this.driving)callback();}
+    wallSleep(useconds,callback){
+      // doTimePasses uses usleep for empty (<10 ms) iterations. Recorded
+      // clocks already own pacing; replaying the wall wait only busy-spins.
+      return this.mode==='play'&&this.driving?0:callback(useconds);
+    }
     preferences(content){this.module.replayPreferences(content);}
     requestQuit(){this.leaving=true;}
     quit(){this.leaving=true;this.stopIfLeaving();}
@@ -49,7 +101,12 @@
     input(){return 1;}
     frame(_world,dt){return dt;}
     frameEnd(){}
-    canTakeOver(){return this.takeoverAllowed&&this.mode==='play'&&!this.error&&!this.finished&&!this.inLoop&&!this.stack.length&&this.worldReady&&this.seekTarget===null&&this.pendingAssets===0&&this.playerState(this.world)[8]>0;}
+    canTakeOver(){return this.takeoverAllowed&&this.mode==='play'&&!this.priming&&!this.error&&!this.finished&&!this.inLoop&&!this.stack.length&&this.worldReady&&this.seekTarget===null&&this.pendingAssets===0&&this.playerState(this.world)[8]>0;}
+    seek(seconds,paused=false){return super.seek(seconds+(this.view?.offset||0)/1000,paused);}
+    setPaused(value){
+      if(this.priming){this.seekPaused=value===true;this.paused=false;return;}
+      return super.setPaused(value);
+    }
     transparent(){
       while(this.ops[this.cursor]?.[0]==='delta'||this.ops[this.cursor]?.[0]==='return'&&this.ops[this.cursor][1]==='delta')this.cursor++;
     }
@@ -94,6 +151,7 @@
       this.stack.push(entry);return 1;
     }
     leave(kind,object){
+      if(kind===5)this.syncWorld();
       if(this.mode==='record'){
         if(!this.inLoop||this.error||this.finished)return;
         const entry=this.stack.pop();if(!entry){this.fail('Portable call stack changed');return;}
@@ -115,7 +173,10 @@
         this.engineElapsed+=entry.dt;
         const check=this.take('engine-state')[1],state=this.playerState(object);
         // Count the source dt, independent of how the display is scheduled.
-        if(JSON.stringify(check)!==JSON.stringify(state))throw Error(`Portable physics checkpoint changed at ${this.cursor-1}`);
+        if(JSON.stringify(check)!==JSON.stringify(state)){
+          this.divergence={kind:'engine-state',cursor:this.cursor-1,expected:check,actual:state,elapsed:this.elapsed,dt:entry.dt,clock:this.lastNativeClock};
+          throw Error(`Portable physics checkpoint changed at ${this.cursor-1}`);
+        }
         this.frameCount++;
       }
     }
@@ -142,7 +203,7 @@
       }else throw Error('Unsupported portable driver operation: '+row[0]);
     }
     *execute(){
-      while(this.cursor<this.ops.length){
+      while(this.cursor<(this.view?.end??this.ops.length)){
         this.expect(['loop',0]);this.inLoop=true;
         while(this.ops[this.cursor]?.[0]!=='state'){
           const row=this.ops[this.cursor];
@@ -158,10 +219,17 @@
             this.stack.pop();this.expect(['return','read']);
           }else this.invoke(row);
         }
+        this.restoreTimeCredit();
         const expected=this.take('state')[1],state=this.world?this.playerState(this.world):[0,0];
-        if(JSON.stringify(expected)!==JSON.stringify(state))throw Error(`Portable player checkpoint changed at ${this.cursor-1}`);
+        if(JSON.stringify(expected)!==JSON.stringify(state)){
+          this.divergence={kind:'state',cursor:this.cursor-1,expected,actual:state,elapsed:this.elapsed,clock:this.lastNativeClock};
+          throw Error(`Portable player checkpoint changed at ${this.cursor-1}`);
+        }
         this.expect(['loop',1]);this.inLoop=false;this.completed++;
         if(state.length===14)this.worldReady=true;
+        if(this.priming&&this.cursor>this.view.start&&state.length===14){
+          this.priming=false;this.playTime=this.elapsed;this.wall=null;this.paused=this.seekTarget===null&&this.seekPaused===true;
+        }
         if(this.pauseWhenReady&&this.worldReady){this.pauseWhenReady=false;this.paused=true;this.wall=null;}
         this.notice({state:this.paused?'paused':'playing',frame:this.worldReady?this.frameCount:0,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
         yield 'frame';
@@ -172,15 +240,18 @@
       if(this.mode==='record'){callback();return;}
       if(this.error||this.finished)return;
       try{
-        callback();
+        // Reconstruct verified engine calls without rendering intermediate
+        // worlds. Asset transitions still run the original event loop.
+        if(!this.priming||!this.joined||!this.nativeServer||!this.nativeClient||this.pendingAssets>0)callback();
         if(!this.joined||!this.nativeServer||this.pendingAssets>0){this.wall=null;return;}
-        if(this.paused&&this.seekTarget===null)return;
+        if(this.paused&&this.seekTarget===null&&!this.priming)return;
         const started=this.now();if(this.wall!==null)this.playTime+=Math.min(250,Math.max(0,started-this.wall))*this.speed;this.wall=started;
         this.driving=true;
+        const budget=this.priming||this.seekTarget!==null||this.speed>1?35:12;
         for(let count=0;count<240&&!this.finished&&!this.paused;count++){
-          if(this.seekTarget===null&&this.ends[this.completed]>this.playTime)break;
+          if(!this.priming&&this.seekTarget===null&&this.ends[this.completed]>this.playTime)break;
           const value=this.runner.next();
-          if(value.done||value.value==='assets'||value.value==='context'||this.now()-started>12)break;
+          if(value.done||value.value==='assets'||value.value==='context'||this.now()-started>budget)break;
           if(this.seekTarget!==null&&this.elapsed>=this.seekTarget&&(!this.seekPaused||this.worldReady)){
             this.seekTarget=null;this.paused=this.seekPaused;this.wall=null;this.playTime=this.elapsed;break;
           }
@@ -217,5 +288,5 @@
       this.liveSocket=peer;queueMicrotask(()=>{peer.readyState=1;peer.onopen?.({type:'open'});this.sendHello();});return peer;
     }
   };
-  if(typeof module!=='undefined'&&module.exports)module.exports={factory,Cipher};else globalThis.StarBreakNativeReplay=factory;
+  if(typeof module!=='undefined'&&module.exports)module.exports={factory,Cipher,nativeView};else globalThis.StarBreakNativeReplay=factory;
 })();

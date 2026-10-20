@@ -121,5 +121,22 @@ class PortableReplayTests(unittest.TestCase):
             self.assertNotIn('private-client',json.dumps(parsed));self.assertNotIn('private-server',json.dumps(parsed));self.assertNotIn('private-frame',json.dumps(parsed))
             self.assertEqual(parsed[2]['frames'][value['server']['frames'].index(frame)],before)
 
+    def test_shared_download_import_validates_once_with_sharing_limit(self):
+        from tools.replay_sharing import ShareClient
+        with tempfile.TemporaryDirectory() as source,tempfile.TemporaryDirectory() as target:
+            store,_,request,_=self.fixture(source);_,blob=store.export([request['record']])
+            response=io.BytesIO(blob);response.headers={'Content-Length':str(len(blob))}
+            client=ShareClient.__new__(ShareClient);client.url='https://replays.invalid'
+            with mock.patch('tools.replay_sharing.urlopen',return_value=response),mock.patch('tools.replay_sharing.clean_replay',side_effect=AssertionError('Importer owns validation')):
+                downloaded=client.download('ABCD2345EFGH',for_import=True)
+            imported=RecordStore(target)
+            with self.assertRaisesRegex(ValueError,'too large'):
+                imported.import_bytes(downloaded,max_expanded=10)
+            self.assertEqual(imported.list(),[])
+            with mock.patch('tools.replay_bundle.read_battle',wraps=read_battle) as read:
+                self.assertEqual(imported.import_bytes(downloaded,max_expanded=96*1024*1024)['imported'],1)
+                self.assertEqual(read.call_count,1)
+            self.assertEqual(imported.get(request['record'])['result'],store.get(request['record'])['result'])
+
 
 if __name__=='__main__':unittest.main()

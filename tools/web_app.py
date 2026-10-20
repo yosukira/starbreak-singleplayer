@@ -804,9 +804,10 @@ class Handler(BaseHTTPRequestHandler):
                 if len(prototype.transfer_progress)>32:prototype.transfer_progress.clear()
                 def progress(stage,loaded=0,total=0):prototype.transfer_progress[token]=dict(stage=stage,loaded=loaded,total=total)
                 progress('connecting')
-                data = service.download(document.get('code'),progress)
+                data = service.download(document.get('code'),progress,for_import=True)
                 progress('validate',len(data),len(data))
-                result=self.server.prototype.records.import_bytes(data,shared_code=document.get('code'))
+                from tools.replay_sharing import MAX_EXPANDED as sharing_limit
+                result=self.server.prototype.records.import_bytes(data,shared_code=document.get('code'),max_expanded=sharing_limit)
                 progress('saved',len(data),len(data))
                 if result['imported']:service.acknowledge(document.get('code'))
                 return self.send(result)

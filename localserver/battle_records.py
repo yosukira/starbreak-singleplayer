@@ -311,7 +311,7 @@ class RecordStore:
                 if author is not None:value['shared_by']=nickname(author)
                 db.execute('UPDATE records SET document=? WHERE id=?',(encoded(value).decode(),identifier))
 
-    def import_bytes(self, data, shared_code=None):
+    def import_bytes(self, data, shared_code=None, max_expanded=None):
         if not data or len(data) > MAX_IMPORT:
             raise ValueError('Battle import exceeds 256 MB')
         if data[:2] == b'PK':
@@ -332,7 +332,7 @@ class RecordStore:
         documents = []
         expanded = 0
         for blob in blobs:
-            document, client, server, size = read_battle(blob)
+            document, client, server, size = read_battle(blob,max_expanded=max_expanded)
             expanded += size
             if expanded>MAX_EXPANDED_IMPORT:raise ValueError('Expanded battle data exceeds 512 MB')
             if document['result'] == 'active':

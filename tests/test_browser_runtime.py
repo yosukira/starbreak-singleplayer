@@ -12,6 +12,38 @@ from tools.browser_runtime import BrowserRuntime,MemoryChannel,PENDING_MAPS
 
 
 class BrowserRuntimeTests(unittest.TestCase):
+    def test_native_takeover_version_check_does_not_read_the_whole_tape_again(self):
+        import uuid
+        from plugins._native_replay_capture import CLIENTS
+        from tools.native_replay import NativeJournals,adapter_digest
+        app=self.app();identifier=str(uuid.uuid4());store=NativeJournals(app.records.directory)
+        store.begin(identifier,next(iter(CLIENTS)),adapter_digest(),dict(content=None),[1366,768])
+        store.append(identifier,dict(sequence=0,ops=[['loop',0],['state',[0,0]],['loop',1]],end=True))
+        with mock.patch.object(NativeJournals,'read',side_effect=AssertionError('Preparation owns full validation')):
+            header=app.replay_document(identifier,require_exact=True,header_only=True)
+        self.assertEqual(header['schema'],'starbreak-native-journal-v1');self.assertEqual(header['ops'],[])
+        self.assertEqual(len(app.replay_document(identifier,require_exact=True)['ops']),3)
+
+    def test_replay_pages_release_reader_on_finish_cancel_and_failed_read(self):
+        app=self.app();closed=[]
+        def reader(fail=False):
+            try:
+                if fail:raise ValueError('Damaged page')
+                yield dict(sequence=0,ops=[],end=True,total=1)
+            finally:closed.append(True)
+        def attach(fail=False):
+            app.replay_pages=dict(token='current',sequence=0,reader=reader(fail))
+        attach()
+        self.assertTrue(app.api('GET','/api/replay/page?token=current&sequence=0')['end'])
+        self.assertEqual(len(closed),1);self.assertIsNone(app.replay_pages)
+        attach(True)
+        with self.assertRaisesRegex(ValueError,'Damaged page'):app.api('GET','/api/replay/page?token=current&sequence=0')
+        self.assertEqual(len(closed),2);self.assertIsNone(app.replay_pages)
+        attach();next(app.replay_pages['reader']);app.boot('')
+        self.assertEqual(len(closed),3);self.assertIsNone(app.replay_pages)
+        attach();next(app.replay_pages['reader']);app.stop()
+        self.assertEqual(len(closed),4);self.assertIsNone(app.replay_pages)
+
     def test_recording_switch_defaults_on_and_applies_to_new_battles_only(self):
         app=self.app()
         self.assertTrue(app.workspace.preferences()['record_replays'])

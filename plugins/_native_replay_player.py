@@ -7,38 +7,54 @@ import bisect
 import time
 
 try:
-    from ._native_replay import NativeTape,validate_operations,CALLS
+    from ._native_replay import NativeTape,validate_operations,VerifiedOperations,CALLS
 except (ImportError,ValueError,SystemError):  # Embedded PyPy 3.5 top-level load
-    from _native_replay import NativeTape,validate_operations,CALLS
+    from _native_replay import NativeTape,validate_operations,VerifiedOperations,CALLS
+
+
+class PreparedReplay:
+    """Local-only indexes; never accepted from a JSON document."""
+    def __init__(self,document,progress=lambda loaded,total:None):
+        ops=document['ops']
+        if not isinstance(ops,VerifiedOperations) or not ops.complete:ops=validate_operations(ops)
+        self.document=dict(document,ops=ops)
+        self.preload=[];self.descriptions=set();seen=set();bootstrap=False
+        self.times=[];self.ends=[];self.clocks=[];self.clock_positions=[];elapsed=0.
+        end=int((document.get('view') or {}).get('end',len(ops)))
+        import base64
+        for index,row in enumerate(ops):
+            if row[0]=='message':
+                if row[1]==10:bootstrap=True
+                if row[1]in(16,17):self.descriptions.add((row[1],base64.b64decode(row[2])))
+                if row[1]==21 and index<end and row[2]not in seen:self.preload.append(row);seen.add(row[2])
+            if row[0]=='clock':self.clock_positions.append(index);self.clocks.append(row[1])
+            if row[0]=='step':elapsed+=row[1]/1000.
+            if row==['loop',1]:self.ends.append(index+1);self.times.append(elapsed)
+            if index%4096==0:progress(index,len(ops));time.sleep(0)
+        if not bootstrap:raise ValueError('This recording predates native world bootstrap capture')
+        if not self.ends:raise ValueError('Native recording has no completed game frames')
+        self.duration=elapsed;progress(len(ops),len(ops))
 
 
 class NativePlayer:
     def __init__(self,capture,document,keyboard=lambda:(),post_frame=lambda:None,clock=time.monotonic):
-        ops=validate_operations(document['ops'])
-        if not any(row[0]=='message' and row[1]==10 for row in ops):
-            raise ValueError('This recording predates native world bootstrap capture')
-        import base64
+        prepared=document if isinstance(document,PreparedReplay) else PreparedReplay(document)
+        document=prepared.document;ops=document['ops']
         descriptions=getattr(capture,'descriptions',set())
-        if any((row[1],base64.b64decode(row[2])) not in descriptions
-               for row in ops if row[0]=='message' and row[1] in (16,17)):
+        if not prepared.descriptions.issubset(descriptions):
             raise ValueError('Native replay requires matching item and character descriptions')
-        self.capture,self.document=capture,dict(document,ops=ops)
+        self.capture,self.document=capture,document
+        self.legacy_sound_clocks=document.get('clock_scope')!='game-v1' or bool(document.get('runners'))
         self.keyboard,self.post_frame,self.clock=keyboard,post_frame,clock
         self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[]
+        self.pending_keyups=[];self.keyup_after=0
         self.world_created=False;self.phase='playing';self.speed=1.;self.paused=False
-        self.preload=[];seen=set()
-        for row in ops[:int((document.get('view') or {}).get('end',len(ops)))]:
-            if row[0]=='message' and row[1]==21 and row[2]not in seen:self.preload.append(row);seen.add(row[2])
+        self.preload=prepared.preload
         self.preloaded=not self.preload;self.preloading=False
         self.target=None;self.seeking=False;self.cursor=0;self.seconds=0.;self.acks=[]
-        self.times=[];self.ends=[];elapsed=0
-        self.clocks=[];self.clock_positions=[]
-        for index,row in enumerate(ops):
-            if row[0]=='clock':self.clock_positions.append(index);self.clocks.append(row[1])
-            if row[0]=='step':elapsed+=row[1]/1000.
-            if row==['loop',1]:self.ends.append(index+1);self.times.append(elapsed)
-        if not self.ends:raise ValueError('Native recording has no completed game frames')
-        self.duration=elapsed;self.anchor=clock();self.anchor_seconds=0.;self.reset()
+        self.times,self.ends=prepared.times,prepared.ends
+        self.clocks,self.clock_positions=prepared.clocks,prepared.clock_positions
+        self.duration=prepared.duration;self.anchor=clock();self.anchor_seconds=0.;self.reset()
         view=document.get('view') or {}
         self.view_start=int(view.get('start',0));self.view_end=int(view.get('end',len(ops)))
         self.view_offset=float(view.get('offset',0));self.view_duration=float(view.get('duration',self.duration))
@@ -65,6 +81,13 @@ class NativePlayer:
             else:raise ValueError('Unexpected native transport operation')
             if tape.error:raise ValueError('Native transport replay diverged')
         return True
+
+    def uses_native_time_credit(self):
+        engine='native'
+        for row in self.document.get('runners',[]):
+            if row['cursor']>self.capture.tape.cursor:break
+            engine=row['engine']
+        return engine=='native'
 
     def frame(self):
         tape=self.capture.tape
@@ -179,4 +202,7 @@ class NativePlayer:
             speed=self.speed,takeover=self.can_takeover(),error=self.capture.tape.error,
             message=getattr(self.capture.tape,'error_detail',None),
             target=max(0,self.target-self.view_offset) if self.seeking else None,
+            stage='reconstructing' if self.priming else 'seeking' if self.seeking else 'assets' if self.phase=='preparing' else None,
+            progress=min(1.,self.cursor/float(max(1,self.view_start))) if self.priming else
+                min(1.,self.seconds/max(.001,self.target)) if self.seeking else None,
             assets_loaded=max(0,len(self.preload)-self.capture.pending_assets),assets_total=len(self.preload))

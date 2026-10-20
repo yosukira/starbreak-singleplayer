@@ -15,6 +15,10 @@ const sandbox={Storage:function(){},document:{createElement(){return {getContext
 try{
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(process.argv[2],'utf8'),sandbox,{timeout:10000,displayErrors:false});
+  // A recorded DOM resize can arrive before XDL creates its canvas. The
+  // original event has no game state to change at this startup boundary.
+  assert.equal(sandbox.XDL.canvas,null);
+  assert.doesNotThrow(()=>sandbox.Module.replayControl('resize',[]));
   const binding=field(1,Buffer.concat([Buffer.from([8,0,16]),varint(122)]));
   const personal=options([['impbstr',binding],['musicVol','17'],['sfxVol','33']]);
   sandbox.Module.replayPreferences(btoa(personal));

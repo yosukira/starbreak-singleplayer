@@ -53,14 +53,10 @@ def display_code(value):
     return '-'.join(value[i:i+4] for i in range(0, 12, 4))
 
 
-def clean_replay(blob, author=None):
+def prepare_replay(blob, author=None):
     if not 0 < len(blob) <= MAX_FILE or not blob.startswith((MAGIC,MAGIC_COMPACT)):
         raise ValueError('Share a complete replay, up to 32 MB')
-    with gzip.GzipFile(fileobj=io.BytesIO(blob[len(MAGIC):])) as stream:
-        raw = stream.read(MAX_EXPANDED + 1)
-    if len(raw) > MAX_EXPANDED:
-        raise ValueError('Expanded sharing file exceeds 96 MB')
-    record, client, server, _ = read_battle(blob)
+    record, client, server, _ = read_battle(blob,max_expanded=MAX_EXPANDED)
     if client is None or record['result'] == 'active':
         raise ValueError('Finish the battle before sharing its recording')
     # Serialize only validated game fields, including when the uploader supplied
@@ -74,7 +70,11 @@ def clean_replay(blob, author=None):
     clean,_ = pack_battle(value)
     if len(clean) > MAX_FILE:
         raise ValueError('Replay sharing file exceeds 32 MB')
-    return clean
+    return clean,record
+
+
+def clean_replay(blob, author=None):
+    return prepare_replay(blob,author)[0]
 
 
 class ShareClient:
@@ -122,7 +122,7 @@ class ShareClient:
         atomic_json(path, cache)
         return entry
 
-    def download(self, identifier, progress=None):
+    def download(self, identifier, progress=None, for_import=False):
         with urlopen(self.url + '/replays/' + code(identifier), timeout=60) as response:
             self.import_token = response.headers.get('X-Replay-Import-Token', '')
             total=int(response.headers.get('Content-Length','0'));chunks=[];received=0
@@ -136,7 +136,10 @@ class ShareClient:
                 if progress:progress('download',received,total)
             blob=b''.join(chunks)
         if progress:progress('validate',received,total)
-        return clean_replay(blob)
+        # The atomic battle importer validates the full file and strips all
+        # unknown fields itself. Avoid decoding/recompressing it first when
+        # the next operation is that importer.
+        return blob if for_import else clean_replay(blob)
 
 
 

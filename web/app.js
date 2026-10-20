@@ -60,7 +60,7 @@
     $('status').hidden=!!loading;
     if(!loading)return;
     const labels={
-      environment:[t('正在准备游戏环境','Preparing game environment'),t('首次加载需要下载运行资源，之后将缓存在本机。','The first visit downloads runtime resources, which are cached on this device.')],
+      environment:loading.updating?[t('正在更新网页版','Updating web version'),t('仅下载发生变化的运行文件，已有资源继续复用。','Only changed runtime files are downloaded; existing resources are reused.')]:[t('正在准备游戏环境','Preparing game environment'),loading.step==='download'?t('正在下载首次使用所需的运行资源。','Downloading resources needed for first use.'):t('正在读取本机资源并初始化游戏。','Reading local resources and initializing the game.')],
       starting:[t('正在启动战斗','Starting battle'),t('准备完成后将自动进入游戏。','The game will start as soon as it is ready.')],
       assets:[t('正在准备游戏资源','Preparing game assets'),t('资源将缓存在本机，下次启动更快。','Assets are cached locally for faster starts next time.')],
       client:[t('正在加载游戏','Loading game'),t('准备完成后将自动进入游戏。','The game will start as soon as it is ready.')],
@@ -70,7 +70,7 @@
     $('loading-title').textContent=heading;$('loading-detail').textContent=detail;
     const known=Number.isFinite(loading.current)&&Number.isFinite(loading.total)&&loading.total>0;
     const percent=Math.floor(Math.max(0,Math.min(100,loadingPercent)));
-    const stages={download:t('正在下载运行资源','Downloading runtime resources'),storage:t('正在读取本地存档','Reading local saves'),initialize:t('正在初始化游戏','Initializing game'),ready:t('准备完成','Ready'),assets:t('正在下载地图资源','Downloading map assets'),engine:t('正在启动游戏引擎','Starting game engine'),world:t('正在载入地图','Loading map')};
+    const stages={checking:t('正在检查网页版本','Checking web version'),cached:t('正在读取本地缓存','Reading cached resources'),update:t('正在下载更新文件','Downloading update files'),download:t('正在下载运行资源','Downloading runtime resources'),'reading-replay':t('正在读取并校验录像','Reading and validating replay'),reconstructing:t('正在还原录像起点','Restoring replay start'),storage:t('正在读取本地存档','Reading local saves'),initialize:t('正在初始化游戏','Initializing game'),ready:t('准备完成','Ready'),assets:t('正在准备地图资源','Preparing map assets'),engine:t('正在启动游戏引擎','Starting game engine'),world:t('正在载入地图','Loading map')};
     $('loading-count').textContent=known&&loading.phase==='assets'?`${stages.assets} · ${loading.current} / ${loading.total}`:(stages[loading.step]||heading);
     $('loading-percent').textContent=`${percent}%`;
     const bar=$('loading-progress');
@@ -110,9 +110,25 @@
   function replayStatus(data){
     lastReplayState=data;
     const state=data.state;
+    if(state==='preparing'&&data.stage==='reconstructing'&&replayRecord?.replay?.engine!=='native'){
+      if(loading){loading.step='reconstructing';loadingPercent=Math.max(loadingPercent,70+25*(data.progress||0));renderLoading();}
+      $('replay-progress').textContent=t('正在还原录像起点','Restoring replay start')+` · ${Math.floor(100*(data.progress||0))}%`;
+      $('replay-takeover').disabled=true;return;
+    }
+    if(replayRecord?.replay?.engine==='native'&&state==='starting'){
+      const labels={reading:t('正在读取录像','Reading replay'),download:t('正在传输录像到客户端','Transferring replay to client'),indexing:t('正在准备回放索引','Preparing replay index'),reconstructing:t('正在还原录像起点','Restoring replay start')};
+      const text=labels[data.stage]||t('正在准备客户端回放','Preparing native replay');
+      const percent=Number.isFinite(data.progress)?Math.floor(100*Math.max(0,Math.min(1,data.progress))):null;
+      $('status').textContent=text;$('replay-progress').textContent=text+(percent!==null?` · ${percent}%`:'');
+      $('replay-pause').disabled=$('replay-speed').disabled=$('replay-seek').disabled=$('replay-takeover').disabled=true;
+      const notice=$('stage').querySelector('.record-native-playback');if(notice)notice.textContent=$('replay-progress').textContent;
+      return;
+    }
     if(replayRecord?.replay?.engine==='native'&&state==='preparing'){
-      $('status').textContent=t('正在准备客户端资源','Preparing native-client assets');
-      $('replay-progress').textContent=`${data.assets_loaded||0} / ${data.assets_total||0}`;
+      const restoring=data.stage==='reconstructing';
+      $('status').textContent=restoring?t('正在还原录像起点','Restoring replay start'):t('正在准备客户端资源','Preparing native-client assets');
+      $('replay-progress').textContent=restoring?`${Math.floor(100*Math.max(0,Math.min(1,data.progress||0)))}%`:`${data.assets_loaded||0} / ${data.assets_total||0}`;
+      const notice=$('stage').querySelector('.record-native-playback');if(notice)notice.textContent=$('status').textContent+' · '+$('replay-progress').textContent;
       $('replay-takeover').disabled=true;return;
     }
     const seek=$('replay-seek');
@@ -289,7 +305,7 @@
         $('stage').classList.add('native-stage');$('stage').replaceChildren(notice);finishLoading();
         void pollNativeReplay();window.pywebview?.api?.show_native_game?.();return;
       }
-      const check=await fetch('/api/replay/check?id='+encodeURIComponent(record.replay.id));
+      const check=await fetch('/api/replay/check?id='+encodeURIComponent(record.replay.id)+(globalThis.StarBreakBrowser?'&paged=1':''));
       if(!check.ok)throw Error(t('录像无法载入，请确认文件完整且与当前版本兼容。','Could not load replay. Check that it is complete and compatible with this version.'));
       await document.querySelector('iframe')?.contentWindow.Module?.gamePreferences?.flush();
       await document.querySelector('iframe')?.contentWindow.Module?.clientReplay?.finish();

@@ -78,6 +78,7 @@ class ChunkDelivery:
         self.control_enabled=control
         self.queue=queue.Queue(maxsize=4)
         self.pending_feedback=None;self.failed_attempts=set()
+        self.loading_serial=None;self.progress_at=0
         self.thread=threading.Thread(target=self.run);self.thread.daemon=True;self.thread.start()
         self.control_thread=threading.Thread(target=self.control_run);self.control_thread.daemon=True;self.control_thread.start()
 
@@ -126,16 +127,72 @@ class ChunkDelivery:
         if time.monotonic()-self.last_poll>=self.poll_interval and not self.incoming.full():
             self.last_poll=time.monotonic()
             request=Request(self.url[:-len('/chunks')]+'/control?serial='+str(self.serial),headers={'Authorization':'Bearer '+self.token})
-            with urlopen(request,timeout=3) as response:raw=read_control(response)
+            with urlopen(request,timeout=3) as response:raw=read_control(response,1024*1024)
             value=json.loads(raw.decode('utf8'))
+            if value.get('play'):
+                request=value['play'];self.loading_serial=request['serial']
+                try:
+                    request['document']=self.load_replay(request)
+                except Exception as error:
+                    # A failed load is terminal for this selection. Retrying
+                    # an oversized allocation forever freezes the UI at 0:00.
+                    self.serial=request['serial']
+                    # Keep the terminal report pending until acknowledged,
+                    # even if the connection that failed is still down.
+                    self.pending_feedback=dict(serial=self.serial,status=dict(state='failed',stage='download',
+                        error=type(error).__name__,message=str(error)[:400] or type(error).__name__))
+                    self.loading_serial=None
+                    return
+                self.loading_serial=None
             if value.get('play') or value.get('resume'):self.serial=value['serial']
             self.incoming.put_nowait(value)
         self.control_error=None
 
+    def report_load(self,stage,loaded,total,error=None):
+        now=time.monotonic()
+        if error is None and loaded!=total and now-self.progress_at<.15:return
+        self.progress_at=now
+        status=dict(state='failed' if error else 'starting',stage=stage,loaded=loaded,total=total,
+                    progress=loaded/float(total) if total else 0)
+        if error:status.update(error=type(error).__name__,message=str(error)[:400] or type(error).__name__)
+        request=Request(self.url[:-len('/chunks')]+'/feedback',
+            data=json.dumps(dict(serial=self.loading_serial,status=status),separators=(',',':')).encode('utf8'),
+            headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
+        with urlopen(request,timeout=3) as response:response.read(4096)
+
+    def load_replay(self,request):
+        try:
+            from ._native_replay import OperationValidator,MAX_OPERATIONS
+            from ._native_replay_player import PreparedReplay
+        except (ImportError,ValueError,SystemError):
+            from _native_replay import OperationValidator,MAX_OPERATIONS
+            from _native_replay_player import PreparedReplay
+        total=request.get('operations')
+        if request.get('transport')!='pages-v1' or type(total)is not int or not 0<total<=MAX_OPERATIONS:
+            raise ValueError('Unsupported native replay transfer')
+        validator=OperationValidator();offset=0
+        while offset<total:
+            if self.closed:raise IOError('Native replay transfer closed')
+            url=self.url[:-len('/chunks')]+'/replay?serial='+str(request['serial'])+'&offset='+str(offset)
+            page_request=Request(url,headers={'Authorization':'Bearer '+self.token})
+            with urlopen(page_request,timeout=3) as response:raw=read_control(response,512*1024)
+            page=json.loads(raw.decode('utf8'));del raw
+            if page.get('serial')!=request['serial'] or page.get('offset')!=offset or page.get('total')!=total:
+                raise ValueError('Native replay page changed')
+            rows=page.get('ops')
+            if not isinstance(rows,list) or not rows or len(rows)>1024 or offset+len(rows)>total:
+                raise ValueError('Invalid native replay page')
+            validator.append(rows);offset+=len(rows);del page,rows
+            self.report_load('download',offset,total)
+            time.sleep(.001)
+        document=dict(request['document'],ops=validator.finish())
+        return PreparedReplay(document,lambda loaded,count:self.report_load('indexing',loaded,count))
+
     def control_run(self):
         while not self.closed:
             try:self.poll_control()
-            except Exception as error:self.control_error=type(error).__name__
+            except Exception as error:
+                self.control_error=type(error).__name__+': '+str(error)[:200]
             time.sleep(.01 if self.control_error is None else .1)
 
     def feedback(self,value):
@@ -183,6 +240,8 @@ class NativeCapture:
         self.resource_depth=0;self.pending_assets=0
         self.tape=NativeTape(save=save,notice=notice)
         self.sound_mixer=None
+        self.sound_clock_caller=base+manifest['sound_clock']['rva'] if manifest.get('sound_clock') else None
+        self.playback_clock=0
         if manifest.get('sound_mixer') and hook is NativeHook:
             if ffi.sizeof('struct SoundMixer')!=12 or ffi.sizeof('struct SoundMixer__ChannelStatus')!=32:
                 raise ValueError('Native sound mixer layout changed')
@@ -198,7 +257,8 @@ class NativeCapture:
                 target,signature,owner=shared_hook_target(ffi,lib,refs,name,target,signature)
                 if owner is not None:self.shared_hook_owners.append(owner)
             hooks.append(hook(ffi,lib,target,signature,
-                result=result,arguments=arguments,convention=convention,replace=self.replacement(kind)))
+                result=result,arguments=arguments,convention=convention,replace=self.replacement(kind),
+                **({'capture_caller':True} if kind=='clock' and hook is NativeHook else {})))
             self.functions[kind]=hooks[-1]
         self.hooks=NativeHookGroup(hooks)
 
@@ -262,6 +322,12 @@ class NativeCapture:
                 def scalar():
                     value=original(*args)
                     return ((int(value)+self.clock_offset+2**31)%2**32-2**31) if kind=='clock' else value
+                if kind=='clock' and self.sound_clock_caller and self.functions[kind].caller==self.sound_clock_caller:
+                    if self.tape.mode!='play':return scalar()
+                    if (player.legacy_sound_clocks and self.tape.cursor<len(self.tape.ops)
+                            and self.tape.ops[self.tape.cursor][0]=='clock'):
+                        return self.tape.value('clock',scalar)
+                    return self.playback_clock
                 return self.tape.value(kind,scalar)
             if kind=='message':
                 message=int(args[1])
@@ -301,7 +367,16 @@ class NativeCapture:
                 return self.tape.call(row,lambda:original(*args))
             if kind=='engine-frame':
                 row=['engine-frame',int(args[1])]
-                result=self.tape.call(row,lambda:original(*args))
+                def update():
+                    result=original(*args)
+                    # Older adapters recorded the camera-dependent audio
+                    # clocks at the end of internalUpdate. Retire only that
+                    # legacy scalar tail; never skip calls, RNG or physics.
+                    if self.tape.mode=='play' and player.legacy_sound_clocks and self.sound_clock_caller:
+                        while self.tape.cursor<len(self.tape.ops) and self.tape.ops[self.tape.cursor][0]=='clock':
+                            self.tape.take('clock')
+                    return result
+                result=self.tape.call(row,update)
                 self.engine_elapsed+=row[1]
                 world=self.ffi.cast('struct ClientWorld *',args[0])
                 check=['engine-state',self.world_state(world)]
@@ -390,7 +465,7 @@ class NativeCapture:
                     if callback:callback()
                     self.player=NativePlayer(self,request['document'],post_frame=post_frame)
                 except Exception as error:
-                    delivery.feedback(dict(serial=self.serial,status=dict(state='failed',error=type(error).__name__)))
+                    delivery.feedback(dict(serial=self.serial,status=dict(state='failed',error=type(error).__name__,message=str(error)[:400])))
                     raise
                 self.packet_buffer=bytearray();self.control_error=None
             if self.player is None:continue
@@ -415,6 +490,7 @@ class NativeCapture:
         SoundMixer persists across worlds. Future lastPlayMS values otherwise
         make its original getBestChannel reject every positional sound.
         """
+        self.playback_clock=logical
         mixer=self.sound_mixer
         if mixer is None:return
         ffi=self.ffi
@@ -450,10 +526,25 @@ class NativeCapture:
             if len(self.packet_buffer)<size+5:break
             data=bytes(self.packet_buffer[5:5+size]);del self.packet_buffer[:5+size]
             self.invoke(['message',kind,base64.b64encode(data).decode('ascii')])
-        for mask,pressed in self.player.pending_keys:self.invoke(['input',mask,pressed])
-        self.player.pending_keys=[]
+        if self.player.pending_keys:
+            pressed_masks=set();deferred=[]
+            for mask,pressed in self.player.pending_keys:
+                if pressed:
+                    self.invoke(['input',mask,1]);pressed_masks.add(mask)
+                    if mask in deferred:deferred.remove(mask)
+                elif mask in pressed_masks:
+                    if mask not in deferred:deferred.append(mask)
+                else:self.invoke(['input',mask,0])
+            # A tap released while handoff was preparing must reach one real
+            # physics step; draining both edges before it loses the action.
+            self.player.pending_keyups=deferred;self.player.keyup_after=self.engine_elapsed
+            self.player.pending_keys=[]
 
     def after(self):
+        if (self.player is not None and self.player.phase=='live' and self.player.pending_keyups
+                and self.engine_elapsed>self.player.keyup_after):
+            for mask in self.player.pending_keyups:self.invoke(['input',mask,0])
+            self.player.pending_keyups=[]
         if ((self.player is None and self.recording and not getattr(self,'awaiting_world',False)) or (self.player is not None and self.player.phase=='live')):
             previous=self.tape.last_state;state=[0,0] if getattr(self,'awaiting_created',False) else self.state()
             self.tape.loop(1,state);self.frames+=1

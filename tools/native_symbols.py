@@ -58,6 +58,7 @@ def coff_symbols(image):
     base,sections=parse_pe_sections(image)
     wanted={value:key for key,value in LINKER_NAMES.items()}
     wanted['__ZZN10SoundMixer3getEvE2sm']='SoundMixer::instance'
+    wanted['__ZN10SoundMixer4playEPKc9SoundType6ObjKeydd']='SoundMixer::play'
     result={};index=0
     while index<count:
         offset=table+index*18;raw=image[offset:offset+8]
@@ -108,6 +109,15 @@ def manifest(image,symbols):
                    for index,(_,start,vsize,raw,raw_size)in enumerate(sections)):
             raise ValueError('Native sound mixer is outside data')
         result['sound_mixer']=dict(rva=mixer-base)
+    sound=symbols.get('SoundMixer::play')
+    if sound is not None:
+        # 1.14.6: this clock selects an SDL sound channel and stamps its age.
+        # It is reached only for audible camera-relative coordinates, so its
+        # call count cannot be part of deterministic battle execution.
+        call=sound+0x79;offset=va_to_offset(sections,base,call)
+        if image[offset:offset+1]!=b'\xe8' or call+5+struct.unpack_from('<i',image,offset+1)[0]!=symbols['TimeUtil::NowMS']:
+            raise ValueError('Native sound clock call site changed')
+        result['sound_clock']=dict(rva=call+5-base)
     return result
 
 

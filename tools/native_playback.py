@@ -38,6 +38,7 @@ class NativePlayback:
         self.status=dict(state='idle');self.packets=bytearray();self.controls=[]
         self.preparing=False;self.warming=False;self.closed=False;self.error=None;self.branches=set()
         self.practice_pending=False
+        self.load_thread=None
 
     def availability(self,identifiers):return self.clients.statuses(identifiers,adapter_digest(),self.client)
 
@@ -59,28 +60,45 @@ class NativePlayback:
             if action=='watch':
                 record=self.records.get(str(uuid.UUID(value['record'])))
                 if record.get('replay',{}).get('format',record['platform'])!='native':raise ValueError('This recording uses the browser replay engine')
-                document=self.clients.read(record['replay']['id'])
-                from tools.portable_replay import supported_runners
-                supported_runners(document)
-                if document['client']!=self.client or not compatible_adapter(document['adapter']):
-                    raise ValueError('Native replay requires the matching checked client and replay adapter')
-                if not any(row[0]=='message' and row[1]==10 for row in document['ops']):
-                    raise ValueError('This older recording has no native world bootstrap; record a new battle')
-                from localserver.replay import read_journal,SUPPORTED_MAPS
-                if record['map'] in SUPPORTED_MAPS:
-                    journal=read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
-                    document=dict(document,view=native_battle_view(document['ops'],journal.get('world_sequence',1)))
                 old_host,old_warm=self.host,self.warm
                 self.host=None;self.warm=WarmTakeovers();self.source=record;self.serial+=1;self.error=None
-                self.command=dict(serial=self.serial,record=record['id'],document=document)
+                serial=self.serial;self.command=None
                 self.branch=None;self.packets.clear();self.controls=[]
                 self.preparing=False;self.warming=False;self.warm_cursor=None
                 self.practice_pending=False
-                self.status=dict(state='starting');result=dict(state='starting',serial=self.serial)
+                self.status=dict(state='starting',stage='reading',progress=0)
+                result=dict(state='starting',serial=serial)
+                def load():
+                    try:
+                        document=self.clients.read(record['replay']['id'])
+                        from tools.portable_replay import supported_runners
+                        supported_runners(document)
+                        if document['client']!=self.client or not compatible_adapter(document['adapter']):
+                            raise ValueError('Native replay requires the matching checked client and replay adapter')
+                        if not any(row[0]=='message' and row[1]==10 for row in document['ops']):
+                            raise ValueError('This older recording has no native world bootstrap; record a new battle')
+                        from localserver.replay import read_journal,SUPPORTED_MAPS
+                        if record['map'] in SUPPORTED_MAPS:
+                            journal=read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
+                            document=dict(document,view=native_battle_view(document['ops'],journal.get('world_sequence',1)))
+                        with self.lock:
+                            if self.closed or self.serial!=serial:return
+                            self.command=dict(serial=serial,record=record['id'],document=document)
+                            self.status=dict(state='starting',stage='download',progress=0,loaded=0,total=len(document['ops']))
+                    except Exception as error:
+                        with self.lock:
+                            if self.serial==serial:
+                                self.error=str(error)[:400]
+                                self.status=dict(state='failed',stage='reading',error=type(error).__name__,message=self.error)
+                self.load_thread=threading.Thread(target=load,daemon=True);self.load_thread.start()
             else:
                 if not self.source:raise ValueError('Select a native replay first')
                 if self.branch:raise ValueError('The native battle is already under live control')
                 if action not in ('pause','speed','seek','takeover','stop'):raise ValueError('Unknown native replay action')
+                if action=='stop':
+                    self.serial+=1;self.command=None;self.source=None;self.error=None;self.controls=[value];self.status=dict(state='stopped')
+                    return dict(accepted=True)
+                if action=='seek':self.controls=[row for row in self.controls if row.get('action')!='seek']
                 if len(self.controls)>=16:raise ValueError('Native controls are busy')
                 self.controls.append(value);result=dict(accepted=True)
         if old_host:old_host.stop()
@@ -89,9 +107,15 @@ class NativePlayback:
 
     def poll(self,serial):
         with self.lock:
-            value=dict(serial=self.serial,controls=self.controls,error=self.error)
-            self.controls=[]
-            if self.command and serial!=self.serial:value['play']=self.command
+            value=dict(serial=self.serial,controls=[],error=self.error)
+            if self.status.get('state')=='stopped':
+                value['controls']=self.controls;self.controls=[]
+            if self.command:
+                value['controls']=self.controls;self.controls=[]
+                if serial!=self.serial:
+                    document=self.command['document']
+                    value['play']=dict(self.command,document={k:v for k,v in document.items() if k!='ops'},
+                                       operations=len(document['ops']),transport='pages-v1')
             if self.branch:value['branch']=self.branch
             if self.host and self.host.committed:
                 value['ack']=self.host.bridge.acknowledgement(0)
@@ -101,6 +125,20 @@ class NativePlayback:
                 value['packets']=base64.b64encode(bytes(self.packets[:512*1024])).decode()
                 del self.packets[:512*1024]
             return value
+
+    def page(self,serial,offset):
+        with self.lock:
+            if serial!=self.serial or not self.command:raise ValueError('Native replay selection changed')
+            rows=self.command['document']['ops']
+            if not 0<=offset<len(rows):raise ValueError('Invalid native replay page offset')
+            # Bound each JSON parse/allocation on the embedded 32-bit client.
+            end=offset;size=0
+            from plugins._native_replay import wire_size
+            while end<len(rows) and end-offset<1024:
+                addition=wire_size(rows[end])+1
+                if end>offset and size+addition>384*1024:break
+                size+=addition;end+=1
+            return dict(serial=serial,offset=offset,total=len(rows),ops=rows[offset:end])
 
     def send(self,data):
         if isinstance(data,str):return  # The bridge has an explicit handoff field.
@@ -113,7 +151,7 @@ class NativePlayback:
             if value.get('serial')!=self.serial or not self.source:return
             status=value.get('status') or {}
             if not isinstance(status,dict):raise ValueError('Invalid native player status')
-            self.status={key:status.get(key) for key in ('state','seconds','duration','paused','speed','takeover','target','error','message','assets_loaded','assets_total')}
+            self.status={key:status.get(key) for key in ('state','seconds','duration','paused','speed','takeover','target','error','message','assets_loaded','assets_total','stage','progress','loaded','total')}
             host=self.host
             if host and value.get('committed')==self.branch['id'] and not host.committed:host.commit()
             if host and host.committed:
@@ -154,10 +192,15 @@ class NativePlayback:
             if value.get('takeover'):
                 if self.preparing:return
                 self.preparing=True
+                source_document=self.command['document']
                 def prepare():
                     created=None
                     try:
                         created=warm_host.take(self.records,self.clients,request)
+                        # Mark the actual handoff boundary, after warm staging
+                        # has advanced to this requested cursor.
+                        self.clients.mark_runner(created.branch['id'],source_document,request['cursor'],
+                            dict(client=self.client,adapter=adapter_digest()),engine='native')
                         owner=self
                         class Transport:
                             def send(_self,data):

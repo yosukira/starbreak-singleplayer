@@ -206,7 +206,8 @@ class Plugin(PluginBase):
             finally:self._report_health()
 
     def _replay_post_frame(self):
-        if bool(self.config.keep_time_reserve):self.bridge.top_up_reserve()
+        player=self.native_capture.player if self.native_capture is not None else None
+        if bool(self.config.keep_time_reserve) and (player is None or player.uses_native_time_credit()):self.bridge.top_up_reserve()
         self.bridge.begin_native_frame()
 
     def _after_update_live(self):

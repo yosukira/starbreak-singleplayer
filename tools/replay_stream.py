@@ -29,7 +29,7 @@ class Boundary:
 
 
 class ReplayStream:
-    def __init__(self, client, server):
+    def __init__(self, client, server, *, plaintext=False):
         operations = client.get('ops')
         frames = server.get('frames')
         if not isinstance(operations, list) or not isinstance(frames, list) or not 1 <= len(frames) <= MAX_FRAMES:
@@ -47,7 +47,7 @@ class ReplayStream:
             if op[0]=='open' and (epoch['chunks'] or epoch['connect_length'] is not None):
                 epoch=new_epoch(received,sent)
             if op[0]=='net':
-                data=base64.b64decode(op[1],validate=True)
+                data=bytes(op[1]) if plaintext else base64.b64decode(op[1],validate=True)
                 received+=len(data)
                 if received>MAX_JOURNAL_BYTES:raise ValueError('Handoff wire stream too large')
                 epoch['chunks'].append(data)
@@ -72,7 +72,7 @@ class ReplayStream:
             if not 0<=size<=65536:raise ValueError('Invalid original Hello frame')
             hello=size+5;epoch['hello_end']=epoch['start']+hello
             if hello>len(raw):plain_parts.append(raw);continue
-            plain=raw[:hello]+RC4(self.key).crypt(raw[hello:]);plain_parts.append(plain)
+            plain=raw if plaintext else raw[:hello]+RC4(self.key).crypt(raw[hello:]);plain_parts.append(plain)
             offset=hello
             while offset+5<=len(plain):
                 kind=plain[offset];size=struct.unpack('>i',plain[offset+1:offset+5])[0]
@@ -90,8 +90,13 @@ class ReplayStream:
                 raise ValueError('Invalid controller packet count')
         # _read_loop sends CreatePlayer immediately before _start_live. Anchor
         # there instead of guessing from repeated, identical idle tick packets.
+        layouts=pb_layout.default_layouts()
+        # Locate the top-level bootstrap field without recursively decoding
+        # every projectile and object in every subsequent world update. Only
+        # candidate CreatePlayer packets need their full protobuf validation.
         players = [i for i, packet in enumerate(packets) if packet[0] == 12
-                   and 'createplayer_' in pb_layout.default_layouts().decode('Delta', packet[1])]
+                   and 'createplayer_' in layouts.observe_wire_types('Delta',packet[1])
+                   and 'createplayer_' in layouts.decode('Delta', packet[1])]
         sequence = server.get('world_sequence')
         if sequence is None:
             if len(players) != 1:

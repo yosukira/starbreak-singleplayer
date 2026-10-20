@@ -105,6 +105,11 @@ def thiscall_original(trampoline, count):
     return bytes(code)
 
 
+def clock_callback(callback):
+    """Preserve a no-argument cdecl call's return site for clock provenance."""
+    return b'\xff\x34\x24\xb8'+uint32(callback)+b'\xff\xd0\x83\xc4\x04\xc3'
+
+
 class NativeHook:
     """A checked hook with a separately callable, permanently retained original.
 
@@ -113,7 +118,7 @@ class NativeHook:
     The caller must check that the target belongs to its owned offline client.
     """
     def __init__(self, ffi, lib, target, expected, result='void', arguments=(),
-                 convention='thiscall', replace=None, kernel=None):
+                 convention='thiscall', replace=None, kernel=None,capture_caller=False):
         if ffi.sizeof('void *') != 4:
             raise ValueError('Native replay hooks require the 32-bit client ABI')
         uint32(target)
@@ -130,6 +135,8 @@ class NativeHook:
         self.ffi,self.lib,self.target,self.expected = ffi,lib,target,expected
         self.result,self.arguments,self.convention = result,arguments,convention
         self.replace = replace
+        if capture_caller and (convention!='cdecl' or arguments):raise ValueError('Clock provenance requires a no-argument cdecl function')
+        self.capture_caller=capture_caller;self.caller=None
         self.kernel = kernel
         self.hook = self.callback = self.original = None
         self.allocations = []
@@ -177,7 +184,8 @@ class NativeHook:
         self.check()
         ffi = self.ffi
         args = (('void *',)+self.arguments if self.convention=='thiscall' else self.arguments)
-        signature = self.result+'('+(', '.join(args) or 'void')+')'
+        callback_args=args+(('unsigned int',) if self.capture_caller else ())
+        signature = self.result+'('+(', '.join(callback_args) or 'void')+')'
         def invoke(values):
             if self.replace is None:return self.original(*values)
             called = [False, None]
@@ -194,12 +202,15 @@ class NativeHook:
                 return called[1] if called[0] else original(*values)
         def dispatch(*values):
             self.active_calls += 1
+            previous=self.caller
+            if self.capture_caller:self.caller=values[-1];values=values[:-1]
             try:return invoke(values)
-            finally:self.active_calls -= 1
+            finally:self.active_calls -= 1;self.caller=previous
         self.callback = ffi.callback(signature,dispatch)
         address = int(ffi.cast('uintptr_t',self.callback))
         try:
             if self.convention=='thiscall':address = self.allocate(thiscall_callback(address,len(self.arguments)))
+            elif self.capture_caller:address=self.allocate(clock_callback(address))
             hook = self.lib.subhook_new(ffi.cast('void *',self.target),ffi.cast('void *',address),0)
             if hook==ffi.NULL:raise RuntimeError('Could not create native replay hook')
             self.hook = hook

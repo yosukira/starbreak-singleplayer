@@ -1,6 +1,8 @@
 import base64
 import copy
+import struct
 import unittest
+from unittest import mock
 
 from localserver import game_settings, pb_layout
 from localserver.replay import ServerCapture, ServerReplay
@@ -10,6 +12,33 @@ from test_replay import encounter, input_at
 
 
 class ReplayStreamTests(unittest.TestCase):
+    def test_native_plaintext_index_matches_legacy_cipher_and_keeps_verification(self):
+        from tools.native_replay_stream import NativeReplayStream
+        browser,server,_=self.documents()
+        plain=ReplayStream(browser,server).plain
+        offset=5+struct.unpack('>i',plain[1:5])[0]
+        operations=[['message',10,'']]
+        while offset<len(plain):
+            size=struct.unpack('>i',plain[offset+1:offset+5])[0]
+            operations.append(['message',plain[offset],base64.b64encode(plain[offset+5:offset+5+size]).decode()])
+            operations.append(['state',[0,0]]);offset+=5+size
+        cipher=RC4(random_string(0,64));virtual=[['open'],['net',base64.b64encode(framed(1,b'')).decode()]]
+        for row in operations:
+            virtual.append(['net',base64.b64encode(cipher.crypt(framed(row[1],base64.b64decode(row[2])))).decode()] if row[0]=='message' else ['timer'])
+        legacy=ReplayStream(dict(ops=virtual),server)
+        with mock.patch('tools.replay_stream.RC4',side_effect=AssertionError('Native plaintext must not be encrypted again')):
+            native=NativeReplayStream(dict(ops=operations),server)
+            self.assertEqual(native.plain,legacy.plain)
+            self.assertEqual(native.received,legacy.received);self.assertEqual(native.sent,legacy.sent)
+            self.assertEqual(native.boundaries,legacy.boundaries)
+            for boundary in native.boundaries:
+                position=boundary.start+1
+                self.assertEqual(native.catchup(position),legacy.catchup(position))
+                self.assertEqual(native.transmitter(position).crypt(b'payload'),b'payload')
+                self.assertEqual(native.receiver(0).crypt(b'input'),b'input')
+            wrong=copy.deepcopy(server);wrong['frames'][5]['sha256']='0'*64
+            with self.assertRaisesRegex(ValueError,'do not match'):NativeReplayStream(dict(ops=operations),wrong)
+
     def test_reconnects_reset_each_cipher_without_hiding_earlier_or_later_battles(self):
         first,server,raw1=self.documents();second,_,raw2=self.documents()
         operations=[['open']]+first['ops']+[['close'],['open']]+second['ops']
@@ -79,7 +108,12 @@ class ReplayStreamTests(unittest.TestCase):
 
     def test_exact_controller_boundary_and_missing_suffix_across_chunk_splits(self):
         client,server,raw=self.documents()
-        index=ReplayStream(client,server)
+        layouts=pb_layout.default_layouts();decode=layouts.decode;delta_calls=[]
+        def counted(kind,*args,**kwargs):
+            if kind=='Delta':delta_calls.append(True)
+            return decode(kind,*args,**kwargs)
+        with mock.patch.object(layouts,'decode',side_effect=counted):index=ReplayStream(client,server)
+        self.assertEqual(len(delta_calls),1,'Only the world bootstrap needs a full Delta decode when indexing')
         self.assertEqual(len(index.boundaries),sum(row['packets']>0 for row in server['frames']))
         for boundary in index.boundaries:
             for position in (boundary.start+1,boundary.end-1,boundary.end):

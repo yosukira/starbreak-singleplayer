@@ -85,6 +85,44 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_verified_audio_clock_count_can_vary_without_relaxing_game_clocks(self):
+        def audio(engine,count,verified=True):
+            engine.capture.sound_clock_caller=123 if verified else None
+            engine.hooks['clock'].caller=0
+            hook=engine.hooks['engine-frame'];original=hook.original
+            def update(*args):
+                result=original(*args)
+                engine.hooks['clock'].caller=123
+                for _ in range(count):engine.call('clock')
+                engine.hooks['clock'].caller=0
+                return result
+            hook.original=update
+        for legacy in (False,True):
+            for count in (0,1,4):
+                with self.subTest(legacy=legacy,playback_audio_calls=count):
+                    source=Engine();audio(source,2,verified=not legacy)
+                    document=source.record(8)
+                    if not legacy:document['clock_scope']='game-v1'
+                    target=Engine();audio(target,count)
+                    player=target.play(document);target.mono=2
+                    player.update()
+                    self.assertEqual(player.phase,'ended')
+                    self.assertIsNone(target.capture.tape.error)
+        source=Engine();document=source.record(8);document['clock_scope']='game-v1'
+        target=Engine();audio(target,1,verified=False)
+        player=target.play(document);target.mono=2;player.update()
+        self.assertEqual(player.phase,'failed','Unclassified extra clocks must still fail closed')
+
+    def test_prepared_replay_attaches_without_validating_or_indexing_on_game_thread(self):
+        from plugins._native_replay_player import PreparedReplay
+        source=Engine();document=source.record();prepared=PreparedReplay(document)
+        target=Engine()
+        with mock.patch('plugins._native_replay_player.validate_operations',side_effect=AssertionError('game thread validation')):
+            player=target.play(prepared)
+        self.assertIs(player.document['ops'],prepared.document['ops'])
+        self.assertIs(player.times,prepared.times)
+        self.assertIs(player.capture.tape.ops,prepared.document['ops'])
+
     def test_rewind_rebases_only_future_sound_channel_times(self):
         capture=NativeCapture.__new__(NativeCapture)
         channels=[NS(lastPlayMS=500,soundName='shot'),NS(lastPlayMS=20,soundName='hit')]
@@ -140,11 +178,20 @@ class NativePlayerTests(unittest.TestCase):
         self.assertIsNone(fresh.capture.tape.error)
         self.assertEqual(player.phase,'ended')
 
+    def test_mixed_engine_time_credit_follows_each_recorded_handoff(self):
+        player=object.__new__(NativePlayer)
+        player.document=dict(runners=[dict(cursor=10,engine='browser'),dict(cursor=20,engine='native')])
+        player.capture=NS(tape=NS(cursor=0))
+        for cursor,expected in [(0,True),(9,True),(10,False),(19,False),(20,True),(30,True)]:
+            player.capture.tape.cursor=cursor
+            self.assertEqual(player.uses_native_time_credit(),expected)
+
     def test_repeated_takeover_requests_keep_the_offered_host_and_live_feedback(self):
         with tempfile.TemporaryDirectory() as directory:
             service=NativePlayback(directory,'a'*64)
-            service.serial=3;service.source=dict(id='source')
-            host=NS(committed=False,bind=mock.Mock(),description=lambda:dict(id='branch'),
+            service.serial=3;service.source=dict(id='source');service.command=dict(document=dict(runners=[]))
+            service.clients.mark_runner=mock.Mock()
+            host=NS(branch=dict(id='branch'),committed=False,bind=mock.Mock(),description=lambda:dict(id='branch'),
                     telemetry=mock.Mock(),binary=mock.Mock(),stop=mock.Mock())
             host.commit=lambda:setattr(host,'committed',True)
             service.warm=NS(take=mock.Mock(return_value=host),close=mock.Mock())
@@ -153,6 +200,8 @@ class NativePlayerTests(unittest.TestCase):
             deadline=time.monotonic()+2
             while service.preparing and time.monotonic()<deadline:time.sleep(.01)
             self.assertIs(service.host,host)
+            self.assertEqual(service.clients.mark_runner.call_args.kwargs,dict(engine='native'))
+            self.assertEqual(service.clients.mark_runner.call_args.args[2],5)
             for _ in range(12):service.feedback(request)
             self.assertEqual(service.warm.take.call_count,1)
             player=dict(player=dict(objid=1,hp=100))
@@ -268,6 +317,21 @@ class NativePlayerTests(unittest.TestCase):
         player.control(dict(action='seek',seconds=.1));player.update()
         self.assertLessEqual(player.seconds,.1);self.assertIsNone(target.capture.tape.error)
 
+    def test_tap_released_during_handoff_survives_an_empty_first_iteration(self):
+        target=Engine();player=target.play(Engine().record());target.mono=.1;player.update()
+        player.keyboard_input(4,True);player.keyboard_input(4,False)
+        chunks=[];player.commit(chunks.append,0);target.capture.reset_inputs=True
+        before=target.props.xmp
+        target.capture.before();target.capture.after()
+        self.assertEqual(target.props.xmp,before)
+        self.assertEqual(target.world.total,4,'Empty display iterations must not consume the tap')
+        target.capture.before();target.call('frame',target.client);target.capture.after()
+        self.assertEqual(target.props.xmp,before+17)
+        self.assertEqual(target.world.total,0)
+        target.capture.before();target.call('frame',target.client);target.capture.after()
+        self.assertEqual(target.props.xmp,before+17,'A tap must not become a held key')
+        self.assertIsNone(target.capture.tape.error)
+
     def test_divergence_and_missing_bootstrap_fail_without_a_takeover(self):
         document=Engine().record();target=Engine();player=target.play(document);target.diverge=True;target.mono=1;player.update()
         self.assertEqual(player.phase,'failed');self.assertFalse(player.can_takeover())
@@ -314,6 +378,43 @@ def native_fixture(directory):
 
 
 class NativeHostTests(unittest.TestCase):
+    def test_loading_is_responsive_and_cancelled_selection_cannot_replace_new_state(self):
+        import threading
+        with tempfile.TemporaryDirectory() as directory:
+            records,native,request,document=native_fixture(directory);service=NativePlayback(directory,'a'*64)
+            entered=threading.Event();release=threading.Event()
+            def read(_):entered.set();release.wait(3);return document
+            try:
+                with mock.patch.object(service.clients,'read',side_effect=read):
+                    result=service.action(dict(action='watch',record=request['record']))
+                    self.assertTrue(entered.wait(1))
+                    self.assertEqual(service.poll(0)['serial'],result['serial'])
+                    self.assertEqual(service.status['stage'],'reading')
+                    service.action(dict(action='stop'))
+                    release.set();service.load_thread.join(3)
+                    self.assertEqual(service.status['state'],'stopped')
+                    stopped=service.poll(0)
+                    self.assertNotIn('play',stopped)
+                    self.assertEqual(stopped['controls'],[dict(action='stop')])
+            finally:release.set();service.close()
+
+    def test_transfer_pages_are_bounded_and_reject_stale_or_out_of_range_requests(self):
+        from plugins._native_replay import OperationValidator
+        with tempfile.TemporaryDirectory() as directory:
+            service=NativePlayback(directory,'a'*64)
+            payload=base64.b64encode(b'x'*200000).decode()
+            ops=[['loop',0],['message',10,payload],['return','message'],['state',[1,0]],['loop',1]]*6
+            service.serial=3;service.command=dict(document=dict(ops=ops))
+            validator=OperationValidator();offset=0;pages=0
+            while offset<len(ops):
+                page=service.page(3,offset);pages+=1
+                self.assertLess(len(json.dumps(page,separators=(',',':')).encode()),512*1024)
+                validator.append(page['ops']);offset+=len(page['ops'])
+            self.assertGreater(pages,1);self.assertEqual(validator.finish(),ops)
+            for serial,offset in ((2,0),(3,-1),(3,len(ops))):
+                with self.assertRaises(ValueError):service.page(serial,offset)
+            service.close()
+
     def test_live_takeover_shortcuts_route_once_to_normal_practice(self):
         for kind,shell,expected in [('restart',None,2),('switch_character',1,1),('switch_character',2,2),('switch_character',5,5),('switch_character',3,3)]:
             with self.subTest(kind=kind,shell=shell),tempfile.TemporaryDirectory() as directory:
@@ -341,6 +442,7 @@ class NativeHostTests(unittest.TestCase):
             try:
                 with self.assertRaises(HTTPError):urlopen(endpoint.config['url'].replace('/chunks','/control'))
                 control.call('/command',dict(action='watch',record=request['record']))
+                endpoint.playback.load_thread.join(3)
                 initial=control.call('/control?serial=0')
                 self.assertTrue(endpoint.ready.is_set());self.assertEqual(initial['play']['record'],request['record'])
                 # This models the plugin's verified frame-boundary request,
@@ -385,8 +487,9 @@ class NativeHostTests(unittest.TestCase):
             records,native,request,document=native_fixture(directory);service=NativePlayback(directory,'a'*64)
             try:
                 service.action(dict(action='watch',record=request['record']))
+                service.load_thread.join(3)
                 initial=service.poll(0)
-                selected=initial['play']['document']
+                selected=dict(initial['play']['document'],ops=service.page(service.serial,0)['ops'])
                 self.assertEqual({k:v for k,v in selected.items() if k!='view'},document)
                 self.assertEqual(selected['view']['end'],len(document['ops']))
                 self.assertNotIn('play',service.poll(initial['serial']))

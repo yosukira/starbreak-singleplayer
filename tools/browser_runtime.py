@@ -132,6 +132,7 @@ class BrowserRuntime:
         return self.info()
 
     def stop(self):
+        self.close_replay_pages()
         for host in self.takeovers.values():host.stop()
         self.takeovers.clear()
         self.active_takeover = None
@@ -143,6 +144,11 @@ class BrowserRuntime:
                 if recorder is not None:recorder.finish()
         if self.receiver:self.receiver.close()
         self.server = self.channel = self.receiver = None
+
+    def close_replay_pages(self):
+        pages=getattr(self,'replay_pages',None)
+        self.replay_pages=None
+        if pages:pages['reader'].close()
 
     def open(self, identifier, url):
         path = urlsplit(url).path
@@ -198,7 +204,15 @@ class BrowserRuntime:
         elif self.server and self.server.live_session:self.server.live_session.step(dt)
         return bool(self.server or host and host.committed and not host.stopped.is_set())
 
-    def replay_document(self, identifier, require_exact=False):
+    def replay_document(self, identifier, require_exact=False, header_only=False):
+        if header_only:
+            from tools.native_replay import NativeJournals
+            try:header,_=NativeJournals(self.records.directory).page_header(identifier)
+            except ValueError:pass
+            else:
+                from tools.portable_replay import browser_document
+                version=pb_layout.default_layouts().decode('DataVersion',base64.b64decode(self.manifest['data_version']))
+                return browser_document(self.records.directory,identifier,version,self.manifest.get('native_adapter'),require_exact,source=dict(header,ops=[]))
         try:value=self.clients.read(identifier)
         except ValueError:
             from tools.portable_replay import browser_document
@@ -211,19 +225,35 @@ class BrowserRuntime:
         return value
 
     def boot(self, query):
+        self.close_replay_pages()
         values = parse_qs(query.lstrip('?'))
         replay = dict(id=self.attempt,mode='record') if self.attempt else None
         prefs = self.preferences.read()
         if 'replay' in values:
             attempt = str(uuid.UUID(values['replay'][0]))
-            document = self.replay_document(attempt)
+            paged=None
+            if values.get('paged')==['1']:
+                from tools.native_replay import NativeJournals
+                native=NativeJournals(self.records.directory)
+                try:paged=native.page_header(attempt)
+                except ValueError:pass
+            if paged:
+                from tools.portable_replay import browser_document
+                version=pb_layout.default_layouts().decode('DataVersion',base64.b64decode(self.manifest['data_version']))
+                document=browser_document(self.records.directory,attempt,version,self.manifest.get('native_adapter'),source=dict(paged[0],ops=[]))
+                token=str(uuid.uuid4());self.replay_pages=dict(token=token,reader=native.read_pages(attempt),sequence=0)
+                document['pages']=dict(token=token,total=paged[1])
+            else:document = self.replay_document(attempt)
             replay = dict(id=attempt,mode='play',document=document, record=values.get('record',[None])[0],takeover=False)
             record = next((r for r in self.records.list() if r['id']==replay['record']),None)
             if record:
                 from localserver.replay import read_journal, compatible_engine
                 try:
                     header = read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
-                    self.replay_document(attempt,require_exact=True)
+                    if paged:
+                        document['view_world']=header.get('world_sequence',1)
+                        browser_document(self.records.directory,attempt,version,self.manifest.get('native_adapter'),True,source=dict(paged[0],ops=[]))
+                    else:self.replay_document(attempt,require_exact=True)
                     replay['takeover'] = compatible_engine(header['engine'],header.get('map'))
                 except (ValueError,OSError):pass
             prefs = dict(key='LocalStorage.pb',revision=0,content=document['preferences'])
@@ -259,11 +289,25 @@ class BrowserRuntime:
             return clients.append(document['id'],document)
         if path == '/api/replay/check':
             attempt = parse_qs(urlsplit(url).query)['id'][0]
-            value = self.replay_document(attempt)
+            if parse_qs(urlsplit(url).query).get('paged')==['1']:
+                from tools.native_replay import NativeJournals
+                try:NativeJournals(self.records.directory).page_header(attempt);return dict(ready=True)
+                except ValueError:pass
+            self.replay_document(attempt)
             return dict(ready=True)
+        if path == '/api/replay/page':
+            query=parse_qs(urlsplit(url).query);pages=getattr(self,'replay_pages',None)
+            if not pages or query.get('token')!=[pages['token']]:raise ValueError('Replay loading was cancelled')
+            if query.get('sequence')!=[str(pages['sequence'])]:raise ValueError('Replay page sequence changed')
+            try:value=next(pages['reader'])
+            except Exception:
+                self.close_replay_pages();raise
+            pages['sequence']+=1
+            if value['end']:self.close_replay_pages()
+            return value
         if path == '/api/replay/warm':
             from tools.replay_host import WarmTakeovers
-            source=self.replay_document(document['id'],require_exact=True)
+            source=self.replay_document(document['id'],require_exact=True,header_only=True)
             clients=self.clients
             if source['schema']=='starbreak-native-journal-v1':
                 from tools.native_replay import NativeJournals
@@ -274,7 +318,7 @@ class BrowserRuntime:
         if path == '/api/replay/takeover':
             if method=='GET':return self.jobs[parse_qs(urlsplit(url).query)['job'][0]]
             from tools.replay_host import WarmTakeovers
-            source=self.replay_document(document['id'],require_exact=True)
+            source=self.replay_document(document['id'],require_exact=True,header_only=True)
             clients=self.clients
             if source['schema']=='starbreak-native-journal-v1':
                 from tools.native_replay import NativeJournals
