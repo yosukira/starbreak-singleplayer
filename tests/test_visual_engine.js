@@ -32,4 +32,5 @@ apply({hideShell:true});assert.equal(Module.visualEntity(5000,3000),0);
 apply({customBackground:true,background:'#808080',brightness:.25});assert.equal(Module.visualBackground(0xff000000)>>>0,0xff404040);
 console.log('SBPE body-center health/armor numbers, sprite cache, render-only filtering and exact restoration passed');
 
-apply({enemyHP:true});put(8000,52,2);put(8000,76,0);main.style.width='400px';draws.length=0;Module.postMainLoop();assert.equal(draws[0].h/2,labels[0].h,'Zooming out must preserve physical number size without a larger text bitmap');
+apply({enemyHP:true});put(8000,52,2);put(8000,76,0);main.style.width='400px';draws.length=0;Module.postMainLoop();assert.equal(draws[0].h,labels[0].h,'Enemy labels retain world-space size');assert.equal(draws[0].h*.5,labels[0].h*.5,'Zooming out scales the label with the enemy');
+for(const scale of [.25,.75,1,2]){main.style.width=(800*scale)+'px';draws.length=0;Module.postMainLoop();assert.equal(draws[0].h,labels[0].h);assert.equal(draws[0].w/40,labels[0].w/40,'Text-to-enemy size ratio stays constant across zoom levels');}

@@ -74,7 +74,7 @@ class DesktopWorkspace(Workspace):
             result['keys'] = normalize_web_keys(dict(result['keys'], **json.loads(path.read_text(encoding='utf-8-sig'))))
         recording = self.source / 'recording.json'
         if recording.is_file():
-            result['record_replays'] = json.loads(recording.read_text(encoding='utf-8-sig')).get('record_replays', True) is not False
+            result['record_replays'] = json.loads(recording.read_text(encoding='utf-8-sig')).get('record_replays') is True
         return result
 
     def save_preferences(self, value):

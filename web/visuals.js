@@ -27,7 +27,7 @@
       ['customBackground','使用纯色背景（隐藏背景装饰）','Use a solid background (hide background decorations)'],['background','背景颜色','Background color','color'],['brightness','背景最大亮度','Maximum background brightness','range',0,1,.05],['cursorHide','鼠标静止后隐藏（秒，0 关闭）','Hide idle cursor (seconds; 0 off)','number',0,10,.5],
       ['showHitboxes','显示攻击判定区域','Show attack hitboxes'],['showBoxes','显示对象边框','Show object boxes']]],
     ['Map / 小地图','Map / Minimap',[
-      ['minimap','显示小地图','Show minimap'],['minimapScale','地图占画面的比例','Map size relative to game','range',.1,.9,.05],
+      ['minimap','显示小地图（默认关闭）','Show minimap (off by default)'],['minimapScale','地图占画面的比例','Map size relative to game','range',.1,.9,.05],
       ['minimapPosition','地图位置','Map position','select',[['bottom-right','右下','Bottom right'],['top-right','右上','Top right'],['center','中央','Center']]]]]
   ];
   function path(value){return decodeURIComponent(new URL(value,'https://local.invalid/').pathname).replace(/^.*\/assets\//,'/').replace(/^\/singleweb\//,'/');}

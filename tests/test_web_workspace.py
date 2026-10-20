@@ -62,6 +62,8 @@ class WorkspaceTests(unittest.TestCase):
 
     def test_preferences_drafts_and_keys_survive_restart_without_applying_draft(self):
         preferences=self.workspace.preferences()
+        self.assertFalse(preferences['record_replays'])
+        preferences['record_replays']=True
         preferences.update(language='en',shell=3,slot=1280,item_sort='name',query='drag',all_classes=True)
         preferences['keys'].update(restart='T',hold_seconds=.7)
         self.workspace.save_preferences(preferences)

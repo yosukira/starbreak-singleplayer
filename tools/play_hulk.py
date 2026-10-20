@@ -950,9 +950,9 @@ def session(argv=None,show_editor=True):
     try:
         from localserver.replay import CLIENT_MAPS
         recording_settings=LAB/'userdata/recording.json'
-        recording_enabled=os.environ.get('SB_RECORD_REPLAY','1')=='1'
+        recording_enabled=os.environ.get('SB_RECORD_REPLAY','0')=='1'
         if recording_settings.is_file():
-            recording_enabled=recording_enabled and json.loads(recording_settings.read_text(encoding='utf-8-sig')).get('record_replays',True) is not False
+            recording_enabled=os.environ.get('SB_RECORD_REPLAY','1')=='1' and json.loads(recording_settings.read_text(encoding='utf-8-sig')).get('record_replays') is True
         if args.map in CLIENT_MAPS:
             try:
                 from tools.native_recording import NativeRecording

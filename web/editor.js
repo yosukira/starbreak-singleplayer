@@ -29,7 +29,7 @@ class WebEquipment {
       const input=this.$('record-replays'),enabled=input.checked;input.disabled=true;
       clearTimeout(this.preferenceTimer);
       try{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),record_replays:enabled});this.changed();}
-      finally{input.checked=this.preferences.record_replays!==false;input.disabled=false;}
+      finally{input.disabled=false;this.renderRecording();}
     });
     this.$('save-identity').onclick=()=>this.action(async()=>{
       this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),character_name:this.$('character-name').value,guild_name:this.$('guild-name').value,callouts:this.$('victory-callouts').checked});
@@ -155,10 +155,16 @@ class WebEquipment {
   }
   mainOptions(){return [...this.catalogue.values()].filter(item=>item.slot===256&&(!item.usableby.length||item.usableby.includes(this.shell)));}
   main(){return this.row().items_.find(item=>item.slotpos_===256)?.type_;}
+  renderRecording(){
+    const enabled=this.preferences?.record_replays===true;
+    this.$('record-replays').checked=enabled;
+    this.$('recording-card').classList.toggle('enabled',enabled);
+    this.$('recording-state').textContent=enabled?this.t('已开启 · 下一场将录制','ON · Next battle will be recorded'):this.t('已关闭 · 下一场不录制','OFF · Next battle will not be recorded');
+  }
   render(){
     if(!this.profile)return;
     this.renderUpdate();
-    this.$('record-replays').checked=this.preferences?.record_replays!==false;
+    this.renderRecording();
     this.$('editor-class').value=this.shell;this.$('editor-mk').value=this.row().mk_;this.$('editor-implants').value=this.row().impslots_;
     this.$('equipment-slots').replaceChildren(...this.data.slots.map(slot=>{
       const button=document.createElement('button'),item=this.row().items_.find(item=>item.slotpos_===slot.id),label=document.createElement('strong'),name=document.createElement('small');

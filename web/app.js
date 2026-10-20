@@ -26,7 +26,7 @@
           waiting:t('尚未收到游戏反馈。若怪物不受伤或 Gen 无响应，请重新运行 start.cmd。','No game feedback yet. If enemies cannot be damaged or panels do not respond, restart start.cmd.'),
           missing:t('游戏插件未启动，请重新运行 start.cmd，并查看本次启动日志。','The game plugin did not start. Restart start.cmd and check this session’s logs.'),
           stale:t('游戏反馈已中断，请重新运行 start.cmd。','Game feedback stopped. Restart start.cmd.'),
-          disabled:t('游戏反馈已关闭，回到游戏按 F6 恢复。','Game feedback is disabled. Press F6 in the game to enable it.'),
+          disabled:t('游戏反馈已关闭，请重新运行 start.cmd。','Game feedback is disabled. Restart start.cmd.'),
           error:t('游戏反馈启动失败，请查看本次启动日志。','Game feedback failed to start. Check this session’s logs.'),
           degraded:t('伤害反馈不可用，可能有插件冲突；请查看本次启动日志。','Damage feedback is unavailable; another plugin may conflict. Check this session’s logs.')
         };

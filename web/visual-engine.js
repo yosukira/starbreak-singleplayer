@@ -65,7 +65,8 @@
     if(!sprite){
       sprite=document.createElement('canvas');let paint=sprite.getContext('2d');paint.font=`bold ${size}px HemiHeadBold, sans-serif`;sprite.width=Math.ceil(paint.measureText(label).width)+6;sprite.height=Math.ceil(size*1.3)+4;paint=sprite.getContext('2d');paint.font=`bold ${size}px HemiHeadBold, sans-serif`;paint.textBaseline='top';paint.lineJoin='round';paint.lineWidth=4;paint.strokeStyle='#000';paint.fillStyle=color;paint.strokeText(label,3,2);paint.fillText(label,3,2);textCache.set(key,sprite);if(textCache.size>256)textCache.delete(textCache.keys().next().value);
     }
-    const width=sprite.width/displayScale,height=sprite.height/displayScale;ctx.drawImage(sprite,Math.round(x-width/2),Math.round(y-(bottom?height:0)),width,height);
+    // World-space labels scale with the same canvas as enemy sprites.
+    const width=sprite.width,height=sprite.height;ctx.drawImage(sprite,Math.round(x-width/2),Math.round(y-(bottom?height:0)),width,height);
   }
   function objects(world){
     const rows=[],seen=new Set(),subs=[read(world,628),read(world,664)],start=read(world,632),end=read(world,636);

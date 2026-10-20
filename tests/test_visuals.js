@@ -16,3 +16,6 @@ assert.deepEqual(options({getItem:()=>'{"enemyHP":true,"textures":false}'}),{...
 console.log('Texture matching, PNG bounds and default switches passed');
 
 const constrained=options({getItem:()=>JSON.stringify({brightness:3,damageFlash:-2,camera:99,enemyFontSize:200,minimapPosition:'bad',background:'url(evil)'})});assert.equal(constrained.brightness,1);assert.equal(constrained.damageFlash,0);assert.equal(constrained.camera,0);assert.equal(constrained.enemyFontSize,48);assert.equal(constrained.minimapPosition,'bottom-right');assert.equal(constrained.background,DEFAULTS.background);
+
+assert.equal(options({getItem:()=>null}).minimap,false);
+assert.equal(options({getItem:()=>JSON.stringify({minimap:true})}).minimap,true,'Preserve an explicitly enabled minimap');

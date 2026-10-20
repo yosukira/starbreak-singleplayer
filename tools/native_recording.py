@@ -126,7 +126,7 @@ class NativeRecording:
         from tools.web_workspace import atomic_json
         enabled=self.recording
         try:
-            if self.registry:enabled=json.loads((self.registry.parent/'recording.json').read_text(encoding='utf8')).get('record_replays',True) is not False
+            if self.registry:enabled=json.loads((self.registry.parent/'recording.json').read_text(encoding='utf8')).get('record_replays') is True
         except (OSError,ValueError,TypeError):pass
         if self.closed:raise ValueError('Native launcher has closed')
         if not self.practice_path:

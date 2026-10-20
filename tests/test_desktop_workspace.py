@@ -68,7 +68,10 @@ class DesktopWorkspaceTests(unittest.TestCase):
 
     def test_preferences_and_reset_use_native_settings(self):
         preferences = self.workspace.preferences()
-        self.assertTrue(preferences['record_replays'])
+        self.assertFalse(preferences['record_replays'])
+        preferences['record_replays'] = True
+        self.workspace.save_preferences(preferences)
+        self.assertTrue(DesktopWorkspace(self.root/'ui',self.source).preferences()['record_replays'])
         preferences['record_replays'] = False
         preferences['keys']['editor_toggle_alt'] = 'F9'
         self.workspace.save_preferences(preferences)
