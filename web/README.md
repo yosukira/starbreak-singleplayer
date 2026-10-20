@@ -264,3 +264,18 @@ and optional guild.
 本地战绩支持单条、批量删除及每页 10/50/100 条（默认 50）；删除本地记录不影响服务器分享。
 在“角色与提示”保存角色名、公会名与通关提示。角色名用作分享、评论的默认署名；背包和
 通关提示会使用设置的名称与可选公会名。
+
+SBPE-style display options are grouped into HUD, Noise, Misc and Minimap. Enemy
+health is a cached number at the body center, with positive armor below it; no
+extra bars are added. Noise controls effects, damage numbers, names/guilds, original
+bars, friendly summons, your shell, chat, shake and flashes. Misc controls the
+camera, scenery, solid background, brightness, idle cursor and debug boxes. Optional
+compact health/ammo, EC gains, FPS and room information are also available.
+Display settings apply immediately and do not change combat values or replay input.
+The low-clutter preset is optional; resetting enhancements preserves custom textures.
+
+增强设置按 HUD、Noise、Misc 和小地图分组。敌人血量以缓存数字显示在身体中央，
+正护甲在下方，不增加血条。Noise 可分别隐藏特效、伤害数字、名字/公会、原版血条、
+友方召唤物、自身外观和聊天，关闭震屏/闪屏并调节受击闪白。Misc 提供视角、场景、
+纯色背景、背景亮度、鼠标自动隐藏和调试框设置；另有角色旁生命/弹药、EC 增量、FPS
+及房间信息。显示设置立即生效，不修改战斗数值或录像输入；重置增强会保留贴图。

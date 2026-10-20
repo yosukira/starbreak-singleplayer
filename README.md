@@ -276,3 +276,18 @@ Windows Equipment & settings and Battle records share one window. Opening the ed
 Windows 客户端也提供“使用说明”标签，涵盖安装、配装、游戏按键、原生录像与接管、分享及本地数据备份。说明页与编辑器共用语言选择；SBRE Discord 对所有语言显示，QQ 群 684496559 仅在中文版显示。客户端与网页版共用最新分享、热门榜、分享码和评论，本地战绩各自保存。
 
 The Windows client also includes a Guide tab covering installation, equipment, native controls, replay/takeover, sharing and backups. It follows the editor language. SBRE Discord is available in both languages; the QQ group appears in Chinese. Desktop and web share the same latest/popular lists, sharing codes and comments; local history remains separate.
+
+SBPE-style display options are grouped into HUD, Noise, Misc and Minimap. Enemy
+health is a cached number at the body center, with positive armor below it; no
+extra bars are added. Noise controls effects, damage numbers, names/guilds, original
+bars, friendly summons, your shell, chat, shake and flashes. Misc controls the
+camera, scenery, solid background, brightness, idle cursor and debug boxes. Optional
+compact health/ammo, EC gains, FPS and room information are also available.
+Display settings apply immediately and do not change combat values or replay input.
+The low-clutter preset is optional; resetting enhancements preserves custom textures.
+
+增强设置按 HUD、Noise、Misc 和小地图分组。敌人血量以缓存数字显示在身体中央，
+正护甲在下方，不增加血条。Noise 可分别隐藏特效、伤害数字、名字/公会、原版血条、
+友方召唤物、自身外观和聊天，关闭震屏/闪屏并调节受击闪白。Misc 提供视角、场景、
+纯色背景、背景亮度、鼠标自动隐藏和调试框设置；另有角色旁生命/弹药、EC 增量、FPS
+及房间信息。显示设置立即生效，不修改战斗数值或录像输入；重置增强会保留贴图。
