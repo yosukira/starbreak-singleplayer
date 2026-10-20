@@ -87,7 +87,11 @@ class NativeRecording:
                                 if owner.resume is resume:
                                     atomic_json(owner.practice_path,resume['practice'])
                                     owner.resume=None
-                        else:owner.playback.feedback(value)
+                        else:
+                            practice=owner.playback.feedback(value)
+                            # Reset outside the playback lock: stopping its host
+                            # joins a simulation thread which takes that lock.
+                            if practice:owner.practice(**practice)
                         return self.result(dict(accepted=True))
                     if self.path=='/availability':
                         identifiers=value['ids']

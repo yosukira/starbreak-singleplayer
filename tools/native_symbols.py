@@ -56,7 +56,9 @@ def coff_symbols(image):
     size=struct.unpack_from('<I',image,strings)[0]
     if size<4 or size>64*1024*1024 or strings+size>len(image):raise ValueError('Invalid native COFF string table')
     base,sections=parse_pe_sections(image)
-    wanted={value:key for key,value in LINKER_NAMES.items()};result={};index=0
+    wanted={value:key for key,value in LINKER_NAMES.items()}
+    wanted['__ZZN10SoundMixer3getEvE2sm']='SoundMixer::instance'
+    result={};index=0
     while index<count:
         offset=table+index*18;raw=image[offset:offset+8]
         if raw[:4]==b'\0'*4:
@@ -98,7 +100,15 @@ def manifest(image,symbols):
         prefix=image[offset:offset+16]
         if len(prefix)!=16 or len(set(prefix))<3:raise ValueError('Invalid native code signature: '+name)
         rows[name]=dict(rva=address-base,signature=prefix.hex())
-    return dict(schema=SCHEMA,client=hashlib.sha256(image).hexdigest(),image_base=base,pointer_bytes=4,hooks=rows)
+    result=dict(schema=SCHEMA,client=hashlib.sha256(image).hexdigest(),image_base=base,pointer_bytes=4,hooks=rows)
+    mixer=symbols.get('SoundMixer::instance')
+    if mixer is not None:
+        if not any(start<=mixer-base and mixer-base+12<=start+vsize and
+                   not struct.unpack_from('<I',image,section_table+index*40+36)[0]&0x20000000
+                   for index,(_,start,vsize,raw,raw_size)in enumerate(sections)):
+            raise ValueError('Native sound mixer is outside data')
+        result['sound_mixer']=dict(rva=mixer-base)
+    return result
 
 
 def resolve(executable,symquery=None):

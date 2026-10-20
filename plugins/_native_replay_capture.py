@@ -182,6 +182,11 @@ class NativeCapture:
         self.last_ack=None;self.bridge_documents=[]
         self.resource_depth=0;self.pending_assets=0
         self.tape=NativeTape(save=save,notice=notice)
+        self.sound_mixer=None
+        if manifest.get('sound_mixer') and hook is NativeHook:
+            if ffi.sizeof('struct SoundMixer')!=12 or ffi.sizeof('struct SoundMixer__ChannelStatus')!=32:
+                raise ValueError('Native sound mixer layout changed')
+            self.sound_mixer=ffi.cast('struct SoundMixer *',base+manifest['sound_mixer']['rva'])
         hooks=[]
         self.shared_hook_owners=[]
         for name,result,arguments,convention,kind in ABI:
@@ -404,6 +409,27 @@ class NativeCapture:
                 self.player.commit(lambda chunk:delivery.put(dict(chunk,attempt=branch['id'])),branch['sequence'])
                 self.branch=branch;self.reset_inputs=True
 
+    def sync_audio_clock(self,logical):
+        """Rebase presentation-only channel ages after a replay time jump.
+
+        SoundMixer persists across worlds. Future lastPlayMS values otherwise
+        make its original getBestChannel reject every positional sound.
+        """
+        mixer=self.sound_mixer
+        if mixer is None:return
+        ffi=self.ffi
+        def rows(vector,kind,size,limit):
+            start=int(ffi.cast('uintptr_t',vector.start));end=int(ffi.cast('uintptr_t',vector.finish))
+            if not start and not end:return ()
+            if not start or end<start or (end-start)%size or (end-start)//size>limit:
+                raise ValueError('Invalid native sound channel vector')
+            pointer=ffi.cast(kind+' *',vector.start)
+            return (pointer[index] for index in range((end-start)//size))
+        for vector in rows(mixer.channels,'struct STDVector',12,32):
+            for channel in rows(vector,'struct SoundMixer__ChannelStatus',32,128):
+                if ((int(logical)-int(channel.lastPlayMS)+2**31)%2**32-2**31)<0:
+                    channel.lastPlayMS=(int(logical)-1+2**31)%2**32-2**31
+
     def before(self):
         if self.player is None:
             if self.recording and not getattr(self,'awaiting_world',False):self.tape.loop(0)
@@ -411,6 +437,7 @@ class NativeCapture:
         if self.player.phase!='live':
             if not self.player.requested:self.player.update()
             return
+        self.sync_audio_clock(int(self.functions['clock'].original())+self.clock_offset)
         self.tape.loop(0)
         if getattr(self,'reset_inputs',False):
             total=self.state()[1]

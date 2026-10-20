@@ -37,6 +37,7 @@ class NativePlayback:
         self.command=None;self.source=None;self.host=None;self.branch=None
         self.status=dict(state='idle');self.packets=bytearray();self.controls=[]
         self.preparing=False;self.warming=False;self.closed=False;self.error=None;self.branches=set()
+        self.practice_pending=False
 
     def availability(self,identifiers):return self.clients.statuses(identifiers,adapter_digest(),self.client)
 
@@ -46,6 +47,7 @@ class NativePlayback:
             self.serial+=1;self.host=None;self.branch=None;self.source=None;self.command=None
             self.warm=WarmTakeovers();self.controls=[];self.packets.clear();self.error=None
             self.preparing=self.warming=False;self.warm_cursor=None;self.status=dict(state='idle')
+            self.practice_pending=False
         if host:host.stop()
         warm.close()
 
@@ -73,6 +75,7 @@ class NativePlayback:
                 self.command=dict(serial=self.serial,record=record['id'],document=document)
                 self.branch=None;self.packets.clear();self.controls=[]
                 self.preparing=False;self.warming=False;self.warm_cursor=None
+                self.practice_pending=False
                 self.status=dict(state='starting');result=dict(state='starting',serial=self.serial)
             else:
                 if not self.source:raise ValueError('Select a native replay first')
@@ -128,6 +131,15 @@ class NativePlayback:
                 for kind in value.get('acks',[]):
                     if kind not in (11,22):raise ValueError('Invalid native room acknowledgement')
                     host.binary(framed(kind,b''))
+                if telemetry and not self.practice_pending:
+                    for event in telemetry.get('events',[]):
+                        kind=event.get('kind') if isinstance(event,dict) else None
+                        if kind not in ('restart','switch_character'):continue
+                        shell=getattr(host.session,'player_type',None) or host.session.options.player_type
+                        if kind=='switch_character':shell=event.get('type')
+                        if type(shell) is not int or shell not in (1,2,3,5):continue
+                        self.practice_pending=True
+                        return dict(map_id=self.source['map'],shell=shell)
                 return
             # The client may send several takeover requests before it receives
             # our branch offer. Keep that one host until the offer is committed;

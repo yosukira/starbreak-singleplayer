@@ -32,7 +32,9 @@ class NativePlayer:
         self.preloaded=not self.preload;self.preloading=False
         self.target=None;self.seeking=False;self.cursor=0;self.seconds=0.;self.acks=[]
         self.times=[];self.ends=[];elapsed=0
+        self.clocks=[];self.clock_positions=[]
         for index,row in enumerate(ops):
+            if row[0]=='clock':self.clock_positions.append(index);self.clocks.append(row[1])
             if row[0]=='step':elapsed+=row[1]/1000.
             if row==['loop',1]:self.ends.append(index+1);self.times.append(elapsed)
         if not self.ends:raise ValueError('Native recording has no completed game frames')
@@ -66,6 +68,8 @@ class NativePlayer:
 
     def frame(self):
         tape=self.capture.tape
+        clock_index=bisect.bisect_left(self.clock_positions,tape.cursor)
+        if clock_index<len(self.clocks):self.capture.sync_audio_clock(self.clocks[clock_index])
         if not tape.loop(0):raise ValueError('Native frame could not start')
         while tape.cursor<len(tape.ops) and tape.ops[tape.cursor][0]!='state':
             row=tape.ops[tape.cursor]
@@ -164,6 +168,7 @@ class NativePlayer:
         clocks=[row[1] for row in tape.ops[:tape.cursor] if row[0]=='clock']
         real=int(self.capture.functions['clock'].original())
         self.capture.clock_offset=((clocks[-1]-real+2**31)%2**32-2**31) if clocks else 0
+        self.capture.sync_audio_clock(real+self.capture.clock_offset)
         tape.continue_recording(save,sequence);self.phase='live'
         self.requested=False;self.paused=False;self.speed=1.
         return checkpoint

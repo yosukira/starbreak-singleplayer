@@ -85,6 +85,18 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_rewind_rebases_only_future_sound_channel_times(self):
+        capture=NativeCapture.__new__(NativeCapture)
+        channels=[NS(lastPlayMS=500,soundName='shot'),NS(lastPlayMS=20,soundName='hit')]
+        memory={1000:[NS(start=2000,finish=2064)],2000:channels}
+        capture.ffi=NS(cast=lambda kind,value:value if kind=='uintptr_t' else memory[value])
+        capture.sound_mixer=NS(channels=NS(start=1000,finish=1012))
+        capture.sync_audio_clock(100)
+        self.assertEqual([row.lastPlayMS for row in channels],[99,20])
+        self.assertEqual([row.soundName for row in channels],['shot','hit'])
+        capture.sound_mixer.channels.finish=1001
+        with self.assertRaisesRegex(ValueError,'sound channel vector'):capture.sync_audio_clock(100)
+
     def test_inventory_and_macro_inputs_outside_the_render_callback_replay_in_order(self):
         engine=Engine();capture=engine.capture
         capture.before();engine.call('message',engine.game.serverConnection.messageHandlers,10,b'world',5);capture.after()
@@ -302,6 +314,18 @@ def native_fixture(directory):
 
 
 class NativeHostTests(unittest.TestCase):
+    def test_live_takeover_shortcuts_route_once_to_normal_practice(self):
+        for kind,shell,expected in [('restart',None,2),('switch_character',1,1),('switch_character',2,2),('switch_character',5,5),('switch_character',3,3)]:
+            with self.subTest(kind=kind,shell=shell),tempfile.TemporaryDirectory() as directory:
+                service=NativePlayback(directory,'a'*64)
+                service.source=dict(id='source',map='egy_hulk');service.serial=1;service.branch=dict(id='branch')
+                service.host=NS(committed=True,session=NS(player_type=2),telemetry=mock.Mock(),binary=mock.Mock())
+                event=dict(kind=kind)
+                if shell is not None:event['type']=shell
+                value=dict(serial=1,status=dict(state='live'),telemetry=dict(player=dict(hp=100),events=[event]))
+                self.assertEqual(service.feedback(value),dict(map_id='egy_hulk',shell=expected))
+                self.assertIsNone(service.feedback(value))
+
     def test_owned_http_control_prepares_commits_and_seals_a_native_branch(self):
         from tools.native_recording import NativeRecording
         from tools.native_playback import NativeControlClient
