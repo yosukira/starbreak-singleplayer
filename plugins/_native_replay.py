@@ -9,7 +9,7 @@ import base64
 import json
 
 SCHEMA='starbreak-native-journal-v1'
-CALLS=('input','delta','frame','read','player-input','engine-frame','message','ack')
+CALLS=('input','delta','frame','read','player-input','engine-frame','message','ack','inventory')
 MESSAGES=(10,12,15,16,17,21,37,38)
 MAX_OPERATIONS=3000000
 MAX_PACKET=262144
@@ -37,6 +37,8 @@ def operation(row):
     if kind=='return' and len(row)==2 and row[1]in CALLS:return list(row)
     if kind=='input' and len(row)==3:
         return [kind,integer(row[1],0,16383),integer(row[2],0,1)]
+    if kind=='inventory' and len(row)==5:
+        return [kind,integer(row[1],1,2),integer(row[2],0,65535),integer(row[3],0,65535),integer(row[4],0,7)]
     if kind=='clock' and len(row)==2:return [kind,integer(row[1],-(2**31),2**31-1)]
     if kind=='random32' and len(row)==2:return [kind,integer(row[1],0,2**32-1)]
     if kind=='random64' and len(row)==3:
@@ -61,6 +63,10 @@ def operation(row):
 
 
 def _invalid_ack():raise ValueError('Unsupported native replay acknowledgement')
+
+
+class VerifiedOperations(list):
+    pass
 
 
 def validate_operations(rows,complete=True):
@@ -90,7 +96,8 @@ def validate_operations(rows,complete=True):
             raise ValueError('Native frame continued after its final player check')
         output.append(row)
     if complete and (in_loop or stack):raise ValueError('Native replay ends inside a game call')
-    return output
+    result=VerifiedOperations(output);result.complete=complete
+    return result
 
 
 class NativeTape:
@@ -102,7 +109,7 @@ class NativeTape:
     """
     def __init__(self,mode='record',ops=None,save=None,notice=None,keep_ops=False):
         if mode not in('record','play'):raise ValueError('Invalid native tape mode')
-        self.mode=mode;self.ops=validate_operations(ops or [])if mode=='play'else[]
+        self.mode=mode;self.ops=(ops if isinstance(ops,VerifiedOperations) and ops.complete else validate_operations(ops or []))if mode=='play'else[]
         self.save=save;self.notice=notice;self.keep_ops=keep_ops
         self.cursor=self.sequence=self.size=self.pending_size=0
         self.pending=[];self.stack=[];self.in_loop=False
@@ -112,6 +119,9 @@ class NativeTape:
         if self.error is None:
             # Never copy arbitrary paths or native exception text into exports.
             self.error=type(error).__name__
+            self.error_detail=str(error)[:400]
+            import logging
+            logging.getLogger('hardlab_live').warning('Native replay stopped: %s: %s',self.error,self.error_detail)
             if self.notice:
                 try:self.notice(self.error)
                 except Exception:pass

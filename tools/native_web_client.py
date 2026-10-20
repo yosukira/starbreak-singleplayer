@@ -24,7 +24,8 @@ def patch(text):
     for name, kind, obj, arguments, returns in (
         ('Bja',1,'a',('b','d'),False), ('Cja',2,'a',(),False),
         ('rh',3,'a',('b',),False), ('Xh',4,'a',('b',),True),
-        ('td',5,'a',('b','d','e'),False), ('KM',6,'b',(),True)):
+        ('td',5,'a',('b','d','e'),False), ('KM',6,'b',(),True),
+        ('Yh',7,'a',('b',),True)):
         start = text.index('function '+name+'(')
         end = text.index('function ',start+10)
         original = text[start:end]
@@ -37,5 +38,5 @@ def patch(text):
     replace('return ~~(a-+h[19826])|0}', 'return webNativeClock(~~(a-+h[19826])|0)|0}')
     replace('return c[b>>2]<<24^d<<16^c[b+4>>2]|0}', 'return webNativeSeed(c[b>>2]<<24^d<<16^c[b+4>>2]|0)|0}')
     replace('return{replayBoundLabel:',
-        'return{nativeReplayClock:af,nativeReplayMessage:td,nativeReplayInput:Bja,nativeReplayFrame:Cja,nativeReplayEngine:rh,nativeReplayPlayerInput:Xh,replayBoundLabel:')
+        'return{nativeReplayInventory:Yh,nativeReplayClock:af,nativeReplayMessage:td,nativeReplayInput:Bja,nativeReplayFrame:Cja,nativeReplayEngine:rh,nativeReplayPlayerInput:Xh,replayBoundLabel:')
     return text

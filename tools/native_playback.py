@@ -40,6 +40,15 @@ class NativePlayback:
 
     def availability(self,identifiers):return self.clients.statuses(identifiers,adapter_digest(),self.client)
 
+    def reset(self):
+        with self.lock:
+            host,warm=self.host,self.warm
+            self.serial+=1;self.host=None;self.branch=None;self.source=None;self.command=None
+            self.warm=WarmTakeovers();self.controls=[];self.packets.clear();self.error=None
+            self.preparing=self.warming=False;self.warm_cursor=None;self.status=dict(state='idle')
+        if host:host.stop()
+        warm.close()
+
     def action(self,value):
         old_host=old_warm=None
         with self.lock:
@@ -63,7 +72,7 @@ class NativePlayback:
                 self.host=None;self.warm=WarmTakeovers();self.source=record;self.serial+=1;self.error=None
                 self.command=dict(serial=self.serial,record=record['id'],document=document)
                 self.branch=None;self.packets.clear();self.controls=[]
-                self.preparing=False;self.warming=False
+                self.preparing=False;self.warming=False;self.warm_cursor=None
                 self.status=dict(state='starting');result=dict(state='starting',serial=self.serial)
             else:
                 if not self.source:raise ValueError('Select a native replay first')
@@ -120,6 +129,11 @@ class NativePlayback:
                     if kind not in (11,22):raise ValueError('Invalid native room acknowledgement')
                     host.binary(framed(kind,b''))
                 return
+            # The client may send several takeover requests before it receives
+            # our branch offer. Keep that one host until the offer is committed;
+            # replacing it strands the first simulation and drops all feedback.
+            if self.branch is not None:
+                return
             request=value.get('checkpoint')
             if not request or status.get('state')not in ('playing','paused','taking-over'):return
             request=dict(request,record=self.source['id'])
@@ -151,7 +165,8 @@ class NativePlayback:
                         with self.lock:
                             if serial==self.serial:self.preparing=False
                 threading.Thread(target=prepare,daemon=True).start()
-            elif not self.warming and not self.preparing:
+            elif status.get('paused') and not self.warming and not self.preparing and getattr(self,'warm_cursor',None)!=request.get('cursor'):
+                self.warm_cursor=request.get('cursor')
                 self.warming=True
                 def warm():
                     try:warm_host.warm(self.records,self.clients,request)
@@ -179,9 +194,9 @@ class NativeControlClient:
         self.url=value['url'][:-len('/chunks')];self.token=token
 
     def call(self,path,value=None):
-        from urllib.request import Request,urlopen
+        from urllib.request import Request,build_opener,ProxyHandler
         request=Request(self.url+path,data=None if value is None else json.dumps(value).encode(),
             headers={'Authorization':'Bearer '+self.token,'Content-Type':'application/json'})
-        with urlopen(request,timeout=10) as response:raw=response.read(128*1024+1)
+        with build_opener(ProxyHandler({})).open(request,timeout=10) as response:raw=response.read(128*1024+1)
         if len(raw)>128*1024:raise ValueError('Native control response is too large')
         return json.loads(raw)

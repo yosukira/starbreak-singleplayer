@@ -19,6 +19,25 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_slow_playback_download_does_not_block_recording_delivery(self):
+        import io
+        import threading
+        from plugins import _native_replay_capture as module
+        entered=threading.Event();release=threading.Event();written=threading.Event()
+        def request(value,timeout=3):
+            if '/control?' in value.full_url:
+                entered.set();release.wait(3)
+                return io.BytesIO(b'{"serial":0,"controls":[]}')
+            written.set();return io.BytesIO(b'{}')
+        with mock.patch.object(module,'urlopen',side_effect=request):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64,attempt='first'))
+            try:
+                self.assertTrue(entered.wait(1))
+                delivery.put(dict(sequence=0,ops=[['loop',0],['loop',1]],end=False))
+                self.assertTrue(written.wait(1),'the recorder must not wait for the playback download')
+                self.assertIsNone(delivery.error)
+            finally:release.set();delivery.close()
+
     def test_recording_disabled_keeps_gameplay_and_playback_descriptions_without_a_tape(self):
         chunks=[];capture,_world,hooks=self.environment(chunks.append)
         capture.recording=False
@@ -32,7 +51,7 @@ class NativeCaptureTests(unittest.TestCase):
             message.assert_called_once()
             capture.after()
         self.assertEqual(capture.descriptions,{(16,b'description')})
-        self.assertEqual(capture.tape.pending,[])
+        self.assertFalse(capture.tape.in_loop)
         self.assertEqual(chunks,[])
         self.assertEqual(capture.frames,0)
 
@@ -58,7 +77,7 @@ class NativeCaptureTests(unittest.TestCase):
             def legacy_loads(value):
                 self.assertIsInstance(value,str,'Python 3.5 json.loads rejects raw bytes')
                 return loads(value)
-            with mock.patch.object(capture.json,'loads',side_effect=legacy_loads):delivery.run()
+            with mock.patch.object(capture.json,'loads',side_effect=legacy_loads):delivery.poll_control();delivery.run()
             self.assertIsNone(delivery.control_error)
             self.assertEqual(delivery.incoming.get_nowait()['serial'],1)
         with self.assertRaisesRegex(ValueError,'too large'):
@@ -115,7 +134,7 @@ class NativeCaptureTests(unittest.TestCase):
         capture,world,hooks=self.environment(mock.Mock(side_effect=OSError('offline')))
         call=hooks['WorldClient::updateInput'].replace;original=mock.Mock(return_value=17)
         self.assertEqual(call(original,1,4,False),17);original.assert_called_once()
-        self.assertEqual(capture.tape.pending,[])
+        self.assertIn(['input',4,0],capture.tape.pending)
         capture.before();capture.tape.fail(OSError('private source path'))
         original.reset_mock();self.assertEqual(call(original,1,4,False),17);original.assert_called_once()
         self.assertNotIn('private',capture.tape.error)

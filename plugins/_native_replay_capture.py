@@ -12,7 +12,7 @@ import threading
 import time
 import copy
 import struct
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, ProxyHandler
 from urllib.parse import urlsplit
 
 try:
@@ -21,6 +21,10 @@ try:
 except (ImportError, ValueError, SystemError):  # PyPy 3.5 top-level relative import
     from _native_replay import NativeTape,MESSAGES
     from _native_replay_hooks import NativeHook, NativeHookGroup
+
+def urlopen(request,timeout=3):
+    return build_opener(ProxyHandler({})).open(request,timeout=timeout)
+
 
 CLIENTS=(
     '29b0d5d1f20862558233a4bc02d89f681211825a3fe3077ba1c7838c50398687',
@@ -39,6 +43,9 @@ ABI=(
     ('MessageHandlers::run','void',('int','const char *','int'),'thiscall','message'),
     ('ServerConnection::sendMessage','void',('int',),'thiscall','ack'),
     ('GameClient::handleKeyboardEvent','void',('int','int'),'thiscall','keyboard'),
+    ('WorldClient::handleModifyInv','void',('void *',),'thiscall','inventory'),
+    ('ModifyInv::ModifyInv','void',(),'thiscall','inventory-ctor'),
+    ('ModifyInv::~ModifyInv','void',(),'thiscall','inventory-dtor'),
 )
 
 
@@ -64,57 +71,72 @@ class ChunkDelivery:
         token=config['token']
         if not isinstance(token,str) or len(token)!=64 or any(c not in '0123456789abcdef' for c in token):
             raise ValueError('Invalid native recorder token')
-        self.url=config['url'];self.token=token;self.error=None;self.closed=False
+        self.url=config['url'];self.token=token;self.error=None;self.closed=False;self.attempt=config.get('attempt')
         self.serial=0;self.incoming=queue.Queue(maxsize=4);self.control_error=None
         self.feedback_value=None;self.feedback_lock=threading.Lock();self.last_poll=0
         self.poll_interval=.1
         self.control_enabled=control
         self.queue=queue.Queue(maxsize=4)
+        self.pending_feedback=None;self.failed_attempts=set()
         self.thread=threading.Thread(target=self.run);self.thread.daemon=True;self.thread.start()
+        self.control_thread=threading.Thread(target=self.control_run);self.control_thread.daemon=True;self.control_thread.start()
 
     def put(self, value):
         if self.closed or self.error:raise IOError('Native recording delivery stopped')
         # NativeTape transfers a detached immutable chunk. Encoding belongs to
         # this delivery worker, never the original game's update thread.
+        if self.attempt and 'attempt' not in value:value=dict(value,attempt=self.attempt)
         try:self.queue.put_nowait(value)
         except queue.Full:raise IOError('Native recording delivery queue is full')
 
     def run(self):
         while True:
-            try:raw=self.queue.get(timeout=.01)
-            except queue.Empty:raw=False
+            try:value=self.queue.get(timeout=.1)
+            except queue.Empty:continue
             try:
-                if raw is None:return
-                if raw is not False and not self.error:
-                    raw=json.dumps(raw,separators=(',',':')).encode('utf8')
-                    if len(raw)>512*1024:raise ValueError('Native recording chunk is too large')
-                    request=Request(self.url,data=raw,headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
-                    for attempt in range(2):
-                        try:
-                            with urlopen(request,timeout=3) as response:response.read(4096)
-                            break
-                        except OSError:
-                            if attempt:raise
-            except Exception as error:self.error=type(error).__name__
-            finally:
-                if raw is not False:self.queue.task_done()
-            try:
-                if not self.control_enabled:continue
-                with self.feedback_lock:
-                    feedback=self.feedback_value;self.feedback_value=None
-                if feedback is not None:
-                    request=Request(self.url[:-len('/chunks')]+'/feedback',data=json.dumps(feedback,separators=(',',':')).encode('utf8'),
-                        headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
-                    with urlopen(request,timeout=3) as response:response.read(4096)
-                if time.monotonic()-self.last_poll>=self.poll_interval and not self.incoming.full():
-                    self.last_poll=time.monotonic()
-                    request=Request(self.url[:-len('/chunks')]+'/control?serial='+str(self.serial),headers={'Authorization':'Bearer '+self.token})
-                    with urlopen(request,timeout=3) as response:
-                        raw=read_control(response)
-                    value=json.loads(raw.decode('utf8'))
-                    if value.get('play'):self.serial=value['serial']
-                    self.incoming.put_nowait(value)
+                if value is None:return
+                if value.get('attempt') in self.failed_attempts:continue
+                raw=json.dumps(value,separators=(',',':')).encode('utf8')
+                if len(raw)>512*1024:raise ValueError('Native recording chunk is too large')
+                request=Request(self.url,data=raw,headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
+                for attempt in range(5):
+                    try:
+                        with urlopen(request,timeout=5) as response:response.read(4096)
+                        break
+                    except OSError:
+                        if attempt==4:raise
+                        time.sleep(.05*(attempt+1))
+            except Exception as error:
+                self.failed_attempts.add(value.get('attempt'))
+                if value.get('attempt')==self.attempt:self.error=type(error).__name__;self.error_detail=str(error)[:400]
+                import logging
+                logging.getLogger('hardlab_live').exception('Native replay delivery failed')
+            finally:self.queue.task_done()
+
+    def poll_control(self):
+        if not self.control_enabled:return
+        if self.pending_feedback is None:
+            with self.feedback_lock:
+                self.pending_feedback=self.feedback_value;self.feedback_value=None
+        if self.pending_feedback is not None:
+            request=Request(self.url[:-len('/chunks')]+'/feedback',data=json.dumps(self.pending_feedback,separators=(',',':')).encode('utf8'),
+                headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
+            with urlopen(request,timeout=3) as response:response.read(4096)
+            self.pending_feedback=None
+        if time.monotonic()-self.last_poll>=self.poll_interval and not self.incoming.full():
+            self.last_poll=time.monotonic()
+            request=Request(self.url[:-len('/chunks')]+'/control?serial='+str(self.serial),headers={'Authorization':'Bearer '+self.token})
+            with urlopen(request,timeout=3) as response:raw=read_control(response)
+            value=json.loads(raw.decode('utf8'))
+            if value.get('play') or value.get('resume'):self.serial=value['serial']
+            self.incoming.put_nowait(value)
+        self.control_error=None
+
+    def control_run(self):
+        while not self.closed:
+            try:self.poll_control()
             except Exception as error:self.control_error=type(error).__name__
+            time.sleep(.01 if self.control_error is None else .1)
 
     def feedback(self,value):
         value=copy.deepcopy(value)
@@ -144,6 +166,7 @@ class ChunkDelivery:
         try:self.queue.put(None,timeout=3)
         except queue.Full:return
         self.thread.join(timeout=8)
+        self.control_thread.join(timeout=4)
 
 
 class NativeCapture:
@@ -176,6 +199,7 @@ class NativeCapture:
 
     def replacement(self,kind):
         def observe(original,*args):
+            if kind in ('inventory-ctor','inventory-dtor'):return original(*args)
             player=self.player
             if kind=='keyboard':
                 mapping=getattr(self,'keyboard_mask',None)
@@ -195,6 +219,13 @@ class NativeCapture:
                 if player is not None and message in(11,22):player.ack(message)
                 return result
             if self.resource_depth:return original(*args)
+            if player is None and self.recording and getattr(self,'awaiting_world',False):
+                if kind=='message' and int(args[1]) in (21,10):
+                    self.awaiting_world=False;self.tape.loop(0)
+                else:return original(*args)
+            if player is None and getattr(self,'awaiting_created',False):
+                if kind=='message' and int(args[1])==10:self.awaiting_created=False
+                elif kind not in ('read','message','clock','random32','random64'):return original(*args)
             if player is not None and kind=='read' and not self.driving:return True
             if player is not None and player.blocked() and not self.driving and kind not in ('clock','random32','random64'):
                 if kind=='input' and self.keyboard_depth:player.keyboard_input(int(args[1]),bool(args[2]))
@@ -210,6 +241,15 @@ class NativeCapture:
                     if not 0<size<=262144:raise ValueError('Invalid native message size')
                     self.descriptions.add((int(args[1]),bytes(self.ffi.buffer(args[2],size))))
                 return original(*args)
+            if (threading.get_ident()==self.owner and not self.tape.in_loop and not self.tape.finished
+                    and not self.tape.error and kind in ('input','inventory')
+                    and not getattr(self,'awaiting_world',False)):
+                # SBPE macros also change equipment/input after our draw
+                # callback. Preserve those real calls as their own complete
+                # iteration instead of silently omitting their side effects.
+                self.tape.loop(0)
+                try:return observe(original,*args)
+                finally:self.after()
             # The client's IO worker may run while the UI thread is updating.
             # Never mix its clocks/call stack into the simulation journal.
             if threading.get_ident()!=self.owner or not self.tape.in_loop or self.tape.error:return original(*args)
@@ -249,6 +289,10 @@ class NativeCapture:
             if kind=='player-input':
                 value=self.ffi.cast('struct PlayerInput *',args[1])
                 row=['player-input',int(value.total),int(value.hit),int(value.unhit),int(value._has_bits[0])]
+                return self.tape.call(row,lambda:original(*args))
+            if kind=='inventory':
+                value=self.ffi.cast('struct ModifyInv *',args[1])
+                row=['inventory',int(value.command),int(value.slotpos),int(value.targetslotpos),int(value._has_bits[0])]
                 return self.tape.call(row,lambda:original(*args))
             if kind=='engine-frame':
                 row=['engine-frame',int(args[1])]
@@ -319,6 +363,18 @@ class NativeCapture:
             try:value=delivery.incoming.get_nowait()
             except queue.Empty:break
             if value.get('serial',0)<self.serial:continue
+            if value.get('resume'):
+                resume=value['resume']
+                if (self.recording or self.player is not None) and not self.tape.finished:self.tape.finish()
+                self.player=None;self.branch=None;self.serial=resume['serial'];self.recording=resume['recording']
+                self.delivery.attempt=resume['id'];self.tape=NativeTape(save=self.delivery.put)
+                self.delivery.error=None;self.delivery.error_detail=None
+                self.packet_buffer=bytearray();self.frames=self.engine_elapsed=0;self.clock_offset=0
+                self.awaiting_world=True;self.awaiting_created=True;self.control_error=None
+                callback=getattr(self,'replay_start',None)
+                if callback:callback()
+                self.delivery.feedback(dict(serial=self.serial,status=dict(state='idle'),resume=resume['id']))
+                continue
             if value.get('play'):
                 if self.tape.mode=='record' and (self.recording or self.player is not None):self.tape.finish()
                 try:from ._native_replay_player import NativePlayer
@@ -350,7 +406,7 @@ class NativeCapture:
 
     def before(self):
         if self.player is None:
-            if self.recording:self.tape.loop(0)
+            if self.recording and not getattr(self,'awaiting_world',False):self.tape.loop(0)
             return
         if self.player.phase!='live':
             if not self.player.requested:self.player.update()
@@ -371,9 +427,11 @@ class NativeCapture:
         self.player.pending_keys=[]
 
     def after(self):
-        if (self.player is None and self.recording) or (self.player is not None and self.player.phase=='live'):
-            self.tape.loop(1,self.state());self.frames+=1
-            if self.frames%30==0:self.tape.flush()
+        if ((self.player is None and self.recording and not getattr(self,'awaiting_world',False)) or (self.player is not None and self.player.phase=='live')):
+            previous=self.tape.last_state;state=[0,0] if getattr(self,'awaiting_created',False) else self.state()
+            self.tape.loop(1,state);self.frames+=1
+            ended=previous and len(previous)==14 and previous[8]>0 and (len(state)!=14 or state[8]<=0)
+            if ended or self.frames%30==0:self.tape.flush()
         self.feedback()
 
     def feedback(self,telemetry=None,documents=None):
@@ -399,10 +457,23 @@ class NativeCapture:
     def close(self):
         if self.recording or self.player is not None:self.tape.finish()
         self.hooks.remove()
+        if hasattr(self,'delivery'):self.delivery.close()
+        global _ACTIVE_CAPTURE
+        if _ACTIVE_CAPTURE is self:_ACTIVE_CAPTURE=None
 
     def invoke(self,row):
         """Use only checked functions and current game-owned objects."""
         kind=row[0];ffi=self.ffi;game=self.refs.GameClient
+        if kind=='frame' and self.tape.mode=='play':
+            cursor=self.tape.cursor;ops=self.tape.ops
+            # doTimePasses sleeps when less than 10 ms have accrued. An
+            # observed empty call has no physics or input side effect; replay
+            # its exact scalar boundaries without repeating that wall sleep.
+            if (cursor+4<=len(ops) and ops[cursor]==['frame'] and ops[cursor+1][0]=='clock'
+                    and ops[cursor+2]==['step',0] and ops[cursor+3]==['return','frame']):
+                def empty():
+                    self.tape.value('clock',lambda:0);self.tape.value('step',lambda:0)
+                return self.tape.call(row,empty)
         if game is None or game==ffi.NULL:raise ValueError('Native game is not connected')
         client=game.worldClient
         if kind=='message':
@@ -422,6 +493,14 @@ class NativeCapture:
             elif kind=='player-input':
                 value=ffi.new('struct PlayerInput *');value.total,value.hit,value.unhit=row[1:4];value._has_bits[0]=row[4]
                 args=(client.clientWorld,value)
+            elif kind=='inventory':
+                value=ffi.new('struct ModifyInv *')
+                self.functions['inventory-ctor'].original(value)
+                try:
+                    value.command,value.slotpos,value.targetslotpos=row[1:4];value._has_bits[0]=row[4]
+                    hook=self.functions[kind]
+                    return self.replacement(kind)(hook.original,client,value)
+                finally:self.functions['inventory-dtor'].original(value)
             else:raise ValueError('Unsupported native driver call')
         hook=self.functions[kind]
         if kind=='message' and row[1]==21 and self.player is not None and getattr(self.player,'preloading',False):

@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 (async()=>{
  const ids=[...fs.readFileSync('web/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>m[1]),elements=new Map();let frame=null,nativePlay=null,nativeWatch=false,shortcut=null;
- const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},close(){this.open=false;},focus(){}});
+ const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{add(){},toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},close(){this.open=false;},focus(){}});
  for(const id of ids)elements.set(id,element());elements.get('map').value='egy_hulk';
  const layout=element(),events={};
  class Editor{constructor(){this.map='egy_hulk';this.shell=1;this.profile={settings:{map:'egy_hulk'}};this.preferences={keys:{}};this.data={stats:[],items:[]};}async load(){}render(){}remember(){}async save(){}async post(){return {assets_ready:true};}}

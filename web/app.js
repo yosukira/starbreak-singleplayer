@@ -99,9 +99,10 @@
       const response=await fetch('/api/native/status',{cache:'no-store'});const value=await response.json();
       if(!response.ok)throw Error(value.error);
       if(value.state==='live'){
-        replayRecord=null;$('replay-controls').hidden=true;$('status').textContent=t('已在 Windows 客户端接管','You are in control in the Windows client');return;
+        replayRecord=null;$('replay-controls').hidden=true;$('status').textContent=t('已在 Windows 客户端接管','You are in control in the Windows client');
+        const notice=$('stage').querySelector('.record-native-playback');if(notice)notice.textContent=t('已接管，正在游戏客户端中战斗。按 F8 或 ~ 隐藏/显示此窗口。','You are in control in the game client. Press F8 or ~ to hide/show this window.');return;
       }
-      replayStatus({...value,state:value.paused&&value.state==='playing'?'paused':value.state,message:value.error||value.message,frame:value.seconds>0?1:0});
+      replayStatus({...value,state:value.paused&&value.state==='playing'?'paused':value.state,message:value.message||value.error,frame:value.seconds>0?1:0});
     }catch(error){$('replay-progress').textContent=error.message;}
     if(replayRecord?.replay?.engine==='native')nativePoll=setTimeout(pollNativeReplay,400);
   }
@@ -134,7 +135,7 @@
     $('replay-pause').disabled=$('replay-speed').disabled=state==='failed'||state==='ended';
     if(state==='failed'){
       $('status').textContent=t('录像停止','Replay stopped');
-      $('replay-progress').textContent=t('录像校验失败，请确认与当前版本兼容。','Replay validation failed. Check compatibility with this version.');
+      $('replay-progress').textContent=t('回放中断：','Replay interrupted: ')+(data.message||data.error||t('请查看本次启动日志','See this session’s log'));
       $('replay-progress').title=data.message||'';
     }else{
       $('replay-progress').title='';
@@ -285,7 +286,7 @@
         $('arena-title').textContent=record.map_title;$('replay-controls').hidden=false;
         $('replay-speed').value='1';$('replay-seek').value='0';updatePause();
         const notice=document.createElement('p');notice.className='record-native-playback';notice.textContent=t('正在 Windows 游戏客户端中回放。可在这里暂停、调整倍速、拖动进度或接管；有效的键盘操作也能直接接管。','Playing in the Windows game client. Pause, change speed, seek or take over here. A valid gameplay keyboard press also takes over.');
-        $('stage').replaceChildren(notice);finishLoading();
+        $('stage').classList.add('native-stage');$('stage').replaceChildren(notice);finishLoading();
         void pollNativeReplay();window.pywebview?.api?.show_native_game?.();return;
       }
       const check=await fetch('/api/replay/check?id='+encodeURIComponent(record.replay.id));
@@ -296,6 +297,7 @@
       $('arena-title').textContent=record.map_title;$('status').textContent=t('加载录像…','Loading replay…');
       $('replay-controls').hidden=false;$('replay-speed').value=String(speed);$('replay-seek').value='0';$('replay-progress').textContent='';$('replay-progress').title='';$('replay-pause').disabled=$('replay-speed').disabled=false;updatePause();
       const frame=document.createElement('iframe');frame.src=(globalThis.StarBreakBrowser?.assetURL('/game.html')||'/game.html')+'?replay='+encodeURIComponent(record.replay.id)+'&record='+encodeURIComponent(record.id);frame.title=t('StarBreak 录像回放','StarBreak replay');frame.allow='autoplay; fullscreen';
+      $('stage').classList.remove('native-stage');
       $('stage').replaceChildren(frame);
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
     finally{setBusy(false);}

@@ -54,8 +54,14 @@ class NativeStartupTests(unittest.TestCase):
                 request=Request(recording.config['url'].replace('/chunks','/command'),data=json.dumps(dict(action='practice',map='hulk_mid',shell=2)).encode(),headers={'Authorization':'Bearer '+recording.token})
                 with urlopen(request) as response:self.assertTrue(json.load(response)['starting'])
                 self.assertIsNone(recording.restart_request)
+                self.assertFalse(path.exists(),'Wait for the native client before requesting the new world')
+                control=Request(recording.config['url'].replace('/chunks','/control?serial=0'),headers={'Authorization':'Bearer '+recording.token})
+                with urlopen(control) as response:resume=json.load(response)['resume']
+                acknowledgement=Request(recording.config['url'].replace('/chunks','/feedback'),data=json.dumps(dict(serial=resume['serial'],resume=resume['id'])).encode(),headers={'Authorization':'Bearer '+recording.token})
+                with urlopen(acknowledgement) as response:json.load(response)
                 value=json.loads(path.read_text());self.assertEqual((value['map'],value['shell']),('hulk_mid',2))
                 server=LocalServer.__new__(LocalServer);server.options=NS(map='hulk_mid');server._restart_in_progress=False
+                server._live_world_sequence=2
                 server._ground_ack_ready=lambda _:True;server.request_live_map_switch=mock.Mock()
                 def restart(*args,**kwargs):server._restart_in_progress=True
                 server.request_live_restart=mock.Mock(side_effect=restart)

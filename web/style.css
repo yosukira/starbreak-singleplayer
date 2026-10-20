@@ -84,6 +84,8 @@ header{border-bottom-color:#476052}dialog{width:min(1420px,97vw);max-height:95dv
 @media(max-width:720px){.main-tabs button{min-width:100px;padding:8px}.desktop-workspace header{padding:0 10px}.desktop-workspace .brand small,.desktop-workspace .mark{display:none}}
 
 #replay-seek{width:clamp(100px,22vw,340px);flex:1 1 150px;accent-color:var(--accent);min-height:28px;cursor:pointer}#replay-seek:disabled{cursor:wait}.replay-controls{flex-wrap:wrap}
+.desktop-workspace #stage.native-stage{aspect-ratio:auto;padding:20px;min-height:0;box-shadow:none}
+.desktop-workspace #stage.native-stage .record-native-playback{margin:0;max-width:none}
 
 #keyboard-settings{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.key-group{display:grid;grid-template-columns:repeat(var(--key-columns),minmax(0,1fr));gap:12px;padding-bottom:14px;border-bottom:1px solid #263c49}.keys-interaction{width:min(100%,240px)}.keys-editor{width:min(100%,580px)}.keys-zoom{width:min(100%,840px)}.key-group .setting-row{min-width:0}.key-group .setting-row>span{min-height:1.6em}@media(max-width:900px){.keys-run{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:500px){.keys-run,.keys-zoom{grid-template-columns:repeat(2,minmax(0,1fr))}.keys-zoom .setting-row:last-child{grid-column:1/-1}}
 

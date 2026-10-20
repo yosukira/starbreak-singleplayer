@@ -94,6 +94,26 @@ def main(argv=None):
                 user32.EnumWindows(callback, 0)
                 time.sleep(.01)
         threading.Thread(target=keep_owned_window_background, daemon=True).start()
+    if not (options.background or options.offscreen):
+        def maximize_owned():
+            import ctypes
+            from ctypes import wintypes
+            user=ctypes.windll.user32
+            render_ready.wait(timeout=15)
+            callback_type=ctypes.WINFUNCTYPE(wintypes.BOOL,wintypes.HWND,wintypes.LPARAM)
+            done=[False]
+            def visit(hwnd,_):
+                owner=wintypes.DWORD();user.GetWindowThreadProcessId(hwnd,ctypes.byref(owner))
+                if owner.value==process.pid:
+                    name=ctypes.create_unicode_buffer(64);user.GetClassNameW(hwnd,name,64)
+                    title=ctypes.create_unicode_buffer(128);user.GetWindowTextW(hwnd,title,128)
+                    if (name.value.startswith('SDL') or title.value=='StarBreak') and user.IsWindowVisible(hwnd):
+                        user.ShowWindow(hwnd,3);done[0]=True
+                return True
+            callback=callback_type(visit);deadline=time.time()+15
+            while process.poll() is None and not done[0] and time.time()<deadline:
+                user.EnumWindows(callback,0);time.sleep(.05)
+        threading.Thread(target=maximize_owned,daemon=True).start()
     if options.wait > 0:
         time.sleep(options.wait)
     native = NativeProcess(pid=process.pid)

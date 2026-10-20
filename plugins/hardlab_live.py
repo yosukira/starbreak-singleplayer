@@ -129,7 +129,8 @@ class Plugin(PluginBase):
             value=dict(at=now,active=self.active,connected=self.bridge.link_ok(),sent=self.bridge.sent,
                 hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
                 replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
-                recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None)
+                recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None,
+                recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else None)
             temporary=path+'.part'
             with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
             os.replace(temporary,path)
@@ -392,6 +393,9 @@ class Plugin(PluginBase):
     def onUnload(self):
         if not self.session:
             return
+        if self.native_capture is not None:
+            try:self.native_capture.close()
+            except Exception:LOG.exception('Native recorder could not finish during unload')
         try:
             self.bridge.uninstall()
         except Exception:

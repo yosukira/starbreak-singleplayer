@@ -118,7 +118,6 @@
     paginationHTML(p){return `<div class="record-pagination"><span>${p.total?p.page*p.size+1:0}–${Math.min((p.page+1)*p.size,p.total)} / ${p.total}</span><label>${this.t('每页','Per page')} <select data-page-size aria-label="${this.t('每页条数','Records per page')}">${[10,50,100].map(n=>`<option value="${n}" ${n===p.size?'selected':''}>${n}</option>`).join('')}</select></label><button class="secondary" data-page="previous" ${p.page===0?'disabled':''}>${this.t('上一页','Previous')}</button><span>${p.page+1} / ${p.pages}</span><button class="secondary" data-page="next" ${p.page+1>=p.pages?'disabled':''}>${this.t('下一页','Next')}</button></div>`;}
     async deleteRecords(ids){
       if(!ids.length)return;
-      if(!window.confirm(this.t(`删除这 ${ids.length} 场本地战绩及其录像？已分享到服务器的副本不受影响。`, `Delete these ${ids.length} local battles and their recordings? Server shares will remain available.`)))return;
       try{
         const response=await fetch('/api/records/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids})}),value=await response.json();
         if(!response.ok)throw Error(value.error||'Delete failed');

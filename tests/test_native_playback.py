@@ -56,6 +56,8 @@ class Engine:
             if kind=='input':
                 if args[2]:self.world.total|=args[1]
                 else:self.world.total&=~args[1]
+            if kind=='inventory':
+                self.props.maxhitpoints=100 if args[1].slotpos==3840 else 150
             if kind=='frame':
                 self.call('clock');self.call('engine-frame',self.world,17)
             if kind=='engine-frame':
@@ -83,6 +85,71 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_inventory_and_macro_inputs_outside_the_render_callback_replay_in_order(self):
+        engine=Engine();capture=engine.capture
+        capture.before();engine.call('message',engine.game.serverConnection.messageHandlers,10,b'world',5);capture.after()
+        engine.call('inventory',engine.client,NS(command=2,slotpos=3840,targetslotpos=1536,_has_bits=[7]))
+        engine.call('input',engine.client,4,1)
+        capture.before();engine.call('frame',engine.client);capture.after();capture.tape.finish()
+        ops=[row for chunk in engine.chunks for row in chunk['ops']]
+        self.assertIn(['inventory',2,3840,1536,7],ops)
+        fresh=Engine();player=fresh.play(dict(id='fresh',ops=ops))
+        for _ in range(20):fresh.mono+=.1;player.update()
+        self.assertEqual(player.phase,'ended')
+        self.assertIsNone(fresh.capture.tape.error)
+        self.assertEqual(fresh.props.maxhitpoints,100)
+        self.assertEqual(fresh.world.total,4)
+
+    def test_resume_starts_a_fresh_tape_at_the_next_zone_without_old_world_frames(self):
+        import queue
+        engine=Engine();capture=engine.capture
+        source=engine.record(5)
+        delivery=NS(incoming=queue.Queue(),feedback=mock.Mock(),put=engine.chunks.append,attempt='old',error='OSError')
+        capture.delivery=delivery
+        delivery.incoming.put(dict(serial=1,resume=dict(serial=1,id='fresh',recording=True)))
+        capture.poll()
+        self.assertTrue(capture.awaiting_world)
+        self.assertIsNone(capture.player)
+        self.assertIsNone(delivery.error)
+        self.assertEqual(delivery.attempt,'fresh')
+        capture.before();engine.call('frame',engine.client);capture.after()
+        self.assertEqual(capture.tape.pending,[])
+        engine.call('message',engine.game.serverConnection.messageHandlers,21,b'zone',4);capture.after()
+        self.assertEqual(capture.tape.last_state,[0,0])
+        capture.before();engine.call('message',engine.game.serverConnection.messageHandlers,10,b'world',5);capture.after()
+        self.assertEqual(len(capture.tape.last_state),14)
+        self.assertFalse(capture.awaiting_created)
+        delivery.feedback.assert_called_with(dict(serial=1,status=dict(state='idle'),resume='fresh'))
+        capture.before();engine.call('frame',engine.client);capture.after()
+        capture.tape.finish()
+        ops=[row for chunk in engine.chunks[1:] for row in chunk['ops']]
+        fresh=Engine();player=fresh.play(dict(id='fresh',ops=ops))
+        for _ in range(100):fresh.mono+=.1;player.update()
+        self.assertIsNone(fresh.capture.tape.error)
+        self.assertEqual(player.phase,'ended')
+
+    def test_repeated_takeover_requests_keep_the_offered_host_and_live_feedback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service=NativePlayback(directory,'a'*64)
+            service.serial=3;service.source=dict(id='source')
+            host=NS(committed=False,bind=mock.Mock(),description=lambda:dict(id='branch'),
+                    telemetry=mock.Mock(),binary=mock.Mock(),stop=mock.Mock())
+            host.commit=lambda:setattr(host,'committed',True)
+            service.warm=NS(take=mock.Mock(return_value=host),close=mock.Mock())
+            request=dict(serial=3,status=dict(state='taking-over'),checkpoint=dict(cursor=5),takeover=True)
+            service.feedback(request)
+            deadline=time.monotonic()+2
+            while service.preparing and time.monotonic()<deadline:time.sleep(.01)
+            self.assertIs(service.host,host)
+            for _ in range(12):service.feedback(request)
+            self.assertEqual(service.warm.take.call_count,1)
+            player=dict(player=dict(objid=1,hp=100))
+            service.feedback(dict(serial=3,status=dict(state='live'),committed='branch',telemetry=player))
+            self.assertTrue(host.committed)
+            host.telemetry.assert_called_once_with(player)
+            self.assertIs(service.host,host)
+            service.close()
+
     def test_specialized_room_documents_are_not_coalesced_into_player_telemetry(self):
         import threading
         delivery=object.__new__(ChunkDelivery)

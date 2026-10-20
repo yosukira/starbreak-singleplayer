@@ -22,6 +22,7 @@ HOOKS=(
     'ClientWorld::addPlayerInput','ClientWorld::internalUpdate',
     'MessageHandlers::run','ServerConnection::sendMessage',
     'GameClient::handleKeyboardEvent',
+    'WorldClient::handleModifyInv','ModifyInv::ModifyInv','ModifyInv::~ModifyInv',
 )
 
 # Exact linker names in the 1.14.6 Win32 executable. Reading its own COFF
@@ -37,6 +38,7 @@ LINKER_NAMES=dict(zip(HOOKS,(
     '__ZN15MessageHandlers3runE11MessageTypePKci',
     '__ZN16ServerConnection11sendMessageE11MessageType',
     '__ZN10GameClient19handleKeyboardEventEii',
+    '__ZN11WorldClient15handleModifyInvERK9ModifyInv','__ZN9ModifyInvC2Ev','__ZN9ModifyInvD2Ev',
 )))
 
 

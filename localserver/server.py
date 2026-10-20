@@ -1240,6 +1240,14 @@ class LocalServer(object):
                 return False
         except (OSError,ValueError,KeyError,TypeError):return False
         if self._restart_in_progress or not self._ground_ack_ready(session.bridge):return True
+        if 'attempt' in request:
+            import uuid
+            try:attempt=str(uuid.UUID(request['attempt']))
+            except (ValueError,TypeError,AttributeError):return False
+            if type(request.get('recording')) is not bool:return False
+            os.environ['SB_REPLAY_ATTEMPT']=attempt
+            os.environ['SB_RECORD_REPLAY']='1' if request['recording'] else '0'
+            self._native_capture_world_offset=self._live_world_sequence
         if map_id!=(getattr(self.options,'map',None) or game_settings.ORIGINAL_MAP):
             if not self.request_live_map_switch(channel,session,map_id,player_type=shell):return True
         else:self.request_live_restart(channel,session,shell)

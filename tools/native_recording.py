@@ -35,6 +35,8 @@ class NativeRecording:
         self.playback=NativePlayback(directory,manifest['client']);self.ready=threading.Event();self.proxy=None
         self.registry=Path(registry) if registry else None
         self.recording=recording
+        self.identifiers={self.identifier} if recording else set()
+        self.viewport=viewport;self.manifest=manifest;self.resume=None
         if recording:self.journals.begin(self.identifier,manifest['client'],adapter_digest(),dict(content=None),viewport)
         owner=self
         class Handler(BaseHTTPRequestHandler):
@@ -53,7 +55,11 @@ class NativeRecording:
                 if url.path!='/control':return self.send_error(404)
                 try:
                     serial=int(parse_qs(url.query).get('serial',['0'])[0]);owner.ready.set()
-                    return self.result(owner.playback.poll(serial))
+                    result=owner.playback.poll(serial)
+                    resume=owner.resume
+                    if resume and serial!=resume['serial']:
+                        result['resume']={k:resume[k] for k in ('serial','id','recording')}
+                    return self.result(result)
                 except (ValueError,TypeError,KeyError):return self.send_error(400)
             def do_POST(self):
                 if self.path not in('/chunks','/command','/feedback','/availability'):return self.send_error(404)
@@ -70,20 +76,19 @@ class NativeRecording:
                             map_id,shell=value.get('map'),value.get('shell')
                             if map_id not in game_settings.available_maps() or type(shell) is not int or shell not in (1,2,3,5):
                                 raise ValueError('Invalid practice encounter')
-                            with owner.lock:
-                                if owner.closed:raise ValueError('Native launcher has closed')
-                                recording_changed=False
-                                try:
-                                    if owner.registry:
-                                        recording_changed=(json.loads((owner.registry.parent/'recording.json').read_text()).get('record_replays',True) is not False)!=owner.recording
-                                except (OSError,ValueError,TypeError):pass
-                                if owner.practice_path and not owner.playback.source and not recording_changed:
-                                    from tools.web_workspace import atomic_json
-                                    atomic_json(owner.practice_path,dict(id=str(uuid.uuid4()),map=map_id,shell=shell))
-                                else:owner.restart_request=dict(map=map_id,shell=shell)
+                            owner.practice(map_id,shell)
                             return self.result(dict(starting=True,map=map_id,shell=shell))
                         return self.result(owner.playback.action(value))
-                    if self.path=='/feedback':owner.playback.feedback(value);return self.result(dict(accepted=True))
+                    if self.path=='/feedback':
+                        resume=owner.resume
+                        if resume and value.get('resume')==resume['id'] and value.get('serial')==resume['serial']:
+                            from tools.web_workspace import atomic_json
+                            with owner.lock:
+                                if owner.resume is resume:
+                                    atomic_json(owner.practice_path,resume['practice'])
+                                    owner.resume=None
+                        else:owner.playback.feedback(value)
+                        return self.result(dict(accepted=True))
                     if self.path=='/availability':
                         identifiers=value['ids']
                         if not isinstance(identifiers,list) or len(identifiers)>500:raise ValueError('Invalid native recording list')
@@ -92,20 +97,41 @@ class NativeRecording:
                     with owner.lock:
                         if owner.closed:raise ValueError('Native recording has ended')
                         identifier=value.get('attempt',owner.identifier)
-                        allowed=[owner.identifier]+list(owner.playback.branches)
+                        allowed=list(owner.identifiers)+list(owner.playback.branches)
                         if identifier not in allowed:raise ValueError('Native recording is not owned by this launcher')
                         result=owner.journals.append(identifier,value)
                     return self.result(result)
                 except (ValueError,TypeError,KeyError):self.send_error(400,'Invalid native recording chunk')
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
         self.server.daemon_threads=True
-        self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest,recording=recording)
+        self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest,recording=recording,attempt=self.identifier)
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
         self.finalizer=threading.Thread(target=self._finalize_loop,daemon=True);self.finalizer.start()
         if self.registry:
             from tools.web_workspace import atomic_json
             atomic_json(self.registry,dict(url=self.config['url'],token=self.token,pid=os.getpid()))
             self.registry.chmod(0o600)
+
+    def practice(self,map_id,shell):
+        from tools.web_workspace import atomic_json
+        enabled=self.recording
+        try:
+            if self.registry:enabled=json.loads((self.registry.parent/'recording.json').read_text(encoding='utf8')).get('record_replays',True) is not False
+        except (OSError,ValueError,TypeError):pass
+        if self.closed:raise ValueError('Native launcher has closed')
+        if not self.practice_path:
+            self.restart_request=dict(map=map_id,shell=shell);return
+        if not self.playback.source and not enabled and not self.recording:
+            atomic_json(self.practice_path,dict(id=str(uuid.uuid4()),map=map_id,shell=shell));return
+        self.playback.reset()
+        with self.lock:
+            identifier=str(uuid.uuid4())
+            if enabled:
+                self.journals.begin(identifier,self.manifest['client'],adapter_digest(),dict(content=None),self.viewport)
+                self.identifiers.add(identifier)
+            self.identifier=identifier;self.recording=enabled
+            request=dict(id=str(uuid.uuid4()),map=map_id,shell=shell,attempt=identifier,recording=enabled)
+            self.resume=dict(serial=self.playback.serial,id=identifier,recording=enabled,practice=request)
 
     def health(self):
         value={}
@@ -120,7 +146,7 @@ class NativeRecording:
         elif not value.get('connected'):state='waiting'
         else:state='connected'
         return dict(state=state,replay_ready=value.get('replay_ready',False),recording=self.recording,
-                    recording_error=value.get('recording_error') or getattr(self,'finalize_error',None))
+                    recording_error=value.get('recording_error_detail') or value.get('recording_error') or getattr(self,'finalize_error',None))
 
     def _finalize_loop(self):
         while not self.finalizer_stop.wait(.5):
@@ -136,7 +162,7 @@ class NativeRecording:
         records=self.playback.records
         with records.connect() as db:
             rows=db.execute('SELECT id,document FROM records WHERE updated>=?',(self.started_wall,)).fetchall()
-        owned={self.identifier,*self.playback.branches}
+        owned={*self.identifiers,*self.playback.branches}
         for identifier,raw in rows:
             record=json.loads(raw);source=record.get('replay',{}).get('id')
             if source not in owned or record['result']=='active':continue
@@ -158,8 +184,12 @@ class NativeRecording:
             trace=document(dict(trace,id=target,ops=trace['ops'][:end]));chunks=list(client_chunks(trace))
             header={key:value for key,value in trace.items() if key!='ops'}
             with self.journals.connect() as db:
-                db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,1)',(target,json.dumps(header,separators=(',',':')),len(chunks),sum(row[3] for row in chunks)))
-                db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks])
+                db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,0)',(target,json.dumps(header,separators=(',',':')),0,0))
+            for start in range(0,len(chunks),4):
+                with self.journals.connect() as db:
+                    db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks[start:start+4]])
+            with self.journals.connect() as db:
+                db.execute('UPDATE attempts SET sequence=?,size=?,complete=1 WHERE id=?',(len(chunks),sum(row[3] for row in chunks),target))
             # Rebind only the identity; every recorded server frame is preserved.
             journal['attempt']=target;frames=journal.pop('frames')
             temporary=path.with_suffix('.snapshot.gz');temporary.unlink(missing_ok=True)
@@ -227,6 +257,7 @@ class NativeRecording:
                 except OSError:pass
             thread.join(timeout=2)
         self.playback.close()
+        self.playback.records.finish_owner(os.getpid())
         self.server.shutdown();self.server.server_close();self.thread.join(timeout=5)
         if self.registry:
             try:
@@ -235,7 +266,7 @@ class NativeRecording:
         # A game process can close without running a plugin destructor. Retain
         # only a fully delivered and validated frame boundary, never a half
         # native call. Pending/in-flight chunks are not guessed or synthesized.
-        for identifier in ([self.identifier] if self.recording else [])+list(self.playback.branches):
+        for identifier in list(self.identifiers)+list(self.playback.branches):
             self.seal(identifier)
         self.finalize_battles(immediate=True)
 

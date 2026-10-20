@@ -60,6 +60,7 @@
         const value=(actual+this.clockOffset)|0;if(this.inLoop&&this.stack.length)this.write(['clock',value]);return value;
       }
       if(!this.driving||!this.stack.length)return actual;
+      if(this.lastNativeClock!==null&&this.ops[this.cursor]?.[0]==='return'&&this.ops[this.cursor][1]===this.stack[this.stack.length-1].kind)return this.lastNativeClock;
       this.lastNativeClock=this.take('clock')[1]|0;return this.lastNativeClock;
     }
     seed(actual){
@@ -84,6 +85,7 @@
       if(kind===4){const h=this.module.HEAP32;row=['player-input',h[(a+4)>>2],h[(a+8)>>2],h[(a+12)>>2],h[(a+20)>>2]];}
       if(kind===5){row=['message',a,encode(this.module.HEAPU8.subarray(b,b+c))];if(a===21)this.pendingAssets++;}
       if(kind===6)row=['read'];
+      if(kind===7){const h=this.module.HEAP32;row=['inventory',h[(a+4)>>2],h[(a+8)>>2],h[(a+12)>>2],h[(a+20)>>2]];}
       const entry={kind:row[0],before:this.engineElapsed,object,dt:kind===3?a:0};
       if(this.mode==='record'){
         this.write(row);
@@ -104,6 +106,10 @@
       if(!this.driving)return;
       const entry=this.stack.pop();if(!entry)throw Error('Portable replay call stack changed');
       if(kind===2){const step=this.take('step')[1];if(step!==this.engineElapsed-entry.before)throw Error('Portable replay clock step changed');this.elapsed+=step;}
+      // Platform builds sample the wall clock a different number of times
+      // inside some attacks. Consume unused samples at this completed call;
+      // inputs, physics steps and player checkpoints remain exact.
+      while(this.ops[this.cursor]?.[0]==='clock')this.lastNativeClock=this.ops[this.cursor++][1]|0;
       this.expect(['return',entry.kind]);
       if(kind===3){
         this.engineElapsed+=entry.dt;
@@ -126,6 +132,12 @@
       else if(row[0]==='player-input'){
         const p=this.module._malloc(24),h=this.module.HEAP32;h.fill(0,p>>2,(p+24)>>2);
         try{for(const [index,offset]of [[1,4],[2,8],[3,12],[4,20]])h[(p+offset)>>2]=row[index];asm.nativeReplayPlayerInput(this.world,p);}
+        finally{this.module._free(p);}
+      }else if(row[0]==='inventory'){
+        // ClientWorld::handleModifyInv reads these three scalar fields;
+        // replay uses its original implementation and no outbound socket.
+        const p=this.module._malloc(24),h=this.module.HEAP32;h.fill(0,p>>2,(p+24)>>2);
+        try{for(const [index,offset]of [[1,4],[2,8],[3,12],[4,20]])h[(p+offset)>>2]=row[index];asm.nativeReplayInventory(this.world,p);}
         finally{this.module._free(p);}
       }else throw Error('Unsupported portable driver operation: '+row[0]);
     }

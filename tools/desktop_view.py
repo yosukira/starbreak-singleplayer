@@ -173,8 +173,18 @@ def main(argv=None):
             bounds=wintypes.RECT()
             if ctypes.windll.user32.SystemParametersInfoW(48,0,ctypes.byref(bounds),0):
                 width=min(width,max(640,bounds.right-bounds.left-40));height=min(height,max(480,bounds.bottom-bounds.top-50))
-        window=webview.create_window('StarBreak',html=startup_page('Preparing equipment and records…\n正在准备装备与战绩…'),js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d')
+        window=webview.create_window('StarBreak',html=startup_page('Preparing equipment and records…\n正在准备装备与战绩…'),js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d',on_top=True)
+        def pin_window():
+            window.on_top=True
+            if os.name=='nt' and window.native is not None:
+                import ctypes
+                user=ctypes.windll.user32
+                user.SetWindowPos.argtypes=(ctypes.c_void_p,ctypes.c_void_p,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_uint)
+                user.SetWindowPos(int(window.native.Handle.ToInt64()),ctypes.c_void_p(-1),0,0,0,0,0x13)
         stopped=threading.Event()
+        pin_pending=threading.Event()
+        window.events.loaded+=pin_pending.set
+        window.events.shown+=pin_pending.set
         visible=options.show
         def prepare():
             nonlocal process,url
@@ -209,7 +219,7 @@ def main(argv=None):
         def toggle():
             nonlocal visible
             visible=not visible
-            if visible:window.show();window.restore()
+            if visible:window.show();window.restore();pin_window()
             else:window.hide()
         def closing():
             nonlocal visible
@@ -219,13 +229,15 @@ def main(argv=None):
         window.events.closing+=closing
         def monitor():
             nonlocal visible
+            pin_window()
             threading.Thread(target=prepare,daemon=True).start()
             stamp=0;held={};next_keys=0;keys=()
             while not stopped.wait(.04):
+                if pin_pending.is_set():pin_pending.clear();pin_window()
                 if not alive(options.owner_pid):stopped.set();window.destroy();return
                 control=folder/'show.json'
                 if control.is_file() and control.stat().st_mtime_ns!=stamp:
-                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore()
+                    stamp=control.stat().st_mtime_ns;visible=True;window.show();window.restore();pin_window()
                 if os.name=='nt':
                     from plugins import _practice_keybindings as bindings
                     if time.monotonic()>=next_keys:

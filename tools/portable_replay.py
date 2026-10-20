@@ -14,13 +14,21 @@ def adapter_digest():
     root=Path(__file__).resolve().parents[1]
     value=hashlib.sha256(CLIENT_SHA256.encode())
     for name in ('tools/native_web_client.py','web/native-replay.js'):
-        value.update((root/name).read_bytes())
+        value.update((root/name).read_bytes().replace(b'\r\n',b'\n').replace(b'\r',b'\n'))
     return value.hexdigest()
 
 
 def check_runner(runner,adapter=None):
     from tools.web_client import CLIENT_SHA256
-    if runner!={'client':CLIENT_SHA256,'adapter':adapter or adapter_digest()}:
+    expected=adapter or adapter_digest()
+    compatible=runner=={'client':CLIENT_SHA256,'adapter':expected}
+    if not compatible and adapter is None and runner.get('client')==CLIENT_SHA256:
+        import json
+        try:
+            aliases=json.loads((Path(__file__).resolve().parents[1]/'data/mechanics/portable_replay_compatibility.json').read_text(encoding='utf8'))
+            compatible=runner.get('adapter') in aliases.get(expected,[])
+        except (OSError,ValueError,TypeError):pass
+    if not compatible:
         raise ValueError('Portable takeover requires the matching browser replay adapter')
 
 

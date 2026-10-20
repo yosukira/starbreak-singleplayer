@@ -22,7 +22,7 @@ class NativePlayer:
         if any((row[1],base64.b64decode(row[2])) not in descriptions
                for row in ops if row[0]=='message' and row[1] in (16,17)):
             raise ValueError('Native replay requires matching item and character descriptions')
-        self.capture,self.document=capture,document
+        self.capture,self.document=capture,dict(document,ops=ops)
         self.keyboard,self.post_frame,self.clock=keyboard,post_frame,clock
         self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[]
         self.world_created=False;self.phase='playing';self.speed=1.;self.paused=False
@@ -45,6 +45,8 @@ class NativePlayer:
     def blocked(self):return self.phase!='live'
 
     def reset(self):
+        callback=getattr(self.capture,'replay_start',None)
+        if callback:callback()
         self.capture.tape=NativeTape(mode='play',ops=self.document['ops'])
         self.capture.engine_elapsed=0;self.world_created=False
         self.cursor=0;self.seconds=0.;self.phase='playing' if self.preloaded else 'preparing';self.requested=False
@@ -91,7 +93,7 @@ class NativePlayer:
         if self.paused and not self.seeking and not self.priming:
             self.anchor=now;self.anchor_seconds=self.seconds;return
         target=self.target if self.seeking else self.anchor_seconds+(now-self.anchor)*self.speed
-        deadline=now+.008;count=0
+        deadline=now+(.035 if self.seeking or self.priming else .025);count=0
         try:
             self.capture.driving=True
             while self.capture.tape.cursor<self.view_end:
@@ -143,6 +145,7 @@ class NativePlayer:
             target+=self.view_offset
             if target<self.seconds or self.phase=='ended':self.reset()
             self.target=float(target);self.seeking=True
+            if type(value.get('paused')) is bool:self.paused=value['paused']
         elif action=='takeover':
             if not self.can_takeover():raise ValueError('Native takeover is not at a verified living-player frame')
             self.requested=True
@@ -169,5 +172,6 @@ class NativePlayer:
         return dict(state='failed' if self.capture.tape.error and self.capture.tape.mode=='play' else 'preparing' if self.priming else 'seeking' if self.seeking else self.phase,
             cursor=self.cursor,seconds=max(0,self.seconds-self.view_offset),duration=self.view_duration,paused=self.paused,
             speed=self.speed,takeover=self.can_takeover(),error=self.capture.tape.error,
+            message=getattr(self.capture.tape,'error_detail',None),
             target=max(0,self.target-self.view_offset) if self.seeking else None,
             assets_loaded=max(0,len(self.preload)-self.capture.pending_assets),assets_total=len(self.preload))

@@ -340,7 +340,7 @@ class ServerCapture:
         self.current_settings = gameplay_settings(game_settings.load())
         self.header = dict(schema=SCHEMA, engine=engine_fingerprint(), map=map_id,
             seed=str(session.seed), worldid=session.worldid, shell=session.options.player_type,
-            world_sequence=int(getattr(session.server, '_live_world_sequence', 1)),
+            world_sequence=int(getattr(session.server, '_live_world_sequence', 1))-int(getattr(session.server,'_native_capture_world_offset',0)),
             settings=self.current_settings,
             options={k: getattr(session.options, k) for k in OPTIONS if hasattr(session.options, k)},
             turrets=copy.deepcopy(getattr(session, 'turret_counts', None)), missiles=copy.deepcopy(getattr(session, 'turret_missiles', None)),
