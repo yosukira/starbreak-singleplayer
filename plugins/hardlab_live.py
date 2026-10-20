@@ -1,7 +1,7 @@
 """Live Hulk Hard simulator bridge plugin (SBPE).
 
 Place this file plus ``_hardlab_livebridge.py`` in the SBPE plugins folder.
-Press **F6** to enable/disable the bridge.  While enabled the plugin sends
+Within an owned practice session the bridge stays active and sends
 player telemetry (position/hp/interact) and player->enemy damage events to
 the local live server over UDP (default 127.0.0.1:21550) and shows a small
 status line in the top-left corner.
@@ -34,10 +34,8 @@ livebridge = importlib.reload(importlib.import_module('_hardlab_livebridge'))
 teleports = importlib.reload(importlib.import_module('_dumb_boss_teleports'))
 wave_teleports = importlib.reload(importlib.import_module('_dumb_wave_teleports'))
 
-VERSION = '0.1.4'
+VERSION = '0.1.5'
 LOG = logging.getLogger('hardlab_live')
-
-F6 = 65
 
 SESSION_ENV = 'HARDLAB_LIVE_SESSION'
 
@@ -57,7 +55,6 @@ class Plugin(PluginBase):
         self.key_reader.refresh()
         self._pending_interact_edge = False
         self.config.option('enabled', True, 'bool')
-        self.config.option('toggle_key', F6, 'int')
         self.config.option('host', '127.0.0.1', 'str')
         self.config.option('port', 21550, 'int')
         self.config.option('telemetry_hz', 60.0, 'float')
@@ -74,6 +71,10 @@ class Plugin(PluginBase):
         self.config.option('keep_time_reserve', True, 'bool')
 
         self.session = in_live_session()
+        if self.session:
+            try:from . import _practice_plugin_guard as plugin_guard
+            except (ImportError,ValueError,SystemError):import _practice_plugin_guard as plugin_guard
+            plugin_guard.install(self.refs.manager)
         self.bridge = livebridge.LiveBridge(
             ffi, lib, util, self.refs, port=int(self.config.port),
             host=str(self.config.host))
@@ -90,11 +91,10 @@ class Plugin(PluginBase):
 
         self._teleport_latched = False
         self.active = False
-        self.status = 'bridge: off (F6)'
+        self.status = 'bridge: inactive'
         self.last_send = 0.0
         self.next_send = 0.0
         self.interval = 1.0 / max(1.0, float(self.config.telemetry_hz))
-        self.old_toggle = False
         self.last_diagnostics = 0.0
         self.txt = (util.PlainText(font='HemiHeadBold')
                     if util is not None else None)
@@ -161,13 +161,7 @@ class Plugin(PluginBase):
         self._pending_interact_edge = False
         self.bridge.disable()
         self.active = False
-        self.status = 'bridge: off (F6)'
-
-    def _toggle(self):
-        if self.active:
-            self._disable()
-        else:
-            self._enable()
+        self.status = 'bridge: inactive'
 
     def beforeUpdate(self):
         if self.native_capture is not None:
@@ -218,9 +212,7 @@ class Plugin(PluginBase):
             self.status='Replay {0}  {1:.1f}/{2:.1f}s'.format(state['state'],state['seconds'],state['duration'])
             return
         try:
-            edge = self._edge()
-            if edge:
-                self._toggle()
+            # Editor/recorder keys must never disconnect player feedback.
             if not self.active:
                 return
 
@@ -369,18 +361,6 @@ class Plugin(PluginBase):
                  x, y, nx, ny, source, destination)
         return {'kind': 'teleport', 'from': [x, y], 'to': [nx, ny],
                 'source': source, 'destination': destination}
-
-    def _edge(self):
-        try:
-            states, count = self.bridge.key_states()
-            if states == ffi.NULL or F6 >= count:
-                return False
-            down = bool(states[F6])
-        except Exception:
-            return False
-        edge = down and not self.old_toggle
-        self.old_toggle = down
-        return edge
 
     def onPresent(self):
         if not self.session or not bool(self.config.hud_visible):
