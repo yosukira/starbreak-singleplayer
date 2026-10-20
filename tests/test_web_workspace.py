@@ -9,6 +9,16 @@ from tools.web_workspace import Workspace
 
 
 class WorkspaceTests(unittest.TestCase):
+    def test_large_modifier_list_preserves_order_and_duplicates_in_saved_and_materialized_profile(self):
+        document=self.workspace.read()
+        expected=[dict(stat_=9,val_=i-75) for i in range(150)]
+        document['loadouts']['1']['items_'][0]['statboosts_']=expected
+        self.workspace.save(document)
+        again=Workspace(self.workspace.directory,self.source)
+        self.assertEqual(again.read()['loadouts']['1']['items_'][0]['statboosts_'],expected)
+        again.materialize('hulk_mid')
+        self.assertEqual(json.loads((again.directory/'class_loadouts.json').read_text())['1']['items_'][0]['statboosts_'],expected)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

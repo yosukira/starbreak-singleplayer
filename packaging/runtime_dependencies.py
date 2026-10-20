@@ -49,8 +49,12 @@ def verify_sqlite(runtime, windows=False):
 def install(destination):
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    with urlopen(URL, timeout=60) as response:
-        data = response.read()
+    bundled = Path(__file__).resolve().parents[1] / 'data/vendor/websockets-17.0.1-py3-none-any.whl'
+    if bundled.is_file():
+        data = bundled.read_bytes()
+    else:
+        with urlopen(URL, timeout=60) as response:
+            data = response.read()
     if hashlib.sha256(data).hexdigest() != SHA256:
         raise RuntimeError('WebSocket dependency checksum mismatch')
     with zipfile.ZipFile(io.BytesIO(data)) as archive:

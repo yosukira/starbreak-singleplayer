@@ -169,8 +169,8 @@ class Workspace:
                 if slot < 3840 and self.catalogue[kind]['slot'] != slot:
                     raise ValueError('Item does not match the selected equipment slot')
                 boosts = item.get('statboosts_', [])
-                if not isinstance(boosts, list) or len(boosts) > 64:
-                    raise ValueError('At most 64 modifiers per item')
+                if not isinstance(boosts, list):
+                    raise ValueError('Invalid modifier list')
                 values = []
                 for boost in boosts:
                     if not isinstance(boost, dict) or boost.get('stat_') not in equipment.STAT_NAMES:

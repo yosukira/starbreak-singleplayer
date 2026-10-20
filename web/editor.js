@@ -179,11 +179,11 @@ class WebEquipment {
   statName(id){return this.data.stats.find(stat=>stat.id===id)?.[this.language()==='zh-affixes'?'zh':'en']||'#'+id;}
   modifiers(){
     this.$('sort-modifiers').textContent=this.affixSort==='name'?this.t('词缀排序：首字母','Modifier sort: A–Z'):this.t('词缀排序：ID','Modifier sort: ID');
-    const current=this.current(),description=this.catalogue.get(current?.type_);this.$('add-modifier').disabled=!current||current.statboosts_.length>=64;
+    const current=this.current(),description=this.catalogue.get(current?.type_);this.$('add-modifier').disabled=!current;
+    const stats=[...this.data.stats].sort((a,b)=>Number(!description?.suggested.includes(a.id))-Number(!description?.suggested.includes(b.id))||(this.affixSort==='name'?this.statName(a.id).localeCompare(this.statName(b.id),'en')||a.id-b.id:a.id-b.id));
+    const options=document.createElement('select');options.append(...stats.map(stat=>new Option(`${description?.suggested.includes(stat.id)?'★ ':''}${this.statName(stat.id)} · ${stat.id}`,stat.id)));
     this.$('modifier-rows').replaceChildren(...(current?.statboosts_||[]).map((boost,index)=>{
-      const row=document.createElement('div'),select=document.createElement('select'),input=document.createElement('input'),remove=document.createElement('button');row.className='modifier-row';
-      const stats=[...this.data.stats].sort((a,b)=>Number(!description.suggested.includes(a.id))-Number(!description.suggested.includes(b.id))||(this.affixSort==='name'?this.statName(a.id).localeCompare(this.statName(b.id),'en')||a.id-b.id:a.id-b.id));
-      select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${this.statName(stat.id)} · ${stat.id}`,stat.id)));select.value=boost.stat_;
+      const row=document.createElement('div'),select=options.cloneNode(true),input=document.createElement('input'),remove=document.createElement('button');row.className='modifier-row';select.value=boost.stat_;
       select.setAttribute('aria-label',this.t('词缀属性','Modifier stat')+' '+(index+1));select.onchange=()=>{boost.stat_=+select.value;this.touch();};
       input.type='number';input.step='1';input.value=boost.val_;input.setAttribute('aria-label',this.t('词缀数值','Modifier value')+' '+(index+1));input.oninput=()=>{boost.val_=Number(input.value);this.touch();};
       remove.textContent=this.t('删除','Remove');remove.className='secondary';remove.onclick=()=>{current.statboosts_.splice(index,1);this.touch();this.modifiers();};row.append(select,input,remove);return row;

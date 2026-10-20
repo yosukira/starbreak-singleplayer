@@ -72,7 +72,7 @@ def loadout(value):
                   impslots_=number(value.get('impslots_', 0), 0, 8, True), items_=[])
     for item in items:
         boosts = item.get('statboosts_', [])
-        if not isinstance(boosts, list) or len(boosts) > 64:
+        if not isinstance(boosts, list):
             raise ValueError('Invalid modifier list')
         result['items_'].append(dict(type_=number(item['type_'], 1, 2**31-1, True),
             slotpos_=number(item['slotpos_'], 1, 65535, True),

@@ -279,3 +279,12 @@ The low-clutter preset is optional; resetting enhancements preserves custom text
 友方召唤物、自身外观和聊天，关闭震屏/闪屏并调节受击闪白。Misc 提供视角、场景、
 纯色背景、背景亮度、鼠标自动隐藏和调试框设置；另有角色旁生命/弹药、EC 增量、FPS
 及房间信息。显示设置立即生效，不修改战斗数值或录像输入；重置增强会保留贴图。
+
+Existing equipment with more than 64 modifiers opens and saves without truncating
+or merging repeated modifiers. This also applies to history and replay exports.
+The local editor service includes its WebSocket library in source updates, so an
+older portable Python installation can open equipment and history offline.
+
+已有装备超过 64 条词缀也可直接打开、编辑和保存，重复词缀不截断、不合并；
+战绩与录像导出同样保留。更新包自带本地服务所需的 WebSocket 库，旧便携 Python
+也能离线打开装备与战绩窗口。

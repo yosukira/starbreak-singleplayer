@@ -11,6 +11,24 @@ from localserver import paths
 
 
 class DesktopWorkspaceTests(unittest.TestCase):
+    def test_existing_large_duplicate_modifier_lists_open_save_and_reopen(self):
+        for count in (65, 129, 512):
+            with self.subTest(count=count):
+                expected=[dict(stat_=9 if i%2 else 18,val_=i-200) for i in range(count)]
+                path=self.source/'class_loadouts.json'
+                loadouts=json.loads(path.read_text());loadouts['1']['items_'][0]['statboosts_']=expected
+                atomic_json(path,loadouts)
+                before=path.read_bytes()
+                workspace=DesktopWorkspace(self.root/('large-'+str(count)),self.source)
+                self.assertEqual(path.read_bytes(),before)
+                document=workspace.editor()['profile']
+                self.assertEqual(document['loadouts']['1']['items_'][0]['statboosts_'],expected)
+                document['loadouts']['1']['mk_']=4
+                workspace.save(document)
+                again=DesktopWorkspace(workspace.directory,self.source).read()
+                self.assertEqual(again['loadouts']['1']['items_'][0]['statboosts_'],expected)
+                self.assertEqual(json.loads(path.read_text())['1']['items_'][0]['statboosts_'],expected)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

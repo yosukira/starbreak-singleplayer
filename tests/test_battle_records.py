@@ -35,6 +35,18 @@ def participating(session):
 
 
 class RecordTests(unittest.TestCase):
+    def test_large_modifier_lists_survive_history_export_import_without_merging(self):
+        value=sample()
+        expected=[dict(stat_=9,val_=i-100) for i in range(512)]
+        value['parameters']['loadout']['items_'][0]['statboosts_']=expected
+        with tempfile.TemporaryDirectory() as directory:
+            source=records.RecordStore(Path(directory)/'one')
+            destination=records.RecordStore(Path(directory)/'two')
+            source.save(value)
+            _,blob=source.export([value['id']])
+            destination.import_bytes(blob)
+            self.assertEqual(destination.get(value['id'])['parameters']['loadout']['items_'][0]['statboosts_'],expected)
+
     def test_graveyard_combat_timer_uses_actual_ship_arrival_on_both_clients(self):
         for web in (False,True):
             with self.subTest(web=web),tempfile.TemporaryDirectory() as directory:

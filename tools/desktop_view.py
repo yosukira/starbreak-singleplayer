@@ -18,10 +18,14 @@ import sys
 import tarfile
 import threading
 import time
-from urllib.request import urlopen
+from urllib.request import urlopen, build_opener, ProxyHandler
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def open_local(request, timeout=1):
+    return build_opener(ProxyHandler({})).open(request,timeout=timeout)
 
 
 def alive(pid):
@@ -102,6 +106,17 @@ def ports():
         for sock in sockets:sock.close()
 
 
+def service_failure(path, offset, code):
+    try:
+        with Path(path).open('rb') as log:
+            log.seek(0, 2)
+            log.seek(max(offset, log.tell()-6000))
+            detail=log.read().decode('utf8',errors='replace').strip()
+    except OSError:
+        detail=''
+    return 'Local equipment service exited ('+str(code)+').\n'+detail
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--owner-pid',type=int)
@@ -169,16 +184,17 @@ def main(argv=None):
                 shared_client=ROOT/'userdata/web'/CLIENT_FILENAME
                 client=shared_client if shared_client.is_file() else folder/'web'/CLIENT_FILENAME
                 if stopped.is_set() or not alive(options.owner_pid):return
-                command=[sys.executable,'-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
+                command=[sys.executable,'-X','utf8','-u','-m','tools.web_app','--desktop','--client',str(client),'--no-browser','--data-dir',str(folder/'web'),'--records-dir',str(options.records_dir),'--port',str(http),'--ws-port',str(ws),'--game-port',str(game),'--bridge-port',str(bridge)]
                 with (folder/'web.log').open('ab') as log:
+                    offset=log.tell()
                     process=subprocess.Popen(command,cwd=ROOT,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
                 url='http://127.0.0.1:'+str(http)
                 deadline=time.monotonic()+120
                 while not stopped.is_set():
-                    if process.poll() is not None:raise RuntimeError('Local records service could not start')
+                    if process.poll() is not None:raise RuntimeError(service_failure(folder/'web.log',offset,process.returncode))
                     if not alive(options.owner_pid):return
                     try:
-                        with urlopen(url+'/api/status',timeout=1) as response:response.read(1024)
+                        with open_local(url+'/api/status') as response:response.read(1024)
                         break
                     except OSError:
                         if time.monotonic()>deadline:raise RuntimeError('Local records service timed out')
@@ -186,10 +202,10 @@ def main(argv=None):
                 if stopped.is_set():return
                 window.load_url(url+'/?desktop=1');report(state='ready')
             except Exception as error:
-                report(state='failed',error=str(error)[:250])
+                report(state='failed',error=str(error)[-2000:])
                 if not stopped.is_set():window.load_html(startup_page(
-                    'Check your connection, then restart the game. Details are in '+str(folder/'web.log')+
-                    '\n请检查网络后重启游戏，详情见上述日志。\n'+str(error)[:250],failed=True))
+                    'The local equipment service could not start. Error details:\n本地装备服务启动失败，错误详情：\n'+str(error)[-4000:]+
+                    '\n\nLog / 日志: '+str(folder/'web.log'),failed=True))
         def toggle():
             nonlocal visible
             visible=not visible
@@ -235,7 +251,7 @@ def main(argv=None):
             if url:
                 try:
                     from urllib.request import Request
-                    with urlopen(Request(url+'/api/quit',data=b'{}',headers={'Content-Type':'application/json'}),timeout=2) as response:response.read()
+                    with open_local(Request(url+'/api/quit',data=b'{}',headers={'Content-Type':'application/json'}),timeout=2) as response:response.read()
                 except OSError:pass
             try:process.wait(timeout=5)
             except subprocess.TimeoutExpired:process.kill()

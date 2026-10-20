@@ -139,10 +139,11 @@ class Prototype:
         self.cache = self.directory / 'assets'
         self.cache.mkdir(exist_ok=True)
         self.version = pb_layout.default_layouts().decode('DataVersion', self.version_file.read_bytes())
-        self.workspace = Workspace(self.directory)
-        if getattr(options, 'desktop', False):
+        if desktop:
             from tools.desktop_workspace import DesktopWorkspace
             self.workspace = DesktopWorkspace(self.directory, paths.USERDATA)
+        else:
+            self.workspace = Workspace(self.directory)
         self.records = RecordStore(getattr(options,'records_dir',None) or self.directory / 'battles')
         self.client_journals = ClientJournals(self.records.directory)
         self.takeovers, self.takeover_lock = {}, threading.Lock()
@@ -852,7 +853,8 @@ def main():
     parser.add_argument('--no-browser', action='store_true', help='Print the address without opening a browser')
     parser.add_argument('--check-runtime', action='store_true', help='Verify the bundled browser runtime and exit')
     options = parser.parse_args()
-    from websockets.sync.server import serve
+    from tools.web_dependencies import websocket_server
+    serve = websocket_server()
     if options.check_runtime:
         print('Browser runtime OK: Python ' + sys.version.split()[0] + ', WebSockets available')
         return
