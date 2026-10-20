@@ -19,6 +19,14 @@ import zlib
 
 from tools.game_preferences import GamePreferences
 
+def compatible_adapter(recorded,current):
+    if recorded==current:return True
+    try:
+        aliases=json.loads((Path(__file__).resolve().parents[1]/'data/mechanics/browser_replay_compatibility.json').read_text(encoding='utf8'))
+        return recorded in aliases.get(current,[])
+    except (OSError,ValueError,TypeError):return False
+
+
 SCHEMA = 'starbreak-client-journal-v1'
 MAX_BYTES = 128 * 1024 * 1024
 MAX_CHUNK = 512 * 1024
@@ -215,6 +223,7 @@ class ClientJournals:
     def read(self, identifier, require_complete=True):
         identifier = str(uuid.UUID(identifier))
         with self.connect() as db:
+            db.execute('BEGIN')
             row = db.execute('SELECT header,sequence,complete FROM attempts WHERE id=?', (identifier,)).fetchone()
             if row is None or (require_complete and not row[2]):
                 raise ValueError('Client replay is incomplete')
@@ -244,7 +253,7 @@ class ClientJournals:
                 for identifier, header, complete in rows:
                     header=json.loads(header)
                     same_client=client is None or header.get('client')==client
-                    matches = header.get('schema')==self.schema and header['adapter'] == adapter and same_client
+                    matches = header.get('schema')==self.schema and (header['adapter']==adapter or self.schema==SCHEMA and compatible_adapter(header['adapter'],adapter)) and same_client
                     trial=(allow_compatible and client is not None and same_client and self.schema==SCHEMA and header.get('schema')==SCHEMA)
                     result[identifier] = dict(available=bool(complete and (matches or trial)),
                         reason='ready' if complete and matches else 'compatible' if complete and trial else 'recording' if not complete else 'incompatible', id=identifier)

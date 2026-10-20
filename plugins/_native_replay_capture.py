@@ -74,9 +74,9 @@ class ChunkDelivery:
 
     def put(self, value):
         if self.closed or self.error:raise IOError('Native recording delivery stopped')
-        raw=json.dumps(value,separators=(',',':')).encode('utf8')
-        if len(raw)>512*1024:raise ValueError('Native recording chunk is too large')
-        try:self.queue.put_nowait(raw)
+        # NativeTape transfers a detached immutable chunk. Encoding belongs to
+        # this delivery worker, never the original game's update thread.
+        try:self.queue.put_nowait(value)
         except queue.Full:raise IOError('Native recording delivery queue is full')
 
     def run(self):
@@ -86,6 +86,8 @@ class ChunkDelivery:
             try:
                 if raw is None:return
                 if raw is not False and not self.error:
+                    raw=json.dumps(raw,separators=(',',':')).encode('utf8')
+                    if len(raw)>512*1024:raise ValueError('Native recording chunk is too large')
                     request=Request(self.url,data=raw,headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
                     for attempt in range(2):
                         try:
@@ -176,6 +178,11 @@ class NativeCapture:
         def observe(original,*args):
             player=self.player
             if kind=='keyboard':
+                mapping=getattr(self,'keyboard_mask',None)
+                if player is not None and player.blocked() and mapping is not None:
+                    mask=mapping(int(args[2]));pressed=bool(args[1])
+                    if mask and (player.requested or pressed and player.accepts_keyboard()):
+                        player.keyboard_input(mask,pressed);return None
                 self.keyboard_depth+=1
                 try:return original(*args)
                 finally:self.keyboard_depth-=1
@@ -317,7 +324,10 @@ class NativeCapture:
                 try:from ._native_replay_player import NativePlayer
                 except (ImportError,ValueError,SystemError):from _native_replay_player import NativePlayer
                 request=value['play'];self.serial=request['serial'];self.branch=None
-                try:self.player=NativePlayer(self,request['document'],post_frame=post_frame)
+                try:
+                    callback=getattr(self,'replay_start',None)
+                    if callback:callback()
+                    self.player=NativePlayer(self,request['document'],post_frame=post_frame)
                 except Exception as error:
                     delivery.feedback(dict(serial=self.serial,status=dict(state='failed',error=type(error).__name__)))
                     raise

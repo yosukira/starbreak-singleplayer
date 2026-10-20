@@ -11,5 +11,5 @@ var Module={arguments:['-s','127.0.0.1:'+STARBREAK_WEB_BOOT.wsPort,'-k'],TOTAL_M
  setStatus:function(t){document.getElementById('loading').textContent=t},
  onAbort:function(t){clearInterval(Module.replayTimerId);Module.clientReplay?.fail(t);console.error(new Error('Game halted: '+String(t)).stack);parent.postMessage({type:'game-error',message:String(t)},location.origin)}};
 </script>
-<script src="canvas.js"></script><script src="zoom.js"></script><script src="game-preferences.js"></script><script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="replay-storage.js"></script><script src="native-replay.js"></script><script src="replay.js"></script><script src="client.js"></script>
+<script src="canvas.js"></script><script src="zoom.js"></script><script src="game-preferences.js"></script><script src="visuals.js"></script><script src="inventory.js"></script><script src="shortcuts.js"></script><script src="bridge.js"></script><script src="replay-storage.js"></script><script src="native-replay.js"></script><script src="replay.js"></script><script src="visual-engine.js"></script><script src="client.js"></script>
 </body></html>

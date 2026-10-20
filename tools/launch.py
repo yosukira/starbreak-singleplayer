@@ -21,7 +21,9 @@ def main():
             except Exception as error:
                 print('Could not restore the previous update / 无法恢复上次更新: '+str(error),flush=True)
                 return 1
-            try:print(auto_update(ROOT),flush=True)
+            try:
+                from startup_progress import run
+                print(run(lambda progress:auto_update(ROOT,progress=progress)),flush=True)
             except Exception as error:
                 print('Update unavailable; using installed version / 暂时无法更新，使用现有版本: '+str(error),flush=True)
             return subprocess.call(command,cwd=ROOT)

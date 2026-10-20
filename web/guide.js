@@ -139,7 +139,11 @@
   };
   function guideContent(language,desktop=false){
     const key=language.startsWith('zh')?'zh':'en',base=content[key];
-    if(!desktop)return base;
+    if(!desktop)return {...base,sections:[...base.sections,{
+      id:'visuals',title:key==='zh'?'贴图与增强':'Textures & enhancements',
+      intro:key==='zh'?'自定义贴图仅保存在自己的浏览器里。':'Custom textures stay in your own browser.',
+      body:()=>key==='zh'?'<p>打开顶部“贴图与增强”，选择 PNG 文件。文件名和尺寸需与页面列出的原始贴图一致；未匹配或尺寸不符的文件会显示原因。可以单张删除或清空，下一次开始战斗或回放时生效。</p><p>敌人血量、小地图和左上角生命/弹药显示可分别开启，默认关闭。只改变显示，不改变战斗数值。清除站点数据也会删除自定义贴图。</p>':'<p>Open Textures & enhancements and choose PNG files. Filenames and dimensions must match the original textures listed on the page. Unmatched files show an explanation. Delete individual textures or remove them all; changes apply the next time you start a battle or replay.</p><p>Enemy health, minimap and the alternative upper-left health/ammo HUD have separate switches, off by default. They only change display. Clearing site data also deletes custom textures.</p>'
+    }]};
     const copy=desktopContent[key];
     return {...base,...copy,sections:base.sections.map(section=>{
       const result={...section,...copy.sections[section.id]};

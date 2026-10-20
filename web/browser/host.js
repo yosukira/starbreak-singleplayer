@@ -5,7 +5,7 @@
   const base=new URL('../',document.currentScript?.src||new URL('/browser/host.js',location.href)).pathname;
   function assetURL(value){
     const target=new URL(value,location.href);
-    if(target.origin!==location.origin||target.pathname.startsWith(base))return target.href;
+    if(!['http:','https:'].includes(target.protocol)||target.origin!==location.origin||target.pathname.startsWith(base))return target.href;
     return base+target.pathname.replace(/^\/+/,'')+target.search+target.hash;
   }
   function virtualPath(path){return path.startsWith(base)?'/'+path.slice(base.length):path;}

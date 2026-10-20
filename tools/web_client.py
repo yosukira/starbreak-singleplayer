@@ -80,10 +80,11 @@ def patch_client(source):
 
     # Add narrow, typed imports to the asm.js module; preserve the game logic.
     replace('"use asm";var a=new global.Int8Array(buffer);',
-            '"use asm";var webFrame=env.webFrame;var webUpdates=env.webUpdates;var webLoot=env.webLoot;var webHealth=env.webHealth;var webReplayFrame=env.webReplayFrame;var webReplayEnd=env.webReplayEnd;var webReplayInput=env.webReplayInput;var webBinding=env.webBinding;var webBattleExit=env.webBattleExit;var a=new global.Int8Array(buffer);')
+            '"use asm";var webVisualContext=env.webVisualContext;var webFrame=env.webFrame;var webUpdates=env.webUpdates;var webLoot=env.webLoot;var webHealth=env.webHealth;var webReplayFrame=env.webReplayFrame;var webReplayEnd=env.webReplayEnd;var webReplayInput=env.webReplayInput;var webBinding=env.webBinding;var webBattleExit=env.webBattleExit;var a=new global.Int8Array(buffer);')
     replace('Module.asmLibraryArg={"abort":abort,',
             'Module.asmLibraryArg={"webBattleExit":function(){if(Module.clientReplay)Module.clientReplay.requestQuit()},'
             '"webBinding":function(p,kind,a,b,c,d){var rows=Module.replayBindings||(Module.replayBindings=new Map());if(kind)rows.set(p,[kind,a,b,c,d]);else rows.delete(p)},'
+            '"webVisualContext":function(p){if(Module.visualContext)Module.visualContext(p)},'
             '"webFrame":function(p){if(Module.webFrame)Module.webFrame(p)},'
             '"webUpdates":function(p,u){if(Module.webUpdates)Module.webUpdates(p,u)},'
             '"webLoot":function(l,p,s){if(Module.webLoot)Module.webLoot(l,p,s)},'
@@ -91,6 +92,10 @@ def patch_client(source):
             '"webReplayFrame":function(w,d){return Module.webReplayFrame?Module.webReplayFrame(w,d):d},'
             '"webReplayEnd":function(w){if(Module.webReplayEnd)Module.webReplayEnd(w)},'
             '"webReplayInput":function(w,p){return Module.webReplayInput?Module.webReplayInput(w,p):1},"abort":abort,')
+    # Observe only verified WorldClient lifetime; display code owns no gameplay state.
+    for name,call in (('zfa','webVisualContext(b|0);'),('ufa','webVisualContext(0);')):
+        signature=re.search(r'function '+name+r'\([^)]*\)\{[^{}]*?var [^;]+;',text).group(0)
+        replace(signature,signature+call)
     # CM serializes CONNECT without RSA, matching make_local_client.py. Both
     # directions still use the existing client's RC4 streams after CONNECT.
     replace('if((d|0)==3){c[i>>2]=0;c[i+4>>2]=0;c[i+8>>2]=0;EUa(e,i)|0;',
@@ -186,7 +191,7 @@ def patch_client(source):
     replace('return Math.random()*256|0',
             'return Module.clientReplay?Module.clientReplay.value("random",Math.random()*256|0):Math.random()*256|0')
     replace('image.onload=(function(){var textureId=XDL.renderEngine.addTexture(image);Runtime.dynCall("vii",doneCallback,[textureId,userData])});',
-            'image.onload=(function(){var apply=function(){var textureId=XDL.renderEngine.addTexture(image);Runtime.dynCall("vii",doneCallback,[textureId,userData])};if(Module.clientReplay)Module.clientReplay.asset("texture",filename,apply);else apply()});')
+            'image.onload=(function(){var ready=function(){var apply=function(){var textureId=XDL.renderEngine.addTexture(image);Runtime.dynCall("vii",doneCallback,[textureId,userData])};if(Module.clientReplay)Module.clientReplay.asset("texture",filename,apply);else apply()};if(Module.visualTextures)Module.visualTextures.choose(filename,image,function(value){image=value;ready()});else ready()});')
     replace('http.onload=(function(){var byteArray=new Uint8Array(http.response);var buffer=_malloc(byteArray.length);HEAPU8.set(byteArray,buffer);Runtime.dynCall("viii",doneCallback,[buffer,byteArray.length,userData]);_free(buffer)});http.send()',
             'http.onload=(function(){var apply=function(){var byteArray=new Uint8Array(http.response);var buffer=_malloc(byteArray.length);HEAPU8.set(byteArray,buffer);Runtime.dynCall("viii",doneCallback,[buffer,byteArray.length,userData]);_free(buffer)};if(Module.clientReplay)Module.clientReplay.asset("data",textFilenameStr,apply);else apply()});http.send()')
     # Observe original input dispatch, including focus/resize events which can

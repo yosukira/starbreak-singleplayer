@@ -23,7 +23,7 @@ sharing code** downloads a replay into your local history. File export remains
 available when sharing is unavailable. An update check reports a new web build
 beside the button; refresh after your battle to use it.
 
-The settings tabs are **Map & loadout**, **Map & enemy parameters**, and **Keys & zoom**.
+The settings tabs are **Battle setup**, **Keys & zoom**, and **Identity & callouts**.
 The first visit selects Chinese or English from the browser language; a manual
 selection is remembered. **简体中文（包含词缀）** also translates modifier names.
 Map, class and equipment names stay in English. `+` zooms in and `-` zooms out;
@@ -242,3 +242,25 @@ The browser's **Equipment & settings → Keyboard settings** uses the same defau
 GY / EGY Boss now default to a **0.66× spawn-rate multiplier**, in both editions and after Restore defaults. Explicit saved custom multipliers are retained.
 
 GY / EGY 首领的默认刷怪速率改为 **0.66×**，两个版本及恢复默认配置统一使用此值；已经明确保存的自定义倍率会保留。
+
+## Textures & enhancements / 贴图与增强
+
+The browser edition has a separate **Textures & enhancements** tab. Select replacement
+PNG files with the original filenames and dimensions shown on the page. Files stay in
+this browser; they are not uploaded. Remove individual textures or clear them all.
+Changes apply to the next battle or replay. Enemy health, the room minimap, and an
+alternative upper-left health/ammo HUD have separate switches, off by default.
+
+网页版顶部的“贴图与增强”支持选择自己的 PNG 贴图，名称与尺寸需匹配页面列出的原图。
+文件只保存在当前浏览器，不上传服务器；支持单张删除、清空，下一次战斗或回放生效。
+敌人血量、小地图、左上角生命与弹药显示有独立开关，默认关闭。
+
+Local history supports deleting finished battles and recordings, individually or in
+batches, with 10/50/100 records per page (default 50). Server shares are independent.
+Character and guild names are configured in **Identity & callouts**; the character name
+is the default signature for sharing and comments. Victory announcements use that name
+and optional guild.
+
+本地战绩支持单条、批量删除及每页 10/50/100 条（默认 50）；删除本地记录不影响服务器分享。
+在“角色与提示”保存角色名、公会名与通关提示。角色名用作分享、评论的默认署名；背包和
+通关提示会使用设置的名称与可选公会名。

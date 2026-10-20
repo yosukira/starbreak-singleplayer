@@ -116,8 +116,14 @@ class NativePlayer:
     def keyboard_input(self,mask,pressed):
         # Called only inside the checked original keyboard-event dispatcher.
         # A mouse-generated WorldInput never reaches this path.
-        if pressed and mask&0x2ff and self.can_takeover():
+        if pressed and mask&0x2ff and self.accepts_keyboard():
+            if self.seeking:self.seeking=False;self.target=None;self.anchor=self.clock();self.anchor_seconds=self.seconds
             self.requested=True;self.pending_keys.append([mask,1])
+        elif not pressed and self.requested and mask&0x2ff:self.pending_keys.append([mask,0])
+
+    def accepts_keyboard(self):
+        state=self.capture.state()
+        return bool(self.phase=='playing' and not self.priming and self.world_created and not self.capture.tape.error and len(state)==14 and state[8]>0)
 
     def ack(self,kind):
         if self.phase=='live':self.acks.append(kind)

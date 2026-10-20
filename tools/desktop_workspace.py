@@ -81,6 +81,8 @@ class DesktopWorkspace(Workspace):
         result = super().save_preferences(value)
         atomic_json(self.source / 'keybindings.json', result['keys'])
         atomic_json(self.source / 'recording.json', dict(record_replays=result['record_replays']))
+        from localserver.player_identity import normalize
+        atomic_json(self.source/'identity.json',normalize(result))
         return result
 
     def start(self, document):

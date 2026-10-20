@@ -66,15 +66,22 @@ def version(root=ROOT):
     except (OSError,ValueError):return {'version':'source','sequence':0}
 
 
-def fetch(path, limit):
+def fetch(path, limit, progress=None):
     if not re.fullmatch(r'latest\.json|starbreak-singleplayer-update-v[0-9]{8}-r[0-9]+\.zip',path):
         raise ValueError('Invalid update download name')
     opener=build_opener(HTTPSHandler(context=ssl.create_default_context()),DownloadRedirects())
     with opener.open(download_url(UPDATE_CHANNEL+'/'+path),timeout=10) as response:
         download_url(response.geturl())
-        data=response.read(limit+1)
-    if len(data)>limit:raise ValueError('Update download too large')
-    return data
+        total=int(response.headers.get('Content-Length') or 0);chunks=[];received=0
+        if progress:progress(0,total)
+        while True:
+            chunk=response.read(min(64*1024,limit+1-received))
+            if not chunk:break
+            received+=len(chunk)
+            if received>limit:raise ValueError('Update download too large')
+            chunks.append(chunk)
+            if progress:progress(received,total)
+    return b''.join(chunks)
 
 
 def manifest():
@@ -185,7 +192,7 @@ def application_lock(root=ROOT):
                 stream.seek(0);msvcrt.locking(stream.fileno(),msvcrt.LK_UNLCK,1)
 
 
-STATUS_STATES={'idle','checking','installing','current','ahead','available','updated',
+STATUS_STATES={'idle','checking','downloading','installing','current','ahead','available','updated',
                'failed','full_required','disabled','source','source_update','interrupted'}
 
 
@@ -197,7 +204,7 @@ def read_status(root=ROOT):
         if (saved.get('state') in STATUS_STATES
                 and saved.get('current_version')==result['current_version']):
             candidate=dict(result,**saved)
-            if candidate['state'] in ('checking','installing') and time.time()-float(candidate['updated_at'])>120:
+            if candidate['state'] in ('checking','downloading','installing') and time.time()-float(candidate['updated_at'])>120:
                 candidate['state']='interrupted'
             return candidate
     except (OSError,ValueError,TypeError,AttributeError):pass
@@ -227,6 +234,7 @@ def status_message(result, language='en'):
     messages={
         'idle':('启动时自动检查更新。','Updates are checked automatically at startup.'),
         'checking':('正在检查更新…','Checking for updates…'),
+        'downloading':('正在下载新版本 {latest}…','Downloading new version {latest}…'),
         'installing':('正在更新至 {latest}…','Installing {latest}…'),
         'current':('已是最新版。','Up to date.'),
         'ahead':('本地版本高于更新频道的 {latest}。','Local version is newer than the update channel ({latest}).'),
@@ -293,7 +301,7 @@ class UpdateChecker:
 class CompletePackageRequired(ValueError):pass
 
 
-def auto_update(root=ROOT, check_only=False):
+def auto_update(root=ROOT, check_only=False, progress=None):
     info={}
     try:
         recover(root)
@@ -317,7 +325,15 @@ def auto_update(root=ROOT, check_only=False):
             record_status('available',root,latest_version=info['version'],operation='auto')
             return 'Update available / 可更新: '+info['version']
         record_status('installing',root,latest_version=info['version'],operation='auto')
-        data=fetch(info['file'],MAX_DOWNLOAD)
+        last_report=[0.]
+        def downloading(current,total):
+            now=time.monotonic()
+            if now-last_report[0]>=.2 or current==info['size']:
+                record_status('downloading',root,latest_version=info['version'],operation='auto',current=current,total=info['size']);last_report[0]=now
+            if progress:progress('downloading',current,info['size'],info['version'])
+        data=fetch(info['file'],MAX_DOWNLOAD,downloading) if progress else fetch(info['file'],MAX_DOWNLOAD)
+        record_status('installing',root,latest_version=info['version'],operation='auto')
+        if progress:progress('installing',len(data),info['size'],info['version'])
         apply_update(data,info,root)
         record_status('updated',root,latest_version=info['version'],operation='auto')
         return 'Updated / 已更新: '+info['version']

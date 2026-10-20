@@ -30,6 +30,7 @@ class NativeRecording:
         self.practice_path=Path(practice_path) if practice_path else None
         self.health_path=Path(health_path) if health_path else None
         self.started=time.monotonic()
+        self.started_wall=time.time();self.finished_pending={};self.finalizer_stop=threading.Event()
         from tools.native_playback import NativePlayback
         self.playback=NativePlayback(directory,manifest['client']);self.ready=threading.Event();self.proxy=None
         self.registry=Path(registry) if registry else None
@@ -100,6 +101,7 @@ class NativeRecording:
         self.server.daemon_threads=True
         self.config=dict(url='http://127.0.0.1:'+str(self.server.server_address[1])+'/chunks',token=self.token,manifest=manifest,recording=recording)
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
+        self.finalizer=threading.Thread(target=self._finalize_loop,daemon=True);self.finalizer.start()
         if self.registry:
             from tools.web_workspace import atomic_json
             atomic_json(self.registry,dict(url=self.config['url'],token=self.token,pid=os.getpid()))
@@ -117,7 +119,62 @@ class NativeRecording:
         elif value.get('hook_error'):state='degraded'
         elif not value.get('connected'):state='waiting'
         else:state='connected'
-        return dict(state=state,replay_ready=value.get('replay_ready',False))
+        return dict(state=state,replay_ready=value.get('replay_ready',False),recording=self.recording,
+                    recording_error=value.get('recording_error') or getattr(self,'finalize_error',None))
+
+    def _finalize_loop(self):
+        while not self.finalizer_stop.wait(.5):
+            try:self.finalize_battles()
+            except (OSError,ValueError,EOFError):pass
+            except Exception as error:self.finalize_error=type(error).__name__
+
+    def finalize_battles(self,immediate=False):
+        """Publish immutable per-battle tapes while the original game keeps running."""
+        from localserver.battle_records import encoded
+        from localserver.replay import read_journal,JournalWriter
+        from tools.replay_bundle import client_chunks
+        records=self.playback.records
+        with records.connect() as db:
+            rows=db.execute('SELECT id,document FROM records WHERE updated>=?',(self.started_wall,)).fetchall()
+        owned={self.identifier,*self.playback.branches}
+        for identifier,raw in rows:
+            record=json.loads(raw);source=record.get('replay',{}).get('id')
+            if source not in owned or record['result']=='active':continue
+            first=self.finished_pending.setdefault(identifier,time.monotonic())
+            if not immediate and time.monotonic()-first<1:continue
+            path=records.directory/(identifier+'.server.jsonl.gz')
+            if not path.is_file():continue
+            journal=read_journal(path)  # A still-open server frame must finish first.
+            target=str(uuid.uuid5(uuid.UUID(source),'battle:'+identifier))
+            trace=self.journals.read(source,require_complete=False)
+            end=next((i+1 for i in range(len(trace['ops'])-1,-1,-1) if trace['ops'][i]==['loop',1]),0)
+            if not end:continue
+            if record['map'] in __import__('localserver.replay',fromlist=['SUPPORTED_MAPS']).SUPPORTED_MAPS:
+                from tools.native_playback import native_battle_view
+                end=min(end,native_battle_view(trace['ops'],journal.get('world_sequence',1))['end'])
+            if record['result']=='defeat':
+                state=next((row[1] for row in reversed(trace['ops'][:end]) if row[0]=='state'),None)
+                if not state or len(state)==14 and state[8]>0:continue
+            trace=document(dict(trace,id=target,ops=trace['ops'][:end]));chunks=list(client_chunks(trace))
+            header={key:value for key,value in trace.items() if key!='ops'}
+            with self.journals.connect() as db:
+                db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,1)',(target,json.dumps(header,separators=(',',':')),len(chunks),sum(row[3] for row in chunks)))
+                db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks])
+            # Rebind only the identity; every recorded server frame is preserved.
+            journal['attempt']=target;frames=journal.pop('frames')
+            temporary=path.with_suffix('.snapshot.gz');temporary.unlink(missing_ok=True)
+            writer=JournalWriter(temporary,journal)
+            try:
+                for frame in frames:writer.frame(frame)
+                writer.close()
+                record['replay']['id']=target
+                with records.connect() as db:
+                    current=db.execute('SELECT document FROM records WHERE id=?',(identifier,)).fetchone()
+                    if current and json.loads(current[0]).get('replay',{}).get('id')==source:
+                        os.replace(temporary,path)
+                        db.execute('UPDATE records SET document=? WHERE id=?',(encoded(record).decode(),identifier));self.finalize_error=None
+            finally:
+                writer.close(False);temporary.unlink(missing_ok=True)
 
     def gate(self,upstream):
         """Delay only this owned connection until the capture hooks are ready."""
@@ -158,6 +215,7 @@ class NativeRecording:
         return listener.getsockname()[1]
 
     def close(self):
+        self.finalizer_stop.set();self.finalizer.join(timeout=30)
         with self.lock:
             if self.closed:return
             self.closed=True
@@ -179,6 +237,7 @@ class NativeRecording:
         # native call. Pending/in-flight chunks are not guessed or synthesized.
         for identifier in ([self.identifier] if self.recording else [])+list(self.playback.branches):
             self.seal(identifier)
+        self.finalize_battles(immediate=True)
 
     def seal(self,identifier):
         with self.lock:

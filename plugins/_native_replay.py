@@ -20,6 +20,13 @@ def integer(value,low=-(2**31),high=2**32-1):
     return value
 
 
+def wire_size(value):
+    """Exact compact JSON size for validated ASCII operation rows, without serialization."""
+    if isinstance(value,list):return 2+max(0,len(value)-1)+sum(wire_size(part) for part in value)
+    if isinstance(value,str):return len(value)+2
+    return len(str(value))
+
+
 def operation(row):
     if not isinstance(row,list) or not row:raise ValueError('Invalid native replay operation')
     kind=row[0]
@@ -112,7 +119,7 @@ class NativeTape:
     def emit(self,row):
         if self.error or self.finished:return
         row=operation(row)
-        size=len(json.dumps(row,separators=(',',':')).encode('utf8'))+1
+        size=wire_size(row)+1
         if self.size+size>128*1024*1024:raise ValueError('Native replay exceeds 128 MB')
         if self.pending_size+size>450000 or len(self.pending)>=1000:self.flush()
         if self.error:return
@@ -215,7 +222,7 @@ class NativeTape:
         integer(sequence,0,10**7)
         if not callable(save):raise ValueError('A separate native branch writer is required')
         self.ops=self.ops[:self.cursor]
-        self.size=sum(len(json.dumps(row,separators=(',',':')).encode('utf8'))+1 for row in self.ops)
+        self.size=sum(wire_size(row)+1 for row in self.ops)
         self.mode='record';self.save=save;self.sequence=sequence
         self.pending=[];self.pending_size=0
 

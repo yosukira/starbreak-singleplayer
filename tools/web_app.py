@@ -269,7 +269,8 @@ class Prototype:
         adapter = self.client_adapter
         if document['client'] != CLIENT_SHA256:
             raise ValueError('Replay requires a supported original game client')
-        if require_exact and document['adapter'] != adapter:
+        from tools.client_replay import compatible_adapter
+        if require_exact and not compatible_adapter(document['adapter'],adapter):
             raise ValueError('Compatible playback can be tried, but takeover requires the matching replay adapter')
         return document
 
@@ -435,7 +436,9 @@ class Prototype:
             if client_document['schema']=='starbreak-native-journal-v1':
                 try:self.replay_document(identifier,require_exact=True)
                 except (OSError,ValueError):return False
-            elif client_document['adapter']!=self.client_adapter:return False
+            else:
+                from tools.client_replay import compatible_adapter
+                if not compatible_adapter(client_document['adapter'],self.client_adapter):return False
         if record is None:
             matches=[r for r in self.records.list() if r.get('replay',{}).get('id')==identifier]
             if len(matches)!=1:return False
@@ -689,6 +692,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(self.server.prototype.game_preferences.read())
             if path == '/api/inventory':
                 return self.send(dict(inventory=self.server.prototype.latest_inventory, error=self.server.prototype.inventory_error))
+            if path == '/texture-catalogue.json':
+                from tools.texture_catalogue import catalogue
+                return self.send(catalogue(self.server.prototype.options.data_dir/'assets'))
             if path == '/client.js':
                 return self.send(self.server.prototype.client, 'text/javascript',cache=True)
             if path == '/runtime.js':
@@ -706,7 +712,7 @@ class Handler(BaseHTTPRequestHandler):
                     preferences = dict(key='LocalStorage.pb', revision=0, content=document['preferences'])
                 data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=prototype.options.ws_port,keybindings=prototype.workspace.preferences()['keys'],gamePreferences=preferences,replay=replay)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/canvas.js', '/zoom.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/native-replay.js', '/replay.js', '/replay-storage.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/visuals.js', '/visuals.css', '/visual-engine.js', '/canvas.js', '/zoom.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/native-replay.js', '/replay.js', '/replay-storage.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
                 data = (ROOT / 'web' / filename).read_bytes()
                 if path == '/game.html':
@@ -725,7 +731,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.local_host():
             return self.send(dict(error='Host rejected'), status=403)
-        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update', '/api/records/import', '/api/records/export', '/api/records/share', '/api/records/redeem', '/api/records/comments', '/api/game-preferences', '/api/replay/client', '/api/replay/takeover', '/api/replay/warm', '/api/native/command', '/api/quit'):
+        if self.path not in ('/api/start', '/api/prepare', '/api/editor', '/api/validate', '/api/reset', '/api/preferences', '/api/draft', '/api/update', '/api/records/import', '/api/records/export', '/api/records/delete', '/api/records/share', '/api/records/redeem', '/api/records/comments', '/api/game-preferences', '/api/replay/client', '/api/replay/takeover', '/api/replay/warm', '/api/native/command', '/api/quit'):
             return self.send(dict(error='Unknown action'), status=404)
         # Local UI only. Do not allow cross-origin web pages to start processes.
         origin = self.headers.get('Origin')
@@ -740,8 +746,8 @@ class Handler(BaseHTTPRequestHandler):
             limit = 8192 if self.path=='/api/records/comments' else 512*1024 if self.path in ('/api/editor', '/api/validate', '/api/draft', '/api/game-preferences') else 4096
             if self.path == '/api/replay/client':
                 limit = MAX_CHUNK
-            if self.path == '/api/records/export':
-                limit = 16*1024  # Up to 128 UUIDs plus JSON delimiters.
+            if self.path in ('/api/records/export','/api/records/delete'):
+                limit = 64*1024 if self.path.endswith('/delete') else 16*1024
             if not 0 < length <= limit:
                 raise ValueError('Invalid request size')
             document = json.loads(self.rfile.read(length))
@@ -768,6 +774,8 @@ class Handler(BaseHTTPRequestHandler):
                 import base64
                 name, data = self.server.prototype.records.export(document.get('ids'))
                 return self.send(dict(filename=name, content=base64.b64encode(data).decode('ascii')))
+            if self.path == '/api/records/delete':
+                return self.send(self.server.prototype.records.delete(document.get('ids')))
             if self.path == '/api/records/comments':
                 from tools.replay_sharing import ShareClient
                 return self.send(ShareClient(self.server.prototype.directory).comment(document.get('code'),document.get('nickname'),document.get('text')))

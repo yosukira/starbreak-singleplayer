@@ -4,7 +4,7 @@
   if(desktop){
     document.body.classList.add('desktop-workspace');
     document.querySelector('.main-tabs').prepend($('tab-equipment'));
-    $('tab-equipment').hidden=false;$('tab-guide').hidden=false;$('tab-battle').hidden=true;$('open-editor').hidden=true;
+    $('tab-visuals').hidden=true;$('tab-equipment').hidden=false;$('tab-guide').hidden=false;$('tab-battle').hidden=true;$('open-editor').hidden=true;
     $('editor-keys-tab').dataset.en='Keys';$('editor-keys-tab').dataset.zh='按键设置';
     $('tab-equipment').onclick=()=>setTab('equipment');
     $('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
@@ -32,6 +32,11 @@
         };
         box.textContent=labels[value.state]||labels.waiting;
         if(value.state==='connected'&&!value.replay_ready)box.textContent+=t('；原生录像组件未能启动。','; native replay is unavailable.');
+        if(value.state==='connected'&&value.replay_ready){
+          box.textContent+=value.recording_error?t('；录制失败：','; recording failed: ')+value.recording_error:
+            value.recording===false?t('；当前未录制（开启后需保存并开始新局）。','; not recording this attempt (enable recording, then Save and start).'):
+            t('；正在录制，单场结束后保存录像。','; recording; replay is saved when this battle ends.');
+        }
         box.hidden=false;
       }catch(_){box.textContent=t('尚未连接原生游戏，请从 start.cmd 启动。','Native game not connected. Launch it with start.cmd.');box.hidden=false;}
       setTimeout(health,2000);
@@ -76,6 +81,8 @@
   addEventListener('starbreak-loading',event=>{const p=event.detail;if(!loading||p.phase==='environment'&&loading.phase!=='environment')return;loadingPercent=Math.max(loadingPercent,p.percent||0);loading={...loading,...p};renderLoading();});
   const editor=new WebEquipment(()=>language,()=>sync());
   const records=new BattleRecords($('records-page'),()=>language,()=>editor.data?.items||[],startReplay,()=>catalogue);
+  records.identity=()=>editor.preferences?.character_name||'';
+  const visuals=desktop?null:new StarBreakVisuals.Page($('visuals-page'),()=>language);
   const guide=new BattleGuide($('guide-page'),()=>language,{
     desktop,configure:()=>desktop?setTab('equipment'):$('open-editor').click(),records:()=>setTab(true),battle:()=>setTab(false),language:setLanguage
   });
@@ -151,10 +158,10 @@
   $('replay-takeover').onclick=()=>playbackControl('takeover');
   function setTab(view){
     if(loading)return;
-    activeTab=view==='equipment'&&desktop?'equipment':view===true?'records':view==='guide'?'guide':'battle';
+    activeTab=view==='equipment'&&desktop?'equipment':view===true?'records':view==='guide'?'guide':view==='visuals'&&!desktop?'visuals':'battle';
     if(activeTab!=='battle'&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
     document.querySelector('.game-layout').hidden=activeTab!=='battle';
-    $('guide-page').hidden=activeTab!=='guide';
+    $('guide-page').hidden=activeTab!=='guide';$('visuals-page').hidden=activeTab!=='visuals';
     if(desktop){
       const panel=$('equipment-dialog');
       if(activeTab==='equipment'){editor.render();if(!panel.open)panel.show();}
@@ -162,20 +169,20 @@
       $('tab-equipment').classList.toggle('selected',activeTab==='equipment');
       $('tab-equipment').setAttribute('aria-pressed',String(activeTab==='equipment'));
     }
-    for(const name of ['guide','battle','records']){
+    for(const name of ['guide','battle','records','visuals']){
       $('tab-'+name).classList.toggle('selected',activeTab===name);
       $('tab-'+name).setAttribute('aria-pressed',String(activeTab===name));
     }
     if(activeTab==='records')records.show();else records.hide();
     if(activeTab==='battle')document.querySelector('iframe')?.contentWindow.focus();
-    if(activeTab==='guide')guide.render();
+    if(activeTab==='guide')guide.render();if(activeTab==='visuals')void visuals.show();
     if(window.history?.replaceState){
       const url=new URL(location.href);url.hash='';
       if(activeTab==='battle')url.searchParams.delete('view');else url.searchParams.set('view',activeTab);
       window.history.replaceState(null,'',url);
     }
   }
-  $('tab-guide').onclick=()=>setTab('guide');$('tab-records').onclick=()=>setTab(true);$('tab-battle').onclick=()=>setTab(false);
+  $('tab-visuals').onclick=()=>setTab('visuals');$('tab-guide').onclick=()=>setTab('guide');$('tab-records').onclick=()=>setTab(true);$('tab-battle').onclick=()=>setTab(false);
   addEventListener('pagehide',()=>editor.flush());
   const title=map=>map?.names?.[language]||map?.title||'StarBreak';
   function mapOptions(){
@@ -187,7 +194,7 @@
   function translate(){
     document.documentElement.lang=language.startsWith('zh')?'zh':'en';$('language').value=language;
     document.querySelectorAll('[data-en]').forEach(element=>element.textContent=element.dataset[language.startsWith('zh')?'zh':'en']);
-    guide.render();
+    guide.render();if(activeTab==='visuals')visuals?.render();
     records.render(true);
     mapOptions();editor.mapTitle=title(catalogue.find(map=>map.id===editor.map));editor.render();sync();
     $('arena-title').textContent=replayRecord?.map_title||title(catalogue.find(map=>map.id===(liveMap||editor.map)));updatePause();
@@ -346,5 +353,5 @@
     finally{if(loading?.phase==='environment')finishLoading();setBusy(false);}
   }
   if(desktop)$('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
-  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:view==='guide'?'guide':'equipment');else if(view==='records'||view==='guide')setTab(view==='records'?true:'guide');});
+  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:view==='guide'?'guide':'equipment');else if(['records','guide','visuals'].includes(view))setTab(view==='records'?true:view);});
 })();

@@ -97,7 +97,8 @@ class Workspace:
     def normalize_preferences(self, value):
         if not isinstance(value,dict):raise ValueError('Invalid preferences')
         shell=value.get('shell',1);slot=value.get('slot',256)
-        return dict(language=value.get('language') if value.get('language') in ('en','zh','zh-affixes') else None,
+        from localserver.player_identity import normalize
+        return dict(**normalize(value),language=value.get('language') if value.get('language') in ('en','zh','zh-affixes') else None,
                     shell=shell if type(shell) is int and shell in CLASSES else 1,
                     slot=slot if type(slot) is int and slot in {s for s,_ in equipment.SLOTS} else 256,
                     item_sort='name' if value.get('item_sort')=='name' else 'id',
@@ -107,7 +108,10 @@ class Workspace:
 
     def save_preferences(self, value):
         result=self.normalize_preferences(value)
-        with self.lock:atomic_json(self.directory/'preferences.json',result)
+        with self.lock:
+            atomic_json(self.directory/'preferences.json',result)
+            from localserver.player_identity import normalize
+            atomic_json(self.directory/'identity.json',normalize(result))
         return result
 
     def draft(self):

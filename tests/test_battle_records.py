@@ -343,7 +343,6 @@ class RecordTests(unittest.TestCase):
             with mock.patch.object(records,'snapshot',return_value=records.parameters(sample()['parameters'])):
                 recorder.tick(.1)
                 session.current.phase='death'
-                player.alive=False;player.hp=0
                 recorder.tick(.1)
             self.assertEqual(recorder.store.list()[0]['result'],'victory')
             self.assertFalse(session.run.completed,'Statistics do not advance the gameplay cutscene')

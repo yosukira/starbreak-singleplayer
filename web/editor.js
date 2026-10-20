@@ -1,7 +1,7 @@
 /* Equipment drafts are validated by the Python model before being saved. */
 class WebEquipment {
   constructor(language, changed) {
-    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';
+    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';this.affixSort=localStorage.getItem('starbreak-affix-sort')==='name'?'name':'id';
     this.$=id=>document.getElementById(id);
     const tabs=[...document.querySelectorAll('#editor-settings-tabs [role="tab"]')];
     for(const [index,tab] of tabs.entries()){
@@ -23,12 +23,17 @@ class WebEquipment {
     this.$('editor-implants').oninput=event=>{this.row().impslots_=+event.target.value;this.touch();};
     this.$('item-search').oninput=()=>{this.itemOptions();this.remember();};
     this.$('sort-items').onclick=()=>{this.itemSort=this.itemSort==='id'?'name':'id';localStorage.setItem('starbreak-item-sort',this.itemSort);this.itemOptions();this.remember();};
+    this.$('sort-modifiers').onclick=()=>{this.affixSort=this.affixSort==='id'?'name':'id';localStorage.setItem('starbreak-affix-sort',this.affixSort);this.modifiers();};
     this.$('all-classes').onchange=()=>{this.itemOptions();this.remember();};
     this.$('record-replays').onchange=()=>this.action(async()=>{
       const input=this.$('record-replays'),enabled=input.checked;input.disabled=true;
       clearTimeout(this.preferenceTimer);
       try{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),record_replays:enabled});this.changed();}
       finally{input.checked=this.preferences.record_replays!==false;input.disabled=false;}
+    });
+    this.$('save-identity').onclick=()=>this.action(async()=>{
+      this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),character_name:this.$('character-name').value,guild_name:this.$('guild-name').value,callouts:this.$('victory-callouts').checked});
+      this.changed();this.$('identity-notice').textContent=this.t('已保存；角色与公会名称新一局生效。','Saved. Character and guild names apply to the next battle.');
     });
     this.$('reset-keys').onclick=()=>{this.keyDraft={...this.data.key_defaults};this.keyboard();};
     this.$('save-keys').onclick=()=>this.action(async()=>{this.preferences=await this.post('/api/preferences',{...this.preferenceDocument(),keys:this.keyDraft});this.keyDraft={...this.preferences.keys};this.changed();this.$('keyboard-notice').textContent=this.t('按键已保存，立即生效。','Keyboard settings saved and applied.');});
@@ -83,12 +88,12 @@ class WebEquipment {
     if(version){this.installedVersion=version;this.$('current-version').textContent=version;}
     const message=state.messages?.[this.language().startsWith('zh')?'zh':'en']||this.t('启动时自动检查更新。','Updates are checked automatically at startup.');
     if(notice.textContent!==message)notice.textContent=message;notice.title=message;
-    this.$('check-updates').disabled=['checking','installing'].includes(state.state);
+    this.$('check-updates').disabled=['checking','downloading','installing'].includes(state.state);
     notice.closest('.update-row').dataset.state=state.state||'idle';
   }
   setUpdateStatus(state){
     clearTimeout(this.updateTimer);this.updateState=state;this.renderUpdate();
-    if(['checking','installing'].includes(state.state))this.updateTimer=setTimeout(()=>this.pollUpdate(),1000);
+    if(['checking','downloading','installing'].includes(state.state))this.updateTimer=setTimeout(()=>this.pollUpdate(),1000);
   }
   updateFailure(){this.setUpdateStatus({state:'failed',messages:{zh:'检查更新失败，请稍后重试；继续使用当前版本。',en:'Could not check for updates. Try again later; the installed version remains in use.'}});}
   async pollUpdate(){
@@ -96,7 +101,7 @@ class WebEquipment {
     catch(_){this.updateFailure();}
   }
   async checkUpdates(){
-    if(['checking','installing'].includes(this.updateState?.state))return;
+    if(['checking','downloading','installing'].includes(this.updateState?.state))return;
     this.lastUpdateCheck=Date.now();this.setUpdateStatus({state:'checking',messages:{zh:'正在检查更新…',en:'Checking for updates…'}});
     try{this.setUpdateStatus(await this.post('/api/update',{}));}catch(_){this.updateFailure();}
   }
@@ -127,6 +132,7 @@ class WebEquipment {
   async load(restoreDraft=true){
     const response=await fetch('/api/editor'),data=await response.json();if(!response.ok)throw new Error(data.error);
     this.profile=data.profile;this.data=data;
+    this.$('character-name').value=data.preferences.character_name||'';this.$('guild-name').value=data.preferences.guild_name||'';this.$('victory-callouts').checked=data.preferences.callouts!==false;
     if(data.update)this.setUpdateStatus(data.update);
     if(globalThis.StarBreakBrowser&&!this.autoUpdateTimer){
       void this.checkUpdates();
@@ -163,7 +169,7 @@ class WebEquipment {
   itemOptions(){
     const current=this.current(),query=this.$('item-search').value.toLowerCase().trim(),all=this.$('all-classes').checked;
     const values=[...this.catalogue.values()].filter(item=>(this.slot>=3840||item.slot===this.slot)&&
-      (item.type===current?.type_||((!query||(item.type+' '+item.name).toLowerCase().includes(query))&&(all||this.slot>=3840||!item.usableby.length||item.usableby.includes(this.shell)))));
+      (item.type===current?.type_||((!query||(item.type+' '+item.name).toLowerCase().includes(query))&&(all||!item.usableby.length||item.usableby.includes(this.shell)))));
     values.sort(this.itemSort==='name'?(a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase(),'en')||a.type-b.type:(a,b)=>a.type-b.type);
     this.$('sort-items').textContent=this.itemSort==='name'?this.t('装备排序：首字母','Equipment sort: A–Z'):this.t('装备排序：ID','Equipment sort: ID');
     const options=values.map(item=>new Option(`${item.name} · #${item.type}`,item.type));if(this.slot!==256)options.unshift(new Option(this.t('— 空槽位 —','— Empty slot —'),0));
@@ -172,10 +178,11 @@ class WebEquipment {
   }
   statName(id){return this.data.stats.find(stat=>stat.id===id)?.[this.language()==='zh-affixes'?'zh':'en']||'#'+id;}
   modifiers(){
+    this.$('sort-modifiers').textContent=this.affixSort==='name'?this.t('词缀排序：首字母','Modifier sort: A–Z'):this.t('词缀排序：ID','Modifier sort: ID');
     const current=this.current(),description=this.catalogue.get(current?.type_);this.$('add-modifier').disabled=!current||current.statboosts_.length>=64;
     this.$('modifier-rows').replaceChildren(...(current?.statboosts_||[]).map((boost,index)=>{
       const row=document.createElement('div'),select=document.createElement('select'),input=document.createElement('input'),remove=document.createElement('button');row.className='modifier-row';
-      const stats=[...this.data.stats].sort((a,b)=>Number(!description.suggested.includes(a.id))-Number(!description.suggested.includes(b.id))||a.id-b.id);
+      const stats=[...this.data.stats].sort((a,b)=>Number(!description.suggested.includes(a.id))-Number(!description.suggested.includes(b.id))||(this.affixSort==='name'?this.statName(a.id).localeCompare(this.statName(b.id),'en')||a.id-b.id:a.id-b.id));
       select.append(...stats.map(stat=>new Option(`${description.suggested.includes(stat.id)?'★ ':''}${this.statName(stat.id)} · ${stat.id}`,stat.id)));select.value=boost.stat_;
       select.setAttribute('aria-label',this.t('词缀属性','Modifier stat')+' '+(index+1));select.onchange=()=>{boost.stat_=+select.value;this.touch();};
       input.type='number';input.step='1';input.value=boost.val_;input.setAttribute('aria-label',this.t('词缀数值','Modifier value')+' '+(index+1));input.oninput=()=>{boost.val_=Number(input.value);this.touch();};

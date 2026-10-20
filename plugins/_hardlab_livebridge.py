@@ -410,6 +410,15 @@ class LiveBridge(object):
 
     def enable(self):
         self.open_socket()
+        if not hasattr(self,'death_observer'):
+            self.death_observer=None
+            try:
+                try:from ._native_death import create
+                except (ImportError,ValueError,SystemError):from _native_death import create
+                self.death_observer=create(self.ffi,self.lib,self.refs)
+            except Exception as error:
+                self.death_error=type(error).__name__+': '+str(error)
+                __import__('logging').getLogger(__name__).warning('Death feedback unavailable: %s',self.death_error)
         if self.health_metrics is None and self.health_error is None:
             try:
                 try:from ._native_battle_metrics import create
@@ -617,6 +626,21 @@ class LiveBridge(object):
                     total |= 1 << index
                     break
         return total
+
+    def keyboard_input_mask(self,keycode):
+        """Match an original gameplay binding even when a death overlay consumes it."""
+        game=self.refs.GameClient
+        if game is not None and game!=self.ffi.NULL:
+            stage=game.asUIElementContainer.asUIElement.stage
+            if stage!=self.ffi.NULL and stage.textInputTarget!=self.ffi.NULL and stage.textInputTarget.show:return 0
+        mapping=self.input_mapping()
+        if mapping==self.ffi.NULL:return 0
+        mask=0
+        for index in range(10):
+            if not (1<<index)&0x2ff:continue
+            binding=mapping.cik[index]
+            if any(int(getattr(binding,name))==int(keycode) for name in ('primary','secondary','tertiary')):mask|=1<<index
+        return mask
 
     def _native_set_input(self, mask):
         "Use WorldClient::setInput's total-only native/protobuf path."
@@ -894,6 +918,8 @@ class LiveBridge(object):
         if self.health_metrics is not None:
             metrics=self.health_metrics.document()
             if metrics:document['battle_metrics']=metrics
+        observer=getattr(self,'death_observer',None)
+        if observer is not None:document=observer.document(cw,document)
         return document
 
     def _drawmods_document(self, props):

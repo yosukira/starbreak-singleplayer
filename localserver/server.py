@@ -386,6 +386,8 @@ class LocalServer(object):
         message['accountid'] = 'local-account-0001'
         message['username'] = 'Localplayer'
         message.pop('factionname', None)
+        from .player_identity import apply
+        apply(message)
         message['charprops']['charid'] = player_type
         if loadout:
             self._apply_recorded_loadout(message, loadout, player_type)
@@ -602,6 +604,8 @@ class LocalServer(object):
             charid=player_type, charslotid=max(0, int(player_type) - 1),
             slottedcharprops=slotted)
         self._fill_loadout_vitals(message['createplayer_'], loadout, player_type)
+        from .player_identity import apply
+        apply(message['createplayer_'])
         blob = self.layouts.encode('Delta', _label_only_item_affixes(message))
         log('built create-player delta type={0} ({1} bytes)'.format(
             player_type, len(blob)))

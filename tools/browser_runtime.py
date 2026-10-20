@@ -65,7 +65,8 @@ class BrowserRuntime:
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         os.environ.update(SB_GAME_SETTINGS_PATH=str(self.directory/'game_settings.json'),
-                          SB_BATTLE_RECORDS_PATH=str(self.directory/'battles'), SB_RECORD_REPLAY='1')
+                          SB_BATTLE_RECORDS_PATH=str(self.directory/'battles'), SB_RECORD_REPLAY='1',
+                          SB_PLAYER_IDENTITY=str(self.directory/'identity.json'))
         game_settings.PATH = str(self.directory/'game_settings.json')
         self.workspace = Workspace(self.directory, source=paths.ROOT/'data/defaults')
         self.records = RecordStore(self.directory/'battles')
@@ -204,7 +205,8 @@ class BrowserRuntime:
             version=pb_layout.default_layouts().decode('DataVersion',base64.b64decode(self.manifest['data_version']))
             return browser_document(self.records.directory,identifier,version,self.manifest.get('native_adapter'),require_exact)
         if value['client']!=self.manifest['client']:raise ValueError('This replay requires a supported original game client')
-        if require_exact and value['adapter']!=self.manifest['adapter']:
+        from tools.client_replay import compatible_adapter
+        if require_exact and not compatible_adapter(value['adapter'],self.manifest['adapter']):
             raise ValueError('Compatible playback can be tried, but takeover requires the matching replay adapter')
         return value
 
@@ -290,6 +292,7 @@ class BrowserRuntime:
         if path == '/api/records/export':
             name, data = self.records.export(document['ids'])
             return dict(filename=name,content=base64.b64encode(data).decode())
+        if path == '/api/records/delete':return self.records.delete(document.get('ids'))
         if path == '/api/records/reference':
             row=self.records.get(parse_qs(urlsplit(url).query).get('id',[''])[0])
             return {key:row.get(key,'') for key in ('id','source','shared_by','shared_code')}

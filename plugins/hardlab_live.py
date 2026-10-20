@@ -112,6 +112,8 @@ class Plugin(PluginBase):
                 if self.native_capture is not None:
                     self.bridge.feedback_sink=self.native_capture.divert_feedback
                     self.native_capture.input_observer=self.bridge.observe_input
+                    self.native_capture.keyboard_mask=self.bridge.keyboard_input_mask
+                    self.native_capture.replay_start=lambda: self.bridge.death_observer.prepare_replay() if getattr(self.bridge,'death_observer',None) is not None else None
             except Exception as error:
                 LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)
         self.replay_initialized=True
@@ -126,7 +128,8 @@ class Plugin(PluginBase):
             import json
             value=dict(at=now,active=self.active,connected=self.bridge.link_ok(),sent=self.bridge.sent,
                 hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
-                replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False))
+                replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
+                recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None)
             temporary=path+'.part'
             with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
             os.replace(temporary,path)

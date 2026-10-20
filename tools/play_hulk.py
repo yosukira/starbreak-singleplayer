@@ -27,7 +27,7 @@ OFFLINE_DISABLED_PLUGINS=('combat_recorder','design_recorder','map_export',
     'sb_hardlab_probe','hardlab_delta','hardlab_server','hardlab_spawn')
 
 RUNTIME_PLUGIN_FILES = ('hardlab_live.py', '_hardlab_livebridge.py', '_practice_keybindings.py', '_full_run_inventory.py',
-                        '_native_replay_hooks.py', '_native_replay.py', '_native_replay_capture.py', '_native_replay_player.py', '_native_battle_metrics.py',
+                        '_native_replay_hooks.py', '_native_replay.py', '_native_replay_capture.py', '_native_replay_player.py', '_native_battle_metrics.py', '_native_death.py',
                         '_full_run_ground.py', '_full_run_egress.py', '_full_run_egress_transport.py',
                         '_full_run_ground_restore.py', '_full_run_ground_restore_transport.py',
                         '_dumb_boss_teleports.py','_dumb_wave_teleports.py',

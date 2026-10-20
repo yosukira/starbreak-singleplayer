@@ -135,6 +135,9 @@ def validate(value):
     result['combat_duration']=None if value.get('combat_duration') is None else number(value['combat_duration'],0,result['duration'])
     result['shared_by'] = nickname(value.get('shared_by', ''))
     result['shared_code'] = sharing_code(value.get('shared_code',''))
+    if type(value.get('recording')) is bool:
+        result['recording']=value['recording']
+        if not value['recording']:result['replay']['reason']='disabled'
     replay = value.get('replay', {})
     if not isinstance(replay, dict):
         raise ValueError('Invalid replay reference')
@@ -229,6 +232,44 @@ class RecordStore:
                     document['result'] = 'interrupted'
                     db.execute('UPDATE records SET document=?,updated=? WHERE id=?',
                                (encoded(document).decode('utf8'), time.time(), identifier))
+
+    def delete(self, identifiers):
+        """Delete completed local records and unreferenced replay payloads only."""
+        if not isinstance(identifiers,list) or not 1<=len(identifiers)<=1000:raise ValueError('Select between 1 and 1000 battles')
+        identifiers=[str(uuid.UUID(value)) for value in identifiers]
+        if len(set(identifiers))!=len(identifiers):raise ValueError('Duplicate battle selection')
+        removed=[];chunk_files=[]
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            documents={row[0]:(json.loads(row[1]),row[2],row[3]) for row in db.execute('SELECT id,document,updated,owner FROM records')}
+            for identifier in identifiers:
+                if identifier not in documents:raise ValueError('Battle record not found')
+                doc,updated,owner=documents[identifier]
+                if self.recovered(dict(doc),updated,owner)['result']=='active':raise ValueError('Finish the battle before deleting it')
+            candidates={documents[value][0].get('replay',{}).get('id') for value in identifiers}
+            remaining={doc.get('replay',{}).get('id') for key,(doc,*_) in documents.items() if key not in identifiers}
+            journals=self.directory/'client-journals.sqlite3'
+            if journals.is_file():
+                db.execute('ATTACH DATABASE ? AS client_store',(str(journals),))
+                for candidate in candidates-remaining-{None}:
+                    state=db.execute('SELECT complete FROM client_store.attempts WHERE id=?',(candidate,)).fetchone()
+                    if state and state[0]:
+                        chunk_files.extend(row[0] for row in db.execute('SELECT data FROM client_store.chunks WHERE id=?',(candidate,)))
+                        db.execute('DELETE FROM client_store.chunks WHERE id=?',(candidate,))
+                        db.execute('DELETE FROM client_store.attempts WHERE id=?',(candidate,))
+                # Content-addressed browser chunks can be shared by multiple recordings.
+                retained={row[0] for row in db.execute('SELECT data FROM client_store.chunks WHERE substr(data,1,6)=?',(b'SBJC1:',))}
+                chunk_files=[value for value in chunk_files if value not in retained]
+            db.executemany('DELETE FROM records WHERE id=?',[(value,) for value in identifiers])
+            removed=identifiers
+        for identifier in removed:
+            (self.directory/(identifier+'.server.jsonl.gz')).unlink(missing_ok=True)
+        from tools.client_replay import CHUNK_FILE
+        for value in chunk_files:
+            if value.startswith(CHUNK_FILE):
+                digest=value[len(CHUNK_FILE):].decode('ascii')
+                if re.fullmatch('[0-9a-f]{64}',digest):(self.directory/'client-chunks'/(digest+'.z')).unlink(missing_ok=True)
+        return dict(deleted=removed)
 
     def export(self, identifiers):
         if not isinstance(identifiers, list) or not 1 <= len(identifiers) <= 128 or len(set(identifiers)) != len(identifiers):
@@ -452,6 +493,7 @@ class BattleRecorder:
                 turret_layout=[dict(id=s.objid, row=s.row, ammo=s.ammo) for s in getattr(session, 'turret_layout', {}).values()],
                 metrics={key: None for key in METRICS}, changes=[], rooms=[])
             attempt = os.environ.get('SB_REPLAY_ATTEMPT')
+            self.document['recording']=os.environ.get('SB_RECORD_REPLAY')=='1'
             if attempt and (self.document['platform'] == 'web' or os.environ.get('SB_RECORD_REPLAY')=='1'):
                 self.document['replay'] = dict(id=str(uuid.UUID(attempt)))
             if map_id in ('egy_hulk', 'hulk_normal') or self.combat_observer is not None:
@@ -523,12 +565,12 @@ class BattleRecorder:
             phase = 'done' if run.completed or boss_death else None
         else:
             phase = getattr(session, 'phase', None)
-        if (phase == 'done' or
+        if phase == 'failed' or (player is not None and not player.alive):
+            self.finish('defeat')
+        elif (phase == 'done' or
                 phase == 'death' and self.document['map'] in ('egy_hulk', 'hulk_normal') or
                 phase == 'defeated' and self.document['map'] in ('jungle_mid', 'jungle_boss')):
             self.finish('victory')
-        elif phase == 'failed' or (player is not None and not player.alive):
-            self.finish('defeat')
         elif self.elapsed - self.last_saved >= 1 or self.player_acted and not self.saved:
             current = snapshot(session)
             previous = self.document['changes'][-1]['parameters'] if self.document['changes'] else self.document['parameters']
@@ -556,6 +598,11 @@ class BattleRecorder:
                 return
             if self.document is not None:
                 self.document['result'] = result
+                if result=='victory':
+                    try:
+                        from .player_identity import announce
+                        announce(self.session,self.document['map_title'])
+                    except (OSError,ValueError,AttributeError):pass
                 if self.player_acted:
                     self.store.save(self.document)
             self.closed = True
