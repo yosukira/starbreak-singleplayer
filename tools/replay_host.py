@@ -34,12 +34,12 @@ def state_player(state):
 
 
 class PreparedReplay:
-    def __init__(self, records, clients, request):
+    def __init__(self, records, clients, request, client=None, server=None):
         self.source=records.get(str(uuid.UUID(request['record'])))
         self.attempt=str(uuid.UUID(request['id']))
         if self.source.get('replay',{}).get('id')!=self.attempt:raise ValueError('Replay does not belong to this battle')
-        self.client=clients.read(self.attempt)
-        self.server=read_journal(Path(records.directory)/(self.source['id']+'.server.jsonl.gz'))
+        self.client=clients.read(self.attempt) if client is None else client
+        self.server=read_journal(Path(records.directory)/(self.source['id']+'.server.jsonl.gz')) if server is None else server
         if self.server.get('attempt')!=self.attempt:raise ValueError('Server recording does not belong to this replay')
         if self.client.get('schema')=='starbreak-native-journal-v1':
             from tools.native_replay_stream import NativeReplayStream
@@ -93,9 +93,17 @@ class PreparedReplay:
 
 class WarmTakeovers:
     def __init__(self):
-        self.lock=threading.RLock();self.key=None;self.prepared=None
+        self.lock=threading.RLock();self.key=None;self.prepared=None;self.closed=False
+
+    def prime(self,records,clients,request,client,server):
+        with self.lock:
+            if self.closed:return
+            key=(request.get('id'),request.get('record'))
+            if self.prepared is None:
+                self.prepared=PreparedReplay(records,clients,request,client,server);self.key=key
 
     def get(self, records, clients, request):
+        if self.closed:raise ValueError('Replay preparation has closed')
         key=(request.get('id'),request.get('record'))
         if key!=self.key or self.prepared is None:
             if self.prepared:self.prepared.close_staging()
@@ -111,6 +119,7 @@ class WarmTakeovers:
 
     def close(self):
         with self.lock:
+            self.closed=True
             if self.prepared:self.prepared.close_staging()
             self.prepared=None;self.key=None
 
@@ -193,7 +202,8 @@ class Takeover:
         if self.full_run:self.capture.enter(self.session,record=False)
 
     def description(self):
-        return dict(token=self.token, id=self.branch['id'], sequence=self.branch['sequence'], record=self.recorder.identifier)
+        return dict(token=self.token, id=self.branch['id'], sequence=self.branch['sequence'], record=self.recorder.identifier,
+                    size=self.branch.get('bytes'))
 
     def bind(self, transport):
         with self.boundary:

@@ -44,9 +44,13 @@ class BrowserRuntimeTests(unittest.TestCase):
         attach();next(app.replay_pages['reader']);app.stop()
         self.assertEqual(len(closed),4);self.assertIsNone(app.replay_pages)
 
-    def test_recording_switch_defaults_on_and_applies_to_new_battles_only(self):
+    def test_recording_switch_defaults_off_and_applies_to_new_battles_only(self):
         app=self.app()
-        self.assertTrue(app.workspace.preferences()['record_replays'])
+        self.assertFalse(app.workspace.preferences()['record_replays'])
+        app.start(dict(map='egy_hulk',shell=1))
+        self.assertIsNone(app.attempt)
+        prefs=app.workspace.preferences();prefs['record_replays']=True
+        app.workspace.save_preferences(prefs)
         app.start(dict(map='egy_hulk',shell=1))
         original=app.attempt
         app.clients.append(original,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))

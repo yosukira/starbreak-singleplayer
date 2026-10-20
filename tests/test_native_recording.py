@@ -19,6 +19,27 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_incomplete_older_battle_does_not_block_finalizing_newer_records(self):
+        recorder=NativeRecording.__new__(NativeRecording)
+        db=mock.MagicMock();db.__enter__.return_value.execute.return_value.fetchall.return_value=[('older','{}'),('newer','{}')]
+        records=NS(connect=lambda:db);recorder.playback=NS(records=records,branches=set())
+        recorder.started_wall=0;recorder.identifiers=set()
+        recorder._finalize_battle=mock.Mock(side_effect=[ValueError('unfinished older tape'),None])
+        recorder.finalize_battles()
+        self.assertEqual(recorder._finalize_battle.call_count,2)
+        self.assertEqual(recorder._finalize_battle.call_args.args[:2],('newer','{}'))
+
+    def test_delivery_absorbs_small_bursts_with_a_bounded_byte_budget(self):
+        import io
+        from plugins import _native_replay_capture as module
+        with mock.patch.object(module.threading.Thread,'start'),mock.patch.object(module,'urlopen',return_value=io.BytesIO()):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64),control=False)
+            for index in range(32):delivery.put(dict(sequence=index,ops=[['loop',0],['loop',1]],end=False))
+            self.assertEqual(delivery.queue.qsize(),32)
+            before=delivery.queued_bytes
+            with self.assertRaisesRegex(OSError,'buffer is full'):
+                delivery.put(dict(ops=[['message',12,'A'*(8*1024*1024)]]))
+            self.assertEqual(delivery.queued_bytes,before)
     def test_failed_transfer_reports_reason_and_acknowledges_selection_once(self):
         import io
         from plugins import _native_replay_capture as module

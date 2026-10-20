@@ -85,6 +85,25 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_live_recording_failure_keeps_simulation_clock_and_physics_running(self):
+        target=Engine();player=target.play(Engine().record(30))
+        player.control(dict(action='seek',seconds=.17,paused=True));player.update()
+        target.now=10
+        with mock.patch('plugins._native_replay.wire_size',side_effect=AssertionError('input-edge prefix scan')):
+            player.commit(lambda _:None,0,size=1000)
+        self.assertEqual(target.capture.tape.ops,[])
+        target.capture.tape.fail(OSError('writer unavailable'))
+        actual=[];original=target.hooks['frame'].original
+        def frame(*args):
+            actual.append(target.call('clock'));return original(*args)
+        target.hooks['frame'].original=frame
+        before=target.props.xmp;elapsed=target.capture.engine_elapsed
+        target.capture.before();target.call('frame',target.client);target.capture.after()
+        self.assertEqual(actual,[target.now+target.capture.clock_offset])
+        self.assertGreater(target.props.xmp,before)
+        self.assertGreater(target.capture.engine_elapsed,elapsed)
+        self.assertEqual(target.call('clock'),target.now,'Window clocks stay real even when recording fails')
+
     def test_culled_legacy_input_sound_retires_only_its_verified_clock_tail(self):
         def sound(engine,audible):
             engine.hooks['clock'].caller=0
@@ -193,7 +212,8 @@ class NativePlayerTests(unittest.TestCase):
         delivery=NS(incoming=queue.Queue(),feedback=mock.Mock(),put=engine.chunks.append,attempt='old',error='OSError')
         capture.delivery=delivery
         delivery.incoming.put(dict(serial=1,resume=dict(serial=1,id='fresh',recording=True)))
-        capture.poll()
+        with mock.patch.object(capture,'sync_audio_clock',wraps=capture.sync_audio_clock) as rebase:
+            capture.poll();rebase.assert_called_once_with(engine.now)
         self.assertTrue(capture.awaiting_world)
         self.assertIsNone(capture.player)
         self.assertIsNone(delivery.error)
@@ -484,9 +504,11 @@ class NativeHostTests(unittest.TestCase):
                 # This models the plugin's verified frame-boundary request,
                 # rather than accepting coordinates supplied by the record UI.
                 control.call('/feedback',dict(serial=initial['serial'],status=dict(state='taking-over'),checkpoint=request,takeover=True))
-                deadline=time.monotonic()+3;branch=None
+                deadline=time.monotonic()+15;branch=None
                 while time.monotonic()<deadline:
-                    branch=control.call('/control?serial='+str(initial['serial'])).get('branch')
+                    response=control.call('/control?serial='+str(initial['serial']))
+                    self.assertIsNone(response.get('error'),response)
+                    branch=response.get('branch')
                     if branch:break
                     time.sleep(.01)
                 self.assertIsNotNone(branch)

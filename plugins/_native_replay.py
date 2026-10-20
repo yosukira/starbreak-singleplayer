@@ -253,13 +253,14 @@ class NativeTape:
                     and self.last_state and len(self.last_state)==14 and self.last_state[8]>0
                     and self.last_state[13]==1)
 
-    def continue_recording(self,save,sequence):
+    def continue_recording(self,save,sequence,size=None):
         """Called only after the host verifies and forks the server checkpoint."""
         if not self.can_takeover():raise ValueError('Native takeover needs a verified living-player frame boundary')
         integer(sequence,0,10**7)
         if not callable(save):raise ValueError('A separate native branch writer is required')
-        self.ops=self.ops[:self.cursor]
-        self.size=sum(wire_size(row)+1 for row in self.ops)
+        self.size=(sum(wire_size(row)+1 for row in self.ops[:self.cursor]) if size is None
+                   else integer(size,0,128*1024*1024))
+        self.ops=self.ops[:self.cursor] if self.keep_ops else []
         self.mode='record';self.save=save;self.sequence=sequence
         self.pending=[];self.pending_size=0
 

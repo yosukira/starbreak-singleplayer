@@ -79,7 +79,8 @@ class ChunkDelivery:
         self.feedback_value=None;self.feedback_lock=threading.Lock();self.last_poll=0
         self.poll_interval=.1
         self.control_enabled=control
-        self.queue=queue.Queue(maxsize=4)
+        self.queue=queue.Queue(maxsize=256)
+        self.queued_bytes=0;self.queue_lock=threading.Lock()
         self.pending_feedback=None;self.failed_attempts=set()
         self.loading_serial=None;self.progress_at=0
         self.thread=threading.Thread(target=self.run);self.thread.daemon=True;self.thread.start()
@@ -90,13 +91,22 @@ class ChunkDelivery:
         # NativeTape transfers a detached immutable chunk. Encoding belongs to
         # this delivery worker, never the original game's update thread.
         if self.attempt and 'attempt' not in value:value=dict(value,attempt=self.attempt)
-        try:self.queue.put_nowait(value)
-        except queue.Full:raise IOError('Native recording delivery queue is full')
+        try:from ._native_replay import wire_size
+        except (ImportError,ValueError,SystemError):from _native_replay import wire_size
+        size=sum(wire_size(row)+1 for row in value.get('ops',[]))+256
+        with self.queue_lock:
+            if self.queued_bytes+size>8*1024*1024:raise IOError('Native recording delivery buffer is full')
+            self.queued_bytes+=size
+        try:self.queue.put_nowait((value,size))
+        except queue.Full:
+            with self.queue_lock:self.queued_bytes-=size
+            raise IOError('Native recording delivery queue is full')
 
     def run(self):
         while True:
-            try:value=self.queue.get(timeout=.1)
+            try:entry=self.queue.get(timeout=.1)
             except queue.Empty:continue
+            value,size=(None,0) if entry is None else entry
             try:
                 if value is None:return
                 if value.get('attempt') in self.failed_attempts:continue
@@ -115,7 +125,9 @@ class ChunkDelivery:
                 if value.get('attempt')==self.attempt:self.error=type(error).__name__;self.error_detail=str(error)[:400]
                 import logging
                 logging.getLogger('hardlab_live').exception('Native replay delivery failed')
-            finally:self.queue.task_done()
+            finally:
+                with self.queue_lock:self.queued_bytes-=size
+                self.queue.task_done()
 
     def poll_control(self):
         if not self.control_enabled:return
@@ -237,6 +249,7 @@ class NativeCapture:
         self.ffi,self.refs=ffi,refs;self.frames=0;self.owner=threading.get_ident();self.engine_elapsed=0
         self.player=None;self.driving=False;self.clock_offset=0;self.functions={};self.keyboard_depth=0
         self.serial=0;self.branch=None;self.packet_buffer=bytearray();self.control_error=None
+        self.live_call_depth=0
         self.descriptions=set()
         self.recording=True
         self.input_observer=None
@@ -268,6 +281,12 @@ class NativeCapture:
 
     def replacement(self,kind):
         def observe(original,*args):
+            if kind in ('frame','engine-frame','message','delta','input','player-input','inventory'):
+                native_original=original
+                def original(*forwarded):
+                    self.live_call_depth+=1
+                    try:return native_original(*forwarded)
+                    finally:self.live_call_depth-=1
             if kind in ('inventory-ctor','inventory-dtor'):return original(*args)
             player=self.player
             if kind=='sound':
@@ -334,7 +353,13 @@ class NativeCapture:
                 finally:self.after()
             # The client's IO worker may run while the UI thread is updating.
             # Never mix its clocks/call stack into the simulation journal.
-            if threading.get_ident()!=self.owner or not self.tape.in_loop or self.tape.error:return original(*args)
+            if threading.get_ident()!=self.owner or not self.tape.in_loop or self.tape.error:
+                result=original(*args)
+                if player is not None and player.phase=='live' and threading.get_ident()==self.owner:
+                    if kind=='clock' and self.live_call_depth:
+                        return (int(result)+self.clock_offset+2**31)%2**32-2**31
+                    if kind=='engine-frame':self.engine_elapsed+=int(args[1])
+                return result
             if kind in ('clock','random32','random64'):
                 def scalar():
                     value=original(*args)
@@ -467,6 +492,7 @@ class NativeCapture:
                 self.delivery.attempt=resume['id'];self.tape=NativeTape(save=self.delivery.put)
                 self.delivery.error=None;self.delivery.error_detail=None
                 self.packet_buffer=bytearray();self.frames=self.engine_elapsed=0;self.clock_offset=0
+                self.sync_audio_clock(int(self.functions['clock'].original()))
                 self.awaiting_world=True;self.awaiting_created=True;self.control_error=None
                 callback=getattr(self,'replay_start',None)
                 if callback:callback()
@@ -498,7 +524,7 @@ class NativeCapture:
             if len(self.packet_buffer)>16*1024*1024:raise ValueError('Native playback output is too large')
             branch=value.get('branch')
             if branch and self.branch is None:
-                self.player.commit(lambda chunk:delivery.put(dict(chunk,attempt=branch['id'])),branch['sequence'])
+                self.player.commit(lambda chunk:delivery.put(dict(chunk,attempt=branch['id'])),branch['sequence'],branch.get('size'))
                 self.branch=branch;self.reset_inputs=True
 
     def sync_audio_clock(self,logical):

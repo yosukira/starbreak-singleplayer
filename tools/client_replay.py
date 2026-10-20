@@ -273,9 +273,10 @@ class ClientJournals:
         return branch
 
     def extend_fork(self, branch, operations):
-        target=branch['id'];sequence=branch['sequence'];rows=[];size=0
+        target=branch['id'];sequence=branch['sequence'];rows=[];size=0;total=0
         for row in operations:
             length = len(encode(row))+1
+            total+=length
             if rows and (size+length > 450000 or len(rows) >= 1000):
                 self.append(target, dict(sequence=sequence, ops=rows, end=False))
                 sequence += 1; rows, size = [], 0
@@ -284,4 +285,5 @@ class ClientJournals:
             self.append(target, dict(sequence=sequence, ops=rows, end=False))
             sequence += 1
         branch['sequence']=sequence
+        branch['bytes']=branch.get('bytes',0)+total
         return branch

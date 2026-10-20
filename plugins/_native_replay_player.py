@@ -191,14 +191,15 @@ class NativePlayer:
         tape=self.capture.tape
         return dict(id=self.document['id'],cursor=tape.cursor,player=tape.last_state)
 
-    def commit(self,save,sequence):
+    def commit(self,save,sequence,size=None):
         checkpoint=self.checkpoint()
         tape=self.capture.tape
-        clocks=[row[1] for row in tape.ops[:tape.cursor] if row[0]=='clock']
+        clock_index=bisect.bisect_left(self.clock_positions,tape.cursor)
         real=int(self.capture.functions['clock'].original())
-        self.capture.clock_offset=((clocks[-1]-real+2**31)%2**32-2**31) if clocks else 0
+        self.capture.clock_offset=((self.clocks[clock_index-1]-real+2**31)%2**32-2**31) if clock_index else 0
         self.capture.sync_audio_clock(real+self.capture.clock_offset)
-        tape.continue_recording(save,sequence);self.phase='live'
+        tape.continue_recording(save,sequence,size);self.phase='live'
+        self.document=dict(id=self.document['id']);self.times=[];self.ends=[];self.clocks=[];self.clock_positions=[]
         self.requested=False;self.paused=False;self.speed=1.
         return checkpoint
 

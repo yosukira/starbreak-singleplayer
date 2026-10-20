@@ -30,7 +30,7 @@ class NativeRecording:
         self.practice_path=Path(practice_path) if practice_path else None
         self.health_path=Path(health_path) if health_path else None
         self.started=time.monotonic()
-        self.started_wall=time.time();self.finished_pending={};self.finalizer_stop=threading.Event()
+        self.started_wall=time.time();self.finished_pending={};self.finalize_versions={};self.finalizer_stop=threading.Event()
         from tools.native_playback import NativePlayback
         self.playback=NativePlayback(directory,manifest['client']);self.ready=threading.Event();self.proxy=None
         self.registry=Path(registry) if registry else None
@@ -166,55 +166,65 @@ class NativeRecording:
 
     def finalize_battles(self,immediate=False):
         """Publish immutable per-battle tapes while the original game keeps running."""
-        from localserver.battle_records import encoded
-        from localserver.replay import read_journal,JournalWriter
-        from tools.replay_bundle import client_chunks
         records=self.playback.records
         with records.connect() as db:
             rows=db.execute('SELECT id,document FROM records WHERE updated>=?',(self.started_wall,)).fetchall()
         owned={*self.identifiers,*self.playback.branches}
         for identifier,raw in rows:
-            record=json.loads(raw);source=record.get('replay',{}).get('id')
-            if source not in owned or record['result']=='active':continue
-            first=self.finished_pending.setdefault(identifier,time.monotonic())
-            if not immediate and time.monotonic()-first<1:continue
-            path=records.directory/(identifier+'.server.jsonl.gz')
-            if not path.is_file():continue
-            journal=read_journal(path)  # A still-open server frame must finish first.
-            target=str(uuid.uuid5(uuid.UUID(source),'battle:'+identifier))
-            trace=self.journals.read(source,require_complete=False)
-            end=next((i+1 for i in range(len(trace['ops'])-1,-1,-1) if trace['ops'][i]==['loop',1]),0)
-            if not end:continue
-            if record['map'] in __import__('localserver.replay',fromlist=['SUPPORTED_MAPS']).SUPPORTED_MAPS:
-                from tools.native_playback import native_battle_view
-                end=min(end,native_battle_view(trace['ops'],journal.get('world_sequence',1))['end'])
-            if record['result']=='defeat':
-                state=next((row[1] for row in reversed(trace['ops'][:end]) if row[0]=='state'),None)
-                if not state or len(state)==14 and state[8]>0:continue
-            trace=document(dict(trace,id=target,ops=trace['ops'][:end]));chunks=list(client_chunks(trace))
-            header={key:value for key,value in trace.items() if key!='ops'}
+            try:self._finalize_battle(identifier,raw,records,owned,immediate)
+            except (OSError,ValueError,EOFError):continue
+
+    def _finalize_battle(self,identifier,raw,records,owned,immediate):
+        from localserver.battle_records import encoded
+        from localserver.replay import read_journal,JournalWriter
+        from tools.replay_bundle import client_chunks
+        record=json.loads(raw);source=record.get('replay',{}).get('id')
+        if source not in owned or record['result']=='active':return
+        first=self.finished_pending.setdefault(identifier,time.monotonic())
+        if not immediate and time.monotonic()-first<1:return
+        path=records.directory/(identifier+'.server.jsonl.gz')
+        if not path.is_file():return
+        with self.journals.connect() as db:
+            version=db.execute('SELECT sequence,size,complete FROM attempts WHERE id=?',(source,)).fetchone()
+        stat=path.stat();signature=(raw,version,stat.st_size,stat.st_mtime_ns)
+        now=time.monotonic();previous=self.finalize_versions.get(identifier)
+        if not immediate and previous and previous[0]==signature and now-previous[1]<10:return
+        self.finalize_versions[identifier]=(signature,now)
+        journal=read_journal(path)  # A still-open server frame must finish first.
+        target=str(uuid.uuid5(uuid.UUID(source),'battle:'+identifier))
+        trace=self.journals.read(source,require_complete=False)
+        end=next((i+1 for i in range(len(trace['ops'])-1,-1,-1) if trace['ops'][i]==['loop',1]),0)
+        if not end:return
+        if record['map'] in __import__('localserver.replay',fromlist=['SUPPORTED_MAPS']).SUPPORTED_MAPS:
+            from tools.native_playback import native_battle_view
+            end=min(end,native_battle_view(trace['ops'],journal.get('world_sequence',1))['end'])
+        if record['result']=='defeat':
+            state=next((row[1] for row in reversed(trace['ops'][:end]) if row[0]=='state'),None)
+            if not state or len(state)==14 and state[8]>0:return
+        trace=document(dict(trace,id=target,ops=trace['ops'][:end]));chunks=list(client_chunks(trace))
+        header={key:value for key,value in trace.items() if key!='ops'}
+        with self.journals.connect() as db:
+            db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,0)',(target,json.dumps(header,separators=(',',':')),0,0))
+        for start in range(0,len(chunks),4):
             with self.journals.connect() as db:
-                db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,0)',(target,json.dumps(header,separators=(',',':')),0,0))
-            for start in range(0,len(chunks),4):
-                with self.journals.connect() as db:
-                    db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks[start:start+4]])
-            with self.journals.connect() as db:
-                db.execute('UPDATE attempts SET sequence=?,size=?,complete=1 WHERE id=?',(len(chunks),sum(row[3] for row in chunks),target))
-            # Rebind only the identity; every recorded server frame is preserved.
-            journal['attempt']=target;frames=journal.pop('frames')
-            temporary=path.with_suffix('.snapshot.gz');temporary.unlink(missing_ok=True)
-            writer=JournalWriter(temporary,journal)
-            try:
-                for frame in frames:writer.frame(frame)
-                writer.close()
-                record['replay']['id']=target
-                with records.connect() as db:
-                    current=db.execute('SELECT document FROM records WHERE id=?',(identifier,)).fetchone()
-                    if current and json.loads(current[0]).get('replay',{}).get('id')==source:
-                        os.replace(temporary,path)
-                        db.execute('UPDATE records SET document=? WHERE id=?',(encoded(record).decode(),identifier));self.finalize_error=None
-            finally:
-                writer.close(False);temporary.unlink(missing_ok=True)
+                db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks[start:start+4]])
+        with self.journals.connect() as db:
+            db.execute('UPDATE attempts SET sequence=?,size=?,complete=1 WHERE id=?',(len(chunks),sum(row[3] for row in chunks),target))
+        # Rebind only the identity; every recorded server frame is preserved.
+        journal['attempt']=target;frames=journal.pop('frames')
+        temporary=path.with_suffix('.snapshot.gz');temporary.unlink(missing_ok=True)
+        writer=JournalWriter(temporary,journal)
+        try:
+            for frame in frames:writer.frame(frame)
+            writer.close()
+            record['replay']['id']=target
+            with records.connect() as db:
+                current=db.execute('SELECT document FROM records WHERE id=?',(identifier,)).fetchone()
+                if current and json.loads(current[0]).get('replay',{}).get('id')==source:
+                    os.replace(temporary,path)
+                    db.execute('UPDATE records SET document=? WHERE id=?',(encoded(record).decode(),identifier));self.finalize_error=None
+        finally:
+            writer.close(False);temporary.unlink(missing_ok=True)
 
     def gate(self,upstream):
         """Delay only this owned connection until the capture hooks are ready."""

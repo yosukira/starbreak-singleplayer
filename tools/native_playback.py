@@ -4,6 +4,7 @@ import copy
 import json
 from pathlib import Path
 import threading
+import time
 import uuid
 
 from localserver.battle_records import RecordStore
@@ -62,7 +63,7 @@ class NativePlayback:
                 if record.get('replay',{}).get('format',record['platform'])!='native':raise ValueError('This recording uses the browser replay engine')
                 old_host,old_warm=self.host,self.warm
                 self.host=None;self.warm=WarmTakeovers();self.source=record;self.serial+=1;self.error=None
-                serial=self.serial;self.command=None
+                serial=self.serial;self.command=None;warm_host=self.warm
                 self.branch=None;self.packets.clear();self.controls=[]
                 self.preparing=False;self.warming=False;self.warm_cursor=None
                 self.practice_pending=False
@@ -78,13 +79,19 @@ class NativePlayback:
                         if not any(row[0]=='message' and row[1]==10 for row in document['ops']):
                             raise ValueError('This older recording has no native world bootstrap; record a new battle')
                         from localserver.replay import read_journal,SUPPORTED_MAPS
+                        journal_path=self.records.directory/(record['id']+'.server.jsonl.gz')
+                        journal=read_journal(journal_path) if record['map'] in SUPPORTED_MAPS or journal_path.is_file() else None
                         if record['map'] in SUPPORTED_MAPS:
-                            journal=read_journal(self.records.directory/(record['id']+'.server.jsonl.gz'))
                             document=dict(document,view=native_battle_view(document['ops'],journal.get('world_sequence',1)))
                         with self.lock:
                             if self.closed or self.serial!=serial:return
                             self.command=dict(serial=serial,record=record['id'],document=document)
                             self.status=dict(state='starting',stage='download',progress=0,loaded=0,total=len(document['ops']))
+                        # Reuse the verified document while the native client
+                        # is downloading/reconstructing it, off its input edge.
+                        if journal is not None:
+                            try:warm_host.prime(self.records,self.clients,dict(id=record['replay']['id'],record=record['id']),document,journal)
+                            except (OSError,ValueError):pass  # Takeover reports its own preparation error.
                     except Exception as error:
                         with self.lock:
                             if self.serial==serial:
@@ -220,8 +227,10 @@ class NativePlayback:
                         with self.lock:
                             if serial==self.serial:self.preparing=False
                 threading.Thread(target=prepare,daemon=True).start()
-            elif status.get('paused') and not self.warming and not self.preparing and getattr(self,'warm_cursor',None)!=request.get('cursor'):
+            elif (not self.warming and not self.preparing and getattr(self,'warm_cursor',None)!=request.get('cursor')
+                    and time.monotonic()-getattr(self,'last_warm',0)>=.5):
                 self.warm_cursor=request.get('cursor')
+                self.last_warm=time.monotonic()
                 self.warming=True
                 def warm():
                     try:warm_host.warm(self.records,self.clients,request)
