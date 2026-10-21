@@ -5,8 +5,8 @@
  */
 (()=>{
   'use strict';
-  const api=StarBreakVisuals,store=new api.Store();let settings=api.options(),textures=new Map(),client=0,hiddenStatus=null,last=0;const applied=new Set();
-  let displayScale=1,cachedRows=[],cachedWorld='',renderCamera=null,frameEdits=[],lastMove=performance.now(),frames=[],fps=0,ecScope='',lastEC=0,roomEC=0,totalEC=0;
+  const api=StarBreakVisuals,store=new api.Store();let settings=api.options(),textures=new Map(),client=0,hiddenStatus=null;const applied=new Set();
+  let displayScale=1,renderCamera=null,frameEdits=[],lastMove=performance.now(),frames=[],fps=0,ecScope='',lastEC=0,roomEC=0,totalEC=0;
   const viewEdits=new Map(),textCache=new Map();
   const ready=store.list().then(rows=>{for(const row of rows)textures.set(api.path(row.path),row);}).catch(error=>console.warn('Local textures unavailable:',error));
   Module.visualTextures={get applied(){return [...applied];},choose(filename,original,done){ready.then(()=>{
@@ -75,9 +75,12 @@
       if(!valid(sub,144))continue;const first=read(sub,60),finish=read(sub,64);
       if(!first||finish<first||(finish-first)%8||finish-first>8192*8||!valid(first,finish-first))continue;
       for(let p=first;p<finish;p+=8){const obj=read(p,4);if(!valid(obj,220)||seen.has(obj))continue;seen.add(obj);
+        // Enumerate current membership on every rendered frame: freed objects can
+        // be reused between frames, even when their heap address stays valid.
+        const vid=string(read(obj,132));
         const x=read(obj,16)/256,y=read(obj,20)/256,w=read(obj,24)/256,h=read(obj,28)/256;
         if(w<=0||h<=0||w>100000||h>100000)continue;
-        rows.push({ptr:obj,x,y,w,h,hp:read(obj,64),max:read(obj,68),armor:read(obj,104),owner:read(obj,52),terrain:read(obj,76),interact:read(obj,84),shape:read(obj,36)});
+        rows.push({ptr:obj,vid,draw:Module.HEAPU8[obj+100]!==0,x,y,w,h,hp:read(obj,64),max:read(obj,68),armor:read(obj,104),owner:read(obj,52),terrain:read(obj,76),interact:read(obj,84),shape:read(obj,36)});
       }
     }
     return rows;
@@ -103,11 +106,10 @@
     if(!(settings.enemyHP||settings.minimap||settings.playerHUD||settings.miniHP||settings.miniAmmo||settings.ecCounter||settings.fps||settings.roomInfo)||overlay){canvas.style.display='none';return;}
     const original=Module.canvas;if(canvas.width!==original.width||canvas.height!==original.height){canvas.width=original.width;canvas.height=original.height;}
     displayScale=parseFloat(original.style.width)/original.width||1;for(const name of ['width','height','left','top'])canvas.style[name]=original.style[name];canvas.style.display='block';ctx.clearRect(0,0,canvas.width,canvas.height);
-    const key=world+'/'+(read(world,200)>>>0);if(cachedWorld!==key||now-last>=100){cachedWorld=key;last=now;cachedRows=settings.enemyHP||settings.minimap?objects(world):[];}
-    const rows=settings.enemyHP||settings.minimap?cachedRows:[],ox=renderCamera?.view===view?renderCamera.x:read(view,144),oy=renderCamera?.view===view?renderCamera.y:read(view,148);let labels=0,armors=0;
-    for(const row of rows)if(valid(row.ptr,216)){row.x=read(row.ptr,16)/256;row.y=read(row.ptr,20)/256;row.hp=read(row.ptr,64);row.armor=read(row.ptr,104);}
+    const key=world+'/'+(read(world,200)>>>0);
+    const rows=settings.enemyHP||settings.minimap?objects(world):[],ox=renderCamera?.view===view?renderCamera.x:read(view,144),oy=renderCamera?.view===view?renderCamera.y:read(view,148);let labels=0,armors=0;
     if(settings.enemyHP){
-      for(const row of rows){if(row.owner!==2||row.terrain||!(row.max>0||row.hp<-1||row.armor>0)||labels>=300)continue;const x=row.x+row.w/2-ox,y=row.y+row.h/2-oy;if(row.x+row.w-ox<=0||row.y+row.h-oy<=0||row.x-ox>=canvas.width||row.y-oy>=canvas.height)continue;labels++;
+      for(const row of rows){if(!row.draw||!row.vid||row.owner!==2||row.terrain||!(row.max>0||row.hp<-1||row.armor>0)||labels>=300)continue;const x=row.x+row.w/2-ox,y=row.y+row.h/2-oy;if(row.x+row.w-ox<=0||row.y+row.h-oy<=0||row.x-ox>=canvas.width||row.y-oy>=canvas.height)continue;labels++;
         if(row.hp>=0)number(row.hp,x,y);else if(row.hp!==-1)number(Math.abs(row.hp),x,y,true,true);
         if(row.armor>0){number(row.armor,x,y,false);armors++;}
       }

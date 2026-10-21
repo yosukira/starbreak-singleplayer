@@ -52,9 +52,25 @@ async function initialize(){
   py.FS.mkdirTree('/profile');py.FS.mount(py.FS.filesystems.IDBFS,{},'/profile');
   await new Promise((resolve,reject)=>py.FS.syncfs(true,error=>error?reject(error):resolve()));
   profileReady=true;
-  const bundle=await (await cache.read('runtime.zip',manifest.runtime_size||0,(fraction,step)=>progress(65+25*fraction,step,updating))).arrayBuffer();
+  // Reuse a verified runtime already on this device, then overlay only files
+  // changed by the release. A frontend/version edit must not redownload maps.
+  let bundle,patch=(manifest.runtime_patches||[]).find(row=>row.base===manifest.runtime_hashes?.['runtime.zip']);
+  for(const candidate of manifest.runtime_patches||[]){
+    const hit=await cache.cached('runtime.zip',candidate.base);
+    if(hit){bundle=await hit.arrayBuffer();patch=candidate;progress(85,'cached',updating);break;}
+  }
+  if(!bundle)bundle=await (await cache.read('runtime.zip',manifest.runtime_size||0,(fraction,step)=>progress(65+20*fraction,step,updating))).arrayBuffer();
+  let overlay;
+  if(patch)overlay=await (await cache.read(patch.path,patch.size,(fraction,step)=>progress(85+6*fraction,step,updating))).arrayBuffer();
   progress(92,'initialize',updating);
   py.unpackArchive(new Uint8Array(bundle),'zip',{extractDir:'/app'});
+  if(overlay){
+    for(const name of patch.remove||[]){
+      if(name.startsWith('/')||name.split('/').includes('..'))throw Error('Invalid runtime update path');
+      const file='/app/'+name;if(py.FS.analyzePath(file).exists)py.FS.unlink(file);
+    }
+    py.unpackArchive(new Uint8Array(overlay),'zip',{extractDir:'/app'});
+  }
   py.globals.set('browser_manifest',encode(manifest));
   run("import sys, os, json\nsys.path.insert(0, '/app')\nos.environ['SB_GAME_SETTINGS_PATH']='/profile/game_settings.json'\nfrom tools.browser_runtime import BrowserRuntime\nruntime=BrowserRuntime('/profile',json.loads(browser_manifest))");
   await flush();
@@ -77,7 +93,7 @@ globalThis.onmessage=event=>{queue=queue.then(async()=>{
     const manifest=await ready;
     py.globals.set('browser_request',encode(message));
     let result;
-    if(message.kind==='ready')result={version:manifest.version,build:manifest.build};
+    if(message.kind==='ready')result={version:manifest.version,build:manifest.build,scripts:manifest.scripts};
     else if(message.kind==='flush')result={saved:true};
     else {
       const source={api:"runtime.api(req['method'],req['url'],req.get('document'))",boot:"runtime.boot(req['query'])",open:"runtime.open(req['socket'],req['url'])",send:"runtime.send(req['socket'],req['url'],req['data'],req.get('binary',False))",close:"runtime.close_socket(req['socket'],req['url'])"}[message.kind];

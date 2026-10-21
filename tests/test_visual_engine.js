@@ -13,6 +13,8 @@ put(1000,628,6000);put(1000,672,3000);put(1000,200,42);
 put(5000,0,46960);put(5000,32,1000);put(5000,92,800);put(5000,96,600);
 put(6000,60,7000);put(6000,64,7008);put(7000,4,8000);
 for(const [offset,value]of [[16,300*256],[20,200*256],[24,40*256],[28,60*256],[52,2],[64,120],[68,200],[104,40]])put(8000,offset,value);
+// A real visible enemy has a non-empty VID string.
+bytes[8100]=1;put(8000,132,9000);bytes.set(new TextEncoder().encode('hulk.robot'),9000);bytes[9011]=10;
 put(3000,64,150);put(3000,68,150);
 vm.createContext(context);vm.runInContext(fs.readFileSync('web/visual-engine.js','utf8'),context);Module.visualContext(2000);Module.postMainLoop();
 assert.equal(draws.filter(row=>row.bar).length,0,'Enemy display must not draw bars');
@@ -34,3 +36,16 @@ console.log('SBPE body-center health/armor numbers, sprite cache, render-only fi
 
 apply({enemyHP:true});put(8000,52,2);put(8000,76,0);main.style.width='400px';draws.length=0;Module.postMainLoop();assert.equal(draws[0].h,labels[0].h,'Enemy labels retain world-space size');assert.equal(draws[0].h*.5,labels[0].h*.5,'Zooming out scales the label with the enemy');
 for(const scale of [.25,.75,1,2]){main.style.width=(800*scale)+'px';draws.length=0;Module.postMainLoop();assert.equal(draws[0].h,labels[0].h);assert.equal(draws[0].w/40,labels[0].w/40,'Text-to-enemy size ratio stays constant across zoom levels');}
+
+// Objects can leave the world and their heap storage can be reused between
+// consecutive renders, before the old 100 ms cache would have expired.
+main.style.width='800px';draws.length=0;put(6000,64,7000);time+=1;Module.postMainLoop();
+assert.equal(draws.length,0,'Removed objects must stop drawing on the next frame');
+put(6000,64,7008);put(8000,132,0);draws.length=0;time+=1;Module.postMainLoop();
+assert.equal(draws.length,0,'Invisible triggers and reused empty object storage have no health label');
+put(8000,132,9000);put(8000,52,1);draws.length=0;time+=1;Module.postMainLoop();
+assert.equal(draws.length,0,'Owner changes at a reused pointer must not retain enemy labels');
+put(8000,52,2);draws.length=0;time+=1;Module.postMainLoop();
+assert.deepEqual(draws.map(row=>row.label),['120'],'A visible current enemy still draws');
+
+bytes[8100]=0;draws.length=0;time+=1;Module.postMainLoop();assert.equal(draws.length,0,'Hidden objects must not show health labels');

@@ -17,6 +17,10 @@ const {webcrypto}=require('node:crypto');
  assert.equal(calls.length,1);assert.ok(calls[0].includes('runtime.zip'));assert.deepEqual(steps,['cached','update']);
  calls.length=0;steps.length=0;cache=create();assert.equal((await cache.open(await manifest('first'))).updating,false);
  await cache.read('pyodide/pyodide.asm.wasm');await cache.read('runtime.zip');assert.equal(calls.length,0);assert.deepEqual(steps,['cached','cached']);
+  const oldHash=await hash('old code');
+  assert.equal(await(await cache.cached('runtime.zip',oldHash)).text(),'old code');
+  assert.equal(await cache.cached('runtime.zip','not-on-this-device'),undefined);
+  assert.equal(calls.length,0,'Selecting a cached runtime for a small overlay must not download anything');
  // A frontend-only update reuses both files. A runtime update only gets new code.
  cache=create();assert.equal((await cache.open(await manifest('frontend update'))).updating,true);
  await cache.read('runtime.zip');await cache.read('pyodide/pyodide.asm.wasm');assert.equal(calls.length,0);

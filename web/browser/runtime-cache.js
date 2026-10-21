@@ -44,5 +44,6 @@ export function runtimeCache({base,fetch:network=globalThis.fetch.bind(globalThi
     return new Response(data,{status:response.status,headers:response.headers});
   }
   async function commit(){if(cache){try{await cache.put(metadata,Response.json({build:manifest.build,version:manifest.version}));}catch(_){}}}
-  return {open,read,commit};
+  async function cached(path,hash){try{return await cache?.match(key(path,hash));}catch(_){return undefined;}}
+  return {open,read,commit,cached};
 }
