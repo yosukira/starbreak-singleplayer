@@ -1,11 +1,11 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 (async()=>{
- for(const playback of [false,true]){
+ for(const mount of ['/','/singleweb/'])for(const playback of [false,true]){
   const scripts=[],messages=[];
   const boot=playback?{replay:{mode:'play',document:{ops:[],pages:{token:'t',total:2}}}}:{};
-  const host={ready:Promise.resolve({scripts:{'/client.js':'engine-hash'}}),assetURL:path=>'https://test.local/singleweb'+path,
+  const host={ready:Promise.resolve({scripts:{'/client.js':'engine-hash'}}),assetURL:path=>mount+path.replace(/^\//,''),
    request:async kind=>kind==='boot'?boot:{ops:[['frame']]}};
-  const context={URL,Uint8Array,console,location:{search:playback?'?replay=1':'?attempt=1',origin:'https://test.local'},parent:{StarBreakBrowser:host,postMessage:message=>messages.push(message)},
+  const context={URL,Uint8Array,console,location:{href:'https://test.local'+mount+'game.html',search:playback?'?replay=1':'?attempt=1',origin:'https://test.local'},parent:{StarBreakBrowser:host,postMessage:message=>messages.push(message)},
    document:{getElementById:()=>({}),createElement:()=>({}),body:{append:script=>scripts.push(script)}}};
   vm.createContext(context);const done=vm.runInContext(fs.readFileSync('web/browser/game.js','utf8'),context);
   await new Promise(resolve=>setImmediate(resolve));

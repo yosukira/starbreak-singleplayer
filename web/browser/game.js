@@ -20,7 +20,7 @@
   // without fourteen consecutive network round trips on every new battle.
   await Promise.all(names.map(src=>new Promise((resolve,reject)=>{
     const element=document.createElement('script');element.async=false;
-    const url=new URL(parent.StarBreakBrowser.assetURL(src));
+    const url=new URL(parent.StarBreakBrowser.assetURL(src),location.href);
     if(manifest.scripts?.[src])url.searchParams.set('sha256',manifest.scripts[src]);
     element.src=url.href;element.onload=()=>{loaded++;parent.postMessage({type:'loading-progress',percent:10+70*loaded/names.length,step:'engine'},location.origin);resolve();};
     element.onerror=()=>reject(Error('Game resource could not load: '+src));document.body.append(element);
