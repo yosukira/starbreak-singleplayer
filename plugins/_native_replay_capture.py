@@ -139,8 +139,8 @@ class ChunkDelivery:
                 headers={'Content-Type':'application/json','Authorization':'Bearer '+self.token})
             with urlopen(request,timeout=3) as response:response.read(4096)
             self.pending_feedback=None
-        if time.monotonic()-self.last_poll>=self.poll_interval and not self.incoming.full():
-            self.last_poll=time.monotonic()
+        if time.perf_counter()-self.last_poll>=self.poll_interval and not self.incoming.full():
+            self.last_poll=time.perf_counter()
             request=Request(self.url[:-len('/chunks')]+'/control?serial='+str(self.serial),headers={'Authorization':'Bearer '+self.token})
             with urlopen(request,timeout=3) as response:raw=read_control(response,1024*1024)
             value=json.loads(raw.decode('utf8'))
@@ -165,7 +165,7 @@ class ChunkDelivery:
 
     def report_load(self,stage,loaded,total,error=None):
         self.loading_status=(stage,loaded,total)
-        now=time.monotonic()
+        now=time.perf_counter()
         if error is None and loaded!=total and now-self.progress_at<.15:return
         self.progress_at=now
         status=dict(state='failed' if error else 'starting',stage=stage,loaded=loaded,total=total,
@@ -242,11 +242,28 @@ class ChunkDelivery:
         self.control_thread.join(timeout=4)
 
 
+class PlatformDropRetry:
+    """Retry one held down-jump only when its original ledge catches it again."""
+    def __init__(self):self.intent=None
+    def arm(self,world,support,step,now):
+        if self.intent is not None and self.intent[:2]==(world,support) and now<=self.intent[3]:return
+        if support is not None and support[0]!='solid':self.intent=(world,support,step,now+.25)
+    def due(self,world,support,total,step,now):
+        if self.intent is None:return False
+        owner,target,previous,until=self.intent
+        if world!=owner or now>until or total&24!=24 or support is not None and support!=target:
+            self.intent=None;return False
+        if support==target and step>previous:
+            self.intent=(owner,target,step,until);return True
+        return False
+
+
 class NativeCapture:
     def __init__(self,ffi,lib,refs,manifest,save,base,hook=NativeHook,notice=None):
         if manifest.get('client') not in CLIENTS or manifest.get('pointer_bytes')!=4:
             raise ValueError('Native recorder does not support this executable')
         self.ffi,self.refs=ffi,refs;self.frames=0;self.owner=threading.get_ident();self.engine_elapsed=0
+        self.drop_retry=PlatformDropRetry();self.drop_steps=0;self.retrying_drop=False
         self.player=None;self.driving=False;self.clock_offset=0;self.functions={};self.keyboard_depth=0
         self.serial=0;self.branch=None;self.packet_buffer=bytearray();self.control_error=None
         self.live_call_depth=0;self.draining=False
@@ -286,7 +303,9 @@ class NativeCapture:
                 def original(*forwarded):
                     self.live_call_depth+=1
                     try:return native_original(*forwarded)
-                    finally:self.live_call_depth-=1
+                    finally:
+                        self.live_call_depth-=1
+                        if kind=='engine-frame':self.drop_steps+=1
             if kind in ('inventory-ctor','inventory-dtor'):return original(*args)
             player=self.player
             if self.draining and kind=='message' and int(args[1]) in MESSAGES:return None
@@ -320,6 +339,10 @@ class NativeCapture:
                 finally:self.resource_depth-=1
                 if player is not None and message in(11,22):player.ack(message)
                 return result
+            if (kind=='input' and int(args[1])&16 and bool(args[2]) and not self.retrying_drop
+                    and threading.get_ident()==self.owner and (player is None or player.phase=='live')):
+                world,support,total=self.platform_drop_state()
+                if total&8 and not total&16:self.drop_retry.arm(world,support,self.drop_steps,time.perf_counter())
             if self.resource_depth:return original(*args)
             if player is None and self.recording and getattr(self,'awaiting_world',False):
                 if kind=='message' and int(args[1]) in (21,10):
@@ -583,6 +606,7 @@ class NativeCapture:
     def before(self):
         if self.player is None:
             if self.recording and not getattr(self,'awaiting_world',False):self.tape.loop(0)
+            self.retry_platform_drop()
             return
         if self.player.phase!='live':
             if not self.player.requested:self.player.update()
@@ -613,6 +637,42 @@ class NativeCapture:
             # physics step; draining both edges before it loses the action.
             self.player.pending_keyups=deferred;self.player.keyup_after=self.engine_elapsed
             self.player.pending_keys=[]
+
+        self.retry_platform_drop()
+
+    def platform_drop_state(self):
+        client=self.refs.WorldClient
+        if client is None or client==self.ffi.NULL:return None,None,0
+        world=client.clientWorld
+        if world==self.ffi.NULL or world.player==self.ffi.NULL:return None,None,0
+        key=(int(self.ffi.cast('uintptr_t',world)),int(world.asWorld.props.seed))
+        native=world.player.asClientObject.asNativeObject
+        owner,objid=int(native.attached.worldId),int(native.attached.objId)
+        if owner and objid:
+            import util
+            subs=[world.serverSubWorld]
+            if world.mySubWorld!=self.ffi.NULL:subs.append(world.mySubWorld.asNativeSubWorld)
+            for sub in subs:
+                if sub==self.ffi.NULL:continue
+                if int(sub.asSubWorldImpl.asSubWorld.worldId)!=owner:continue
+                for obj in util.worldobjects(sub):
+                    if int(obj.objId)==objid:
+                        return key,(owner,objid) if int(obj.props.terraintype)==2 else ('solid',owner,objid),int(world.total)
+        return key,None,int(world.total)
+
+    def retry_platform_drop(self):
+        retry=getattr(self,'drop_retry',None)
+        if retry is None or retry.intent is None:return
+        if self.player is not None and self.player.phase!='live':retry.intent=None;return
+        if self.drop_steps<=retry.intent[2]:return
+        world,support,total=self.platform_drop_state()
+        if retry.due(world,support,total,self.drop_steps,time.perf_counter()):
+            self.retrying_drop=True
+            try:
+                # Original mapped inputs are journaled normally. Playback
+                # drives those exact calls without running this assistance.
+                self.invoke(['input',16,0]);self.invoke(['input',16,1])
+            finally:self.retrying_drop=False
 
     def after(self):
         if (self.player is not None and self.player.phase=='live' and self.player.pending_keyups

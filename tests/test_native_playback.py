@@ -11,7 +11,7 @@ import uuid
 import time
 
 from plugins._native_replay import NativeTape
-from plugins._native_replay_capture import NativeCapture,ChunkDelivery,ABI
+from plugins._native_replay_capture import NativeCapture,ChunkDelivery,ABI,PlatformDropRetry
 from plugins._native_replay_player import NativePlayer
 from tools.native_replay import NativeJournals,adapter_digest
 from tools.native_playback import NativePlayback
@@ -85,6 +85,21 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_platform_drop_retries_only_the_same_catching_ledge_and_completed_steps(self):
+        retry=PlatformDropRetry();world=(100,42);ledge=(1,6)
+        retry.arm(world,ledge,10,0)
+        self.assertFalse(retry.due(world,ledge,24,10,.001),'No retry before the original physics step')
+        self.assertFalse(retry.due(world,None,24,11,.02),'An airborne drop is left alone')
+        self.assertTrue(retry.due(world,ledge,24,12,.03),'Retry if the original ledge catches the player again')
+        for _ in range(100):self.assertFalse(retry.due(world,ledge,24,12,.031),'Rendering more frames must not add inputs')
+        retry.arm(world,ledge,13,.2)
+        self.assertFalse(retry.due(world,ledge,24,14,.26),'Retries cannot extend their own deadline')
+        for support,total,new_world in [((1,7),24,world),(ledge,8,world),(ledge,24,(200,42)),(('solid',1,1),24,world)]:
+            retry.arm(world,ledge,1,1)
+            self.assertFalse(retry.due(new_world,support,total,2,1.01),'Other ledges, released keys and changed worlds are not retried')
+        retry.arm(world,('solid',1,1),1,2)
+        self.assertIsNone(retry.intent,'Solid ground cannot arm a drop retry')
+
     def test_world_lifetime_callback_runs_even_when_recording_is_disabled(self):
         for recording in (False,True):
             engine=Engine();engine.capture.recording=recording
@@ -175,6 +190,33 @@ class NativePlayerTests(unittest.TestCase):
         target.mono=10;player.update();self.assertEqual(player.seconds,before)
         player.control(dict(action='pause',paused=False));target.mono+=.1;player.update()
         self.assertGreater(player.seconds,before)
+
+    def test_clock_excursions_cannot_strand_playback_in_the_future(self):
+        target=Engine();player=target.play(Engine().record(300))
+        target.mono=.1;player.update();before=player.seconds
+        # Observed with the embedded 32-bit interpreter at high render rates:
+        # one monotonic clock sample jumps by a uint64 conversion interval.
+        target.mono+=17179869.184;player.update()
+        self.assertLess(player.seconds-before,.1)
+        target.mono=.12;player.update();before=player.seconds
+        for _ in range(100):target.mono+=1/240;player.update()
+        self.assertGreater(player.seconds,before+.35)
+        self.assertIsNone(target.capture.tape.error)
+
+    def test_playback_speed_is_independent_of_render_rate_and_irregular_frames(self):
+        document=Engine().record(300)
+        for hz in (24,30,60,75,120,144,165,240,360,720):
+            for speed in (.25,.5,1,2,4):
+                target=Engine();player=target.play(document)
+                player.control(dict(action='speed',speed=speed))
+                for index in range(hz):
+                    target.mono=(index+1)/hz;player.update()
+                self.assertAlmostEqual(player.seconds,speed,delta=.018,msg=(hz,speed))
+                self.assertIsNone(target.capture.tape.error)
+        target=Engine();player=target.play(document)
+        for gap in (.002,.017,.1,.004,.24,.03,.3,.001,.306):
+            target.mono+=gap;player.update()
+        self.assertAlmostEqual(player.seconds,1,delta=.018)
 
     def test_verified_audio_clock_count_can_vary_without_relaxing_game_clocks(self):
         def audio(engine,count,verified=True):

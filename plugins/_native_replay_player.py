@@ -37,7 +37,7 @@ class PreparedReplay:
 
 
 class NativePlayer:
-    def __init__(self,capture,document,keyboard=lambda:(),post_frame=lambda:None,clock=time.monotonic):
+    def __init__(self,capture,document,keyboard=lambda:(),post_frame=lambda:None,clock=time.perf_counter):
         prepared=document if isinstance(document,PreparedReplay) else PreparedReplay(document)
         document=prepared.document;ops=document['ops']
         descriptions=getattr(capture,'descriptions',set())
@@ -120,7 +120,11 @@ class NativePlayer:
         now=self.clock()
         if self.last_update is not None and not self.priming and not self.seeking:
             gap=now-self.last_update
-            if gap>.5:self.anchor+=gap-.05
+            if gap<0 or gap>.5:
+                # Rebase from the last displayed simulation time. Adjusting
+                # the old absolute anchor by an anomalous clock delta can
+                # leave it years ahead after the clock returns to normal.
+                self.anchor=now;self.anchor_seconds=self.seconds+(.05*self.speed if gap>0 else 0.)
         self.last_update=now
         if self.paused and not self.seeking and not self.priming:
             self.anchor=now;self.anchor_seconds=self.seconds;return
