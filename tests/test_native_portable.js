@@ -47,3 +47,17 @@ assert.equal(waits.wallSleep(6000,sleep),0);assert.equal(slept,0);assert.equal(w
 waits.driving=false;assert.equal(waits.wallSleep(6000,sleep),7);assert.equal(slept,6000);
 waits.driving=true;waits.mode='record';assert.equal(waits.wallSleep(3000,sleep),7);assert.equal(slept,9000);
 console.log('Replay wall waits stay separate from recorded simulation time.');
+
+// Initial map loading must run, but CreateWorld cannot construct ChatWindow
+// until the original UI/base data callbacks have installed their resources.
+const startup=driver([['loop',0],['message',21,'map'],['return','message'],['message',10,'world'],['return','message'],['state',[0,0]],['loop',1]]);
+Object.assign(startup,{stack:[],bootstrap:{assets:['ui','base']},coreAssets:new Set(),completed:0,world:0,priming:false,notice(){},restoreTimeCredit(){}});
+const invoked=[];startup.invoke=row=>{invoked.push(row[1]);startup.expect(row);startup.expect(['return','message']);};
+const loading=startup.execute();
+assert.equal(loading.next().value,'assets');assert.deepEqual(invoked,[21]);
+startup.asset('data','texture/ui.d.checked.bpb',()=>{});
+assert.equal(loading.next().value,'assets');assert.deepEqual(invoked,[21]);
+let installed=false;startup.asset('data','texture/base.d.checked.bpb',()=>{installed=true;});
+assert.ok(installed);assert.equal(loading.next().value,'frame');assert.deepEqual(invoked,[21,10]);
+assert.equal(loading.next().done,true);
+console.log('Cold native replay waits for core resources only at world creation.');

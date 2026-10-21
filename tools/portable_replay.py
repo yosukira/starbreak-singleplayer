@@ -72,6 +72,7 @@ def browser_document(directory, identifier, version, adapter=None, require_exact
     from localserver.server import MT_HELLO, MT_JOINED
     from tools.web_client import CLIENT_SHA256
     return dict(value,runner=dict(client=CLIENT_SHA256,adapter=adapter or adapter_digest()),bootstrap=dict(
+        assets=['ui','base'],
         hello=base64.b64encode(framed(MT_HELLO, layouts.encode('Hello', hello))).decode(),
         joined=base64.b64encode(framed(MT_JOINED, layouts.encode('Joined', build_joined()))).decode(),
         key=base64.b64encode(protocol.random_string(0,64)).decode()))

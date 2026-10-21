@@ -48,6 +48,7 @@
       this.runnerInfo=options.document.runner;this.clockOffset=0;this.lastNativeClock=null;this.liveControls=[];
       this.save=chunk=>options.save?.({...chunk,native:true});this.stage=chunk=>options.stage?.({...chunk,native:true});
       if(!this.bootstrap)throw Error('Portable replay bootstrap is missing');
+      this.coreAssets=new Set();
       this.module.nativeJournal=this;
     }
     clientContext(client){
@@ -96,7 +97,14 @@
     preferences(content){this.module.replayPreferences(content);}
     requestQuit(){this.leaving=true;}
     quit(){this.leaving=true;this.stopIfLeaving();}
-    asset(_kind,_path,callback){callback();}
+    asset(kind,path,callback){
+      callback();
+      // A short restarted tape reaches CreateWorld before the original UI
+      // catalogue finishes loading. ChatWindow requires ui.chatbg to exist.
+      // Native LoadPVid ACKs cover map assets, not these startup libraries.
+      const match=kind==='data'&&String(path).match(/(?:^|\/)texture\/(ui|base)\.d\.[^/]+\.bpb(?:\?.*)?$/);
+      if(match)this.coreAssets.add(match[1]);
+    }
     viewport(){return this.document.viewport;}
     input(){return 1;}
     frame(_world,dt){return dt;}
@@ -207,11 +215,13 @@
         this.expect(['loop',0]);this.inLoop=true;
         while(this.ops[this.cursor]?.[0]!=='state'){
           const row=this.ops[this.cursor];
+          if(row[0]==='message'&&row[1]===10&&(this.bootstrap.assets||[]).some(name=>!this.coreAssets.has(name))){yield 'assets';continue;}
           if(['frame','input'].includes(row[0])&&!this.nativeClient){yield 'context';continue;}
           if(row[0]==='read'){
             this.expect(['read']);this.stack.push({kind:'read',before:this.engineElapsed});
             while(JSON.stringify(this.ops[this.cursor])!==JSON.stringify(['return','read'])){
               const next=this.ops[this.cursor];
+              if(next[0]==='message'&&next[1]===10&&(this.bootstrap.assets||[]).some(name=>!this.coreAssets.has(name))){yield 'assets';continue;}
               if(['clock','random32','random64'].includes(next[0]))this.cursor++;
               else this.invoke(next);
               if(this.pendingAssets>0)yield 'assets';
