@@ -324,6 +324,15 @@ class NativeCapture:
             if player is None and self.recording and getattr(self,'awaiting_world',False):
                 if kind=='message' and int(args[1]) in (21,10):
                     self.awaiting_world=False;self.tape.loop(0)
+                    if getattr(self,'bootstrap_descriptions',False):
+                        # A restarted native client retains its login catalogue,
+                        # but a browser opens this battle in a fresh engine.
+                        # Preserve the exact previously delivered descriptions
+                        # as bootstrap records; do not install them twice here.
+                        for message,payload in sorted(self.descriptions):
+                            row=['message',message,base64.b64encode(payload).decode('ascii')]
+                            self.tape.call(row,lambda:None)
+                        self.bootstrap_descriptions=False
                 else:return original(*args)
             if player is None and getattr(self,'awaiting_created',False):
                 if kind=='message' and int(args[1])==10:self.awaiting_created=False
@@ -515,6 +524,7 @@ class NativeCapture:
                 self.packet_buffer=bytearray();self.frames=self.engine_elapsed=0;self.clock_offset=0
                 self.sync_audio_clock(int(self.functions['clock'].original()))
                 self.awaiting_world=True;self.awaiting_created=True;self.control_error=None
+                self.bootstrap_descriptions=self.recording
                 callback=getattr(self,'replay_start',None)
                 if callback:callback()
                 self.delivery.feedback(dict(serial=self.serial,status=dict(state='idle'),resume=resume['id']))

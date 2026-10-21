@@ -95,6 +95,20 @@ class NativePlayerTests(unittest.TestCase):
             reset.assert_called_once_with()
             self.assertIs(engine.refs.WorldClient,engine.game.worldClient)
 
+    def test_restarted_tape_contains_exact_login_descriptions_for_a_fresh_engine(self):
+        engine=Engine();capture=engine.capture
+        descriptions={(16,b'exact item'),(17,b'exact character')}
+        capture.descriptions=descriptions;capture.awaiting_world=True;capture.bootstrap_descriptions=True
+        capture.before()
+        engine.call('message',engine.game.serverConnection.messageHandlers,10,b'world',5)
+        capture.after();capture.tape.finish()
+        ops=[row for chunk in engine.chunks for row in chunk['ops']]
+        messages=[row for row in ops if row[0]=='message']
+        self.assertEqual([(row[1],base64.b64decode(row[2])) for row in messages],sorted(descriptions)+[(10,b'world')])
+        document=dict(id=str(uuid.uuid4()),ops=ops)
+        player=engine.play(document);engine.mono=1;player.update()
+        self.assertEqual(player.phase,'ended');self.assertIsNone(capture.tape.error)
+
     def test_original_socket_is_drained_without_applying_stale_world_packets(self):
         engine=Engine();player=engine.play(Engine().record(30))
         player.control(dict(action='seek',seconds=.17,paused=True));player.update()
