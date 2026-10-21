@@ -13,6 +13,10 @@
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
   let activeTab='battle';
+  const battleView=StarBreakBattleView({document,arena:document.querySelector('.arena-panel'),button:$('battle-fullscreen'),enabled:!desktop});
+  for(const [id,direction] of [['view-zoom-out',-1],['view-zoom-in',1]]){
+    $(id).hidden=desktop;$(id).onclick=()=>document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(direction);
+  }
   const t=(zh,en)=>language.startsWith('zh')?zh:en;
   if(desktop){
     async function health(){
@@ -177,6 +181,7 @@
     if(loading)return;
     activeTab=view==='equipment'&&desktop?'equipment':view===true?'records':view==='guide'?'guide':view==='visuals'&&!desktop?'visuals':'battle';
     if(activeTab!=='battle'&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
+    if(activeTab!=='battle')void battleView.leave();
     document.querySelector('.game-layout').hidden=activeTab!=='battle';
     $('guide-page').hidden=activeTab!=='guide';$('visuals-page').hidden=activeTab!=='visuals';
     if(desktop){
@@ -266,7 +271,9 @@
       finally{setBusy(false);}
       return;
     }
-    if(busy)return;battleEnded=false;setTab(false);setBusy(true);$('error').hidden=true;$('editor-error').hidden=true;$('status').textContent=t('正在启动…','Starting…');
+    if(busy)return;
+    $('equipment-dialog').close();void battleView.enter();
+    battleEnded=false;setTab(false);setBusy(true);$('error').hidden=true;$('editor-error').hidden=true;$('status').textContent=t('正在启动…','Starting…');
     showLoading('starting');
     try{
       if(saveDraft)await editor.save();

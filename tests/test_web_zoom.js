@@ -12,3 +12,14 @@ const replay=new ClientReplay({module:{webZoom:{viewport(){throw Error('Playback
 assert.deepEqual(replay.viewport(1920,1080),[960,640]);
 engine.clientReplay={mode:'play'};zoom.step(-1);assert.equal(zoom.level,1.25);assert.equal(changes,1);
 console.log('Logical view zoom, configurable step, persistence, and recorded viewport playback passed.');
+// Fullscreen survives replacement of the child frame and repeated starts.
+const createView=require('../web/battle-view.js');
+let enters=0,exits=0;
+const doc={fullscreenElement:null,addEventListener(){},exitFullscreen(){exits++;this.fullscreenElement=null;return Promise.resolve();}};
+const arena={requestFullscreen(){enters++;doc.fullscreenElement=this;return Promise.resolve();}};
+const view=createView({document:doc,arena,button:{setAttribute(){}}});
+view.enter();view.enter();assert.equal(enters,1);assert.equal(doc.fullscreenElement,arena);
+view.leave();assert.equal(exits,1);
+const unsupported=createView({document:doc,arena:{},button:{}});assert.doesNotThrow(()=>unsupported.enter());
+const denied=createView({document:doc,arena:{requestFullscreen(){return Promise.reject(Error('No activation'));}},button:{}});
+denied.enter().then(()=>console.log('Persistent arena fullscreen and denied/unsupported fallback passed.'));

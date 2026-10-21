@@ -19,6 +19,19 @@ try{
   // original event has no game state to change at this startup boundary.
   assert.equal(sandbox.XDL.canvas,null);
   assert.doesNotThrow(()=>sandbox.Module.replayControl('resize',[]));
+  // Zoom must reach the original resize adapter with recording disabled.
+  // This is the default play mode and has no clientReplay object at all.
+  sandbox.window={innerWidth:1200,innerHeight:800};
+  sandbox.XDL.canvas={width:1200,height:800};
+  sandbox.XDL.cWidth=1200;sandbox.XDL.cHeight=800;sandbox.XDL.renderEngine=null;
+  sandbox.Browser.setCanvasSize=(width,height)=>Object.assign(sandbox.XDL.canvas,{width,height});
+  const zoom=require('../web/zoom.js')({module:sandbox.Module,storage:{getItem(){return null;},setItem(){}},resize:()=>sandbox.XDL.onWindowResize()});
+  sandbox.Module.webZoom=zoom;
+  zoom.step(1);assert.equal(sandbox.XDL.canvas.width,1091);assert.equal(sandbox.XDL.canvas.height,727);
+  zoom.step(-1);assert.equal(sandbox.XDL.canvas.width,1200);assert.equal(sandbox.XDL.canvas.height,800);
+  sandbox.Module.clientReplay={viewport:()=>[900,650]};
+  sandbox.XDL.onWindowResize();assert.equal(sandbox.XDL.canvas.width,900);assert.equal(sandbox.XDL.canvas.height,650);
+  delete sandbox.Module.clientReplay;sandbox.XDL.canvas=null;
   const binding=field(1,Buffer.concat([Buffer.from([8,0,16]),varint(122)]));
   const personal=options([['impbstr',binding],['musicVol','17'],['sfxVol','33']]);
   sandbox.Module.replayPreferences(btoa(personal));

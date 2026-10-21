@@ -74,7 +74,7 @@ def patch_client(source):
     # Viewport affects camera culling and positional audio as well as drawing.
     # Replay the original logical size, while CSS scales it to today's window.
     replace('newHeight=Math.max(600,Math.min(XDL.cHeight,window.innerHeight,1600));if(XDL.canvas.width!=newWidth',
-            'newHeight=Math.max(600,Math.min(XDL.cHeight,window.innerHeight,1600));if(Module.clientReplay){var size=Module.clientReplay.viewport(newWidth,newHeight);newWidth=size[0];newHeight=size[1]}if(XDL.canvas.width!=newWidth')
+            'newHeight=Math.max(600,Math.min(XDL.cHeight,window.innerHeight,1600));if(Module.clientReplay){var size=Module.clientReplay.viewport(newWidth,newHeight);newWidth=size[0];newHeight=size[1]}else if(Module.webZoom){var size=Module.webZoom.viewport(newWidth,newHeight);newWidth=size[0];newHeight=size[1]}if(XDL.canvas.width!=newWidth')
     replace('onWindowResize:(function(){var newWidth=XDL.canvas.width;',
             'onWindowResize:(function(event){if(!XDL.canvas)return;if(event&&event.type==="resize"&&Module.clientReplay){Module.clientReplay.control("resize",[],function(){XDL.onWindowResize()});return}var newWidth=XDL.canvas.width;')
 
