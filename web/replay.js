@@ -38,6 +38,12 @@
     return new Set((action===null?bindings.flat():bindings[action]||[]).filter(v=>Number.isInteger(v)&&v>0&&(v<0x20000000||v>=0x40000000)));
   }
 
+  function takeoverKey(event,key,keys){
+    const code=event.keyCode||event.which||0;
+    return !event.repeat&&keys.has(key)&&(!event.ctrlKey||code===17)&&
+      (!event.altKey||code===18)&&(!event.metaKey||[91,92,93].includes(code));
+  }
+
   function installPlatformDrop(module,{now:clock=()=>performance.now()}={}){
     let lastWorld=0;
   let dropIntent=null,dropStep=0,retryingDrop=false;
@@ -485,7 +491,7 @@
     throw Error('Takeover verification timed out');
   }
 
-  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys,installPlatformDrop,applyPlayerProtection,installPlayerProtection};return;}
+  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys,takeoverKey,installPlatformDrop,applyPlayerProtection,installPlayerProtection};return;}
   globalThis.StarBreakClientReplay=ClientReplay;
   const drop=installPlatformDrop(Module);
   const protection=installPlayerProtection(Module);
@@ -592,7 +598,7 @@
     if(replay.mode!=='play'||!['keydown','keyup'].includes(type))return;
     const key=Module.replayTranslateKey?.(event.keyCode||event.which)||0;
     if(type==='keyup')physical.delete(key);else if(takeoverKeys.has(key))physical.add(key);
-    if(type==='keydown'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&takeoverKeys.has(key))void takeOver(key);
+    if(type==='keydown'&&takeoverKey(event,key,takeoverKeys))void takeOver(key);
   }
   addEventListener('message',event=>{
     if(event.origin!==location.origin||event.source!==parent||event.data.type!=='replay-control')return;

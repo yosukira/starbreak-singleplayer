@@ -1,5 +1,11 @@
 const assert=require('node:assert/strict');
-const {ClientReplay,prepareTakeover,gameplayKeys}=require('../web/replay.js');
+const {ClientReplay,prepareTakeover,gameplayKeys,takeoverKey}=require('../web/replay.js');
+
+const mappedKeys=new Set([100,1073742048,1073742050,1073742051,1073742049]);
+for(const [keyCode,key,flags] of [[68,100,{}],[17,1073742048,{ctrlKey:true}],[18,1073742050,{altKey:true}],[91,1073742051,{metaKey:true}],[16,1073742049,{shiftKey:true}]])assert.equal(takeoverKey({keyCode,...flags},key,mappedKeys),true,'Mapped modifier keys are game inputs too');
+assert.equal(takeoverKey({keyCode:68,ctrlKey:true},100,mappedKeys),false,'Browser Ctrl+D is not a takeover gesture');
+assert.equal(takeoverKey({keyCode:16,ctrlKey:true,shiftKey:true},1073742049,mappedKeys),false,'Browser Ctrl+Shift shortcuts do not start a takeover');
+assert.equal(takeoverKey({keyCode:68,repeat:true},100,mappedKeys),false,'Repeated key events do not create another handoff');
 
 function engine(){
   const HEAP32=new Int32Array(32768),module={HEAP32,_malloc:()=>24000,asm:{}};

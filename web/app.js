@@ -101,7 +101,8 @@
   for(const type of ['keydown','keyup'])addEventListener(type,event=>{
     if(desktop||activeTab!=='battle'||!replayRecord||loading||busy||event.isComposing||
        event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
-    if(replayKeyboardKeys.has(event.keyCode||event.which)&&!event.ctrlKey&&!event.metaKey&&!event.altKey)event.preventDefault();
+    const code=event.keyCode||event.which;
+    if(replayKeyboardKeys.has(code)&&(!event.ctrlKey||code===17)&&(!event.altKey||code===18)&&(!event.metaKey||[91,92,93].includes(code)))event.preventDefault();
     playbackControl('keyboard',{event:type,keyCode:event.keyCode||event.which||0,code:event.code,
       repeat:event.repeat,ctrlKey:event.ctrlKey,metaKey:event.metaKey,altKey:event.altKey});
   },true);
