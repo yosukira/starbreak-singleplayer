@@ -92,6 +92,24 @@
     for(const row of rows){let color=row.ptr===player?'#bde877':row.terrain===1?'#e5edf5':row.terrain===2?'#91a8bc':row.owner===2&&row.max>0?'#ff726b':row.interact?'#69dfe0':null;if(!color)continue;ctx.fillStyle=color;ctx.fillRect(x+(row.x-bounds.x)*scale,y+(row.y-bounds.y)*scale,Math.max(2,row.w*scale),Math.max(2,row.h*scale));}
     ctx.restore();
   }
+  function healthPacks(rows,ox,oy){
+    let count=0;ctx.save();ctx.strokeStyle='#bde877';ctx.fillStyle='#bde877';ctx.lineWidth=3;
+    for(const row of rows){
+      if(!row.draw||!(row.vid==='loot-health1'||row.vid==='loot-xmas'))continue;
+      const x=row.x-ox,y=row.y-oy,cx=x+row.w/2,cy=y+row.h/2;
+      if(x+row.w>=0&&y+row.h>=0&&x<=canvas.width&&y<=canvas.height){
+        ctx.strokeRect(x-3,y-3,row.w+6,row.h+6);
+      }else{
+        const sx=canvas.width/2,sy=canvas.height/2,dx=cx-sx,dy=cy-sy;
+        // Project the target to the visible edge, retaining its direction.
+        const margin=Math.min(16,sx/2,sy/2),t=Math.min((sx-margin)/Math.abs(dx),(sy-margin)/Math.abs(dy)),ax=sx+dx*t,ay=sy+dy*t,length=Math.hypot(dx,dy),ux=dx/length,uy=dy/length;
+        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-20*ux-6*uy,ay-20*uy+6*ux);ctx.lineTo(ax-20*ux+6*uy,ay-20*uy-6*ux);ctx.closePath();
+        ctx.strokeStyle='#071018';ctx.lineWidth=4;ctx.stroke();ctx.fill();ctx.strokeStyle='#bde877';ctx.lineWidth=3;
+      }
+      count++;
+    }
+    ctx.restore();return count;
+  }
   function draw(){
     if(!Module.HEAP32||!valid(client,120)||read(client)!==47524){restore();canvas.style.display='none';return;}
     const world=read(client,72),view=read(client,76),hud=read(client,80),overlay=read(client,84);
@@ -103,11 +121,12 @@
       Module.HEAPU8[status+12]=0;
     }else restore();
     const now=performance.now();if(settings.fps){frames.push(now);while(frames.length>240||frames.length&&frames[0]<now-1000)frames.shift();fps=frames.length>1?(frames.length-1)*1000/(now-frames[0]):0;}else frames.length=0;
-    if(!(settings.enemyHP||settings.minimap||settings.playerHUD||settings.miniHP||settings.miniAmmo||settings.ecCounter||settings.fps||settings.roomInfo)||overlay){canvas.style.display='none';return;}
+    const needsHealth=settings.healthPacks&&alive&&read(player,68)>read(player,64);
+    if(!(settings.enemyHP||needsHealth||settings.minimap||settings.playerHUD||settings.miniHP||settings.miniAmmo||settings.ecCounter||settings.fps||settings.roomInfo)||overlay){canvas.style.display='none';return;}
     const original=Module.canvas;if(canvas.width!==original.width||canvas.height!==original.height){canvas.width=original.width;canvas.height=original.height;}
     displayScale=parseFloat(original.style.width)/original.width||1;for(const name of ['width','height','left','top'])canvas.style[name]=original.style[name];canvas.style.display='block';ctx.clearRect(0,0,canvas.width,canvas.height);
     const key=world+'/'+(read(world,200)>>>0);
-    const rows=settings.enemyHP||settings.minimap?objects(world):[],ox=renderCamera?.view===view?renderCamera.x:read(view,144),oy=renderCamera?.view===view?renderCamera.y:read(view,148);let labels=0,armors=0;
+    const rows=settings.enemyHP||needsHealth||settings.minimap?objects(world):[],ox=renderCamera?.view===view?renderCamera.x:read(view,144),oy=renderCamera?.view===view?renderCamera.y:read(view,148);let labels=0,armors=0;
     if(settings.enemyHP){
       for(const row of rows){if(!row.draw||!row.vid||row.owner!==2||row.terrain||!(row.max>0||row.hp<-1||row.armor>0)||labels>=300)continue;const x=row.x+row.w/2-ox,y=row.y+row.h/2-oy;if(row.x+row.w-ox<=0||row.y+row.h-oy<=0||row.x-ox>=canvas.width||row.y-oy>=canvas.height)continue;labels++;
         if(row.hp>=0)number(row.hp,x,y);else if(row.hp!==-1)number(Math.abs(row.hp),x,y,true,true);
@@ -115,6 +134,7 @@
       }
     }
     if(settings.minimap)minimap(view,rows,player);
+    const healthIndicators=needsHealth?healthPacks(rows,ox,oy):0;
     if(settings.playerHUD&&alive&&!overlay){
       ctx.save();ctx.scale(1/displayScale,1/displayScale);ctx.textAlign='left';ctx.lineWidth=4;ctx.strokeStyle='#071018';ctx.fillStyle=read(player,64)>=read(player,68)?'#bde877':'#fff';const size=settings.hudFontSize,y=size+11;ctx.font=`bold ${size}px sans-serif`;const hp=String(read(player,64));ctx.strokeText(hp,24,y);ctx.fillText(hp,24,y);const width=ctx.measureText(hp).width;ctx.font=`bold ${Math.round(size*.575)}px sans-serif`;ctx.strokeText('/'+read(player,68),28+width,y);ctx.fillText('/'+read(player,68),28+width,y);ctx.fillStyle='#ffe56b';ctx.font='bold 19px sans-serif';const ammo='Ammo '+read(player,540)+'/'+Math.max(0,read(player,532)+read(player,536));ctx.strokeText(ammo,24,y+27);ctx.fillText(ammo,24,y+27);ctx.font='14px sans-serif';ctx.fillStyle='#b4c7dc';ctx.strokeText(read(player,380)+' EC · '+read(player,384)+' UC',24,y+49);ctx.fillText(read(player,380)+' EC · '+read(player,384)+' UC',24,y+49);ctx.restore();
     }
@@ -128,7 +148,7 @@
     }
     if(settings.fps)text(fps.toFixed(1)+' FPS · '+(fps>0?1000/fps:0).toFixed(1)+' ms',canvas.width-12/displayScale,22/displayScale,'#ffff80','right');
     if(settings.roomInfo){const title=parent.document.getElementById('arena-title')?.textContent||'StarBreak',zone=string(read(world,184))||string(read(world,196)),floor=read(world,188);text(zone?zone+(floor>0?' '+(floor+1):''):title,canvas.width-12/displayScale,canvas.height-9/displayScale,'#fff','right');}
-    Module.visualStats={objects:rows.length,enemies:rows.filter(row=>row.owner===2&&row.max>0).length,labels,armors,textCache:textCache.size,player,view,bounds:[read(view,84),read(view,88),read(view,92),read(view,96)],offset:[ox,oy]};
+    Module.visualStats={objects:rows.length,enemies:rows.filter(row=>row.owner===2&&row.max>0).length,labels,armors,healthIndicators,textCache:textCache.size,player,view,bounds:[read(view,84),read(view,88),read(view,92),read(view,96)],offset:[ox,oy]};
   }
   const previous=Module.postMainLoop;Module.postMainLoop=()=>{try{previous?.();}finally{undo(frameEdits);for(const changes of viewEdits.values())undo(changes);viewEdits.clear();}try{draw();}catch(error){restore();canvas.style.display='none';console.warn('Display enhancement:',error);}};
   addEventListener('pagehide',()=>{restore();undo(frameEdits);for(const changes of viewEdits.values())undo(changes);Module.canvas.style.cursor='';});

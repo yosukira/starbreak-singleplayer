@@ -2,7 +2,7 @@
 (function(scope){
   'use strict';
   const LIMIT=128*1024*1024,KEY='starbreak-visual-options-v1';
-  const DEFAULTS={textures:true,enemyHP:false,minimap:false,playerHUD:false,
+  const DEFAULTS={textures:true,enemyHP:false,healthPacks:true,minimap:false,playerHUD:false,
     hideEffects:false,hideDamageNumbers:false,hideNames:false,hideFactions:false,hideHealthbars:false,
     hideFriendlyObjects:false,hideShell:false,hideChat:false,noShake:false,noFlash:false,
     damageFlash:1,camera:0,showHUD:true,showTiles:true,showEdges:true,showScatter:true,showUniform:true,
@@ -12,6 +12,7 @@
   const GROUPS=[
     ['HUD / 信息显示','HUD / Information',[
       ['enemyHP','敌人血量与护甲数字','Enemy health & armor numbers'],['enemyFontSize','敌人数字字号','Enemy number size','number',10,48,1],
+      ['healthPacks','缺血时标出血包位置（含屏幕外方向）','Highlight health packs when injured (including off-screen directions)'],
       ['playerHUD','替换左上角生命与弹药显示','Replace upper-left health & ammo HUD'],['hudFontSize','左上角生命字号','Player health size','number',24,160,1],
       ['miniHP','角色上方显示生命','Health above your character'],['miniAmmo','角色上方显示弹药','Ammo above your character'],
       ['ecCounter','本房间与本次游玩的 EC 增量','Room & session EC gained'],['fps','显示 FPS 与帧耗时','Show FPS & frame time'],['roomInfo','显示当前房间信息','Show current room information']]],

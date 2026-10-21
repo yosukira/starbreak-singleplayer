@@ -1,9 +1,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const base=require('../web/visuals.js'),heap=new Int32Array(65536),bytes=new Uint8Array(heap.buffer),events={},draws=[];
+const base=require('../web/visuals.js'),heap=new Int32Array(65536),bytes=new Uint8Array(heap.buffer),events={},draws=[],markers=[];
 let time=1000,settings={...base.DEFAULTS,enemyHP:true};
 const makeCanvas=()=>{
   const canvas={width:800,height:600,style:{width:'800px',height:'600px',left:'0px',top:'0px'},text:null};
-  canvas.getContext=()=>({measureText:t=>({width:String(t).length*9}),strokeText(){},fillText(t){canvas.text=String(t);},drawImage(image,x,y,w=image.width,h=image.height){draws.push({label:image.text,x,y,w,h});},clearRect(){},fillRect(){draws.push({bar:true});},strokeRect(){},save(){},restore(){},beginPath(){},rect(){},clip(){}});return canvas;
+  canvas.getContext=()=>({measureText:t=>({width:String(t).length*9}),strokeText(){},fillText(t){canvas.text=String(t);},drawImage(image,x,y,w=image.width,h=image.height){draws.push({label:image.text,x,y,w,h});},clearRect(){},fillRect(){draws.push({bar:true});},strokeRect(x,y,w,h){markers.push({rect:[x,y,w,h]});},save(){},restore(){},beginPath(){},moveTo(x,y){markers.push({arrow:[x,y]});},lineTo(){},closePath(){},stroke(){},fill(){},rect(){},clip(){}});return canvas;
 };
 const main=makeCanvas(),Module={HEAP32:heap,HEAPU8:bytes,canvas:main},parent={document:{getElementById:()=>({textContent:'Test room'})}};
 const context={Module,parent,location:{origin:'https://test.local'},StarBreakVisuals:{...base,Store:class{async list(){return [];}},options:storage=>storage?base.options(storage):settings},document:{body:{append(){}},createElement:makeCanvas},addEventListener:(key,fn)=>events[key]=fn,performance:{now:()=>time},console,Map,Set,TextDecoder};
@@ -49,3 +49,32 @@ put(8000,52,2);draws.length=0;time+=1;Module.postMainLoop();
 assert.deepEqual(draws.map(row=>row.label),['120'],'A visible current enemy still draws');
 
 bytes[8100]=0;draws.length=0;time+=1;Module.postMainLoop();assert.equal(draws.length,0,'Hidden objects must not show health labels');
+
+// Health-pack indicators use current world membership, independently of the
+// enemy overlay and minimap, and must disappear as soon as health is restored.
+function pack(vid='loot-health1'){
+  bytes.fill(0,9000,9020);
+  if(vid.length>11){put(9000,0,9100);put(9000,4,vid.length);bytes[9011]=128;bytes.set(new TextEncoder().encode(vid),9100);}
+  else{bytes.set(new TextEncoder().encode(vid),9000);bytes[9011]=vid.length;}
+  put(8000,52,0);put(8000,132,9000);put(8000,64,-1);put(8000,68,0);bytes[8100]=1;
+}
+function mark(){markers.length=0;Module.postMainLoop();return markers;}
+apply({healthPacks:true});pack();put(3000,64,100);
+assert.deepEqual(mark(),[{rect:[296,195,46,66]}],'A visible health pack gets a frame at its camera-relative position');
+put(3000,64,150);assert.equal(mark().length,0,'Full health hides every pack indicator');
+put(3000,64,0);assert.equal(mark().length,0,'Dead players get no pack indicators');
+put(3000,64,100);apply({healthPacks:false});assert.equal(mark().length,0,'User can disable the feature');
+apply({healthPacks:true});pack('loot-ammo1');assert.equal(mark().length,0,'Ammo is not a health pack');
+pack('loot-xmas');assert.equal(mark().length,1,'Native SBPE holiday health pickup is supported');
+put(6000,64,7000);assert.equal(mark().length,0,'Collected or removed packs disappear on the next frame');put(6000,64,7008);
+bytes[8100]=0;assert.equal(mark().length,0,'Hidden pickups get no indicator');bytes[8100]=1;
+put(2000,84,100);assert.equal(mark().length,0,'Menus hide world indicators');put(2000,84,0);
+for(const [x,y,edge] of [[1200,200,0],[-100,200,0],[300,1000,1],[300,-100,1],[2000,-2000,null]]){
+  put(8000,16,x*256);put(8000,20,y*256);const row=mark()[0];assert.ok(row.arrow,'Off-screen pickup gets a direction arrow');
+  assert.ok(row.arrow.every(Number.isFinite));assert.ok(row.arrow[0]>=16&&row.arrow[0]<=784&&row.arrow[1]>=16&&row.arrow[1]<=584,'Arrow stays inside visible edges');
+  if(edge!==null)assert.ok([16,edge===0?784:584].includes(row.arrow[edge]));
+}
+put(8000,16,300*256);put(8000,20,200*256);apply({healthPacks:true,noShake:false});
+put(5000,144,100);put(5000,148,50);Module.visualView(5000,0);Module.visualView(5000,1);Module.visualView(5000,2);
+assert.deepEqual(mark(),[{rect:[197,147,46,66]}],'Pack highlights follow the exact rendered camera');
+console.log('Health-pack hints cover injured/full/dead states, pickup removal, visibility, camera and all off-screen edges');
