@@ -90,5 +90,18 @@ class NativeStartupTests(unittest.TestCase):
                     server.request_live_map_switch.assert_called_once_with('channel',mock.ANY,'hulk_normal',player_type=3)
             finally:recording.close()
 
+    def test_every_native_restart_rotates_attempt_before_creating_world(self):
+        server=LocalServer.__new__(LocalServer);server.options=NS(map='egy_hulk')
+        server._restart_in_progress=False;server._ground_ack_ready=lambda bridge:True
+        server.reload_class_loadouts_if_changed=mock.Mock()
+        session=NS(bridge=mock.Mock(),player_type=1)
+        with mock.patch.dict(os.environ,SB_NATIVE_CONTROL_PATH='owned-control.json'),mock.patch('tools.native_playback.NativeControlClient') as client:
+            server.request_live_restart('channel',session,3)
+            server.request_live_restart('channel',session,3)
+            client.assert_called_once_with('owned-control.json')
+            client.return_value.call.assert_called_once_with('/command',dict(action='practice',map='egy_hulk',shell=3))
+            server.reload_class_loadouts_if_changed.assert_not_called()
+            self.assertFalse(server._restart_in_progress)
+
 
 if __name__=='__main__':unittest.main()

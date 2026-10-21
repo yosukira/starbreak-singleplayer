@@ -91,16 +91,16 @@ EN = {
     '跳过开局': 'Skip opening',
     '新一局生效；直接从首领飞船停稳后开始': 'Applies to the next attempt; start with the boss ship in position',
     '全部配装与战斗设置已恢复默认；原配置已备份：': 'All loadouts and encounter settings restored; previous settings backed up: ',
-    '整数 0–1000000；同名武器共用。保存后退出并重新启动模拟器生效。':
-        'Integer 0–1000000; shared by all instances of this item. Save, exit the game, then relaunch.',
-    '弹速必须是 0–1000000 的整数': 'Projectile speed must be an integer between 0 and 1000000.',
-    '子弹速度请填 0–1000000 的整数': 'Enter an integer projectile speed between 0 and 1000000.',
+    '整数 -1000000–1000000；同名武器共用。保存后退出并重新启动模拟器生效。':
+        'Integer -1000000–1000000; shared by all instances of this item. Save, exit the game, then relaunch.',
+    '弹速必须是 -1000000–1000000 的整数': 'Projectile speed must be an integer between -1000000 and 1000000.',
+    '子弹速度请填 -1000000–1000000 的整数': 'Enter an integer projectile speed between -1000000 and 1000000.',
     '弹速已保存；请退出游戏并重新启动模拟器，长按 R 不会更新基础弹速。':
         'Projectile speed saved. Exit the game and relaunch the simulator; holding R does not reload base speeds.',
     '弹速配置必须是对象': 'Projectile speed settings must be an object.',
     '弹速配置中的物品 ID 或弹体配置无效': 'Invalid item ID or projectile configuration.',
-    '弹速必须是 0–1000000 的整数，弹体索引必须非负':
-        'Projectile speeds must be integers from 0 to 1000000; projectile indices must be non-negative.',
+    '弹速必须是 -1000000–1000000 的整数，弹体索引必须非负':
+        'Projectile speeds must be integers from -1000000 to 1000000; projectile indices must be non-negative.',
 }
 ZH = {
     'Gear Editor': '装备编辑器',

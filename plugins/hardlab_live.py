@@ -115,6 +115,7 @@ class Plugin(PluginBase):
                     self.native_capture.input_observer=self.bridge.observe_input
                     self.native_capture.keyboard_mask=self.bridge.keyboard_input_mask
                     self.native_capture.replay_start=lambda: self.bridge.death_observer.prepare_replay() if getattr(self.bridge,'death_observer',None) is not None else None
+                    self.native_capture.world_started=lambda: self.bridge.death_observer.reset_world() if getattr(self.bridge,'death_observer',None) is not None else None
             except Exception as error:
                 self.native_capture_error=type(error).__name__+': '+str(error)
                 LOG.warning('native recording unavailable: %s',type(error).__name__,exc_info=True)

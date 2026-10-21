@@ -204,7 +204,7 @@ class WebEquipment {
     const current=this.current(),objects=this.catalogue.get(current?.type_)?.projectiles||[];this.$('projectile-panel').hidden=!objects.length;
     this.$('projectile-rows').replaceChildren(...objects.map(object=>{
       const row=document.createElement('label'),name=document.createElement('span'),input=document.createElement('input');row.className='projectile-row';name.textContent=object.vid;
-      input.type='number';input.min='0';input.max='1000000';input.step='1';input.value=this.profile.projectile_speeds[current.type_]?.[object.index]??object.speed;
+      input.type='number';input.min='-1000000';input.max='1000000';input.step='1';input.value=this.profile.projectile_speeds[current.type_]?.[object.index]??object.speed;
       input.setAttribute('aria-label',this.t('基础弹速 ','Projectile speed ')+object.index);input.oninput=()=>{const speeds=this.profile.projectile_speeds[current.type_]||={};speeds[object.index]=Number(input.value);this.touch();};row.append(name,input);return row;
     }));
   }

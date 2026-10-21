@@ -110,7 +110,7 @@ def parameters(value):
         result['items'].append(dict(type=number(item['type'], 1, 2**31-1, True),
             name=text(item['name']),
             base=[dict(stat_=number(b['stat_'], 1, 1000, True), val_=number(b.get('val_', 0), -2**31, 2**31-1, True)) for b in base],
-            projectiles=[dict(index=number(p['index'], 0, 127, True), speed=number(p['speed'], 0, 1000000, True)) for p in projectiles]))
+            projectiles=[dict(index=number(p['index'], 0, 127, True), speed=number(p['speed'], -1000000, 1000000, True)) for p in projectiles]))
     return result
 
 
@@ -657,7 +657,7 @@ def attach(session):
             action(*args)
         except Exception as error:
             recorder.closed = True
-            session.log('Battle recording unavailable: ' + type(error).__name__)
+            session.log('Battle recording unavailable: ' + type(error).__name__ + ': ' + str(error)[:200])
 
     def close_capture():
         nonlocal detached

@@ -29,12 +29,17 @@ class NativeDeath:
     def identity(self,world):
         return (int(self.ffi.cast('uintptr_t',world)),int(world.asWorld.props.seed))
 
+    def reset_world(self):
+        # Replaying/restarting a world can reuse both its allocator address and
+        # recorded seed. Those values cannot distinguish the new lifetime.
+        self.scope=None;self.last=None;self.dead=False;self.missing=False
+
     def prepare_replay(self):
         client=self.refs.WorldClient
         # This verified original callback only destroys WorldClient.overlay
         # and clears its pointer. Bypass notification hooks during UI cleanup.
         if client is not None and client!=self.ffi.NULL and client.overlay!=self.ffi.NULL:self.hook.original(client)
-        self.scope=None;self.last=None;self.dead=False;self.missing=False
+        self.reset_world()
 
     def observe(self,original,client):
         if client==self.refs.WorldClient:

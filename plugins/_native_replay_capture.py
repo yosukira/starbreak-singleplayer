@@ -348,6 +348,12 @@ class NativeCapture:
                     size=int(args[3])
                     if not 0<size<=262144:raise ValueError('Invalid native message size')
                     self.descriptions.add((int(args[1]),bytes(self.ffi.buffer(args[2],size))))
+                if kind=='message' and int(args[1])==10:
+                    result=original(*args)
+                    self.sync_refs()
+                    callback=getattr(self,'world_started',None)
+                    if callback:callback()
+                    return result
                 return original(*args)
             if (threading.get_ident()==self.owner and not self.tape.in_loop and not self.tape.finished
                     and not self.tape.error and kind in ('input','inventory')
@@ -401,6 +407,8 @@ class NativeCapture:
                 if message in (16,17):self.descriptions.add((message,payload))
                 if message==10:
                     self.sync_refs()
+                    callback=getattr(self,'world_started',None)
+                    if callback:callback()
                     if player is not None:player.world_created=True
                 return result
             if kind=='input':

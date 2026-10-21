@@ -34,6 +34,21 @@ class LifecycleTests(unittest.TestCase):
         dead=observer.document(world,dict(room_seed=99));self.assertEqual((dead['objid'],dead['hp'],dead['alive']),(1,0,False))
         world.asWorld.props.seed+=1;self.assertNotIn('alive',observer.document(world,dict(room_seed=100)))
 
+    def test_reconstructed_world_reusing_pointer_and_seed_does_not_inherit_death(self):
+        observer=NativeDeath.__new__(NativeDeath)
+        observer.ffi=NS(cast=lambda kind,value:123)
+        world=NS(asWorld=NS(props=NS(seed=99)))
+        client=NS(clientWorld=world);observer.refs=NS(WorldClient=client)
+        observer.ffi.NULL=None;observer.reset_world()
+        old=dict(objid=1,worldid=2,hp=5,alive=True,room_seed=99,xmp=100)
+        observer.document(world,old);observer.observe(lambda client:None,client)
+        living=dict(old,hp=150,xmp=200)
+        self.assertEqual(observer.document(world,living)['hp'],0)
+        observer.reset_world()
+        self.assertEqual(observer.document(world,living),living)
+        observer.observe(lambda client:None,client)
+        self.assertEqual(observer.document(world,dict(room_seed=99))['hp'],0)
+
     def test_native_battle_is_replayable_before_the_recording_game_closes(self):
         with tempfile.TemporaryDirectory() as directory,mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
             owner=NativeRecording(directory,'owned.exe')

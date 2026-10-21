@@ -1485,7 +1485,7 @@ class GearEditor(object):
                        command=lambda v=variable, speed=obj['speed']: v.set(str(speed))).pack(side='left')
             self.projectile_speed_rows.append((obj, variable))
         ttk.Label(self.projectile_frame,
-                  text=self.tr('整数 0–1000000；同名武器共用。保存后退出并重新启动模拟器生效。'),
+                  text=self.tr('整数 -1000000–1000000；同名武器共用。保存后退出并重新启动模拟器生效。'),
                   style='Hint.TLabel').pack(anchor='w', pady=(4, 0))
 
 
@@ -1493,8 +1493,8 @@ class GearEditor(object):
         speeds = {}
         for obj, variable in self.projectile_speed_rows:
             value = int(variable.get().strip())
-            if not 0 <= value <= projectile_speeds.MAX_SPEED:
-                raise ValueError(self.tr('弹速必须是 0–1000000 的整数'))
+            if not -projectile_speeds.MAX_SPEED <= value <= projectile_speeds.MAX_SPEED:
+                raise ValueError(self.tr('弹速必须是 -1000000–1000000 的整数'))
             if value != obj['speed']:
                 speeds[str(obj['index'])] = value
         return speeds
@@ -1642,7 +1642,7 @@ class GearEditor(object):
         try:
             speeds = self._current_projectile_speeds()
         except (TypeError, ValueError):
-            messagebox.showwarning(self.tr('Gear Editor'), self.tr('子弹速度请填 0–1000000 的整数'))
+            messagebox.showwarning(self.tr('Gear Editor'), self.tr('子弹速度请填 -1000000–1000000 的整数'))
             return
         previous_speeds = dict((self.overrides.get(projectile_speeds.KEY) or {}).get(str(self.item_type), {}))
         self._store_projectile_speeds(speeds)

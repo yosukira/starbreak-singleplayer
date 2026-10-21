@@ -222,6 +222,22 @@ class RecordTests(unittest.TestCase):
         self.assertEqual(first['items'][0]['name'],'Frozen weapon')
         self.assertEqual(first['items'][0]['base'],[{'stat_':9,'val_':3}])
 
+    def test_every_retail_item_can_be_in_a_recorded_loadout(self):
+        import base64
+        from localserver import pb_layout
+        catalogue=Path(__file__).resolve().parents[1]/'data/catalogue/item_descriptions.jsonl'
+        layouts=pb_layout.default_layouts()
+        for line in catalogue.read_text(encoding='utf8').splitlines():
+            item=layouts.decode('ItemDescription',base64.b64decode(json.loads(line)['payloadBase64']))
+            kind=item['type_']
+            row=dict(type_=3,mk_=6,impslots_=1,items_=[dict(type_=kind,slotpos_=1280)])
+            session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=3),
+                server=SimpleNamespace(class_loadouts={3:row},item_descriptions={kind:item}))
+            with self.subTest(item=kind,name=item.get('name_')):
+                snap=records.snapshot(session)
+                expected={str(i):p['speed_'] for i,p in enumerate(item.get('obj_',[])) if 'speed_' in p}
+                self.assertEqual(snap['projectile_speeds'].get(str(kind),{}),expected)
+
     def test_cumulative_metrics_are_not_double_counted_or_lost_after_reset(self):
         with tempfile.TemporaryDirectory() as directory:
             session=SimpleNamespace(options=SimpleNamespace(map='egy_hulk',player_type=1,web_client=True),

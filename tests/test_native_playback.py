@@ -85,6 +85,16 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_world_lifetime_callback_runs_even_when_recording_is_disabled(self):
+        for recording in (False,True):
+            engine=Engine();engine.capture.recording=recording
+            reset=engine.capture.world_started=mock.Mock()
+            engine.capture.before()
+            engine.call('message',engine.game.serverConnection.messageHandlers,10,b'world',5)
+            engine.capture.after()
+            reset.assert_called_once_with()
+            self.assertIs(engine.refs.WorldClient,engine.game.worldClient)
+
     def test_original_socket_is_drained_without_applying_stale_world_packets(self):
         engine=Engine();player=engine.play(Engine().record(30))
         player.control(dict(action='seek',seconds=.17,paused=True));player.update()

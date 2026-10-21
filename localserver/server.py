@@ -1118,6 +1118,7 @@ class LocalServer(object):
         if self._restart_in_progress:
             return
         if not self._ground_ack_ready(session.bridge):return
+        if self._queue_native_restart(self.options.map,player_type):return
         self.reload_class_loadouts_if_changed()
         requested_type = int(player_type)
         current_type = int(getattr(session, 'player_type', self.options.player_type) or 1)
@@ -1158,6 +1159,23 @@ class LocalServer(object):
         log('live restart requested: character type {0}'.format(
             self._restart_player_type))
         self._request_pvid_loads(channel)
+
+    def _queue_native_restart(self,map_id,shell):
+        control=os.environ.get('SB_NATIVE_CONTROL_PATH')
+        if not control or getattr(self,'_native_restart_commit_thread',None)==threading.get_ident():return False
+        # Both the encounter tick and the map watcher may see the same hold.
+        # Queue one rotation and wait for the recorder's acknowledgement before
+        # allowing any path (including automatic/gear restarts) to create a world.
+        lock=self.__dict__.setdefault('_native_restart_lock',threading.Lock())
+        with lock:
+            if getattr(self,'_native_restart_pending',False):return True
+            from tools.native_playback import NativeControlClient
+            try:
+                NativeControlClient(control).call('/command',dict(action='practice',map=map_id,shell=int(shell)))
+                self._native_restart_pending=True
+            except (OSError,ValueError) as error:
+                log('Native restart is waiting for recorder acknowledgement: '+str(error)[:200])
+        return True
 
     def _ensure_map_watch(self, channel):
         """Watch game_settings.json so an editor map change applies live."""
@@ -1248,11 +1266,16 @@ class LocalServer(object):
             os.environ['SB_REPLAY_ATTEMPT']=attempt
             os.environ['SB_RECORD_REPLAY']='1' if request['recording'] else '0'
             self._native_capture_world_offset=self._live_world_sequence
-        if map_id!=(getattr(self.options,'map',None) or game_settings.ORIGINAL_MAP):
-            if not self.request_live_map_switch(channel,session,map_id,player_type=shell):return True
-        else:self.request_live_restart(channel,session,shell)
-        if self._restart_in_progress:self._native_practice_applied=serial
-        return True
+        self._native_restart_commit_thread=threading.get_ident()
+        try:
+            if map_id!=(getattr(self.options,'map',None) or game_settings.ORIGINAL_MAP):
+                if not self.request_live_map_switch(channel,session,map_id,player_type=shell):return True
+            else:self.request_live_restart(channel,session,shell)
+            if self._restart_in_progress:
+                self._native_practice_applied=serial
+                self._native_restart_pending=False
+            return True
+        finally:self._native_restart_commit_thread=None
 
     def request_live_room_transition(self, channel, session, link, player):
         """Accept a door intent; commit only after its native inventory refresh."""

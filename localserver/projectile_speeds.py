@@ -18,8 +18,9 @@ def normalize(rows):
             raise ValueError('弹速配置中的物品 ID 或弹体配置无效')
         speeds = {}
         for index, speed in objects.items():
-            if not str(index).isdigit() or type(speed) is not int or not 0 <= speed <= MAX_SPEED:
-                raise ValueError('弹速必须是 0–1000000 的整数，弹体索引必须非负')
+            # Retail movement equipment (Boosters/Gliders) uses signed speeds.
+            if not str(index).isdigit() or type(speed) is not int or not -MAX_SPEED <= speed <= MAX_SPEED:
+                raise ValueError('弹速必须是 -1000000–1000000 的整数，弹体索引必须非负')
             speeds[str(int(index))] = speed
         if speeds:
             result[str(int(item))] = speeds

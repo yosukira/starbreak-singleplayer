@@ -198,6 +198,10 @@ class NativePlayer:
         real=int(self.capture.functions['clock'].original())
         self.capture.clock_offset=((self.clocks[clock_index-1]-real+2**31)%2**32-2**31) if clock_index else 0
         self.capture.sync_audio_clock(real+self.capture.clock_offset)
+        # The checkpoint proves a living character. Discard death telemetry
+        # retained from earlier worlds reconstructed in this replay prefix.
+        callback=getattr(self.capture,'world_started',None)
+        if callback:callback()
         tape.continue_recording(save,sequence,size);self.phase='live'
         self.document=dict(id=self.document['id']);self.times=[];self.ends=[];self.clocks=[];self.clock_positions=[]
         self.requested=False;self.paused=False;self.speed=1.

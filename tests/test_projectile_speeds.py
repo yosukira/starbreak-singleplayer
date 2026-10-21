@@ -63,7 +63,7 @@ class SpeedTests(unittest.TestCase):
         self.assertEqual(ps.patch_payload(self.layouts, blob, desc, {}), blob)
 
     def test_invalid_input_and_nonprojectile(self):
-        for value in (-1, 1000001, True, 1.5, '600'):
+        for value in (-1000001, 1000001, True, 1.5, '600'):
             with self.assertRaises(ValueError):
                 ps.normalize({'31': {'0': value}})
         blob, desc = self.payloads[36]

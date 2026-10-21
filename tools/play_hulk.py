@@ -1020,7 +1020,9 @@ def session(argv=None,show_editor=True):
                 command.extend(['--live-demo-damage', '--live-auto-interact',
                                 '--live-force-demo'])
             server_env=dict(os.environ)
-            if native_recording:server_env['SB_NATIVE_PRACTICE_PATH']=str(native_recording.practice_path)
+            if native_recording:
+                server_env['SB_NATIVE_PRACTICE_PATH']=str(native_recording.practice_path)
+                server_env['SB_NATIVE_CONTROL_PATH']=str(native_recording.registry)
             server_env.pop('SB_REPLAY_ATTEMPT',None)
             server_env['SB_RECORD_REPLAY']='0'
             if native_recording and recording_enabled:
