@@ -45,6 +45,7 @@ def validate(document):
         raise ValueError('Invalid run engine identity')
     result=dict(schema=SCHEMA,engine=digest,map=document['map'],seed=str(integer(int(document['seed']),0,2**64-1)),
         shell=integer(document['shell'],1,5),web=document.get('web') is True,
+        victory_rules=integer(document.get('victory_rules',0),0,1),
         world_sequence=integer(document['world_sequence'],1,10000),
         input_serial=integer(document['input_serial'],1,10000),
         teleport_serial=integer(document.get('teleport_serial',0),0,2**31-1),
@@ -106,6 +107,7 @@ class RunCapture:
         self.active,self.active_thread,self.failed=None,None,None
         self.settings=gameplay_settings(game_settings.load())
         self.header=dict(schema=SCHEMA,engine=engine_fingerprint(),map=session.options.map,
+            victory_rules=0 if getattr(session.current,'_legacy_victory_presentation',False) else 1,
             seed=str(session.run.seed),shell=session.options.player_type,web=getattr(session.options,'web_client',False),
             world_sequence=int(getattr(session.server,'_live_world_sequence',1)),input_serial=session._input_serial,
             teleport_serial=int(getattr(session.bridge,'_teleport_serial',0)),
@@ -218,9 +220,11 @@ class RunRecording:
         self.writer=JournalWriter(recorder.store.directory/(recorder.identifier+'.server.jsonl.gz'),self.capture.header)
         self.capture.sink=self.writer.frame
 
-    def seal(self):
+    def seal(self,force=False):
         if self.closed or self.capture.active is not None:return
         if not (self.recorder.closed or self.capture.failed):return
+        from .battle_records import recording_tail_pending
+        if not force and not self.capture.failed and recording_tail_pending(self.capture.session):return
         try:self.writer.close(complete=not self.capture.failed)
         finally:
             self.capture.detach();self.closed=True
@@ -257,7 +261,7 @@ class RunRecording:
                 transition=getattr(session,'_battle_room_transition',False)
                 session._battle_room_transition=False
                 if not transition and recorder.session is session:safely(recorder.finish)
-                self.seal()
+                self.seal(force=True)
             return result
         session.step,session.stop=step,stop
 
@@ -311,6 +315,7 @@ class RunReplay:
                     if self.server._live_world_sequence!=row['world_sequence']:
                         raise ReplayMismatch('Full-run world sequence changed')
                     self.session=_map_session_class(options.map)(self.server,self.channel,options,bridge=self.bridge)
+                    self.session.current._legacy_victory_presentation=self.document['victory_rules']==0
                     if (self.session.instance.role,self.session.run.entry)!=(row['role'],row['entry']):
                         raise ReplayMismatch('Full-run room route changed')
                     self.server.live_session=self.session

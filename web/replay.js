@@ -7,7 +7,7 @@
   const base64 = value => {const data=bytes(value);let output='';for(let i=0;i<data.length;i+=8192)output+=String.fromCharCode(...data.subarray(i,i+8192));return btoa(output);};
   const unbase64 = value => Uint8Array.from(atob(value),c=>c.charCodeAt(0)).buffer;
 
-  function gameplayKeys(content){
+  function gameplayKeys(content,action=null){
     // Original 1.14.6 defaults. Controller buttons and menu/emote bindings
     // are not takeover gestures. Explicit personal bindings replace a row.
     const bindings=[[1073741904],[1073741903],[1073741906],[1073741905],[32,102],[100],[115],[97],[],[1073742049,1073742053],[],[],[],[]];
@@ -35,7 +35,73 @@
         }
       }
     }catch(_){}
-    return new Set(bindings.flat().filter(v=>Number.isInteger(v)&&v>0&&(v<0x20000000||v>=0x40000000)));
+    return new Set((action===null?bindings.flat():bindings[action]||[]).filter(v=>Number.isInteger(v)&&v>0&&(v<0x20000000||v>=0x40000000)));
+  }
+
+  function installPlatformDrop(module,{now:clock=()=>performance.now()}={}){
+    let lastWorld=0;
+  let dropIntent=null,dropStep=0,retryingDrop=false;
+  function dropState(world){
+    const h=module.HEAP32;if(!h)return null;const read=(p,o)=>h[(p+o)>>2]|0;
+    const valid=(p,size)=>p>0&&!(p&3)&&p+size<=h.byteLength;
+    if(!valid(world,700))return null;
+    const player=read(world,672);if(!valid(player,744)||read(player,64)<=0)return null;
+    const owner=read(player,304),id=read(player,308),key=world+'/'+(read(world,200)>>>0);
+    for(const sub of [read(world,628),read(world,664)]){
+      if(!valid(sub,144)||read(sub,4)!==owner)continue;
+      const first=read(sub,60),end=read(sub,64);
+      if(!first||end<first||(end-first)%8||end-first>8192*8||!valid(first,end-first))continue;
+      for(let p=first;p<end;p+=8){const obj=read(p,4);if(valid(obj,216)&&read(obj,8)===id)return {key,total:read(world,668),support:read(obj,76)===2?owner+'/'+id:'solid'};}
+    }
+    return {key,total:read(world,668),support:null};
+  }
+  module.webDropControl=(kind,values)=>{
+    if(module.clientReplay?.mode==='play'||retryingDrop||kind!=='key'||!values[0])return;
+    const saved=module.gamePreferences?.load('LocalStorage.pb');
+    if(!gameplayKeys(saved?btoa(saved):null,4).has(values[1]))return;
+    const state=dropState(module.clientReplay?.world||lastWorld),now=clock();
+    if(!state||!(state.total&8)||state.total&16||!state.support||state.support==='solid')return;
+    if(dropIntent&&dropIntent.key===state.key&&dropIntent.support===state.support&&now<=dropIntent.until)return;
+    dropIntent={key:state.key,support:state.support,step:dropStep,until:now+250};
+  };
+  function retryDrop(world){
+    if(!dropIntent||module.clientReplay?.mode==='play')return;
+    const state=dropState(world),now=clock();
+    if(!state||state.key!==dropIntent.key||now>dropIntent.until||(state.total&24)!==24||state.support!==null&&state.support!==dropIntent.support){dropIntent=null;return;}
+    if(state.support!==dropIntent.support||dropStep<=dropIntent.step)return;
+    dropIntent.step=dropStep;
+    // Use the current mapped jump key and the original event dispatcher.
+    // These controls are recorded, so old and new tapes replay exact inputs.
+    const saved=module.gamePreferences?.load('LocalStorage.pb');
+    const jump=[...gameplayKeys(saved?btoa(saved):null,4)][0];if(!jump)return;
+    retryingDrop=true;
+    try{for(const pressed of [0,1]){const apply=()=>module.replayControl('key',[pressed,jump]);if(module.clientReplay)module.clientReplay.control('key',[pressed,jump],apply);else apply();}}
+    finally{retryingDrop=false;}
+  }
+    return {frame(world){lastWorld=world;dropStep++;retryDrop(world);},get intent(){return dropIntent;}};
+  }
+
+  function applyPlayerProtection(module,world,values){
+    if(!Array.isArray(values)||values.length!==4||values.some(value=>!Number.isInteger(value))||![0,1].includes(values[3]))throw Error('Invalid player protection control');
+    const h=module.HEAP32,valid=(p,size)=>p>0&&!(p&3)&&p+size<=h.byteLength;
+    if(!valid(world,700))throw Error('Player protection world is unavailable');
+    const player=h[(world+672)>>2],sub=h[(world+664)>>2];
+    if(!valid(player,744)||!valid(sub,144)||h[(player+8)>>2]!==values[2]||h[(sub+4)>>2]!==values[1]||(h[(world+200)>>2]>>>0)!==values[0])throw Error('Player protection target changed');
+    module.HEAPU8[player+103]=values[3];
+  }
+  function installPlayerProtection(module){
+    let world=0;
+    module.applyProtectionFlag=values=>applyPlayerProtection(module,module.clientReplay?.world||world,values);
+    module.applyPlayerProtection=values=>module.nativeJournal?module.nativeJournal.protection(values):module.applyProtectionFlag(values);
+    return {frame(current){
+      world=current;if(module.clientReplay?.mode==='play')return;
+      const command=module.pendingPlayerProtection;if(!command||typeof command.enabled!=='boolean')return;
+      const h=module.HEAP32,player=h[(world+672)>>2],sub=h[(world+664)>>2];if(!player||!sub)return;
+      const values=[command.room_seed,command.worldid,command.objid,Number(command.enabled)];
+      if((h[(world+200)>>2]>>>0)!==values[0]||h[(player+8)>>2]!==values[2]||h[(sub+4)>>2]!==values[1]||!!module.HEAPU8[player+103]===command.enabled)return;
+      const apply=()=>module.replayControl('protection',values);
+      if(module.clientReplay)module.clientReplay.control('protection',values,apply);else apply();
+    }};
   }
 
   class ClientReplay {
@@ -220,8 +286,8 @@
       if(this.mode==='play')return;
       if(kind==='key')values[0]?this.heldKeys.add(values[1]):this.heldKeys.delete(values[1]);
       if(kind==='reset')this.heldKeys.clear();
-      this.write(['control',kind,values.map(value=>value|0)]);
-      try{callback();}finally{this.stopIfLeaving();}
+      this.write(['control',kind,kind==='protection'?values.slice():values.map(value=>value|0)]);
+      try{this.module.webDropControl?.(kind,values);callback();}finally{this.stopIfLeaving();}
     }
     preferences(content) {
       if(this.mode!=='record')throw Error('Cannot change playback options');
@@ -419,10 +485,12 @@
     throw Error('Takeover verification timed out');
   }
 
-  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys};return;}
+  if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys,installPlatformDrop,applyPlayerProtection,installPlayerProtection};return;}
   globalThis.StarBreakClientReplay=ClientReplay;
+  const drop=installPlatformDrop(Module);
+  const protection=installPlayerProtection(Module);
   const boot=globalThis.STARBREAK_WEB_BOOT?.replay;
-  if(!boot)return;
+  if(!boot){Module.webReplayFrame=(world,dt)=>{protection.frame(world);drop.frame(world);return dt;};return;}
   const playback=boot.mode==='play';
   const ReplayEngine=boot.document?.schema==='starbreak-native-journal-v1'?StarBreakNativeReplay(ClientReplay):ClientReplay;
   const replay=new ReplayEngine({module:Module,mode:playback?'play':'record',document:boot.document,takeoverAllowed:boot.takeover!==false,
@@ -435,19 +503,25 @@
       parent.postMessage({type:'replay-status',...status},location.origin);
     }});
   Module.clientReplay=replay;
-  Module.webReplayFrame=(world,dt)=>replay.frame(world,dt);
+  Module.webReplayFrame=(world,dt)=>{protection.frame(world);drop.frame(world);return replay.frame(world,dt);};
   Module.webReplayEnd=world=>replay.frameEnd(world);
   Module.webReplayInput=(world,pointer)=>replay.input(world,pointer);
   Module.preMainLoop=()=>replay.loop(0);
   Module.postMainLoop=()=>{
     replay.loop(1);
+    if(playback&&!keyboardPublished)publishKeyboard();
     if(queuedTakeover!==undefined&&replay.canTakeOver()){
       const tap=queuedTakeover;queuedTakeover=undefined;queueMicrotask(()=>takeOver(tap));
     }
   };
   const physical=new Set();
-  let takeoverKeys=gameplayKeys(null);
-  if(playback)void fetch('/api/game-preferences',{cache:'no-store'}).then(response=>response.json()).then(value=>{takeoverKeys=gameplayKeys(value.content);}).catch(()=>{});
+  let takeoverKeys=gameplayKeys(null),keyboardPublished=false;
+  function publishKeyboard(){
+    if(!Module.replayTranslateKey)return;
+    const keys=[];for(let key=1;key<256;key++)if(takeoverKeys.has(Module.replayTranslateKey(key)))keys.push(key);
+    parent.postMessage({type:'replay-keyboard',keys},location.origin);keyboardPublished=true;
+  }
+  if(playback)void fetch('/api/game-preferences',{cache:'no-store'}).then(response=>response.json()).then(value=>{takeoverKeys=gameplayKeys(value.content);keyboardPublished=false;publishKeyboard();}).catch(()=>{});
   let pendingTakeover=false,queuedTakeover;
   let warming=false;
   const warmTimer=playback?setInterval(async()=>{
@@ -514,22 +588,25 @@
       parent.postMessage({type:'replay-status',state:'takeover-failed',message:String(error.message||error)},location.origin);
     }finally{pendingTakeover=false;replay.handoffPending=false;}
   }
+  function playbackKeyboard(type,event){
+    if(replay.mode!=='play'||!['keydown','keyup'].includes(type))return;
+    const key=Module.replayTranslateKey?.(event.keyCode||event.which)||0;
+    if(type==='keyup')physical.delete(key);else if(takeoverKeys.has(key))physical.add(key);
+    if(type==='keydown'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&takeoverKeys.has(key))void takeOver(key);
+  }
   addEventListener('message',event=>{
     if(event.origin!==location.origin||event.source!==parent||event.data.type!=='replay-control')return;
     if(event.data.action==='pause')replay.setPaused(event.data.paused);
     if(event.data.action==='seek')replay.seek(event.data.seconds,event.data.paused);
     if(event.data.action==='speed')replay.setSpeed(event.data.speed);
     if(event.data.action==='takeover')void takeOver();
+    if(event.data.action==='keyboard'&&Number.isInteger(event.data.keyCode)&&event.data.keyCode>0&&event.data.keyCode<256)playbackKeyboard(event.data.event,event.data);
   });
   if(playback){
     for(const type of ['keydown','keyup','mousedown','mouseup'])addEventListener(type,event=>{
       if(replay.mode!=='play')return;
       event.preventDefault();event.stopImmediatePropagation();
-      if(type==='keydown'||type==='keyup'){
-        const key=Module.replayTranslateKey?.(event.keyCode||event.which)||0;
-        if(type==='keyup')physical.delete(key);else if(takeoverKeys.has(key))physical.add(key);
-        if(type==='keydown'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&takeoverKeys.has(key))void takeOver(key);
-      }
+      playbackKeyboard(type,event);
     },true);
     parent.postMessage({type:'replay-status',state:'ready'},location.origin);
   }

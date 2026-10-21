@@ -603,9 +603,29 @@ class NativeCapture:
                 if ((int(logical)-int(channel.lastPlayMS)+2**31)%2**32-2**31)<0:
                     channel.lastPlayMS=(int(logical)-1+2**31)%2**32-2**31
 
+    def apply_protection(self,row):
+        client=self.refs.WorldClient
+        if client==self.ffi.NULL or client.clientWorld==self.ffi.NULL:raise ValueError('Player protection world is unavailable')
+        world=client.clientWorld;state=self.world_state(world)
+        if len(state)!=14 or (state[0],state[3],state[2])!=tuple(row[1:4]):raise ValueError('Player protection target changed')
+        def apply():world.player.asClientObject.asNativeObject.asWorldObject.props.invulnerable=bool(row[4])
+        if self.recording or self.player is not None:return self.tape.call(row,apply)
+        return apply()
+
+    def update_protection(self):
+        provider=getattr(self,'protection_command',None)
+        command=provider() if provider else None
+        if not isinstance(command,dict) or type(command.get('enabled')) is not bool:return
+        state=self.state()
+        if len(state)!=14 or (state[0],state[3],state[2])!=(command.get('room_seed'),command.get('worldid'),command.get('objid')):return
+        world=self.refs.WorldClient.clientWorld
+        if bool(world.player.asClientObject.asNativeObject.asWorldObject.props.invulnerable)==command['enabled']:return
+        self.apply_protection(['protection',state[0],state[3],state[2],int(command['enabled'])])
+
     def before(self):
         if self.player is None:
             if self.recording and not getattr(self,'awaiting_world',False):self.tape.loop(0)
+            self.update_protection()
             self.retry_platform_drop()
             return
         if self.player.phase!='live':
@@ -613,6 +633,7 @@ class NativeCapture:
             return
         self.sync_audio_clock(int(self.functions['clock'].original())+self.clock_offset)
         self.tape.loop(0)
+        self.update_protection()
         if getattr(self,'reset_inputs',False):
             total=self.state()[1]
             for bit in range(14):
@@ -716,6 +737,7 @@ class NativeCapture:
     def invoke(self,row):
         """Use only checked functions and current game-owned objects."""
         kind=row[0];ffi=self.ffi;game=self.refs.GameClient
+        if kind=='protection':return self.apply_protection(row)
         if kind=='frame' and self.tape.mode=='play':
             cursor=self.tape.cursor;ops=self.tape.ops
             # doTimePasses sleeps when less than 10 ms have accrued. An

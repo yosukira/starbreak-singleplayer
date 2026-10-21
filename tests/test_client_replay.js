@@ -34,6 +34,11 @@ function engine(){
   assert.equal(progress.length,30,'Long verification must continue beyond the old 20-second timeout');
   await assert.rejects(prepareTakeover({}, {request:async url=>({ok:true,json:async()=>url.includes('?')?{state:'failed',error:'Incompatible recording'}:{job:'failed'}})}),/Incompatible recording/);
   const chunks=[],source=engine();
+  const protectionRows=[],protectionRecorder=new ClientReplay({module:source.module,keepOps:true});
+  protectionRecorder.control('protection',[0xfedcba98,2,1,1],()=>protectionRows.push('applied'));
+  assert.deepEqual(protectionRecorder.ops,[['control','protection',[0xfedcba98,2,1,1]]],'Keep unsigned room seeds intact in saved controls');
+  const protectionPlayback=new ClientReplay({module:{replayControl:(kind,args)=>protectionRows.push([kind,args])},mode:'play',document:{ops:protectionRecorder.ops}});
+  protectionPlayback.external();assert.deepEqual(protectionRows,['applied',['protection',[0xfedcba98,2,1,1]]]);
   const record=new ClientReplay({module:source.module,keepOps:true,save:async chunk=>chunks.push(chunk)});
   record.value('random',117);record.value('clock',123456789);
   record.loop(0);record.frame(source.world,17);record.frameEnd(source.world);record.loop(1);
@@ -56,6 +61,24 @@ function engine(){
   assert.equal(replay.loop(0),true);assert.equal(destination.module.HEAP32[(destination.world+668)>>2],8,'Recorded input is executed through the original input handler');
   assert.equal(replay.value('clock',0),123456806);assert.equal(replay.frame(destination.world,100),17);destination.set(destination.player,16,500);replay.frameEnd(destination.world);replay.loop(1);
   assert.equal(replay.loop(0),false);assert.equal(replay.error,null);assert.equal(notices.at(-1).state,'ended');
+  // Drop assistance can dispatch original key edges inside a render loop,
+  // immediately before the engine's physics frame. Playback must execute
+  // these recorded controls before that frame even with assistance disabled.
+  const dropSource=engine(),dropRecord=new ClientReplay({module:dropSource.module,keepOps:true});
+  const edge=(runner,target,pressed)=>{
+    const ptr=target.module._malloc(24),total=pressed?24:8;
+    target.set(ptr,4,total);target.set(ptr,8,pressed?16:0);target.set(ptr,12,pressed?0:16);target.set(ptr,20,7);
+    runner.input(target.world,ptr);target.module.asm.replaySetInput(target.world,ptr);
+  };
+  dropRecord.loop(0);
+  for(const pressed of [0,1])dropRecord.control('key',[pressed,32],()=>edge(dropRecord,dropSource,pressed));
+  dropRecord.frame(dropSource.world,17);dropSource.set(dropSource.player,20,256);dropRecord.frameEnd(dropSource.world);dropRecord.loop(1);await dropRecord.finish();
+  const dropTarget=engine(),dropPlayback=new ClientReplay({module:dropTarget.module,mode:'play',document:{ops:dropRecord.ops}});
+  dropTarget.module.replayControl=(kind,values)=>{assert.equal(kind,'key');edge(dropPlayback,dropTarget,values[0]);};
+  dropPlayback.loop(0);assert.equal(dropPlayback.frame(dropTarget.world,99),17);
+  assert.equal(dropTarget.module.HEAP32[(dropTarget.world+668)>>2],24,'Both retry edges replay before physics');
+  dropTarget.set(dropTarget.player,20,256);dropPlayback.frameEnd(dropTarget.world);dropPlayback.loop(1);
+  assert.equal(dropPlayback.error,null);assert.equal(dropPlayback.loop(0),false);
   const corrupt=structuredClone(record.ops);corrupt.find(row=>row[0]==='state')[1][8]=99;
   const wrong=new ClientReplay({module:engine().module,mode:'play',document:{ops:corrupt}});
   wrong.value('random',0);wrong.value('clock',0);wrong.loop(0);wrong.frame(destination.world,17);wrong.frameEnd(destination.world);
@@ -82,7 +105,7 @@ function engine(){
   controls.setPaused(false);controls.setSpeed(.5);controls.iterate(()=>iterations++);assert.equal(iterations,0);controls.iterate(()=>iterations++);assert.equal(iterations,1);
   controls.setSpeed(4);controls.iterate(()=>iterations++);assert.equal(iterations,5);
   // Real elapsed time, not the playback monitor's refresh rate, controls pace.
-  for(const hz of [30,60,144])for(const speed of [.25,.5,1,2,4]){
+  for(const hz of [24,30,60,75,120,144,165,240,360,720])for(const speed of [.25,.5,1,2,4]){
     let now=0;
     const ops=[];
     for(let i=0;i<2001;i++)ops.push(['loop',0],['tick',i*5],['loop',1]);

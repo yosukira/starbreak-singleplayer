@@ -71,9 +71,10 @@ def operation(row):
         return [kind, *(integer(v) for v in values)]
     if kind == 'control' and len(values) == 2:
         control, args = values
-        counts = dict(key=2, mouse=2, button=4, window=3, reset=0, resize=0)
+        counts = dict(key=2, mouse=2, button=4, window=3, reset=0, resize=0, protection=4)
         if control not in counts or not isinstance(args, list) or len(args) != counts[control]:
             raise ValueError('Invalid replay control')
+        if control=='protection':return [kind,control,[integer(args[0],0,2**32-1),integer(args[1],1,2**31-1),integer(args[2],1,2**31-1),integer(args[3],0,1)]]
         return [kind, control, [integer(int(v) if type(v) is bool else v) for v in args]]
     if kind == 'asset' and len(values) == 1 and isinstance(values[0], str) and re.fullmatch(r'(?:texture|data):[A-Za-z0-9_.-]{1,240}', values[0]):
         return [kind, values[0]]

@@ -9,7 +9,7 @@ import base64
 import json
 
 SCHEMA='starbreak-native-journal-v1'
-CALLS=('input','delta','frame','read','player-input','engine-frame','message','ack','inventory')
+CALLS=('input','delta','frame','read','player-input','engine-frame','message','ack','inventory','protection')
 MESSAGES=(10,12,15,16,17,21,37,38)
 MAX_OPERATIONS=3000000
 MAX_PACKET=262144
@@ -37,6 +37,8 @@ def operation(row):
     if kind=='return' and len(row)==2 and row[1]in CALLS:return list(row)
     if kind=='input' and len(row)==3:
         return [kind,integer(row[1],0,16383),integer(row[2],0,1)]
+    if kind=='protection' and len(row)==5:
+        return [kind,integer(row[1],0,2**32-1),integer(row[2],1,2**31-1),integer(row[3],1,2**31-1),integer(row[4],0,1)]
     if kind=='inventory' and len(row)==5:
         return [kind,integer(row[1],1,2),integer(row[2],0,65535),integer(row[3],0,65535),integer(row[4],0,7)]
     if kind=='clock' and len(row)==2:return [kind,integer(row[1],-(2**31),2**31-1)]

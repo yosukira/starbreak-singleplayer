@@ -11,14 +11,14 @@
   let maximumDependencies=0;
   Module.monitorRunDependencies=count=>{maximumDependencies=Math.max(maximumDependencies,count);parent.postMessage({type:'loading-progress',percent:75+(maximumDependencies?15*(1-count/maximumDependencies):0),step:'engine'},location.origin);};
   (Module.preRun||=[]).push(()=>parent.postMessage({type:'loading-progress',percent:92,step:'world'},location.origin));
-  let frame = 0, seq = 0, last = 0, wasInteract = false, pendingInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false;
+  let frame = 0, seq = 0, last = 0, wasInteract = false, pendingInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false, playerEpoch=0;
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => {keys.clear();wasInteract=false;pendingInteract=false;});
   const acknowledge = e => {
-    try { const ack = JSON.parse(e.data); if(ack.map)context=ack; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
+    try { const ack = JSON.parse(e.data); if(ack.map)context=ack;if(ack.player_protection?.epoch===playerEpoch)Module.pendingPlayerProtection=ack.player_protection; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
   };
   const connectTelemetry = () => {
@@ -44,7 +44,7 @@
       frame++;
       const pointer = read(world, 672), subworld = read(world, 664);
       const key=world+'/'+(read(world,200)>>>0);
-      if(key!==worldKey){worldKey=key;lastPlayer=null;wasInteract=false;pendingInteract=false;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
+      if(key!==worldKey){worldKey=key;playerEpoch++;Module.pendingPlayerProtection=null;lastPlayer=null;wasInteract=false;pendingInteract=false;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
       activePlayer=valid(pointer)?pointer:0;
       // Engine input uses the game's own remapped keyboard/controller binds.
       // Sample every frame, before rate limiting; menu clicks do not set it.
@@ -67,7 +67,7 @@
         hp:read(pointer,64),maxhp:read(pointer,68),facing:read(pointer,40),
         alive:read(pointer,64)>0,vid:'browser-player',ammo:read(pointer,540),input:read(pointer,520)} : {...lastPlayer,hp:0,alive:false};
       lastPlayer = player;activePlayer=valid(pointer)?pointer:0;
-      player.room_seed=read(world,200)>>>0;
+      player.room_seed=read(world,200)>>>0;player.player_epoch=playerEpoch;
       player.battle_metrics={protocol:'player-metrics-v1',...pickupTotals};
       const documentState={};
       if(context.map){

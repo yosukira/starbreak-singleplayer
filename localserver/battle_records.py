@@ -608,6 +608,14 @@ class BattleRecorder:
             self.closed = True
 
 
+def recording_tail_pending(session):
+    """Keep the new ship death presentation after the combat result is final."""
+    current=getattr(session,'current',None) or session
+    return (getattr(current,'phase',None)=='death' and
+            bool(getattr(current,'death_records',())) and
+            not getattr(current,'_legacy_victory_presentation',False))
+
+
 def attach(session):
     """Observe public session boundaries without changing any AI or timestep."""
     if getattr(session.options, 'map', None) in NON_BATTLE_MAPS:
@@ -659,11 +667,12 @@ def attach(session):
             recorder.closed = True
             session.log('Battle recording unavailable: ' + type(error).__name__ + ': ' + str(error)[:200])
 
-    def close_capture():
+    def close_capture(force=False):
         nonlocal detached
         # stop() may be called from inside a tick. Seal only after that frame
         # has reached the journal, and never race the simulation writer.
         if journal is not None and not detached and capture.active is None and (recorder.closed or capture.failed):
+            if not force and not capture.failed and recording_tail_pending(session):return
             safely(journal.close, not capture.failed)
             capture.detach(restore_methods=False)
             detached = True
@@ -690,7 +699,7 @@ def attach(session):
             session._battle_room_transition = False
             if not (run is not None and room_transition):
                 safely(recorder.finish)
-            close_capture()
+            close_capture(force=True)
             return result
 
     session.step, session.stop = step, stop

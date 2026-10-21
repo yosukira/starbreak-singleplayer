@@ -98,6 +98,7 @@ def server_document(value):
         shell=integer(value['shell'],1,5),worldid=integer(value['worldid'],1,2**31-1),
         world_sequence=integer(value.get('world_sequence',1),1,10000),
         settings=replay.gameplay_settings(value['settings']),options={},frames=[])
+    if 'victory_rules' in value:result['victory_rules']=integer(value['victory_rules'],0,1)
     if 'room_seed' in value:
         result['room_seed']=str(integer(int(value['room_seed']),0,2**64-1))
     for group,keys in (('turrets',('front','upper','lower')),('missiles',('upper','lower'))):

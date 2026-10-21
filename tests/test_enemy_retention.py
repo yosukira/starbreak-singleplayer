@@ -1,5 +1,6 @@
 """Endless encounters retain living enemies and unacknowledged deaths only."""
 import unittest
+import base64
 from types import SimpleNamespace
 from unittest import mock
 
@@ -25,6 +26,51 @@ class EnemyRetentionTests(unittest.TestCase):
         self.assertIsNone(session.enemies.find_unit(100))
         session._emit_units(.02)
         session.batch.destroy.assert_called_once()
+
+    def test_victory_retains_survivors_and_targets_protection_to_player_world(self):
+        with game_settings.event_snapshot(game_settings.normalize(dict(map='egy_hulk',skip_intro={'egy_hulk':True}))):
+            session,bridge,server=encounter('egy_hulk');packets=[]
+            server._send_raw=lambda channel,kind,payload,*a,**kw:packets.append((kind,payload))
+            session.prepare()
+            for tick in range(240):bridge._absorb(input_at(tick));session.step(.05)
+            survivors=list(session.enemies.live());self.assertTrue(survivors)
+            projectiles=list(session.projectiles.projectiles)
+            packets.clear();session.batch.general=[];session.batch.objects=[]
+            session._begin_death()
+            self.assertTrue(all(unit.alive for unit in survivors))
+            self.assertFalse(session.enemies.enabled)
+            self.assertEqual(session.enemies.pending,[])
+            self.assertEqual(session.projectiles.projectiles,projectiles)
+            self.assertEqual(bridge.player_protection,dict(room_seed=session.player.raw.get('room_seed'),
+                epoch=session.player.raw.get('player_epoch'),worldid=session.player.worldid,
+                objid=session.player.objid,enabled=True))
+            self.assertEqual(bridge.acknowledgement(4)['player_protection'],bridge.player_protection)
+            self.assertEqual(packets,[],'A native-owned player cannot receive a foreign WorldUpdate')
+            before=session.enemies.room_time;session.step(.05)
+            self.assertGreater(session.enemies.room_time,before,'Survivors continue simulating')
+            session.batch.general=[]
+            session._resolve_events([dict(kind='player_damage',value=999,owner=survivors[0].objid)])
+            self.assertFalse(any('damage_' in row for row in session.batch.general),'Victory is invulnerable')
+            session.phase_time=6;session._step_death(.05,[])
+            destroyed={row['destroy_']['objid_'] for row in session.batch.general if 'destroy_' in row}
+            self.assertTrue(set(session.rules.TURRET_IDS).issubset(destroyed),'Extra turrets retire with the ship')
+            self.assertFalse(any(unit.objid in destroyed for unit in survivors))
+
+    def test_ship_death_animation_payload_is_binary_and_plays_at_captured_duration(self):
+        session,_,_=encounter('egy_hulk')
+        records=session._load_death_records();animations=[]
+        for row in records:
+            delta=session.layouts.decode('Delta',row['payload'],raw_strings=True)
+            for update in delta['worldupdate_'].get('objectupdates_',[]):
+                props=update.get('modifyprops_') or {}
+                if update['objid_']==session.rules.SHIP_ID and props.get('property_')==49:
+                    raw=base64.b64decode(props['messageval_']['raw'])
+                    animations.append(session.layouts.decode('AnimationProperties',raw))
+        self.assertEqual(len(animations),10)
+        self.assertEqual(animations,[dict(animid_=1,time_=528)]*10)
+        session._legacy_victory_presentation=True
+        legacy=session._load_death_records()
+        self.assertNotEqual(legacy,records,'Historical journals retain their original packet bytes')
 
     def test_ten_thousand_completed_deaths_do_not_accumulate(self):
         session,_,_=encounter('egy_hulk')

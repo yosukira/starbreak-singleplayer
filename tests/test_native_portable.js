@@ -61,3 +61,15 @@ let installed=false;startup.asset('data','texture/base.d.checked.bpb',()=>{insta
 assert.ok(installed);assert.equal(loading.next().value,'frame');assert.deepEqual(invoked,[21,10]);
 assert.equal(loading.next().done,true);
 console.log('Cold native replay waits for core resources only at world creation.');
+
+// A paused seek must publish its final verified boundary after clearing the
+// seek target. Otherwise the parent keeps its takeover button disabled.
+const seek=driver([]),notices=[];
+Object.assign(seek,{driving:false,stack:[],joined:true,nativeServer:1,nativeClient:1,pendingAssets:0,priming:false,
+  paused:false,seekTarget:1000,seekPaused:true,elapsed:0,totalDuration:2000,frameCount:10,worldReady:true,world:1,
+  finished:false,error:null,inLoop:false,takeoverAllowed:true,wall:null,playTime:0,now:()=>0,
+  playerState:()=>[1,0,1,2,0,0,40,80,150,150,0,12,0,1],notice:value=>notices.push(value),
+  runner:{next(){seek.elapsed=1000;return {value:'frame',done:false};}}});
+seek.iterate(()=>{});assert.equal(seek.paused,true);assert.equal(seek.seekTarget,null);
+assert.equal(notices.at(-1).state,'paused');assert.equal(notices.at(-1).takeover,true);
+console.log('Paused portable seeking publishes the usable takeover boundary.');

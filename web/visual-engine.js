@@ -8,13 +8,15 @@
   const api=StarBreakVisuals,store=new api.Store();let settings=api.options(),textures=new Map(),client=0,hiddenStatus=null;const applied=new Set();
   let displayScale=1,renderCamera=null,frameEdits=[],lastMove=performance.now(),frames=[],fps=0,ecScope='',lastEC=0,roomEC=0,totalEC=0;
   const viewEdits=new Map(),textCache=new Map();
+  let renderedView=0;const renderedObjects=new Set();
   const ready=store.list().then(rows=>{for(const row of rows)textures.set(api.path(row.path),row);}).catch(error=>console.warn('Local textures unavailable:',error));
   Module.visualTextures={get applied(){return [...applied];},choose(filename,original,done){ready.then(()=>{
     const row=settings.textures&&textures.get(api.path(filename));
     if(!row||row.width!==original.naturalWidth||row.height!==original.naturalHeight){done(original);return;}
     const image=new Image(),url=URL.createObjectURL(row.blob);image.onload=()=>{URL.revokeObjectURL(url);applied.add(row.path);done(image);};image.onerror=()=>{URL.revokeObjectURL(url);console.warn('Custom texture could not load:',row.path);done(original);};image.src=url;
   });}};
-  Module.visualContext=value=>{if(!value)restore();client=value;};
+  Module.visualContext=value=>{if(!value){restore();renderedView=0;renderedObjects.clear();}client=value;};
+  Module.visualSprite=(view,obj)=>{if(view===renderedView)renderedObjects.add(obj);};
   addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data.type==='visual-options')settings=api.options({getItem:()=>JSON.stringify(event.data.options)});});
   const canvas=document.createElement('canvas');canvas.id='visual-overlay';canvas.style.cssText='position:absolute;pointer-events:none;z-index:2;display:none';document.body.append(canvas);const ctx=canvas.getContext('2d');
   const read=(p,o=0)=>Module.HEAP32[(p+o)>>2]|0,valid=(p,size=352)=>Number.isInteger(p)&&p>0&&!(p&3)&&p+size<=Module.HEAP32.byteLength;
@@ -35,6 +37,7 @@
     if(stage===2){const changes=viewEdits.get(view);if(changes){undo(changes);viewEdits.delete(view);}return;}
     if(!valid(view)||read(view)!==46960)return;
     if(stage===0){
+      renderedView=view;renderedObjects.clear();
       const old=viewEdits.get(view);if(old)undo(old);const changes=[];viewEdits.set(view,changes);
       for(const [key,address]of Object.entries(flags))write(changes,address,Number(settings[key]&&!(settings.customBackground&&['showUniform','showEdges','showScatter'].includes(key))),true);
       if(settings.camera){write(changes,view+140,0,true);if(settings.camera===2){for(const [offset,value]of [[100,-1000000],[104,-1000000],[108,2000000],[112,2000000]])write(changes,view+offset,value);}}
@@ -128,7 +131,7 @@
     const key=world+'/'+(read(world,200)>>>0);
     const rows=settings.enemyHP||needsHealth||settings.minimap?objects(world):[],ox=renderCamera?.view===view?renderCamera.x:read(view,144),oy=renderCamera?.view===view?renderCamera.y:read(view,148);let labels=0,armors=0;
     if(settings.enemyHP){
-      for(const row of rows){if(!row.draw||!row.vid||row.owner!==2||row.terrain||!(row.max>0||row.hp<-1||row.armor>0)||labels>=300)continue;const x=row.x+row.w/2-ox,y=row.y+row.h/2-oy;if(row.x+row.w-ox<=0||row.y+row.h-oy<=0||row.x-ox>=canvas.width||row.y-oy>=canvas.height)continue;labels++;
+      for(const row of rows){if(renderedView!==view||!renderedObjects.has(row.ptr)||!row.draw||!row.vid||row.owner!==2||row.terrain||!(row.max>0||row.hp<-1||row.armor>0)||labels>=300)continue;const x=row.x+row.w/2-ox,y=row.y+row.h/2-oy;if(row.x+row.w-ox<=0||row.y+row.h-oy<=0||row.x-ox>=canvas.width||row.y-oy>=canvas.height)continue;labels++;
         if(row.hp>=0)number(row.hp,x,y);else if(row.hp!==-1)number(Math.abs(row.hp),x,y,true,true);
         if(row.armor>0){number(row.armor,x,y,false);armors++;}
       }

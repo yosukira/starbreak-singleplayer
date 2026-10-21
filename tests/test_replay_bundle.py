@@ -38,6 +38,18 @@ class PortableReplayTests(unittest.TestCase):
                 self.assertEqual(rebuilt.session.phase,session.phase)
                 with self.assertRaises(ValueError):server_document(dict(value,room_seed='-1'))
 
+    def test_victory_presentation_version_survives_portable_exports(self):
+        session,_,_=encounter('egy_hulk');capture=ServerCapture(session);capture.run('prepare')
+        value=dict(capture.document(),attempt=str(uuid.uuid4()))
+        self.assertEqual(value['victory_rules'],1)
+        portable=server_document(value)
+        self.assertEqual(portable['victory_rules'],1)
+        self.assertFalse(ServerReplay(portable).session._legacy_victory_presentation)
+        legacy=dict(value);legacy.pop('victory_rules')
+        self.assertNotIn('victory_rules',server_document(legacy))
+        self.assertTrue(ServerReplay(server_document(legacy)).session._legacy_victory_presentation)
+        with self.assertRaises(ValueError):server_document(dict(value,victory_rules=2))
+
     def fixture(self,directory):
         return test_replay_host.ReplayHostTests().documents(directory)
 

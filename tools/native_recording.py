@@ -186,7 +186,11 @@ class NativeRecording:
         if not path.is_file():return
         with self.journals.connect() as db:
             version=db.execute('SELECT sequence,size,complete FROM attempts WHERE id=?',(source,)).fetchone()
-        stat=path.stat();signature=(raw,version,stat.st_size,stat.st_mtime_ns)
+        stat=path.stat()
+        # Let the original client consume the final ordered scene packets
+        # before freezing its immutable per-battle snapshot.
+        if not immediate and time.time()-stat.st_mtime<.5:return
+        signature=(raw,version,stat.st_size,stat.st_mtime_ns)
         now=time.monotonic();previous=self.finalize_versions.get(identifier)
         if not immediate and previous and previous[0]==signature and now-previous[1]<10:return
         self.finalize_versions[identifier]=(signature,now)

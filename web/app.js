@@ -12,7 +12,7 @@
   let language=localStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
-  let activeTab='battle';
+  let activeTab='battle',replayKeyboardKeys=new Set();
   const battleView=StarBreakBattleView({document,arena:document.querySelector('.arena-panel'),button:$('battle-fullscreen'),enabled:!desktop});
   for(const [id,direction] of [['view-zoom-out',-1],['view-zoom-in',1]]){
     $(id).hidden=desktop;$(id).onclick=()=>document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(direction);
@@ -96,6 +96,15 @@
     }
     document.querySelector('iframe')?.contentWindow.postMessage({type:'replay-control',action,...extra},location.origin);
   }
+  // Replay controls keep focus in the parent document. Forward gameplay keys
+  // from that document as well as keys delivered directly to the game iframe.
+  for(const type of ['keydown','keyup'])addEventListener(type,event=>{
+    if(desktop||activeTab!=='battle'||!replayRecord||loading||busy||event.isComposing||
+       event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
+    if(replayKeyboardKeys.has(event.keyCode||event.which)&&!event.ctrlKey&&!event.metaKey&&!event.altKey)event.preventDefault();
+    playbackControl('keyboard',{event:type,keyCode:event.keyCode||event.which||0,code:event.code,
+      repeat:event.repeat,ctrlKey:event.ctrlKey,metaKey:event.metaKey,altKey:event.altKey});
+  },true);
   let nativePoll=0;
   async function pollNativeReplay(){
     clearTimeout(nativePoll);if(replayRecord?.replay?.engine!=='native')return;
@@ -327,6 +336,7 @@
   }
   addEventListener('message',event=>{
     if(event.origin!==location.origin||event.source!==document.querySelector('iframe')?.contentWindow)return;
+    if(event.data.type==='replay-keyboard'&&Array.isArray(event.data.keys)){replayKeyboardKeys=new Set(event.data.keys.filter(key=>Number.isInteger(key)&&key>0&&key<256));return;}
     if(event.data.type==='replay-status'&&event.data.state==='closed'&&!replayRecord&&!busy){
       battleEnded=true;
       showLoading(null);

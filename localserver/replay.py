@@ -340,6 +340,7 @@ class ServerCapture:
         self.current_settings = gameplay_settings(game_settings.load())
         self.header = dict(schema=SCHEMA, engine=engine_fingerprint(), map=map_id,
             seed=str(session.seed), worldid=session.worldid, shell=session.options.player_type,
+            victory_rules=0 if getattr(session,'_legacy_victory_presentation',False) else 1,
             world_sequence=int(getattr(session.server, '_live_world_sequence', 1))-int(getattr(session.server,'_native_capture_world_offset',0)),
             settings=self.current_settings,
             options={k: getattr(session.options, k) for k in OPTIONS if hasattr(session.options, k)},
@@ -462,6 +463,7 @@ class ServerReplay:
                 kwargs['seed'] = options.live_seed
             self.session = session_class(self.server, None, options,
                 BossRoom.from_capture(str(source), options.boss_templates), **kwargs)
+        self.session._legacy_victory_presentation=integer(document.get('victory_rules',0),0,1)==0
         self.frames, self.index, self.verified, self.failed = frames, 0, False, False
 
     def packet(self, channel, kind, payload, *args, **kwargs):

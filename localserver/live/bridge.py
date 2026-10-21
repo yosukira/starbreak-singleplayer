@@ -66,6 +66,7 @@ class PlayerBridge(object):
         self.datagrams = 0
         self.last_error = None
         self.native_context = None
+        self.player_protection = None
         self._lock = threading.Lock()
         self._socket = None
         self._stop = threading.Event()
@@ -133,6 +134,7 @@ class PlayerBridge(object):
 
     def acknowledgement(self, seq):
         message = {'ack': int(seq or 0)}
+        if self.player_protection is not None:message['player_protection']=dict(self.player_protection)
         context = self.native_context
         if context and context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home'):
             message.update(context)

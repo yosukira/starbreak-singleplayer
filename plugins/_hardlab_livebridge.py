@@ -812,11 +812,15 @@ class LiveBridge(object):
             self._log('place_player failed: {0}'.format(error))
             return False
 
+    def begin_player_epoch(self):
+        self.player_epoch=getattr(self,'player_epoch',0)+1
+        self.player_protection=None
+
     def player_document(self):
         cw = self._current_world()
         if cw is None:
             return None
-        document = {'room_seed': int(cw.asWorld.props.seed)}
+        document = {'room_seed': int(cw.asWorld.props.seed),'player_epoch':getattr(self,'player_epoch',0)}
         try:
             sub = cw.mySubWorld
             if sub != self.ffi.NULL:
@@ -1133,6 +1137,7 @@ class LiveBridge(object):
         if 'ack' not in document:
             return
 
+        self.player_protection=document.get('player_protection') if isinstance(document.get('player_protection'),dict) else None
         self.input_context = ({key: document[key] for key in
             ('map', 'room_token', 'room_seed', 'room_ready', 'room_handoff', 'inventory_request')
             if key in document} if document.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home') else {})

@@ -669,10 +669,12 @@ class LiveSession(object):
 
         if self.phase == 'death':
             self._step_death(dt, events)
+            if not getattr(self,'_legacy_victory_presentation',False):self._step_victory(dt, events)
             self._send_tick(dt)
             return
 
         if self.phase in ('done', 'failed'):
+            if self.phase == 'done' and not getattr(self,'_legacy_victory_presentation',False):self._step_victory(dt, events)
             self._send_tick(dt)
 
     def _step_fighting(self, dt, events):
@@ -1349,7 +1351,7 @@ class LiveSession(object):
                 continue
             if kind == 'player_damage':
 
-                if self._native_damage_active():
+                if self.phase in ('death','done') or self._native_damage_active():
                     continue
                 now = self.room_time
                 from ..participants import life_identity
@@ -1795,15 +1797,18 @@ class LiveSession(object):
         self.death_started = time.time()
         self.death_index = 0
         self.death_records = self._load_death_records()
-        self._clear_combat()
+        if getattr(self,'_legacy_victory_presentation',False):self._clear_combat()
+        else:
+            self._stop_encounter()
+            self._protect_victors()
         self._prepare_death_motion()
         self.event('boss-clear', records=len(self.death_records))
         if not self.death_records:
             self.batch.shake(self.rules.DEATH_SHAKE_MAGNITUDE,
                              self.rules.DEATH_SHAKE_DURATION)
 
-    def _clear_combat(self):
-        """No frozen attackers or projectiles survive a win/player death."""
+    def _stop_encounter(self,stop_platforms=True):
+        """Stop ship weapons and new portal waves without erasing survivors."""
         self.enemies.enabled = False
         for item in self.enemies.pending:
             if item['shown']:
@@ -1812,6 +1817,24 @@ class LiveSession(object):
         self.enemies.pending.clear()
         self.enemies.portal_refills.clear()
         self.gens.enabled = False
+        if stop_platforms:self._stop_ship_platforms()
+
+    def _stop_ship_platforms(self):
+        for battery in self.batteries:
+
+            battery.preparing_until = dict(
+                (turret_id, None) for turret_id in battery.turret_ids)
+        for objid in self.rules.LEDGE_IDS:
+            self.batch.modify(objid, 'TERRAINTYPE', intval=0)
+            item = self.room.object(objid)
+            if item is not None:
+                item.set(terraintype_=0)
+        self.ledge_terrain_at = self.ledge_drop_until = None
+        self.platforms.stop()
+
+    def _clear_combat(self):
+        """A player failure retires attackers; a victory keeps them alive."""
+        self._stop_encounter(stop_platforms=False)
         for unit in self.enemies.units:
             unit.alive = False
             unit.state = 'dead'
@@ -1826,17 +1849,29 @@ class LiveSession(object):
         self.emitted_projectiles.clear()
         self.projectile_motion_due.clear()
         self.preparing_projectiles.clear()
-        for battery in self.batteries:
+        self._stop_ship_platforms()
 
-            battery.preparing_until = dict(
-                (turret_id, None) for turret_id in battery.turret_ids)
-        for objid in self.rules.LEDGE_IDS:
-            self.batch.modify(objid, 'TERRAINTYPE', intval=0)
-            item = self.room.object(objid)
-            if item is not None:
-                item.set(terraintype_=0)
-        self.ledge_terrain_at = self.ledge_drop_until = None
-        self.platforms.stop()
+    def _protect_victors(self):
+        # The player belongs to the client's native subworld. Sending it a
+        # server WorldUpdate fails the original ClientWorld world lookup.
+        # Use the scoped practice control channel; each adapter journals the
+        # real invulnerability flag change at its next game-loop boundary.
+        player=self.player
+        if player is None or not player.alive:return
+        self.bridge.player_protection=dict(room_seed=player.raw.get('room_seed'),
+            epoch=player.raw.get('player_epoch'),worldid=player.worldid,
+            objid=player.objid,enabled=True)
+
+    def _step_victory(self,dt,events):
+        # Existing enemies and their projectiles keep simulating after the
+        # ship falls. The player's world owns the invulnerability property.
+        self._protect_victors()
+        self._apply_bridge_events(events)
+        self.enemies.step(dt,self.player,events,players=self.combat_players())
+        self.projectiles.step(dt,self.player,events,resolve_player=False,players=self.combat_players())
+        self._emit_projectiles(dt)
+        self._emit_units(dt)
+        self._resolve_events(events,offset=self._frame_end_offset(dt))
 
     def _prepare_death_motion(self):
         ship = self.room.object(self.rules.SHIP_ID)
@@ -1873,6 +1908,15 @@ class LiveSession(object):
         rows = []
         try:
             for item in jsonio.load_json(path)[0]:
+                if getattr(self,'_legacy_victory_presentation',False):
+                    # Old journals contain the former UTF-8 replacement bytes.
+                    # Keep their verified packet stream reproducible; new
+                    # battles use the original binary animation messages.
+                    for update in item['objects']:
+                        props=update.get('modifyprops_') or {}
+                        value=props.get('messageval_')
+                        if isinstance(value,dict) and 'raw' in value:
+                            props['messageval_']=base64.b64decode(value['raw']).decode('utf8','replace')
                 delta = {'worldupdate_': {'generalupdates_': item['general'],
                                          'objectupdates_': item['objects']}}
                 rows.append({'at': float(item['at']), 'type': 12,
@@ -1923,6 +1967,10 @@ class LiveSession(object):
                                 continue
                             if destroy.get('objid_') == self.rules.SHIP_ID:
                                 self.death_motion = None
+                                # Configurable and tracking turrets do not all
+                                # share the IDs in the captured presentation.
+                                for part in (() if getattr(self,'_legacy_victory_presentation',False) else self.rules.BOSS_PART_IDS+self.rules.BOSS_DOOR_IDS):
+                                    self.batch.destroy(part,ownerid=self.worldid,reason='INTERNAL')
                         elif not update.get('screenshake_'):
                             continue
                         update.pop('t_', None)

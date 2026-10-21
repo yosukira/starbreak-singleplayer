@@ -9,11 +9,12 @@ def patch(text):
         text=text.replace(before,after)
 
     replace('var webVisualContext=env.webVisualContext;',
-        'var webVisualSetting=env.webVisualSetting;var webVisualView=env.webVisualView;var webVisualEntity=env.webVisualEntity;var webVisualDamageAge=env.webVisualDamageAge;var webVisualContext=env.webVisualContext;')
+        'var webVisualSetting=env.webVisualSetting;var webVisualView=env.webVisualView;var webVisualEntity=env.webVisualEntity;var webVisualSprite=env.webVisualSprite;var webVisualDamageAge=env.webVisualDamageAge;var webVisualContext=env.webVisualContext;')
     replace('Module.asmLibraryArg={','Module.asmLibraryArg={'
         '"webVisualSetting":function(k){return Module.visualSetting?Module.visualSetting(k):0},'
         '"webVisualView":function(p,s){if(Module.visualView)Module.visualView(p,s)},'
         '"webVisualEntity":function(w,p){return Module.visualEntity?Module.visualEntity(w,p):1},'
+        '"webVisualSprite":function(w,p){if(Module.visualSprite)Module.visualSprite(w,p)},'
         '"webVisualDamageAge":function(t){return Module.visualDamageAge?Module.visualDamageAge(t):t},')
     for name,call in (
         ('qaa','if(webVisualSetting(4)|0)return;'),
@@ -24,6 +25,12 @@ def patch(text):
         ('Hba','if(webVisualSetting(3)|0)e=0;')):
         signature=re.search(r'function '+name+r'\([^)]*\)\{[^{}]*?var [^;]+;',text).group(0)
         replace(signature,signature+call)
+    # Associate labels with actual sprite submissions, after sprite/animation
+    # lookup has succeeded. A live WorldObject alone is not a visible enemy.
+    for name,call,expected in (('Rba','MN(e,f,i,l,j,m,k,1);',2),('Sba','AN(o,m,p,C,k,D,B,1,i);',1)):
+        start=text.index('function '+name+'(');end=text.index('function ',start+10);original=text[start:end]
+        if original.count(call)!=expected:raise ValueError('Visible sprite signature mismatch')
+        replace(original,original.replace(call,'webVisualSprite(b|0,d|0);'+call))
     replace('if(!(s&3145728))return;s=Iba(b,d)|0;',
             'if(!(s&3145728))return;if(webVisualSetting(1)|0)return;s=Iba(b,d)|0;')
     replace('aO(s,t,u);v=c[(c[(c[d+96>>2]|0?g:c[40702]|0)+84>>2]|0)+8>>2]|0;',

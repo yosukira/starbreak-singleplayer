@@ -23,7 +23,7 @@ import test_replay_host
 class Engine:
     def __init__(self):
         self.now=0;self.mono=0.;self.diverge=False;self.chunks=[];self.hooks={}
-        self.props=NS(seed=123,xmp=100,ymp=200,wmp=10240,hmp=20480,hitpoints=150,maxhitpoints=150,facing=1)
+        self.props=NS(seed=123,xmp=100,ymp=200,wmp=10240,hmp=20480,hitpoints=150,maxhitpoints=150,facing=1,invulnerable=False)
         obj=NS(objId=1,props=self.props)
         self.player=NS(asClientObject=NS(asNativeObject=NS(asWorldObject=obj)),ammo=12,total=0)
         sub=NS(asNativeSubWorld=NS(asSubWorldImpl=NS(asSubWorld=NS(worldId=2))))
@@ -48,7 +48,7 @@ class Engine:
             if kind=='random32':return 123
             if kind=='random64':return 2**64-1
             if kind=='message' and args[1]==10:
-                self.props.xmp=100;self.props.hitpoints=150;self.world.total=0
+                self.props.xmp=100;self.props.hitpoints=150;self.props.invulnerable=False;self.world.total=0
                 self.client.clientWorld=self.world;self.game.worldClient=self.client;self.refs.WorldClient=self.client
             if kind=='message' and args[1]==12:self.call('delta',self.client,12,args[2],args[3])
             if kind=='message' and args[1]==21:self.call('ack',self.game.serverConnection,22)
@@ -85,6 +85,19 @@ class Engine:
 
 
 class NativePlayerTests(unittest.TestCase):
+    def test_protection_records_a_scoped_flag_and_replays_at_the_same_boundary(self):
+        source=Engine();source.props.seed=0xfedcba98
+        source.capture.protection_command=lambda:dict(room_seed=0xfedcba98,worldid=2,objid=1,enabled=True) if source.now>=34 else None
+        document=source.record(8)
+        self.assertEqual([row for row in document['ops'] if row[0]=='protection'],[['protection',0xfedcba98,2,1,1]])
+        self.assertTrue(source.props.invulnerable)
+        target=Engine();target.props.seed=0xfedcba98;player=target.play(document)
+        player.control(dict(action='seek',seconds=player.view_duration,paused=True));player.update()
+        self.assertIsNone(target.capture.tape.error)
+        self.assertTrue(target.props.invulnerable)
+        self.assertEqual(target.capture.tape.cursor,len(document['ops']))
+        with self.assertRaisesRegex(ValueError,'target changed'):target.capture.apply_protection(['protection',0xfedcba99,2,1,0])
+
     def test_platform_drop_retries_only_the_same_catching_ledge_and_completed_steps(self):
         retry=PlatformDropRetry();world=(100,42);ledge=(1,6)
         retry.arm(world,ledge,10,0)

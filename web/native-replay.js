@@ -87,7 +87,7 @@
       }
       return true;
     }
-    control(_kind,_values,callback){if(this.mode==='record'){if(this.liveControls.length>=256){this.fail('Portable input queue is full');return;}this.liveControls.push(callback);}}
+    control(kind,values,callback){if(this.mode==='record'){if(this.liveControls.length>=256){this.fail('Portable input queue is full');return;}this.liveControls.push(()=>{this.module.webDropControl?.(kind,values);callback();});}}
     timer(callback){if(!this.driving)callback();}
     wallSleep(useconds,callback){
       // doTimePasses uses usleep for empty (<10 ms) iterations. Recorded
@@ -188,9 +188,16 @@
         this.frameCount++;
       }
     }
+    protection(values){
+      const row=['protection',...values];
+      if(this.mode==='record')this.write(row);else this.expect(row);
+      this.module.applyProtectionFlag(values);
+      if(this.mode==='record')this.write(['return','protection']);else this.expect(['return','protection']);
+    }
     invoke(row){
       const asm=this.module.asm;
-      if(row[0]==='message'){
+      if(row[0]==='protection'){this.protection(row.slice(1));}
+      else if(row[0]==='message'){
         if(!this.nativeServer)throw Error('Portable replay transport is not initialized');
         const bytes=decode(row[2]),pointer=this.module._malloc(bytes.length);
         try{this.module.HEAPU8.set(bytes,pointer);asm.nativeReplayMessage(this.nativeServer+72,row[1],pointer,bytes.length);}
@@ -263,7 +270,8 @@
           const value=this.runner.next();
           if(value.done||value.value==='assets'||value.value==='context'||this.now()-started>budget)break;
           if(this.seekTarget!==null&&this.elapsed>=this.seekTarget&&(!this.seekPaused||this.worldReady)){
-            this.seekTarget=null;this.paused=this.seekPaused;this.wall=null;this.playTime=this.elapsed;break;
+            this.seekTarget=null;this.paused=this.seekPaused;this.wall=null;this.playTime=this.elapsed;
+            this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});break;
           }
         }
       }catch(error){this.fail(error);}finally{this.driving=false;}
