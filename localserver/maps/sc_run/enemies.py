@@ -56,7 +56,7 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     monk_interval_s=16., monk_refill_s=1.92, monk_orb_interval_s=.25,
     monk_mode_choices=('sequential', 'radial', 'focused'),
     # OBS: a captured warning line is 13 segments of 64px (~832px).
-    laser_segment_px=64., laser_range_px=1000.,
+    laser_segment_px=32., laser_range_px=1600., laser_max_segments=50,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
     scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4), skeleton_melee_vertical_px=110.,
     flytank_hover_span_px=260., golem_stand_px=520., golem_wave_gravity=180000.,
@@ -560,7 +560,8 @@ class ScEnemies:
         if hit:
             length = max(0., hit[0]*length-8*256)
         step = max(1., self.fit['laser_segment_px']*256)
-        count = max(1, math.ceil(length/step))
+        # OBS: captured beams place a segment every 32px and stop at 50 of them.
+        count = max(1, min(self.fit['laser_max_segments']-1, math.ceil(length/step)))
         for index in range(count+1):
             vid = 'sc.aimend' if index == count else 'sc.aim'
             p = self.host.pack.props(vid)
