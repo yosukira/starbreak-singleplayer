@@ -666,6 +666,12 @@ class LiveBridge(object):
         self._input_setter(self.refs.WorldClient, int(mask))
 
     def reapply_room_input(self):
+        # USER: every door in the Cathedral run froze telemetry. The stall sits
+        # inside this native reapply after a room load, so the run never performs
+        # it: held keys are re-pressed by the player instead.
+        if str((self.input_context or {}).get('map', '')) == 'sc_run':
+            self._input_handoff.reset()
+            return False
         """Restore held native input once after an EGY room becomes ready."""
         marker = str(os.environ.get('HARDLAB_LIVE_SESSION', '')).strip().lower()
         if not self.enabled or marker not in ('1', 'yes', 'true', 'on'):
