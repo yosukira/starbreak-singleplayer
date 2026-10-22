@@ -1541,7 +1541,8 @@ class LocalServer(object):
                 return False
             blob = self._distinct_player_world_blob(world_blob(self, run))
             # USER: land clear of the door just used, never inside its trigger.
-            spawn = session.entry_position(run, run.current, run.entry, player.wmp, player.hmp)
+            from .maps.run_common.session import RunLiveSession
+            spawn = RunLiveSession.entry_position(run, run.current, run.entry, player.wmp, player.hmp)
             position = (spawn[0], spawn[1], player.wmp, player.hmp)
 
             message = self.layouts.decode('Delta', self.player_delta_blob)

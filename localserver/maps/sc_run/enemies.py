@@ -9,6 +9,7 @@ import math
 from collections import Counter
 
 from .abilities import ScProjectiles, center, move, players, prop, stop_motion
+from .mechanic_helpers import place
 from .physics import clear, edge_ahead, flight, geometry, ground, rect, sinusoid, sweep
 
 
@@ -184,6 +185,22 @@ class ScEnemies:
             u.update(active=True, phase='ghost', saved_hp=VITALS['sc.assassin'], ghost_steps=1,
                      ghost_at=self.now+self.fit['assassin_ghost_wait_s'])
         self._attach_explicit_lineage(oid, row.get('creator', 0))
+        # USER: no creature is born inside a wall; nudge it to the nearest
+        # opening before it ever acts.
+        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+        if family != 'sc.hunter' and not clear(self.host, (row['pos'][0], row['pos'][1], w, h), (oid,)):
+            for radius in (16, 32, 48, 64, 96, 128, 192):
+                spot = None
+                for step in range(0, 360, 45):
+                    px = row['pos'][0]+math.cos(math.radians(step))*radius*256
+                    py = row['pos'][1]+math.sin(math.radians(step))*radius*256
+                    if clear(self.host, (px, py, w, h), (oid,)):
+                        spot = (px, py)
+                        break
+                if spot:
+                    place(self.host, oid, spot)
+                    u['home'] = spot
+                    break
         stop_motion(self.host, oid)
         return True
 

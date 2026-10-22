@@ -86,7 +86,7 @@ class RunLiveSession:
 
     @classmethod
     def entry_position(cls, run, role, entry, wmp, hmp):
-        """Position the arriving player clear of the door they came through."""
+        """Return a landing spot clear of the door and of all solid geometry."""
         recipe = run.room(role).recipe
         x, y = run.destination_spawn(role, entry)
         door = None
@@ -95,19 +95,38 @@ class RunLiveSession:
                 door = recipe['objects'].get(int(entry.split('_')[-1]))
             except (TypeError, ValueError):
                 door = None
-        if door and door.get('wmp') and door.get('hmp'):
-            dx, dy = door.get('xmp', 0), door.get('ymp', 0)
-            dw, dh = door['wmp'], door['hmp']
-            spans = [(o.get('xmp', 0), o.get('wmp', 0)) for o in recipe['objects'].values()]
-            left = min(span[0] for span in spans)
-            right = max(span[0]+span[1] for span in spans)
-            if dx+dw/2 <= (left+right)/2:
-                x = dx+dw+cls.ENTRY_CLEARANCE_MP
-            else:
-                x = dx-wmp-cls.ENTRY_CLEARANCE_MP
-            y = dy+dh-hmp
-            return (round(x), round(y))
-        width, height = recipe['metadata'].get('spawn_footprint_mp', (10240, 20480))
+        solids = []
+        spans = []
+        for row in recipe['objects'].values():
+            ox, oy = row.get('xmp', 0), row.get('ymp', 0)
+            ow, oh = row.get('wmp', 0), row.get('hmp', 0)
+            spans.append((ox, ow))
+            if row.get('terraintype') in (1, 2):
+                solids.append((ox, oy, ow, oh))
+        if not door or not door.get('wmp') or not door.get('hmp'):
+            width, height = recipe['metadata'].get('spawn_footprint_mp', (10240, 20480))
+            return (round(x+(width-wmp)/2), round(y+height-hmp))
+        dx, dy = door.get('xmp', 0), door.get('ymp', 0)
+        dw, dh = door['wmp'], door['hmp']
+        left = min(span[0] for span in spans) if spans else dx
+        right = max(span[0]+span[1] for span in spans) if spans else dx+dw
+        inward = 1 if dx+dw/2 <= (left+right)/2 else -1
+
+        def free(px, py):
+            if px < dx+dw and px+wmp > dx and py < dy+dh and py+hmp > dy:
+                return False  # never inside the door itself
+            for sx, sy, sw, sh in solids:
+                if px < sx+sw and px+wmp > sx and py < sy+sh and py+hmp > sy:
+                    return False
+            return True
+
+        for depth in (cls.ENTRY_CLEARANCE_MP, 48*256, 72*256, 96*256, 128*256, 160*256):
+            px = dx+dw+depth if inward > 0 else dx-wmp-depth
+            for lift in (dh-hmp, 0, -16*256, 16*256, -32*256):
+                py = dy+lift
+                if free(px, py):
+                    return (round(px), round(py))
+        return (round(x), round(y))
         return (round(x+(width-wmp)/2), round(y+height-hmp))
 
     @classmethod

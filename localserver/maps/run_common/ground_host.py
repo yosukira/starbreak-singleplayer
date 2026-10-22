@@ -153,7 +153,8 @@ class GroundEgressHost:
         if self.purpose=='room':
             w,h=vitals['wmp'],vitals['hmp']
             # USER: never arrive inside the door just used.
-            spawn=type(self.source).entry_position(self.run,self.link['destination'],
+            from .session import RunLiveSession
+            spawn=RunLiveSession.entry_position(self.run,self.link['destination'],
                 self.link.get('entry','default'),w,h)
             created['pos_']=dict(xmp_=spawn[0],ymp_=spawn[1],wmp_=w,hmp_=h)
         else:created.pop('pos_',None)
