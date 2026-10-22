@@ -49,8 +49,19 @@ DEFAULTS = {
     'switch_interact_radius_px': 160,
     'hive_active_radius_px': 1200, 'hive_max_children': 4,
     'hive_spawn_s': (4., 7.), 'hive_first_s': (.5, 2.),
-    'vermin_speed_px_s': 180, 'vermin_jump_px_s': 390,
+    'vermin_speed_px_s': 180,
+    # D: captured scmid11 snapshots place Cathedral maze ledges on a fixed
+    # 192px row grid, and one vermin's own vertical steps between snapshots
+    # are whole rows. A hop therefore has to clear one row: with the FIT
+    # gravity below, 560px/s rises ~209px.
+    'vermin_jump_px_s': 560,
     'vermin_gravity_px_s2': 750, 'vermin_jump_cooldown_s': (1.3, 2.5),
+    # FIT: USER-described Cathedral vermin behaviour. Aggro envelope, idle
+    # patrol speed, ledge-change cadence and the chase jump height are local
+    # policies; captures do not establish a retail decision rule.
+    'vermin_aggro_px': 900, 'vermin_release_px': 1400,
+    'vermin_patrol_speed_px_s': 90, 'vermin_hop_s': (2.5, 6.),
+    'vermin_climb_px': 48, 'vermin_climb_jump_px_s': 700,
 }
 
 WORKERS = {'sc.libworker', 'sc.libworkerb', 'sc.libworkerr'}
@@ -111,11 +122,17 @@ class ScMechanics(Ownership):
         if oid in self.owned:
             return True
         vid = row['vid']
-        if vid not in MECHANISMS and not vid.startswith('sc.mledge'):
+        movement = row['props'].get('move')
+        # OBS: the authored Cathedral rooms carry hundreds of terrain bodies
+        # with their own native MOVE (floating ledges, sine platforms). A
+        # mechanism-only whitelist left every one of them frozen at birth, so
+        # any independently moving terrain body keeps its native track.
+        moving_terrain = bool(movement and not movement.get('relativeto')
+                              and row['props'].get('terraintype') in (1, 2))
+        if vid not in MECHANISMS and not vid.startswith('sc.mledge') and not moving_terrain:
             return False
         self.own(oid)
         s = self.states[oid] = dict(vid=vid, origin=tuple(row['pos']), next=self.now, phase='idle')
-        movement = row['props'].get('move')
         if movement and not movement.get('relativeto'):
             self.tracks[oid] = MechanismTrack(row['pos'], movement, round(self.now*1000))
         if vid in ('sc.enginecore', 'sc.core'):
@@ -168,8 +185,12 @@ class ScMechanics(Ownership):
             s.update(next=self.now+self._range('hive_first_s'), children=set())
         elif vid == 'sc.vermin':
             x, y, w, h = rect(row)
+            # USER: a vermin walks its own ledge while idle; acquisition turns
+            # it toward the player and lets it cross ledges vertically.
             s.update(body=dict(x=x, y=y, w=w, h=h, vy=0., grounded=False),
-                     next_jump=self.now+self._range('vermin_jump_cooldown_s'))
+                     next_jump=self.now+self._range('vermin_jump_cooldown_s'),
+                     aggro=False, direction=-1 if row['props'].get('facing') == 180 else 1,
+                     next_hop=self.now+self._range('vermin_hop_s'))
         elif vid.startswith('sc.mledge') and not movement:
             # Native snapshots often contain only the current MoveTo position.
             # FIT continuous horizontal travel is used only without native MOVE.
@@ -469,13 +490,41 @@ class ScMechanics(Ownership):
 
     def _vermin(self, oid, s, dt, target, terrain):
         b = s['body']
-        vx = 0.
-        if target:
+        cx, cy = b['x']+b['w']/2, b['y']+b['h']/2
+        px = py = None
+        reach = None
+        if target is not None:
             px, py = center(target)
-            direction = -1 if px < b['x']+b['w']/2 else 1
-            vx = direction*self.config['vermin_speed_px_s']*256
-            if b.get('grounded') and self.now >= s['next_jump'] and (b.get('blocked') or py < b['y'] or abs(px-b['x']) < 200*256):
-                b['vy'] = -self.config['vermin_jump_px_s']*256
+            reach = math.hypot(px-cx, py-cy)
+        # USER: acquisition and release are independent of the wake distance;
+        # an idle vermin keeps patrolling instead of standing at a wall.
+        if s['aggro']:
+            if reach is None or reach > self.config['vermin_release_px']*256:
+                s['aggro'] = False
+        elif reach is not None and reach <= self.config['vermin_aggro_px']*256:
+            s['aggro'] = True
+            s['direction'] = -1 if px < cx else 1
+        if not s['aggro'] and b.get('blocked'):
+            s['direction'] *= -1
+        vx = 0.
+        if s['aggro'] and px is not None:
+            s['direction'] = -1 if px < cx else 1
+            if abs(px-cx) > 8*256:
+                vx = s['direction']*self.config['vermin_speed_px_s']*256
+        elif not s['aggro']:
+            vx = s['direction']*self.config['vermin_patrol_speed_px_s']*256
+        climbing = bool(s['aggro'] and py is not None and py < b['y']-self.config['vermin_climb_px']*256)
+        if b.get('grounded'):
+            # The shared terrain integrator keeps a supported grounded body on
+            # its ledge, so a hop must leave support before it is integrated.
+            if s['aggro'] and self.now >= s['next_jump'] and (climbing or b.get('blocked')):
+                b.update(vy=-self.config['vermin_climb_jump_px_s' if climbing else 'vermin_jump_px_s']*256,
+                         grounded=False)
+                s['next_jump'] = self.now+self._range('vermin_jump_cooldown_s')
+            elif not s['aggro'] and self.now >= s['next_hop']:
+                # USER: idle vermin change ledges at random, not on the player.
+                b.update(vy=-self.config['vermin_jump_px_s']*256, grounded=False)
+                s['next_hop'] = self.now+self._range('vermin_hop_s')
                 s['next_jump'] = self.now+self._range('vermin_jump_cooldown_s')
         terrain.step(b, dt, vx, self.config['vermin_gravity_px_s2']*256)
         move(self.host, oid, (b['x'], b['y']), dt,

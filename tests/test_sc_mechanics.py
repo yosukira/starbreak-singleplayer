@@ -380,6 +380,91 @@ class ScMechanicsTests(unittest.TestCase):
         self.assertEqual(replacement['props']['move']['vel']['xvel'], 7168)
         self.assertLess(replacement['pos'][0], -10000)
 
+    def test_native_floating_ledge_keeps_its_own_move(self):
+        # OBS: 802 authored floating ledges carry a native sine MOVE; the
+        # mechanism whitelist used to drop them, so the server kept the birth
+        # position while the client animated the platform.
+        h = Host({1: body('sc.fledge160', x=0, y=0, w=160, h=96, terraintype=2,
+                          move=dict(sin=dict(xmp=0, ymp=0, vel=0, period=2000, offset=0, amp=2000)))})
+        self.assertIn(1, h.mechanics.states)
+        self.assertIn(1, h.mechanics.tracks)
+        start = list(h.actors[1]['pos'])
+        h.room_time = 0.5
+        h.mechanics._physics_clock = None
+        h.mechanics.pre_physics(.016)
+        self.assertNotEqual(h.actors[1]['pos'], start)
+
+
+class ScVerminTests(unittest.TestCase):
+    """USER: Cathedral vermin patrol their ledge and follow a player vertically."""
+
+    def make(self, player_xy):
+        h = Host({1: body('sc.vermin', x=100, y=96, w=48, h=48, hitpoints=100),
+                  2: body('sc.twall', x=0, y=96, w=16, h=64, terraintype=1),
+                  3: body('sc.twall', x=420, y=96, w=16, h=64, terraintype=1),
+                  4: body('sc.tledge', x=0, y=160, w=436, h=32, terraintype=2)})
+        h.player_at(*player_xy)
+        h.tick(.01)
+        return h
+
+    def state(self, h):
+        return h.mechanics.states[1]
+
+    def test_idle_vermin_patrols_its_ledge_without_the_player(self):
+        h = self.make((3000, 96))
+        self.assertFalse(self.state(h)['aggro'])
+        start = h.actors[1]['pos'][0]
+        for _ in range(12):
+            h.tick(.05)
+        self.assertNotEqual(h.actors[1]['pos'][0], start)
+        self.assertFalse(self.state(h)['aggro'])
+
+    def test_idle_vermin_reverses_at_a_wall_instead_of_stopping(self):
+        h = self.make((3000, 96))
+        directions = set()
+        for _ in range(200):
+            h.tick(.05)
+            directions.add(self.state(h)['direction'])
+        self.assertEqual(directions, {-1, 1})
+
+    def test_idle_vermin_changes_ledges_on_its_own(self):
+        h = self.make((3000, 96))
+        jumped = False
+        for _ in range(220):
+            h.tick(.05)
+            if self.state(h)['body']['vy'] < 0:
+                jumped = True
+        self.assertTrue(jumped)
+
+    def test_idle_hop_clears_one_authored_maze_row(self):
+        h = self.make((3000, 96))
+        s = self.state(h)
+        start = s['body']['y']
+        apex = start
+        for _ in range(200):
+            h.tick(.05)
+            apex = min(apex, s['body']['y'])
+        # Captured maze ledges sit 192px apart; one hop must clear a row.
+        self.assertGreaterEqual((start - apex) / MP, 192)
+
+    def test_acquired_vermin_climbs_toward_a_player_above_it(self):
+        h = self.make((160, -200))
+        self.assertTrue(self.state(h)['aggro'])
+        climbed = False
+        for _ in range(120):
+            h.tick(.05)
+            if self.state(h)['body']['vy'] < 0:
+                climbed = True
+        self.assertTrue(climbed)
+
+    def test_vermin_releases_a_player_beyond_the_release_range(self):
+        h = self.make((160, -200))
+        self.assertTrue(self.state(h)['aggro'])
+        h.player_at(3000, 96)
+        h.tick(.05)
+        self.assertFalse(self.state(h)['aggro'])
+        self.assertIn(self.state(h)['direction'], (-1, 1))
+
 
 if __name__ == '__main__':
     unittest.main()

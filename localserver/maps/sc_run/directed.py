@@ -87,10 +87,16 @@ def _attempt(content, seed, config, optional, rng):
             # Native combat Mid entrance doors also reopen only on victory.
             if rooms[src]['objects'][p['id']].get('vid')=='sc.cdoor':
                 required = 'mid_cleared'
-            link = dict(destination=dst,entry=q['entry'],trigger='interact')
+            # USER: Cathedral room-edge doors are walked through. Crossing the
+            # authored edge boundary starts the transition; no interact press
+            # is consumed.
+            core = p['kind']=='core'
+            # USER: a core door inside a room stays an interact action; its own
+            # gate enables that interact flag (a closed core door is inert).
+            link = dict(destination=dst,entry=q['entry'],trigger='interact' if core else 'boundary')
             if required:link['requires']=required
             rooms[src]['links'][p['id']]=link
-            rooms[src]['objects'][p['id']]['interact']=0 if required else 1
+            rooms[src]['objects'][p['id']]['interact']=(0 if required else 1) if core else 0
             required_flags.append(required)
         edges.append(dict(a=a,b=b,a_port=pa['id'],b_port=pb['id'],
                           requires=gate,a_requires=required_flags[0],b_requires=required_flags[1]))

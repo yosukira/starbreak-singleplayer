@@ -11,10 +11,14 @@ def rect(row):
 def geometry(host):
     # Actors are live geometry: moving ledges and opening walls cannot use a
     # room-load-only collision cache. The controller refreshes once per slice.
+    # A live projectile is not world terrain for its own controller: the native
+    # ball is solid for everyone else, but counting it here made its thrower
+    # collide with it and flip facing every frame.
     return [(oid, rect(row), int(row['props']['terraintype']),
              int(row['props'].get('shapetype', 0)))
             for oid, row in host.actors.items()
-            if not row.get('dead') and row['props'].get('terraintype') in (1, 2)]
+            if not row.get('dead') and not row.get('_sc_projectile')
+            and row['props'].get('terraintype') in (1, 2)]
 
 
 def clear(host, bounds, ignore=()):

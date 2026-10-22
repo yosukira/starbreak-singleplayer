@@ -1,14 +1,46 @@
 """SC progression through real room actors, snapshots and transport wrappers."""
+import time
 from types import SimpleNamespace
 import unittest
 from unittest import mock
 
 from localserver.live.bridge import PlayerBridge
 from localserver.pb_layout import default_layouts
+from localserver.server import LocalServer
 from localserver.world_snapshot import decode_delta
 from localserver.maps.sc_run.run import ScLevelRun
 from localserver.maps.sc_run.scene import ScRunPack
 from localserver.maps.sc_run.session import ScRunLiveSession
+
+
+class DoorGateTests(unittest.TestCase):
+    """A lost native egress ACK must not disable every later door and restart."""
+
+    @staticmethod
+    def host(since, status=None):
+        bridge = mock.Mock()
+        bridge.ground_egress_status.return_value = status or {'schema': 'full-run-egress-ready-v1',
+                                                             'status': 'pending'}
+        host = SimpleNamespace(
+            _ground_egress_ack_pending=dict(bridge=bridge, since=since,
+                                            control={'request_id': 1}, ack={'receipt': 1}),
+            GROUND_EGRESS_ACK_TIMEOUT_S=LocalServer.GROUND_EGRESS_ACK_TIMEOUT_S)
+        host._release_ground_ack = lambda reason: setattr(host, '_ground_egress_ack_pending', None)
+        return host, bridge
+
+    def test_fresh_ack_keeps_the_gate_closed(self):
+        host, bridge = self.host(time.time())
+        self.assertFalse(LocalServer._ground_ack_ready(host, bridge))
+
+    def test_missing_ack_releases_the_gate_after_the_deadline(self):
+        host, bridge = self.host(time.time()-LocalServer.GROUND_EGRESS_ACK_TIMEOUT_S-1.)
+        self.assertTrue(LocalServer._ground_ack_ready(host, bridge))
+        self.assertIsNone(host._ground_egress_ack_pending)
+
+    def test_retired_bridge_releases_the_gate_immediately(self):
+        host, _bridge = self.host(time.time())
+        self.assertTrue(LocalServer._ground_ack_ready(host, object()))
+        self.assertIsNone(host._ground_egress_ack_pending)
 
 
 class Clock:
@@ -69,6 +101,22 @@ class ScRunTests(unittest.TestCase):
             player=dict(worldid=2, objid=1, xmp=x, ymp=y, wmp=10240, hmp=20480,
                         hp=500, maxhp=500, alive=True, room_seed=context['room_seed'])))
 
+    def test_every_planned_room_runs_without_errors(self):
+        # Broad regression net over every generated room: activations, moving
+        # ledges, projectiles and doors must survive a few real ticks.
+        run, _ = self.make_run(seed=5)
+        for role in list(run.pack.room_names):
+            with self.subTest(role=role):
+                wrapper, _server = self.open_room(run, role)
+                for _ in range(12):
+                    self.feedback(wrapper)
+                    wrapper.step(.05)
+                if not hasattr(wrapper.current, 'actors'):
+                    continue  # dedicated boss/Mid sessions own their own actors
+                for oid, row in wrapper.current.actors.items():
+                    x, y = row['pos']
+                    self.assertFalse(x != x or y != y, 'non-finite actor position %s' % oid)
+
     def test_initial_twenty_four_minutes_and_gen_bonus_use_one_global_display_clock(self):
         run, clock = self.make_run()
         self.assertEqual(run.remaining(), 1440)
@@ -99,11 +147,17 @@ class ScRunTests(unittest.TestCase):
                 self.assertEqual(wrapper.instance.snapshot.properties_at((1, oid))['vid_'], 'sc.min0')
         oid, link = next(iter(wrapper.instance.recipe['links'].items()))
         self.assertTrue(run.allows(link))
+        # USER: side doors are walked through; the boundary contact performs the
+        # transition and no interact press is available on that door.
+        self.assertEqual(link.get('trigger'), 'boundary')
         props = wrapper.instance.snapshot.properties_at((1, oid))
+        self.assertEqual(props['interact_'], 0)
+        self.feedback(wrapper, (props['xmp_']-props['wmp_']*2, props['ymp_']))
+        wrapper.step(.02)
         self.feedback(wrapper, (props['xmp_'], props['ymp_']))
-        player, _ = wrapper.bridge.snapshot()
-        self.assertTrue(wrapper.interact(oid, player))
+        wrapper.step(.02)
         self.assertEqual(server.transitions[-1]['destination'], link['destination'])
+        player, _ = wrapper.bridge.snapshot()
         self.assertTrue(run.move(link, player))
         self.assertEqual(run.current, link['destination'])
         self.assertFalse(server.exits)
@@ -217,6 +271,23 @@ class ScRunTests(unittest.TestCase):
         self.assertTrue(run.allows(jump_link, role=jump.role))
         self.assertFalse(run.allows(hive_link, role=other.role))
         self.assertNotIn('mid', run.defeated)
+
+    def test_cleared_mid_core_door_is_an_interact_door_gated_by_its_own_flag(self):
+        # USER: a core door inside the room is an interact action, unlike the
+        # walked-through room-edge doors.
+        run, _ = self.make_run()
+        wrapper, server = self.open_room(run, 'mid_jump')
+        oid, link = next((o, l) for o, l in wrapper.instance.recipe['links'].items()
+                         if l.get('requires') == 'mid_cleared')
+        self.assertEqual(link.get('trigger'), 'interact')
+        props = wrapper.instance.snapshot.properties_at((1, oid))
+        self.feedback(wrapper, (props['xmp_'], props['ymp_']))
+        player, _ = wrapper.bridge.snapshot()
+        self.assertFalse(wrapper.interact(oid, player))
+        self.assertFalse(server.transitions)
+        run.room('mid_jump').flags['mid_cleared'] = True
+        self.assertTrue(wrapper.interact(oid, player))
+        self.assertEqual(server.transitions[-1]['destination'], link['destination'])
 
     def test_failed_boss_world_preparation_does_not_cancel_the_automatic_retry(self):
         from localserver.server import LocalServer

@@ -119,7 +119,7 @@ class GroundEgressHost:
                 self.error=str(error);self.tx.state='recovery-required';self.stop.set();return
         self.source.bridge.arm_ground_egress(None)
         if self.tx.ack is not None:
-            self.server._ground_egress_ack_pending=dict(bridge=self.source.bridge,
+            self.server._ground_egress_ack_pending=dict(bridge=self.source.bridge,since=time.time(),
                 control=copy.deepcopy(self.tx.control),ack=copy.deepcopy(self.tx.ack))
         self.source._inventory_status=dict(status='rejected',reason=reason)
         self.server._restart_in_progress=False
@@ -192,7 +192,7 @@ class GroundEgressHost:
                 self.source.bridge.native_context=dict(self.restore.room,room_ready=False,room_handoff=True)
         if self.server.live_session is self.source:self.server.live_session=None
         self.tx.mark_committed();self.source.bridge.acknowledge_ground_egress(candidate['ack'])
-        self.server._ground_egress_ack_pending=dict(bridge=self.source.bridge,
+        self.server._ground_egress_ack_pending=dict(bridge=self.source.bridge,since=time.time(),
             control=copy.deepcopy(self.tx.control),ack=copy.deepcopy(candidate['ack']))
         self.source.bridge.arm_ground_egress(None)
         self.stats['commits']+=1;self.stop.set();self.ready.set()

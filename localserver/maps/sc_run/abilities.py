@@ -5,6 +5,11 @@ import math
 from .physics import flight, ground, rect, sinusoid
 
 
+def overlaps(a, b):
+    """Whether two (x, y, w, h) boxes share interior area."""
+    return a[0] < b[0]+b[2] and a[0]+a[2] > b[0] and a[1] < b[1]+b[3] and a[1]+a[3] > b[1]
+
+
 def center(value):
     point = value.get('center') if isinstance(value, dict) else getattr(value, 'center', None)
     if callable(point):
@@ -92,12 +97,18 @@ class ScProjectiles:
         self.host.presentation.projectile_created(oid, vid)
         return oid
 
-    def spawn_sinusoid(self, vid, point, parameters, *, owner=0):
-        """Start a new native sinusoid at its birth origin, never a CW phase."""
+    def spawn_sinusoid(self, vid, point, parameters, *, owner=0, lifetime_s=None):
+        """Start a new native sinusoid at its birth origin, never a CW phase.
+
+        ``lifetime_s`` only bounds the server-side instance: the authored
+        lifetime field still travels unchanged on the wire.
+        """
         motion = dict(sin=dict(parameters, xmp=round(point[0]), ymp=round(point[1]), pos=0))
         oid = self.host._create(vid, point, owner,
             dict(move=motion, facing=parameters['angle']))
         self.adopt(oid, owner=owner)
+        if lifetime_s is not None:
+            self.shots[oid]['expiry']=self.host.room_time+float(lifetime_s)
         self.host.presentation.projectile_created(oid, vid)
         return oid
 
@@ -172,7 +183,15 @@ class ScProjectiles:
                                                     (point[1]-row['pos'][1])/dt), dt, (s['owner'],))
             elif s['bounce']:
                 oldvy = s['vy']
-                point = ground([t for t in terrain if t[0] != s['owner']], row, s, dt, s['vx'], s['gravity'])
+                # USER: the thrown Cathedral ball is native terrain
+                # (terraintype1) and must collide with the creature that threw
+                # it. Only the spawn overlap is ignored, so it cannot bounce
+                # inside that body before it has left it.
+                solids = terrain
+                owner_row = self.host.actors.get(s['owner'])
+                if owner_row is not None and overlaps(rect(row), rect(owner_row)):
+                    solids = [t for t in terrain if t[0] != s['owner']]
+                point = ground(solids, row, s, dt, s['vx'], s['gravity'])
                 hit = None
                 if s.get('grounded') and oldvy > 0:
                     s['vy'] = -max(25000., oldvy*self.controller.fit['golem_restitution'])

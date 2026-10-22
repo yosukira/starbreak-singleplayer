@@ -96,6 +96,19 @@ class ScEnemyTests(unittest.TestCase):
         return dict(angle=angle, births=[dict(pos_mp=list(point), offset=82)],
                     sin=dict(vel=8000, period=750, amp=10000), interval_s=[.6, .6])
 
+    def test_damage_on_a_body_without_hp_is_ignored_once(self):
+        # A damage report the server cannot apply must never look like an
+        # "unkillable" creature without a log line naming the actor.
+        h = Host()
+        h.floor(256)
+        h.add(1, 'sc.golem', (0, 0), changes=dict(hitpoints=None))
+        h.enemies.prepare()
+        h.player_at(0, 0)
+        for seq in (1, 2, 3):
+            self.assertTrue(h.enemies.feedback(dict(kind='damage', victim=1, value=500, seq=seq)))
+        self.assertIn(1, h.actors)
+        self.assertIn(1, h.enemies._damage_ignored)
+
     def test_wall_emitter_crosses_its_wall_in_the_native_fixed_direction(self):
         emitter = self.wall_emitter()
         h = Host(dict(sc_wraith_emitters=[emitter]))
@@ -305,6 +318,21 @@ class ScEnemyTests(unittest.TestCase):
         self.assertEqual(len(released), 8)
         h.advance(3.9)
         self.assertEqual(len(u['orbs']), 8)
+
+    def test_thrown_ball_collides_with_the_golem_that_threw_it(self):
+        # USER: the Cathedral ball is native terrain and collides with the
+        # creature that threw it, instead of passing through that body.
+        h = Host()
+        h.floor(256)
+        h.add(1, 'sc.golem', (0, 0))
+        h.enemies.prepare()
+        ball = h.enemies.projectiles.spawn('sc.golemb', (400*256, 0), (-136000., 0.), 1,
+                                           gravity=200000., bounce=True)
+        for _ in range(40):
+            h.advance(.05)
+            if h.enemies.projectiles.shots.get(ball, {}).get('vx', -1.) > 0:
+                break
+        self.assertGreater(h.enemies.projectiles.shots[ball]['vx'], 0.)
 
     def test_golem_landing_creates_opposite_waves_and_titan_has_no_weapon(self):
         h = Host()

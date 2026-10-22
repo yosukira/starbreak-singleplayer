@@ -1293,27 +1293,47 @@ class LocalServer(object):
         if self._world_exit_options('home') is None:return False
         return self._request_live_inventory_transition(channel,session,link,player,'world-exit')
 
+    def _reject_door(self, session, link, reason):
+        """Record and once-per-reason log why a door intent did not start.
+
+        A silent refusal is indistinguishable from a dead door, so the local
+        server keeps the last reason on the session and writes it once.
+        """
+        map_id=getattr(self.options,'map',None)
+        status=dict(status='rejected',reason=reason,destination=(link or {}).get('destination'))
+        previous=getattr(session,'_inventory_status',None) or {}
+        if previous.get('reason')!=reason:
+            log('{0} door rejected: {1}'.format(map_id,reason))
+        session._inventory_status=status
+        return False
+
     def _request_live_inventory_transition(self,channel,session,link,player,purpose):
-        if not self._ground_ack_ready(session.bridge):return False
+        if not self._ground_ack_ready(session.bridge):
+            return self._reject_door(session,link,'ground egress acknowledgement pending')
         map_id=getattr(self.options,'map',None)
         run=getattr(session,'run',None)
-        if (self._restart_in_progress or run is None or
-                run is not getattr(self,'egy_run' if map_id=='egy_run' else 'level_run',None) or
-                player is None or not player.alive or player.hp<=0 or player.age()>.5 or not run.allows(link)):
-            return False
+        if self._restart_in_progress:
+            return self._reject_door(session,link,'native restart in progress')
+        if run is None or run is not getattr(self,'egy_run' if map_id=='egy_run' else 'level_run',None):
+            return self._reject_door(session,link,'level run generation changed')
+        if player is None or not player.alive or player.hp<=0:
+            return self._reject_door(session,link,'player is dead or missing')
+        if player.age()>.5:
+            return self._reject_door(session,link,'player telemetry is stale')
+        if not run.allows(link):
+            return self._reject_door(session,link,'door requirement not met: '+str((link or {}).get('requires')))
         pending=getattr(session,'_inventory_handoff',None)
         if pending is not None:
             return pending.link==link and getattr(session,'_inventory_handoff_purpose','room')==purpose
 
         if purpose=='room':run.destination_spawn(link['destination'],link.get('entry','default'))
         context=session.bridge.native_context or {}
-        if not context.get('room_ready') or context.get('map')!=map_id:
-            return False
+        if not context.get('room_ready'):
+            return self._reject_door(session,link,'room input context is not ready')
+        if context.get('map')!=map_id:
+            return self._reject_door(session,link,'room input context names another map')
         if player.raw.get('inventory_protocol')!='full-run-inventory-v1':
-            reason='native inventory bridge unavailable; restart the simulator to load its updated plugin'
-            if getattr(session,'_inventory_status',{}).get('reason')!=reason:log(map_id+' door rejected: '+reason)
-            session._inventory_status=dict(status='rejected',reason=reason)
-            return False
+            return self._reject_door(session,link,'native inventory bridge unavailable; restart the simulator to load its updated plugin')
         issued=self.layouts.decode('Delta',self.player_delta_blob)['createplayer_']['charprops_']
         scope=dict(map=map_id,room_token=session._input_serial,
             room_seed=session.instance.recipe['world']['worldprops_'].get('seed_',0),
@@ -1402,24 +1422,44 @@ class LocalServer(object):
         return self._commit_live_room_transition(channel,session,outcome['link'],player,
             inventory_create=outcome['create_player'])
 
+    # A native ACK that never arrives must not wedge every later door and
+    # restart in this run: the gate is released once it is provably stale.
+    GROUND_EGRESS_ACK_TIMEOUT_S=8.
+
+    def _release_ground_ack(self, reason):
+        self._ground_egress_ack_pending=None
+        log('ground egress acknowledgement released the door gate: '+reason)
+
     def _ground_ack_ready(self,bridge):
         """Publishing an ACK cannot authorize a new same-PVID native load.
 
         Wait for the native coordinator to confirm consuming that exact ACK
-        and removing its gate, including for R/editor/class restarts.
+        and removing its gate, including for R/editor/class restarts. A missing
+        or mismatched acknowledgement is bounded: an unreachable native gate
+        would otherwise leave the whole run unable to change rooms or restart.
         """
         pending=getattr(self,'_ground_egress_ack_pending',None)
         if pending is None:return True
-        if pending['bridge'] is not bridge:return False
+        if pending['bridge'] is not bridge:
+            self._release_ground_ack('the acknowledgement belongs to a retired bridge')
+            return True
+        since=pending.get('since')
+        stale=isinstance(since,(int,float)) and time.time()-since>self.GROUND_EGRESS_ACK_TIMEOUT_S
         from .maps.run_common.ground_transition import fingerprint
         small=bridge.ground_egress_status()
         try:
             if (not isinstance(small,dict) or small.get('schema')!='full-run-egress-ready-v1' or
                     small.get('status')!='acknowledged' or
-                    fingerprint(small.get('acknowledged_receipt'))!=fingerprint(pending['ack'])):return False
+                    fingerprint(small.get('acknowledged_receipt'))!=fingerprint(pending['ack'])):
+                if stale:self._release_ground_ack('the native receipt never matched within the deadline')
+                return stale
             fields=('request_id','request_attempt','issued_at','scope','expected_pvid','expected_cw_sha256')
-            if fingerprint({k:small.get(k) for k in fields})!=fingerprint({k:pending['control'][k] for k in fields}):return False
-        except (ValueError,TypeError,KeyError,UnicodeError):return False
+            if fingerprint({k:small.get(k) for k in fields})!=fingerprint({k:pending['control'][k] for k in fields}):
+                if stale:self._release_ground_ack('the native receipt carried another request within the deadline')
+                return stale
+        except (ValueError,TypeError,KeyError,UnicodeError):
+            if stale:self._release_ground_ack('the native receipt was unreadable within the deadline')
+            return stale
         self._ground_egress_ack_pending=None
         bridge.finish_ground_egress_ack()
         return True
