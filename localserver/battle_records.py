@@ -1,4 +1,4 @@
-"""Local, versioned battle records. Only explicit gameplay fields cross exports.
+﻿"""Local, versioned battle records. Only explicit gameplay fields cross exports.
 
 Documents are JSON, never executable snapshots. SQLite owns the index and atomic
 writes, so the UI can read while the simulator records a battle in another process.
@@ -481,7 +481,7 @@ class BattleRecorder:
                 return
             map_id = str(getattr(session.options, 'map', 'egy_hulk'))
             try:
-                version = json.loads((paths.ROOT / 'data/version.json').read_text())['version']
+                version = json.loads((paths.ROOT / 'data/version.json').read_text(encoding='utf-8-sig'))['version']
             except (OSError, ValueError, KeyError):
                 version = 'development'
             self.document = dict(schema=SCHEMA, id=self.identifier, started=time.time(), duration=0.,
