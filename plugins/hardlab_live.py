@@ -138,9 +138,13 @@ class Plugin(PluginBase):
                 replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
                 recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None,
                 recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else self.native_capture_error)
-            temporary=path+'.part'
-            with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
-            os.replace(temporary,path)
+            delivery=getattr(self.native_capture,'delivery',None)
+            if delivery is not None:
+                delivery.health(path,value)
+            else:
+                temporary=path+'.part'
+                with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
+                os.replace(temporary,path)
         except (OSError,ValueError,AttributeError):pass
 
     def _enable(self):

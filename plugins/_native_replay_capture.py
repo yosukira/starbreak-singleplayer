@@ -76,7 +76,7 @@ class ChunkDelivery:
             raise ValueError('Invalid native recorder token')
         self.url=config['url'];self.token=token;self.error=None;self.closed=False;self.attempt=config.get('attempt')
         self.serial=0;self.incoming=queue.Queue(maxsize=4);self.control_error=None
-        self.feedback_value=None;self.feedback_lock=threading.Lock();self.last_poll=0
+        self.feedback_value=None;self.health_value=None;self.feedback_lock=threading.Lock();self.last_poll=0
         self.poll_interval=.1
         self.control_enabled=control
         self.queue=queue.Queue(maxsize=256)
@@ -90,10 +90,17 @@ class ChunkDelivery:
         if self.closed or self.error:raise IOError('Native recording delivery stopped')
         # NativeTape transfers a detached immutable chunk. Encoding belongs to
         # this delivery worker, never the original game's update thread.
-        if self.attempt and 'attempt' not in value:value=dict(value,attempt=self.attempt)
         try:from ._native_replay import wire_size
         except (ImportError,ValueError,SystemError):from _native_replay import wire_size
         size=sum(wire_size(row)+1 for row in value.get('ops',[]))+256
+        self.put_sized(value,size)
+
+    def put_sized(self,value,size):
+        if self.closed or self.error:raise IOError('Native recording delivery stopped')
+        if type(size)is not int or not 0<size<=8*1024*1024:raise IOError('Native recording delivery buffer is full')
+        if self.attempt and 'attempt' not in value:value=dict(value,attempt=self.attempt)
+        # NativeTape already counted every validated row as it was emitted.
+        # Rewalking the entire batch here adds a spike to the game thread.
         with self.queue_lock:
             if self.queued_bytes+size>8*1024*1024:raise IOError('Native recording delivery buffer is full')
             self.queued_bytes+=size
@@ -130,6 +137,15 @@ class ChunkDelivery:
                 self.queue.task_done()
 
     def poll_control(self):
+        with self.feedback_lock:
+            health=self.health_value;self.health_value=None
+        if health is not None:
+            path,value=health
+            try:
+                temporary=path+'.part'
+                with open(temporary,'w',encoding='utf8') as output:json.dump(value,output)
+                os.replace(temporary,path)
+            except (OSError,ValueError):pass
         if not self.control_enabled:return
         if self.pending_feedback is None:
             with self.feedback_lock:
@@ -231,6 +247,10 @@ class ChunkDelivery:
                 if len(json.dumps(value['documents'],separators=(',',':')).encode('ascii'))>256*1024:
                     raise ValueError('Native room feedback queue is full')
             self.feedback_value=value
+
+    def health(self,path,value):
+        # Replace stale status instead of accumulating file writes.
+        with self.feedback_lock:self.health_value=(path,value)
 
     def close(self):
         self.closed=True

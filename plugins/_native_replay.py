@@ -135,10 +135,10 @@ class NativeTape:
     supplies native addresses or selects an executable from recording data.
     A recorder failure stops recording while allowing the live call to finish.
     """
-    def __init__(self,mode='record',ops=None,save=None,notice=None,keep_ops=False):
+    def __init__(self,mode='record',ops=None,save=None,notice=None,keep_ops=False,save_sized=None):
         if mode not in('record','play'):raise ValueError('Invalid native tape mode')
         self.mode=mode;self.ops=(ops if isinstance(ops,VerifiedOperations) and ops.complete else validate_operations(ops or []))if mode=='play'else[]
-        self.save=save;self.notice=notice;self.keep_ops=keep_ops
+        self.save=save;self.save_sized=save_sized or getattr(getattr(save,'__self__',None),'put_sized',None);self.notice=notice;self.keep_ops=keep_ops
         self.cursor=self.sequence=self.size=self.pending_size=0
         self.pending=[];self.stack=[];self.in_loop=False
         self.error=None;self.finished=False;self.last_state=None;self.elapsed=0
@@ -168,7 +168,8 @@ class NativeTape:
         if self.mode!='record'or self.error or (not self.pending and not end):return
         chunk=dict(sequence=self.sequence,ops=self.pending,end=end)
         try:
-            if self.save:self.save(chunk)
+            if self.save_sized:self.save_sized(chunk,self.pending_size+256)
+            elif self.save:self.save(chunk)
         except Exception as error:
             self.fail(error);return
         self.sequence+=1;self.pending=[];self.pending_size=0
@@ -263,7 +264,7 @@ class NativeTape:
         self.size=(sum(wire_size(row)+1 for row in self.ops[:self.cursor]) if size is None
                    else integer(size,0,128*1024*1024))
         self.ops=self.ops[:self.cursor] if self.keep_ops else []
-        self.mode='record';self.save=save;self.sequence=sequence
+        self.mode='record';self.save=save;self.save_sized=getattr(getattr(save,'__self__',None),'put_sized',None);self.sequence=sequence
         self.pending=[];self.pending_size=0
 
     def finish(self):

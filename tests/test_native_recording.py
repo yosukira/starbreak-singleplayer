@@ -19,6 +19,31 @@ def manifest():
 
 
 class NativeCaptureTests(unittest.TestCase):
+    def test_sized_delivery_does_not_walk_the_batch_on_the_game_thread(self):
+        from plugins import _native_replay_capture as module
+        class Untouchable(list):
+            def __iter__(self):raise AssertionError('game thread rewalked the batch')
+        with mock.patch.object(module.threading.Thread,'start'):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64,attempt='owned'))
+            delivery.put_sized(dict(ops=Untouchable(),sequence=0,end=False),512)
+            value,size=delivery.queue.get_nowait()
+            self.assertEqual((size,delivery.queued_bytes,value['attempt']),(512,512,'owned'))
+        chunks=[];tape=NativeTape(save_sized=lambda chunk,size:chunks.append((chunk,size)))
+        tape.loop(0);tape.loop(1,[0,0]);tape.flush()
+        from plugins._native_replay import wire_size
+        self.assertEqual(chunks[0][1],sum(wire_size(row)+1 for row in chunks[0][0]['ops'])+256)
+
+    def test_health_writes_are_deferred_and_coalesce_to_latest_status(self):
+        from plugins import _native_replay_capture as module
+        with tempfile.TemporaryDirectory() as folder,mock.patch.object(module.threading.Thread,'start'):
+            delivery=ChunkDelivery(dict(url='http://127.0.0.1:12345/chunks',token='a'*64),control=False)
+            target=Path(folder)/'health.json'
+            delivery.health(str(target),dict(sent=1));delivery.health(str(target),dict(sent=2))
+            self.assertFalse(target.exists())
+            delivery.poll_control()
+            self.assertEqual(json.loads(target.read_text()),dict(sent=2))
+            self.assertIsNone(delivery.health_value)
+
     def test_incomplete_older_battle_does_not_block_finalizing_newer_records(self):
         recorder=NativeRecording.__new__(NativeRecording)
         db=mock.MagicMock();db.__enter__.return_value.execute.return_value.fetchall.return_value=[('older','{}'),('newer','{}')]
