@@ -1,4 +1,4 @@
-"""Live Hulk Hard simulator bridge plugin (SBPE).
+﻿"""Live Hulk Hard simulator bridge plugin (SBPE).
 
 Place this file plus ``_hardlab_livebridge.py`` in the SBPE plugins folder.
 Within an owned practice session the bridge stays active and sends
@@ -137,7 +137,8 @@ class Plugin(PluginBase):
                 hook_error=bool(self.bridge.hook_error),error=bool(self.bridge_error),
                 replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
                 recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None,
-                recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else self.native_capture_error)
+                recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else self.native_capture_error,
+                tick_error=getattr(self,'tick_error',None))
             delivery=getattr(self.native_capture,'delivery',None)
             if delivery is not None:
                 delivery.health(path,value)
@@ -200,13 +201,19 @@ class Plugin(PluginBase):
                 self.bridge._interaction_pre_local=False
 
     def afterUpdate(self):
-        try:self._after_update_live()
-        finally:
+        # A world reload must never kill the telemetry hook: once this stops
+        # running the server sees no player at all and every room stays inert.
+        try:
+            try:self._after_update_live()
+            except Exception as error:self.tick_error=type(error).__name__+': '+str(error)
             try:
                 if self.native_capture is not None:
                     try:self.native_capture.after()
                     except Exception as error:self.native_capture.tape.fail(error)
-            finally:self._report_health()
+            except Exception:pass
+            try:self._report_health()
+            except Exception:pass
+        except BaseException:pass
 
     def _replay_post_frame(self):
         player=self.native_capture.player if self.native_capture is not None else None
