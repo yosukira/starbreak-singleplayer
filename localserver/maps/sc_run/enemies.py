@@ -725,7 +725,10 @@ class ScEnemies:
                 origin = (x+w if event['direction'] > 0 else x-ball['wmp'], y+h*.7-ball['hmp']/2)
                 velocity = (event['direction']*136000., 0.)
             else:
-                origin = (x+w/2-ball['wmp']/2, y+h*.7-ball['hmp']/2)
+                # OBS: every captured ball is born at body centre + (side 96px,
+                # down 74px); the sideways sign follows the throw direction.
+                origin = (x+w/2+event['direction']*96*256-ball['wmp']/2,
+                          y+h/2+74*256-ball['hmp']/2)
                 velocity = (math.cos(angle)*136000., math.sin(angle)*136000.)
             # FIT: the captures contain no sc.golemb movement packet at all, so
             # the 136k speed and the aimed launch are a local policy; only the
