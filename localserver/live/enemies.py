@@ -1,4 +1,4 @@
-'Scavenger wave spawner and live enemy AI.'
+﻿'Scavenger wave spawner and live enemy AI.'
 
 import json
 import math
@@ -605,7 +605,10 @@ class Enemy(object):
                         results.append({'kind':'enemy-attack','objid':self.objid,
                             'vid':self.vid,'anim':8,'time_ms':5346})
                         return results
-        if (was_grounded and now >= self.next_jump and 'shredder' in self.vid):
+        # USER: a melee lizard never jumps while it is attacking or recovering.
+        # Only a blocked or higher pursuit may jump, never the swing itself.
+        busy_melee = bool(melee and (in_reach or now < self.recovery_until))
+        if (was_grounded and not busy_melee and now >= self.next_jump and 'shredder' in self.vid):
             if self.climb_route is None and (self.motion.blocked or
                     (higher > 40 * 256 and abs(dx) < 400 * 256)):
 

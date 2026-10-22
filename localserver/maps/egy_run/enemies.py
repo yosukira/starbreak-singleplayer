@@ -1,4 +1,4 @@
-'Live ordinary EGY enemies; native capabilities with exploration policy.'
+﻿'Live ordinary EGY enemies; native capabilities with exploration policy.'
 import copy
 import math
 from collections import Counter, deque
@@ -850,6 +850,11 @@ class ExplorationEnemies:
     def _pursuit_jump(self,oid,state,target,vx,acquired):
         rule=state['policy']['pursuit_jump'];motion=state['motion'];b=state['body']
         if not rule or not acquired or target is None or not motion.grounded or not vx:return False
+        # USER: a melee lizard does not jump while it is attacking; inside its
+        # swing reach it attacks instead of leaping.
+        if state['family']=='melee' and self.now<state['recover_until']:return False
+        if (state['family']=='melee' and target is not None
+                and math.dist(_center(target),b.center())<=state['policy']['attack_px']*256):return False
         tx,ty=_center(target)
         player_h=target.get('hmp',17920) if isinstance(target,dict) else getattr(target,'hmp',17920)
         feet=ty+player_h/2;higher=b.y+b.h-feet;dx=tx-b.center()[0]
