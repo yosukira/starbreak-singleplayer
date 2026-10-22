@@ -541,7 +541,10 @@ class ScEnemies:
                 self._queue(oid, delay, 'shard')
         elif vid == 'sc.scout':
             self.host.presentation.sound(oid, 'sc.scoutattack', self.now)
-            u.update(dive_until=self.now+self.fit['scout_dive_s'], next=self.now+self.fit['scout_cooldown_s'])
+            cooldown = self.fit['scout_cooldown_s']
+            if isinstance(cooldown, (tuple, list)):
+                cooldown = self.host.rng.uniform(*cooldown)
+            u.update(dive_until=self.now+self.fit['scout_dive_s'], next=self.now+cooldown)
             self.counts['attacks'] += 1
         elif vid == 'sc.assassin':
             self._assassin_ghost(oid, u)
