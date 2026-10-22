@@ -1575,7 +1575,9 @@ class LocalServer(object):
             session.bridge.keys = {}
         if self.live_session is session:
             self.live_session = None
-        log('{0} room transition: {1} -> {2}, entry {3}'.format(map_id, previous[0], run.current, run.entry))
+        log('{0} room transition: {1} -> {2}, entry {3}, player at ({4}, {5})'.format(
+            map_id, previous[0], run.current, run.entry,
+            round(position[0]/256), round(position[1]/256)))
         self._request_pvid_loads(channel)
         return True
 
