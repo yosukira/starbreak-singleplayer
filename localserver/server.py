@@ -1593,8 +1593,18 @@ class LocalServer(object):
         map_id = str(map_id or '').strip()
         current = (getattr(self.options, 'map', None)
                    or game_settings.ORIGINAL_MAP)
-        if not map_id or map_id == current:
+        if not map_id:
             return False
+        if map_id == current:
+            # USER: choosing the already-loaded full run and pressing start did
+            # nothing on the first click, and a second start looked like the
+            # same map. A start request for the current map is a restart: it
+            # rebuilds the level with a new seed instead of silently returning.
+            log('map start requested for the current map {0}; restarting it'.format(map_id))
+            self.request_live_restart(
+                channel, session,
+                player_type if player_type is not None else getattr(session, 'player_type', 1))
+            return True
         if map_id == game_settings.ORIGINAL_MAP:
             create_world = os.path.join(
                 game_settings.LAB, 'data', 'catalogue',
