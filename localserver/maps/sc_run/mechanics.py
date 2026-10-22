@@ -8,7 +8,7 @@ import copy
 import math
 from collections import Counter
 
-from ..efb_run.abilities import Ownership, center, nearest, rect, prop, move, changed
+from ..efb_run.abilities import Ownership, center, nearest, players, rect, prop, move, changed
 from ..efb_run.physics import TriangleTerrain
 from .physics import geometry, sweep as solid_sweep
 from .mechanic_helpers import (MechanismTrack, animate, clear, distance_to_rect,
@@ -92,6 +92,10 @@ class ScMechanics(Ownership):
         return self.host.rng.uniform(*value) if isinstance(value, (tuple, list)) else float(value)
 
     def prepare(self):
+        # Capture each lane's native MOVE before adoption moves it into a track.
+        natives = {oid: copy.deepcopy(row['props'].get('move') or {})
+                   for oid, row in self.host.actors.items()
+                   if row['vid'].startswith('sc.mledge')}
         for oid in list(self.host.actors):
             self.add_actor(oid)
         self.guardian_row = self.host.actors.get(self.guardian)
@@ -101,6 +105,35 @@ class ScMechanics(Ownership):
             # FIT streaming boundary, never inferred as a bounce instruction.
             self.mledge_bounds = dict(left=min(r['pos'][0] for r in ledges)-256*256,
                                       right=max(r['pos'][0]+r['props'].get('wmp', 0) for r in ledges)+256*256)
+        # USER: the moving-platform room opens empty; both sides only start
+        # streaming their lanes once a player is inside. Park every authored
+        # ledge just outside its own lane and release it on the first player.
+        self.mledge_hold = {}
+        if self.mledge_bounds:
+            stock = sorted((oid for oid, r in self.host.actors.items()
+                            if r['vid'].startswith('sc.mledge')),
+                           key=lambda oid: self.host.actors[oid]['pos'][0])
+            left = right = 0
+            for oid in stock:
+                row = self.host.actors[oid]
+                width = row['props'].get('wmp', 0)
+                facing = row['props'].get('facing')
+                direction = -1 if facing == 180 else 1
+                movement = natives.get(oid) or copy.deepcopy(row['props'].get('move') or {})
+                velocity = (movement.get('vel') or {}).get('xvel') or 0
+                if velocity:
+                    direction = -1 if velocity < 0 else 1
+                if direction > 0:
+                    x = self.mledge_bounds['left'] - width - left*width
+                    left += 1
+                else:
+                    x = self.mledge_bounds['right'] + right*width
+                    right += 1
+                place(self.host, oid, (x, row['pos'][1]))
+                self.tracks.pop(oid, None)
+                row['props'].pop('move', None)
+                self.mledge_hold[oid] = (direction, movement)
+                self.states[oid]['native_move'] = movement
         # A carried book is a separate terrain entity, with a real carrier ID.
         for oid, state in self.states.items():
             if state['vid'] not in BOOKS:
@@ -207,6 +240,9 @@ class ScMechanics(Ownership):
         self.tracks[oid] = MechanismTrack(self.host.actors[oid]['pos'], movement, round(self.now*1000))
 
     def pre_physics(self, dt):
+        if self.mledge_hold and players(self.host):
+            # USER: the room's lanes start only after a player is inside.
+            self._release_ledges()
         clock = round(self.host.room_time*1000)
         if clock == self._physics_clock:
             return
@@ -625,7 +661,20 @@ class ScMechanics(Ownership):
             return True
         return False
 
+    def _release_ledges(self):
+        """Start every parked lane once the room has a live player."""
+        speed = self.config['mledge_speed_px_s']*256*256/1000
+        for oid, (direction, movement) in list(self.mledge_hold.items()):
+            row = self.host.actors.get(oid)
+            if row is None:
+                self.mledge_hold.pop(oid, None)
+                continue
+            self._movement(oid, movement or dict(vel=dict(xvel=round(direction*speed))))
+        self.mledge_hold.clear()
+
     def _mledge(self, oid, s, dt):
+        if oid in self.mledge_hold:
+            return
         row = self.host.actors[oid]
         movement = row['props'].get('move', {})
         velocity = movement.get('vel', {}).get('xvel')
@@ -647,8 +696,12 @@ class ScMechanics(Ownership):
             props.pop('xmp', None)
             props.pop('ymp', None)
             vid = row['vid']
+            native = s.get('native_move')
             self.retire(oid, 'INTERNAL')
-            self._spawn(vid, point, 0, props)
+            child = self._spawn(vid, point, 0, props)
+            if native:
+                self.states[child]['native_move'] = copy.deepcopy(native)
+                self._movement(child, copy.deepcopy(native))
 
     def resume(self, elapsed_s):
         """Reconcile an unoccupied interval without replaying attack history.

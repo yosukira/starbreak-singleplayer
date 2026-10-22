@@ -1,4 +1,4 @@
-import copy
+﻿import copy
 import random
 import unittest
 from types import SimpleNamespace
@@ -416,20 +416,34 @@ class ScMechanicsTests(unittest.TestCase):
         self.assertFalse(overlaps(block, wall))
         self.assertEqual(sum(r['vid'] in WORKERS for r in h.actors.values()), 1)
 
-    def test_mledge_native_velocity_survives_stream_out_replacement(self):
+    def test_mledge_lanes_wait_for_a_player_then_keep_native_velocity(self):
+        # USER: the room opens empty; both sides start streaming only once a
+        # player is inside. Each lane keeps its own native velocity.
         h = Host({1: body('sc.mledge64', w=64, h=96, terraintype=2, move=dict(vel=dict(xvel=7168))),
                   2: body('sc.mledge64', y=200, w=64, h=96, terraintype=2, move=dict(vel=dict(xvel=-12032)))},
                  dict(sc_mledge_bounds=dict(left=-10000, right=10000)))
+        parked = {oid: h.actors[oid]['pos'][0] for oid in (1, 2)}
         h.tick(.05)
-        # Original observed endpoint deltas: +1400 / -2350 mp in 50ms.
-        self.assertEqual(h.actors[1]['pos'][0], 1400)
-        self.assertEqual(h.actors[2]['pos'][0], -2350)
-        h.tick(.5)
+        self.assertEqual({oid: h.actors[oid]['pos'][0] for oid in (1, 2)}, parked)
+        self.assertNotIn('move', h.actors[1]['props'])
+        h.player_at(0, 0)
+        h.tick(.05)
+        h.tick(.05)
+        # Original observed endpoint deltas: +1400 / -2350 mp per 50ms.
+        moved = h.actors[1]['pos'][0]-parked[1]
+        back = h.actors[2]['pos'][0]-parked[2]
+        self.assertGreater(moved, 0)
+        self.assertLess(back, 0)
+        # Each lane keeps its own native velocity: 7168 right, 12032 left.
+        self.assertAlmostEqual(moved/7168, -back/12032, places=2)
+        for _ in range(400):
+            h.tick(.05)
+            if 1 not in h.actors:
+                break
         self.assertNotIn(1, h.actors)
-        self.assertEqual(len(h.actors), 2)
-        replacement = next(row for oid, row in h.actors.items() if oid not in (1, 2))
-        self.assertEqual(replacement['props']['move']['vel']['xvel'], 7168)
-        self.assertLess(replacement['pos'][0], -10000)
+        velocities = sorted(row['props']['move']['vel']['xvel'] for row in h.actors.values())
+        self.assertIn(7168, velocities)
+        self.assertTrue(any(row['pos'][0] < -10000 for row in h.actors.values()))
 
     def test_native_floating_ledge_keeps_its_own_move(self):
         # OBS: 802 authored floating ledges carry a native sine MOVE; the
