@@ -79,19 +79,29 @@ class WorldSnapshot:
                 number=modify['property_'];field=self.properties.get(number)
                 if number in self.MESSAGE_FIELDS:
                     field,kind=self.MESSAGE_FIELDS[number]
-                    encoded=modify.get('messageval_')
-                    raw=encoded.get('raw') if isinstance(encoded,dict) else encoded
-                    if raw is None:raise SnapshotError('SnapshotMessagePropertyMissing')
-                    value=self.layouts.decode(kind,base64.b64decode(raw))
-                    if number==42:
-                        value=dict(to_=value);field='move_'
-                    obj['props'][field]=value
+                    if number==42:field='move_'
+                    if not any(name in modify for name in ('messageval_','intval_','boolval_','stringval_')):
+                        # A property-only ModifyProps is the native clear
+                        # operation. Freeze motion at this update's clock so
+                        # revisiting the room cannot restart the old path.
+                        obj['props'].pop(field,None)
+                        if field=='move_':
+                            obj['props'].update(xmp_=round(current[0]),ymp_=round(current[1]))
+                    else:
+                        encoded=modify.get('messageval_')
+                        raw=encoded.get('raw') if isinstance(encoded,dict) else encoded
+                        if raw is None:raise SnapshotError('SnapshotMessagePropertyMissing')
+                        value=self.layouts.decode(kind,base64.b64decode(raw))
+                        if number==42:value=dict(to_=value)
+                        obj['props'][field]=value
                     if field=='move_':obj.update(origin=current,motion_at=at,follow_position=current,correction=None)
                     elif field=='animprops_':obj['anim_at']=at
                 elif field:
                     for payload in ('intval_','boolval_','stringval_'):
                         if payload in modify:
                             obj['props'][field]=modify[payload];break
+                    else:
+                        obj['props'].pop(field,None)
                     if field in ('pose_','posetime_'):obj['pose_at']=at
                     if field=='pose_':obj['props']['posetime_']=0
                     if field=='lifetime_':obj['born']=at

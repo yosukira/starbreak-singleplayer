@@ -35,7 +35,7 @@ READY_SCHEMA = 'full-run-egress-ready-v1'
 MAX_WIRE_BYTES = 63000
 MAX_JOINT_BYTES = 60000
 MAX_CONTROL_TTL_S = 10.
-RUN_MAPS = frozenset(('egy_run','eub_run','etl_run','est_run','efb_run','eff_run'))
+RUN_MAPS = frozenset(('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run'))
 TARGETS = {
     'load_pvid': (0x469b90, bytes.fromhex('5589e557565381ec8c000000')),
     'create_world': (0x46e5d0, bytes.fromhex('5589e557565381ecbc000000')),

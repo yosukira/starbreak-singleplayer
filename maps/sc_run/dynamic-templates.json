@@ -1,0 +1,983 @@
+{
+  "sc.aim": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "lifetime": 2000,
+    "ownertype": 2,
+    "vid": "sc.aim",
+    "rotate": true
+  },
+  "sc.aimend": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "z": 61,
+    "lifetime": 2000,
+    "ownertype": 2,
+    "vid": "sc.aimend",
+    "rotate": true
+  },
+  "sc.arch": {
+    "wmp": 49152,
+    "hmp": 49152,
+    "z": 75,
+    "vid": "sc.arch"
+  },
+  "sc.assassin": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 750,
+    "vid": "sc.assassin",
+    "soundprefix": "sc.spectre"
+  },
+  "sc.bomb": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "blocktype": 3,
+    "ownertype": 2,
+    "damage": 30,
+    "removetype": 3,
+    "vid": "sc.bomb"
+  },
+  "sc.bomber": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "blocktype": 2,
+    "ownertype": 2,
+    "vid": "sc.bomber",
+    "soundprefix": "sc.spectre"
+  },
+  "sc.book": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "terraintype": 2,
+    "vid": "sc.book"
+  },
+  "sc.burst": {
+    "wmp": 6144,
+    "hmp": 6144,
+    "lifetime": 4000,
+    "blocktype": 4,
+    "ownertype": 2,
+    "damage": 35,
+    "removetype": 3,
+    "vid": "sc.burst"
+  },
+  "sc.ccoredoor": {
+    "wmp": 49152,
+    "hmp": 65536,
+    "vid": "sc.ccoredoor",
+    "interact": 0
+  },
+  "sc.cdoor": {
+    "wmp": 40960,
+    "hmp": 49152,
+    "vid": "sc.cdoor",
+    "interact": 0
+  },
+  "sc.core": {
+    "wmp": 106496,
+    "hmp": 172032,
+    "z": 61,
+    "ownertype": 2,
+    "hitpoints": 5000,
+    "removetype": 0,
+    "vid": "sc.core"
+  },
+  "sc.coredoor": {
+    "wmp": 49152,
+    "hmp": 65536,
+    "interact": 0,
+    "vid": "sc.coredoor"
+  },
+  "sc.cturret": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "ownertype": 0,
+    "damage": 15,
+    "terraintype": 0,
+    "armor": 50,
+    "rotate": true,
+    "vid": "sc.cturret",
+    "hitpoints": 1,
+    "removetype": 0,
+    "draw": true,
+    "isinternal": false,
+    "boundsworld": false
+  },
+  "sc.dcore": {
+    "wmp": 106496,
+    "hmp": 172032,
+    "z": 61,
+    "ownertype": 2,
+    "removetype": 0,
+    "vid": "sc.dcore"
+  },
+  "sc.denginecore": {
+    "wmp": 131072,
+    "hmp": 106496,
+    "ownertype": 2,
+    "removetype": 0,
+    "terraintype": 0,
+    "vid": "sc.denginecore"
+  },
+  "sc.door": {
+    "wmp": 40960,
+    "hmp": 49152,
+    "vid": "sc.door",
+    "interact": 0
+  },
+  "sc.dplants": {
+    "wmp": 98304,
+    "hmp": 32768,
+    "z": -1,
+    "ownertype": 2,
+    "damage": 30,
+    "vid": "sc.dplants"
+  },
+  "sc.dplat": {
+    "wmp": 65536,
+    "hmp": 8192,
+    "ownertype": 2,
+    "damage": 30,
+    "terraintype": 1,
+    "vid": "sc.dplat"
+  },
+  "sc.dropwall": {
+    "wmp": 16384,
+    "hmp": 139264,
+    "z": 61,
+    "ownertype": 2,
+    "damage": 30,
+    "removetype": 0,
+    "terraintype": 1,
+    "boundsworld": false,
+    "vid": "sc.dropwall",
+    "noleech": true
+  },
+  "sc.eassassin": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "blocktype": 0,
+    "ownertype": 0,
+    "damage": 0,
+    "vid": "sc.eassassin",
+    "soundprefix": "sc.spectre"
+  },
+  "sc.egolem": {
+    "wmp": 40960,
+    "hmp": 65536,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 10000,
+    "removetype": 0,
+    "terraintype": 1,
+    "boundsworld": false,
+    "armor": 50,
+    "vid": "sc.egolem",
+    "soundprefix": "sc.golem"
+  },
+  "sc.engineball": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "ownertype": 2,
+    "damage": 15,
+    "terraintype": 1,
+    "vid": "sc.engineball"
+  },
+  "sc.enginecore": {
+    "wmp": 131072,
+    "hmp": 106496,
+    "ownertype": 2,
+    "damage": 15,
+    "hitpoints": 60000,
+    "removetype": 0,
+    "terraintype": 1,
+    "vid": "sc.enginecore"
+  },
+  "sc.enginefire": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "lifetime": 4500,
+    "ownertype": 2,
+    "damage": 15,
+    "removetype": 3,
+    "vid": "sc.enginefire"
+  },
+  "sc.enginefireseed": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "lifetime": 5000,
+    "removetype": 3,
+    "vid": "sc.enginefireseed"
+  },
+  "sc.enginefireub": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "lifetime": 509,
+    "ownertype": 2,
+    "damage": 15,
+    "removetype": 0,
+    "vid": "sc.enginefireub",
+    "rotate": true
+  },
+  "sc.enginespawner": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "ownertype": 2,
+    "vid": "sc.enginespawner"
+  },
+  "sc.evilbook": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "ownertype": 2,
+    "damage": 20,
+    "terraintype": 2,
+    "vid": "sc.evilbook"
+  },
+  "sc.evilpeg32": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "ownertype": 2,
+    "damage": 20,
+    "terraintype": 1,
+    "vid": "sc.evilpeg32",
+    "rotate": true
+  },
+  "sc.external": {
+    "wmp": 229376,
+    "hmp": 139264,
+    "vid": "sc.external"
+  },
+  "sc.fancy": {
+    "wmp": 98304,
+    "hmp": 163840,
+    "vid": "sc.fancy"
+  },
+  "sc.fledge160": {
+    "wmp": 40960,
+    "hmp": 24576,
+    "terraintype": 2,
+    "vid": "sc.fledge160"
+  },
+  "sc.fledge224": {
+    "wmp": 57344,
+    "hmp": 24576,
+    "terraintype": 2,
+    "vid": "sc.fledge224"
+  },
+  "sc.flytank": {
+    "wmp": 56320,
+    "hmp": 38400,
+    "blocktype": 1,
+    "ownertype": 2,
+    "hitboxdamage": 35,
+    "hitpoints": 2000,
+    "armor": 50,
+    "vid": "sc.flytank",
+    "soundprefix": "sc.tank"
+  },
+  "sc.golem": {
+    "wmp": 40960,
+    "hmp": 65536,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 5000,
+    "removetype": 0,
+    "terraintype": 1,
+    "boundsworld": false,
+    "armor": 50,
+    "vid": "sc.golem"
+  },
+  "sc.golemb": {
+    "wmp": 12288,
+    "hmp": 12288,
+    "lifetime": 5000,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 50,
+    "removetype": 3,
+    "terraintype": 1,
+    "boundsworld": false,
+    "vid": "sc.golemb"
+  },
+  "sc.golemw": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "lifetime": 2000,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 40,
+    "vid": "sc.golemw"
+  },
+  "sc.hive": {
+    "wmp": 40960,
+    "hmp": 49152,
+    "ownertype": 2,
+    "vid": "sc.hive"
+  },
+  "sc.hunter": {
+    "wmp": 24576,
+    "hmp": 16384,
+    "vid": "sc.hunter"
+  },
+  "sc.incen": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "lifetime": 800,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 30,
+    "vid": "sc.incen"
+  },
+  "sc.ledge": {
+    "wmp": 16384,
+    "hmp": 8192,
+    "terraintype": 2,
+    "vid": "sc.ledge"
+  },
+  "sc.libbg": {
+    "wmp": 1048576,
+    "hmp": 1048576,
+    "z": 70,
+    "vid": "sc.libbg"
+  },
+  "sc.libworker": {
+    "wmp": 16384,
+    "hmp": 24576,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 200,
+    "removetype": 0,
+    "vid": "sc.libworker",
+    "soundprefix": "sc.monk"
+  },
+  "sc.libworkerb": {
+    "wmp": 16384,
+    "hmp": 24576,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 200,
+    "removetype": 0,
+    "vid": "sc.libworkerb",
+    "soundprefix": "sc.monk"
+  },
+  "sc.libworkerr": {
+    "wmp": 16384,
+    "hmp": 24576,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 200,
+    "removetype": 0,
+    "vid": "sc.libworkerr",
+    "soundprefix": "sc.monk"
+  },
+  "sc.min0": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "vid": "sc.min0"
+  },
+  "sc.min1": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "vid": "sc.min1"
+  },
+  "sc.min2": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "vid": "sc.min2"
+  },
+  "sc.min3": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "vid": "sc.min3"
+  },
+  "sc.min4": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "vid": "sc.min4"
+  },
+  "sc.mledge": {
+    "wmp": 32768,
+    "hmp": 24576,
+    "z": 62,
+    "terraintype": 2,
+    "vid": "sc.mledge"
+  },
+  "sc.mledge128": {
+    "wmp": 32768,
+    "hmp": 24576,
+    "z": 62,
+    "terraintype": 2,
+    "vid": "sc.mledge128"
+  },
+  "sc.mledge160": {
+    "wmp": 40960,
+    "hmp": 24576,
+    "z": 62,
+    "terraintype": 2,
+    "vid": "sc.mledge160"
+  },
+  "sc.mledge64": {
+    "wmp": 16384,
+    "hmp": 24576,
+    "z": 62,
+    "terraintype": 2,
+    "vid": "sc.mledge64"
+  },
+  "sc.mledge96": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 62,
+    "terraintype": 2,
+    "vid": "sc.mledge96"
+  },
+  "sc.monk": {
+    "wmp": 16384,
+    "hmp": 24576,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 30,
+    "hitpoints": 3000,
+    "vid": "sc.monk"
+  },
+  "sc.monkb": {
+    "wmp": 6144,
+    "hmp": 6144,
+    "ownertype": 2,
+    "damage": 30,
+    "hitpoints": 1,
+    "invulnerable": true,
+    "vid": "sc.monkb"
+  },
+  "sc.patriarch": {
+    "wmp": 16384,
+    "hmp": 32768,
+    "ownertype": 2,
+    "damage": 30,
+    "hitpoints": 10000,
+    "invulnerable": true,
+    "vid": "sc.patriarch",
+    "removetype": 0,
+    "maxhitpoints": 10000
+  },
+  "sc.peg32": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "terraintype": 1,
+    "vid": "sc.peg32",
+    "rotate": true
+  },
+  "sc.rock": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "ownertype": 2,
+    "damage": 30,
+    "removetype": 7,
+    "terraintype": 1,
+    "boundsworld": false,
+    "vid": "sc.rock"
+  },
+  "sc.saw": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 11,
+    "blocktype": 2,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 1,
+    "invulnerable": true,
+    "vid": "sc.saw"
+  },
+  "sc.scout": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "blocktype": 2,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 750,
+    "vid": "sc.scout",
+    "soundprefix": "sc.spectre"
+  },
+  "sc.shard": {
+    "wmp": 6144,
+    "hmp": 6144,
+    "lifetime": 6000,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "removetype": 3,
+    "vid": "sc.shard"
+  },
+  "sc.skeleton": {
+    "wmp": 16384,
+    "hmp": 32768,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "hitboxdamage": 35,
+    "hitpoints": 1000,
+    "vid": "sc.skeleton"
+  },
+  "sc.sliver": {
+    "wmp": 6144,
+    "hmp": 6144,
+    "lifetime": 10000,
+    "blocktype": 3,
+    "ownertype": 2,
+    "damage": 35,
+    "removetype": 3,
+    "vid": "sc.sliver",
+    "rotate": true
+  },
+  "sc.sliverx": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "lifetime": 1000,
+    "ownertype": 2,
+    "damage": 45,
+    "vid": "sc.sliverx"
+  },
+  "sc.sniper": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "blocktype": 2,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 750,
+    "vid": "sc.sniper",
+    "soundprefix": "sc.spectre"
+  },
+  "sc.spirit": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "blocktype": 4,
+    "ownertype": 2,
+    "damage": 20,
+    "removetype": 3,
+    "vid": "sc.spirit",
+    "rotate": true
+  },
+  "sc.spirithive": {
+    "wmp": 73728,
+    "hmp": 98304,
+    "z": 12,
+    "vid": "sc.spirithive"
+  },
+  "sc.spirithiveoverlay": {
+    "wmp": 73728,
+    "hmp": 98304,
+    "ownertype": 2,
+    "damage": 30,
+    "hitpoints": 20000,
+    "removetype": 0,
+    "vid": "sc.spirithiveoverlay",
+    "soundprefix": "sc.spirithive",
+    "maxhitpoints": 20000
+  },
+  "sc.spiritspawner": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 11,
+    "ownertype": 2,
+    "vid": "sc.spiritspawner"
+  },
+  "sc.statusscreen": {
+    "wmp": 53248,
+    "hmp": 45056,
+    "vid": "sc.statusscreen"
+  },
+  "sc.step": {
+    "wmp": 24576,
+    "hmp": 8192,
+    "z": 75,
+    "terraintype": 2,
+    "vid": "sc.step"
+  },
+  "sc.strut": {
+    "wmp": 57344,
+    "hmp": 16384,
+    "terraintype": 1,
+    "vid": "sc.strut"
+  },
+  "sc.strutedge": {
+    "wmp": 73728,
+    "hmp": 16384,
+    "vid": "sc.strutedge"
+  },
+  "sc.surn": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "vid": "sc.surn"
+  },
+  "sc.switch": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "blocktype": 1,
+    "interact": 1,
+    "vid": "sc.switch",
+    "interactreaction": {
+      "sound": "sc.switch"
+    }
+  },
+  "sc.switchdone": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "blocktype": 1,
+    "interact": 0,
+    "vid": "sc.switchdone",
+    "interactreaction": {
+      "sound": "sc.switch"
+    }
+  },
+  "sc.tank": {
+    "wmp": 32768,
+    "hmp": 32768,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 35,
+    "hitpoints": 3000,
+    "armor": 50,
+    "vid": "sc.tank"
+  },
+  "sc.taskempty": {
+    "wmp": 12288,
+    "hmp": 12288,
+    "vid": "sc.taskempty"
+  },
+  "sc.taskfull": {
+    "wmp": 12288,
+    "hmp": 12288,
+    "vid": "sc.taskfull"
+  },
+  "sc.titan": {
+    "wmp": 57344,
+    "hmp": 49152,
+    "blocktype": 2,
+    "ownertype": 2,
+    "armor": 50,
+    "vid": "sc.titan",
+    "soundprefix": "sc.titan"
+  },
+  "sc.tledge": {
+    "wmp": 32768,
+    "hmp": 8192,
+    "terraintype": 2,
+    "vid": "sc.tledge"
+  },
+  "sc.trapdoor": {
+    "wmp": 245760,
+    "hmp": 8192,
+    "terraintype": 1,
+    "vid": "sc.trapdoor",
+    "interact": 0
+  },
+  "sc.tshooter": {
+    "wmp": 32768,
+    "hmp": 32768,
+    "ownertype": 2,
+    "damage": 30,
+    "terraintype": 1,
+    "vid": "sc.tshooter",
+    "rotate": true
+  },
+  "sc.tshot": {
+    "wmp": 32768,
+    "hmp": 32768,
+    "blocktype": 2,
+    "ownertype": 2,
+    "damage": 30,
+    "hitpoints": 1000,
+    "terraintype": 1,
+    "vid": "sc.tshot",
+    "soundprefix": "sc.monk"
+  },
+  "sc.ttri": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "shapetype": 1,
+    "terraintype": 1,
+    "vid": "sc.ttri"
+  },
+  "sc.twall": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "terraintype": 1,
+    "vid": "sc.twall"
+  },
+  "sc.vermin": {
+    "wmp": 12288,
+    "hmp": 12288,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 100,
+    "vid": "sc.vermin"
+  },
+  "sc.wall": {
+    "wmp": 278528,
+    "hmp": 24576,
+    "vid": "sc.wall"
+  },
+  "sc.warch": {
+    "wmp": 81920,
+    "hmp": 139264,
+    "vid": "sc.warch"
+  },
+  "sc.wheel128": {
+    "wmp": 32768,
+    "hmp": 32768,
+    "vid": "sc.wheel128",
+    "rotate": true
+  },
+  "sc.wheel256": {
+    "wmp": 65536,
+    "hmp": 65536,
+    "vid": "sc.wheel256",
+    "rotate": true
+  },
+  "sc.wplatform": {
+    "wmp": 65536,
+    "hmp": 65536,
+    "ownertype": 2,
+    "damage": 15,
+    "terraintype": 1,
+    "armor": 50,
+    "rotate": false,
+    "vid": "sc.wplatform",
+    "hitpoints": 1,
+    "removetype": 0,
+    "draw": true,
+    "isinternal": false,
+    "boundsworld": false
+  },
+  "sc.wplatformdest": {
+    "wmp": 65536,
+    "hmp": 65536,
+    "ownertype": 0,
+    "removetype": 0,
+    "terraintype": 0,
+    "armor": 50,
+    "vid": "sc.wplatformdest"
+  },
+  "sc.wraith": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "z": 61,
+    "lifetime": 30000,
+    "ownertype": 2,
+    "damage": 20,
+    "hitpoints": 75,
+    "vid": "sc.wraith",
+    "rotate": true,
+    "noleech": true
+  },
+  "sc.wsupport": {
+    "wmp": 65536,
+    "hmp": 221184,
+    "vid": "sc.wsupport"
+  },
+  "sc.xfx": {
+    "wmp": 38400,
+    "hmp": 38400,
+    "z": 9,
+    "lifetime": 500,
+    "vid": "sc.xfx"
+  },
+  "scboss.bits": {
+    "wmp": 4096,
+    "hmp": 4096,
+    "z": 7,
+    "lifetime": 1500,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 15,
+    "vid": "scboss.bits"
+  },
+  "scboss.bomb": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "z": 6,
+    "blocktype": 3,
+    "ownertype": 2,
+    "damage": 25,
+    "removetype": 3,
+    "vid": "scboss.bomb"
+  },
+  "scboss.bossbody": {
+    "wmp": 327680,
+    "hmp": 655360,
+    "vid": "scboss.bossbody",
+    "draw": true,
+    "boundsworld": false
+  },
+  "scboss.bosshead": {
+    "wmp": 122880,
+    "hmp": 215040,
+    "ownertype": 2,
+    "hitboxdamage": 40,
+    "vid": "scboss.bosshead",
+    "draw": true,
+    "boundsworld": false,
+    "hitpoints": 1,
+    "removetype": 0,
+    "invulnerable": false,
+    "soundprefix": "scboss.boss",
+    "armor": 50
+  },
+  "scboss.dshot": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "z": 7,
+    "blocktype": 4,
+    "ownertype": 2,
+    "damage": 20,
+    "removetype": 3,
+    "vid": "scboss.dshot"
+  },
+  "scboss.eye": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "vid": "scboss.eye",
+    "draw": true,
+    "boundsworld": false
+  },
+  "scboss.gshot": {
+    "wmp": 16384,
+    "hmp": 16384,
+    "z": 7,
+    "ownertype": 2,
+    "damage": 20,
+    "vid": "scboss.gshot"
+  },
+  "scboss.hopper": {
+    "wmp": 8192,
+    "hmp": 16384,
+    "z": 6,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 15,
+    "hitpoints": 500,
+    "removetype": 0,
+    "vid": "scboss.hopper"
+  },
+  "scboss.hxfx": {
+    "wmp": 32768,
+    "hmp": 32768,
+    "lifetime": 600,
+    "damage": 30,
+    "vid": "scboss.hxfx"
+  },
+  "scboss.lfragment": {
+    "wmp": 24576,
+    "hmp": 8192,
+    "z": 8,
+    "terraintype": 2,
+    "vid": "scboss.lfragment"
+  },
+  "scboss.lrledge": {
+    "wmp": 376832,
+    "hmp": 32768,
+    "terraintype": 1,
+    "vid": "scboss.lrledge",
+    "draw": true,
+    "boundsworld": false
+  },
+  "scboss.mfragment": {
+    "wmp": 16384,
+    "hmp": 8192,
+    "z": 8,
+    "terraintype": 2,
+    "vid": "scboss.mfragment"
+  },
+  "scboss.particle": {
+    "wmp": 2048,
+    "hmp": 2048,
+    "lifetime": 10000,
+    "vid": "scboss.particle"
+  },
+  "scboss.plinkos": {
+    "wmp": 12288,
+    "hmp": 12288,
+    "z": 7,
+    "lifetime": 12500,
+    "blocktype": 1,
+    "ownertype": 2,
+    "damage": 20,
+    "removetype": 3,
+    "vid": "scboss.plinkos"
+  },
+  "scboss.rshot": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "z": 7,
+    "ownertype": 2,
+    "damage": 20,
+    "removetype": 3,
+    "vid": "scboss.rshot",
+    "rotate": true
+  },
+  "scboss.scream": {
+    "wmp": 32768,
+    "hmp": 245760,
+    "lifetime": 10000,
+    "boundsworld": false,
+    "vid": "scboss.scream"
+  },
+  "scboss.sfragment": {
+    "wmp": 8192,
+    "hmp": 8192,
+    "z": 8,
+    "terraintype": 2,
+    "vid": "scboss.sfragment"
+  },
+  "scboss.srledge": {
+    "wmp": 188416,
+    "hmp": 32768,
+    "z": 8,
+    "terraintype": 1,
+    "vid": "scboss.srledge"
+  },
+  "scboss.sshot": {
+    "wmp": 5120,
+    "hmp": 5120,
+    "z": 7,
+    "lifetime": 8000,
+    "blocktype": 4,
+    "ownertype": 2,
+    "damage": 20,
+    "removetype": 3,
+    "vid": "scboss.sshot"
+  },
+  "scboss.summons": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 4,
+    "blocktype": 2,
+    "removetype": 0,
+    "vid": "scboss.summons",
+    "hitpoints": 1500,
+    "ownertype": 2,
+    "damage": 20,
+    "soundprefix": "scboss.summons"
+  },
+  "scboss.summonsb": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 4,
+    "blocktype": 2,
+    "removetype": 0,
+    "vid": "scboss.summonsb"
+  },
+  "scboss.vortex": {
+    "wmp": 24576,
+    "hmp": 24576,
+    "z": 7,
+    "lifetime": 5000,
+    "vid": "scboss.vortex"
+  }
+}

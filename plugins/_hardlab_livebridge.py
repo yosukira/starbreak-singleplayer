@@ -67,7 +67,7 @@ def _ack_json(data):
     if 'ack' in document and (type(document['ack']) is not int or not 0 <= document['ack'] <= 4294967295):
         raise ValueError('invalid ACK sequence')
 
-    if 'ground_restore' not in document and document.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home'):
+    if 'ground_restore' not in document and document.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home'):
         for key, low in (('room_token', 1), ('room_seed', 0)):
             if key in document and (type(document[key]) is not int or not low <= document[key] <= 4294967295):
                 raise ValueError('invalid ACK room identity')
@@ -92,7 +92,7 @@ class RoomInputHandoff(object):
         self.pending = False
 
     def due(self, context, native_seed):
-        if (context.get('map') not in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home') or
+        if (context.get('map') not in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home') or
                 context.get('room_token') is None or
                 context.get('room_seed') is None):
             self.reset()
@@ -572,7 +572,7 @@ class LiveBridge(object):
         # Native-only objects consume interaction in full rooms. Boss panels
         # are handled by the local server and must retain their keyboard edge.
         self._interaction_pre_local=(self.input_context.get('map') in
-            ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home')
+            ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home')
             and self.local_interaction_selected())
 
     def interaction_blocked(self):
@@ -1140,7 +1140,7 @@ class LiveBridge(object):
         self.player_protection=document.get('player_protection') if isinstance(document.get('player_protection'),dict) else None
         self.input_context = ({key: document[key] for key in
             ('map', 'room_token', 'room_seed', 'room_ready', 'room_handoff', 'inventory_request')
-            if key in document} if document.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home') else {})
+            if key in document} if document.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home') else {})
         if self._ground_egress is not None or isinstance(document.get('egress_request'),dict):
             if self._ground_egress is None:
                 try:from ._full_run_egress_transport import EgressTransport
@@ -1277,7 +1277,7 @@ class LiveBridge(object):
             },
             'events': events,
         }
-        if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run'):
+        if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run'):
             cw = self._current_world()
             document['player']['inventory_protocol']='full-run-inventory-v1'
             control=self.input_context.get('inventory_request')
@@ -1291,7 +1291,7 @@ class LiveBridge(object):
                     if inventory is not None:document['player']['inventory']=inventory
                 except Exception as error:
                     document['player']['inventory_error']=type(error).__name__+': '+str(error)
-        if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home'):
+        if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home'):
             cw = self._current_world()
             document['room_context'] = dict(self.input_context)
             document['room_context']['room_seed'] = int(cw.asWorld.props.seed) if cw is not None else None

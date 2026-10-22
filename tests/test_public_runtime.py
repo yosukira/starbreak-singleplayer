@@ -22,7 +22,8 @@ class PublicRuntimeTests(unittest.TestCase):
 
     def test_all_map_session_classes_import(self):
         maps = game_settings.available_maps()
-        self.assertEqual(len(maps), 31)
+        self.assertEqual(len(maps), 32)
+        self.assertIn("sc_run", maps)
         for map_id in maps:
             info = game_settings.map_info(map_id)
             module = info.get('session_module')

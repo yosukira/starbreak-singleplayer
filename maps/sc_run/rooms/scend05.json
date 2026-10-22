@@ -1,0 +1,2414 @@
+{
+  "role": "scend05",
+  "world": {
+    "worldid_": 2,
+    "worldprops_": {
+      "zoneid_": 1,
+      "gameid_": 1,
+      "zone_": "sc",
+      "floor_": 21,
+      "gdv_": 0,
+      "seed_": 978095917,
+      "music_": "sc",
+      "decoration_": {
+        "name_": "scend05",
+        "inherit_": [
+          "scmaster"
+        ],
+        "backgroundcolor_": 0,
+        "externaltiles_": [
+          {
+            "vid_": "sc.external"
+          }
+        ],
+        "scatter_": [
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5,
+              "top_": 0.5,
+              "right_": 0.5,
+              "bottom_": 0.5
+            },
+            "z_": 180,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.scbg1"
+          },
+          {
+            "type_": [
+              6
+            ],
+            "z_": 55,
+            "frequency_": 200,
+            "spacingwidth_": 50,
+            "spacingheight_": 50,
+            "vid_": "sc.ext",
+            "allowfliph_": true,
+            "widthoverride_": 350,
+            "heightoverride_": 350
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.800000011920929,
+              "top_": 0.5,
+              "right_": 0.800000011920929,
+              "bottom_": 0.5
+            },
+            "z_": 130,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar1"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.20000000298023224,
+              "top_": 0.5,
+              "right_": 0.20000000298023224,
+              "bottom_": 0.5
+            },
+            "z_": 130,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar1"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.4000000059604645,
+              "top_": 0.5,
+              "right_": 0.4000000059604645,
+              "bottom_": 0.5
+            },
+            "z_": 160,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar2"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.6000000238418579,
+              "top_": 0.5,
+              "right_": 0.6000000238418579,
+              "bottom_": 0.5
+            },
+            "z_": 160,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar2"
+          },
+          {
+            "xps_": -6,
+            "xpsjitter_": 7,
+            "yps_": -5,
+            "ypsjitter_": 7,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 100,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty"
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -5,
+            "ypsjitter_": 6,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 150,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty2"
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -6,
+            "ypsjitter_": 5,
+            "z_": 160,
+            "zjitter_": 20,
+            "frequency_": 60,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.arch2",
+            "allowfliph_": true
+          },
+          {
+            "xps_": -6,
+            "xpsjitter_": 5,
+            "yps_": 6,
+            "ypsjitter_": 5,
+            "z_": 160,
+            "zjitter_": 20,
+            "frequency_": 60,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.arch2",
+            "allowfliph_": true
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5199999809265137,
+              "top_": 0.550000011920929,
+              "right_": 0.5199999809265137,
+              "bottom_": 0.550000011920929
+            },
+            "z_": 130,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.mbg3"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.8500000238418579,
+              "top_": 0.6600000262260437,
+              "right_": 0.8500000238418579,
+              "bottom_": 0.6600000262260437
+            },
+            "z_": 125,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.bend"
+          }
+        ],
+        "edge_": [
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 200,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": -22,
+                "vid_": "sc.floormist"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 10,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 71,
+                "vid_": "sc.lamp"
+              }
+            ]
+          },
+          {
+            "type_": [
+              2
+            ],
+            "frequency_": 9,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 70,
+                "vid_": "sc.chandelier"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 50,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 70,
+                "vid_": "sc.bench"
+              }
+            ]
+          }
+        ],
+        "fill_": [
+          {
+            "z_": 160,
+            "mingq_": 0,
+            "maxgq_": 4,
+            "color_": 226267801,
+            "blendmode_": 4
+          }
+        ]
+      }
+    },
+    "worldstate_": {
+      "serverworld_": {
+        "ownerid_": 1,
+        "obj_": [
+          {
+            "objid_": 1,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 188416,
+              "wmp_": 122880,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 2,
+            "props_": {
+              "xmp_": 368640,
+              "ymp_": 81920,
+              "wmp_": 8192,
+              "hmp_": 106496,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 3,
+            "props_": {
+              "xmp_": 368640,
+              "ymp_": 81920,
+              "wmp_": 24576,
+              "hmp_": 106496,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 4,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 57344,
+              "wmp_": 303104,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 5,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 73728,
+              "wmp_": 286720,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 6,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 188416,
+              "wmp_": 139264,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 7,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 253952,
+              "wmp_": 122880,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 8,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 196608,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 10,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 212992,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 11,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 237568,
+              "wmp_": 139264,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 13,
+            "props_": {
+              "xmp_": 278528,
+              "ymp_": 212992,
+              "wmp_": 114688,
+              "hmp_": 24576,
+              "vid_": "sc.external"
+            }
+          },
+          {
+            "objid_": 14,
+            "props_": {
+              "xmp_": 393216,
+              "ymp_": 57344,
+              "wmp_": 24576,
+              "hmp_": 204800,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 15,
+            "props_": {
+              "xmp_": 327680,
+              "ymp_": 139264,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 16,
+            "props_": {
+              "xmp_": 330752,
+              "ymp_": 188416,
+              "draw_": false,
+              "spawn_": true
+            }
+          },
+          {
+            "objid_": 17,
+            "props_": {
+              "xmp_": 348160,
+              "ymp_": 139264,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 0,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 18,
+            "props_": {
+              "xmp_": 376832,
+              "ymp_": 253952,
+              "wmp_": 40960,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 19,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 32768,
+              "wmp_": 8192,
+              "hmp_": 221184,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 20,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 32768,
+              "wmp_": 327680,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 21,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 32768,
+              "wmp_": 319488,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 22,
+            "props_": {
+              "xmp_": -286720,
+              "ymp_": 57344,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 23,
+            "props_": {
+              "xmp_": -286720,
+              "ymp_": 73728,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 24,
+            "props_": {
+              "xmp_": -155648,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 25,
+            "props_": {
+              "xmp_": -155648,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 26,
+            "props_": {
+              "xmp_": -147456,
+              "ymp_": 262144,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 27,
+            "props_": {
+              "xmp_": -57344,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 28,
+            "props_": {
+              "xmp_": -73728,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 29,
+            "props_": {
+              "xmp_": -131072,
+              "ymp_": 262144,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 31,
+            "props_": {
+              "xmp_": -104960,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 32,
+            "props_": {
+              "xmp_": -111872,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 33,
+            "props_": {
+              "xmp_": -137728,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 34,
+            "props_": {
+              "xmp_": -118528,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 35,
+            "props_": {
+              "xmp_": -155648,
+              "ymp_": 606208,
+              "wmp_": 106496,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 36,
+            "props_": {
+              "xmp_": -131072,
+              "ymp_": 286720,
+              "wmp_": 57344,
+              "hmp_": 319488,
+              "vid_": "sc.external"
+            }
+          },
+          {
+            "objid_": 37,
+            "props_": {
+              "xmp_": -286720,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 38,
+            "props_": {
+              "xmp_": -286720,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 39,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 57344,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 40,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 73728,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 41,
+            "props_": {
+              "xmp_": -532480,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 42,
+            "props_": {
+              "xmp_": -532480,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 43,
+            "props_": {
+              "xmp_": -524288,
+              "ymp_": 262144,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 44,
+            "props_": {
+              "xmp_": -434176,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 45,
+            "props_": {
+              "xmp_": -450560,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 46,
+            "props_": {
+              "xmp_": -507904,
+              "ymp_": 262144,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 48,
+            "props_": {
+              "xmp_": -468480,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 49,
+            "props_": {
+              "xmp_": -484864,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 50,
+            "props_": {
+              "xmp_": -495360,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 51,
+            "props_": {
+              "xmp_": -481024,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 52,
+            "props_": {
+              "xmp_": -502528,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 53,
+            "props_": {
+              "xmp_": -513024,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 54,
+            "props_": {
+              "xmp_": -532480,
+              "ymp_": 606208,
+              "wmp_": 106496,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 55,
+            "props_": {
+              "xmp_": -507904,
+              "ymp_": 286720,
+              "wmp_": 57344,
+              "hmp_": 319488,
+              "vid_": "sc.external"
+            }
+          },
+          {
+            "objid_": 56,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 57,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 58,
+            "props_": {
+              "xmp_": -1040384,
+              "ymp_": 57344,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 59,
+            "props_": {
+              "xmp_": -1040384,
+              "ymp_": 73728,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 60,
+            "props_": {
+              "xmp_": -909312,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 61,
+            "props_": {
+              "xmp_": -909312,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 62,
+            "props_": {
+              "xmp_": -901120,
+              "ymp_": 262144,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 63,
+            "props_": {
+              "xmp_": -811008,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 344064,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 64,
+            "props_": {
+              "xmp_": -827392,
+              "ymp_": 262144,
+              "wmp_": 24576,
+              "hmp_": 344064,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 65,
+            "props_": {
+              "xmp_": -884736,
+              "ymp_": 262144,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 67,
+            "props_": {
+              "xmp_": -865536,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 68,
+            "props_": {
+              "xmp_": -880128,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 69,
+            "props_": {
+              "xmp_": -871424,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 70,
+            "props_": {
+              "xmp_": -846592,
+              "ymp_": 229376,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 71,
+            "props_": {
+              "xmp_": -909312,
+              "ymp_": 606208,
+              "wmp_": 106496,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 72,
+            "props_": {
+              "xmp_": -884736,
+              "ymp_": 286720,
+              "wmp_": 57344,
+              "hmp_": 319488,
+              "vid_": "sc.external"
+            }
+          },
+          {
+            "objid_": 73,
+            "props_": {
+              "xmp_": -1040384,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 74,
+            "props_": {
+              "xmp_": -1040384,
+              "ymp_": 32768,
+              "wmp_": 376832,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 75,
+            "props_": {
+              "xmp_": -1327104,
+              "ymp_": 188416,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 76,
+            "props_": {
+              "xmp_": -1327104,
+              "ymp_": 81920,
+              "wmp_": 8192,
+              "hmp_": 106496,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 77,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 81920,
+              "wmp_": 24576,
+              "hmp_": 106496,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 78,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 57344,
+              "wmp_": 303104,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 79,
+            "props_": {
+              "xmp_": -1327104,
+              "ymp_": 73728,
+              "wmp_": 286720,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 80,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 188416,
+              "wmp_": 196608,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 81,
+            "props_": {
+              "xmp_": -1327104,
+              "ymp_": 253952,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 82,
+            "props_": {
+              "xmp_": -1155072,
+              "ymp_": 196608,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 84,
+            "props_": {
+              "xmp_": -1171456,
+              "ymp_": 212992,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 85,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 237568,
+              "wmp_": 196608,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 87,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 212992,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.external"
+            }
+          },
+          {
+            "objid_": 88,
+            "props_": {
+              "xmp_": -1368064,
+              "ymp_": 57344,
+              "wmp_": 24576,
+              "hmp_": 204800,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 89,
+            "props_": {
+              "xmp_": -1212416,
+              "ymp_": 122880,
+              "wmp_": 40960,
+              "hmp_": 65536,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 10000,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "armor_": 50,
+              "vid_": "sc.egolem",
+              "soundprefix_": "sc.golem"
+            }
+          },
+          {
+            "objid_": 91,
+            "props_": {
+              "xmp_": -1368064,
+              "ymp_": 32768,
+              "wmp_": 327680,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 92,
+            "props_": {
+              "xmp_": -1368064,
+              "ymp_": 40960,
+              "wmp_": 8192,
+              "hmp_": 221184,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 93,
+            "props_": {
+              "xmp_": -1359872,
+              "ymp_": 253952,
+              "wmp_": 32768,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 94,
+            "props_": {
+              "xmp_": -1368064,
+              "ymp_": 32768,
+              "wmp_": 327680,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 95,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 32768,
+              "z_": 200,
+              "terraintype_": 4
+            }
+          },
+          {
+            "objid_": 96,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 606208,
+              "z_": 200,
+              "terraintype_": 4
+            }
+          },
+          {
+            "objid_": 97,
+            "props_": {
+              "xmp_": 393216,
+              "ymp_": 32768,
+              "z_": 200,
+              "terraintype_": 4
+            }
+          },
+          {
+            "objid_": 98,
+            "props_": {
+              "xmp_": 393216,
+              "ymp_": 606208,
+              "z_": 200,
+              "terraintype_": 4
+            }
+          },
+          {
+            "objid_": 99,
+            "props_": {
+              "xmp_": -1376256,
+              "ymp_": 630784,
+              "wmp_": 1802240,
+              "hmp_": 8192,
+              "ownertype_": 1,
+              "damage_": 1000000
+            }
+          },
+          {
+            "objid_": 100,
+            "props_": {
+              "xmp_": -1384448,
+              "ymp_": 32768,
+              "wmp_": 8192,
+              "hmp_": 606208,
+              "terraintype_": 1,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 101,
+            "props_": {
+              "xmp_": 425984,
+              "ymp_": 32768,
+              "wmp_": 8192,
+              "hmp_": 606208,
+              "terraintype_": 1,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 102,
+            "props_": {
+              "xmp_": -1384448,
+              "ymp_": 24576,
+              "wmp_": 1818624,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 103,
+            "props_": {
+              "xmp_": -1384448,
+              "ymp_": 638976,
+              "wmp_": 1818624,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 1000,
+              "terraintype_": 1,
+              "draw_": false,
+              "vid_": "__empty_tiles__"
+            }
+          },
+          {
+            "objid_": 104,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": 225792,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "z_": 62,
+              "terraintype_": 2,
+              "vid_": "sc.mledge160",
+              "facing_": 180,
+              "move_": {
+                "vel_": {
+                  "xvel_": -14336,
+                  "yvel_": 0
+                }
+              }
+            }
+          },
+          {
+            "objid_": 105,
+            "props_": {
+              "xmp_": -1196032,
+              "ymp_": 227072,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "z_": 62,
+              "terraintype_": 2,
+              "vid_": "sc.mledge160",
+              "move_": {
+                "vel_": {
+                  "xvel_": 11008,
+                  "yvel_": 0
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "spawnobj_": {
+      "worldid_": 1,
+      "objid_": 16
+    }
+  },
+  "objects": {
+    "1": {
+      "xmp": 253952,
+      "ymp": 188416,
+      "wmp": 122880,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "2": {
+      "xmp": 368640,
+      "ymp": 81920,
+      "wmp": 8192,
+      "hmp": 106496,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "3": {
+      "xmp": 368640,
+      "ymp": 81920,
+      "wmp": 24576,
+      "hmp": 106496,
+      "vid": "sc.wall"
+    },
+    "4": {
+      "xmp": 90112,
+      "ymp": 57344,
+      "wmp": 303104,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "5": {
+      "xmp": 90112,
+      "ymp": 73728,
+      "wmp": 286720,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "6": {
+      "xmp": 253952,
+      "ymp": 188416,
+      "wmp": 139264,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "7": {
+      "xmp": 253952,
+      "ymp": 253952,
+      "wmp": 122880,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "8": {
+      "xmp": 253952,
+      "ymp": 196608,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "10": {
+      "xmp": 253952,
+      "ymp": 212992,
+      "wmp": 24576,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "11": {
+      "xmp": 253952,
+      "ymp": 237568,
+      "wmp": 139264,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "13": {
+      "xmp": 278528,
+      "ymp": 212992,
+      "wmp": 114688,
+      "hmp": 24576,
+      "vid": "sc.external"
+    },
+    "14": {
+      "xmp": 393216,
+      "ymp": 57344,
+      "wmp": 24576,
+      "hmp": 204800,
+      "vid": "sc.wall"
+    },
+    "15": {
+      "xmp": 327680,
+      "ymp": 139264,
+      "wmp": 40960,
+      "hmp": 49152,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "16": {
+      "xmp": 330752,
+      "ymp": 188416,
+      "draw": false,
+      "spawn": true
+    },
+    "17": {
+      "xmp": 348160,
+      "ymp": 139264,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 0,
+      "draw": false
+    },
+    "18": {
+      "xmp": 376832,
+      "ymp": 253952,
+      "wmp": 40960,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "19": {
+      "xmp": 409600,
+      "ymp": 32768,
+      "wmp": 8192,
+      "hmp": 221184,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "20": {
+      "xmp": 90112,
+      "ymp": 32768,
+      "wmp": 327680,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "21": {
+      "xmp": 90112,
+      "ymp": 32768,
+      "wmp": 319488,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "22": {
+      "xmp": -286720,
+      "ymp": 57344,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "23": {
+      "xmp": -286720,
+      "ymp": 73728,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "24": {
+      "xmp": -155648,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "25": {
+      "xmp": -155648,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "26": {
+      "xmp": -147456,
+      "ymp": 262144,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "27": {
+      "xmp": -57344,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "28": {
+      "xmp": -73728,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "29": {
+      "xmp": -131072,
+      "ymp": 262144,
+      "wmp": 57344,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "31": {
+      "xmp": -104960,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "32": {
+      "xmp": -111872,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "33": {
+      "xmp": -137728,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "34": {
+      "xmp": -118528,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "35": {
+      "xmp": -155648,
+      "ymp": 606208,
+      "wmp": 106496,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "36": {
+      "xmp": -131072,
+      "ymp": 286720,
+      "wmp": 57344,
+      "hmp": 319488,
+      "vid": "sc.external"
+    },
+    "37": {
+      "xmp": -286720,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "38": {
+      "xmp": -286720,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "39": {
+      "xmp": -663552,
+      "ymp": 57344,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "40": {
+      "xmp": -663552,
+      "ymp": 73728,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "41": {
+      "xmp": -532480,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "42": {
+      "xmp": -532480,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "43": {
+      "xmp": -524288,
+      "ymp": 262144,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "44": {
+      "xmp": -434176,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "45": {
+      "xmp": -450560,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "46": {
+      "xmp": -507904,
+      "ymp": 262144,
+      "wmp": 57344,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "48": {
+      "xmp": -468480,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "49": {
+      "xmp": -484864,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "50": {
+      "xmp": -495360,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "51": {
+      "xmp": -481024,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "52": {
+      "xmp": -502528,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "53": {
+      "xmp": -513024,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "54": {
+      "xmp": -532480,
+      "ymp": 606208,
+      "wmp": 106496,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "55": {
+      "xmp": -507904,
+      "ymp": 286720,
+      "wmp": 57344,
+      "hmp": 319488,
+      "vid": "sc.external"
+    },
+    "56": {
+      "xmp": -663552,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "57": {
+      "xmp": -663552,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "58": {
+      "xmp": -1040384,
+      "ymp": 57344,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "59": {
+      "xmp": -1040384,
+      "ymp": 73728,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "60": {
+      "xmp": -909312,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "61": {
+      "xmp": -909312,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "62": {
+      "xmp": -901120,
+      "ymp": 262144,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "63": {
+      "xmp": -811008,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 344064,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "64": {
+      "xmp": -827392,
+      "ymp": 262144,
+      "wmp": 24576,
+      "hmp": 344064,
+      "vid": "sc.wall"
+    },
+    "65": {
+      "xmp": -884736,
+      "ymp": 262144,
+      "wmp": 57344,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "67": {
+      "xmp": -865536,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "68": {
+      "xmp": -880128,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "69": {
+      "xmp": -871424,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "70": {
+      "xmp": -846592,
+      "ymp": 229376,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "71": {
+      "xmp": -909312,
+      "ymp": 606208,
+      "wmp": 106496,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "72": {
+      "xmp": -884736,
+      "ymp": 286720,
+      "wmp": 57344,
+      "hmp": 319488,
+      "vid": "sc.external"
+    },
+    "73": {
+      "xmp": -1040384,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "74": {
+      "xmp": -1040384,
+      "ymp": 32768,
+      "wmp": 376832,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "75": {
+      "xmp": -1327104,
+      "ymp": 188416,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "76": {
+      "xmp": -1327104,
+      "ymp": 81920,
+      "wmp": 8192,
+      "hmp": 106496,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "77": {
+      "xmp": -1343488,
+      "ymp": 81920,
+      "wmp": 24576,
+      "hmp": 106496,
+      "vid": "sc.wall"
+    },
+    "78": {
+      "xmp": -1343488,
+      "ymp": 57344,
+      "wmp": 303104,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "79": {
+      "xmp": -1327104,
+      "ymp": 73728,
+      "wmp": 286720,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "80": {
+      "xmp": -1343488,
+      "ymp": 188416,
+      "wmp": 196608,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "81": {
+      "xmp": -1327104,
+      "ymp": 253952,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "82": {
+      "xmp": -1155072,
+      "ymp": 196608,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "84": {
+      "xmp": -1171456,
+      "ymp": 212992,
+      "wmp": 24576,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "85": {
+      "xmp": -1343488,
+      "ymp": 237568,
+      "wmp": 196608,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "87": {
+      "xmp": -1343488,
+      "ymp": 212992,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.external"
+    },
+    "88": {
+      "xmp": -1368064,
+      "ymp": 57344,
+      "wmp": 24576,
+      "hmp": 204800,
+      "vid": "sc.wall"
+    },
+    "89": {
+      "xmp": -1212416,
+      "ymp": 122880,
+      "wmp": 40960,
+      "hmp": 65536,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 10000,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "armor": 50,
+      "vid": "sc.egolem",
+      "soundprefix": "sc.golem"
+    },
+    "91": {
+      "xmp": -1368064,
+      "ymp": 32768,
+      "wmp": 327680,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "92": {
+      "xmp": -1368064,
+      "ymp": 40960,
+      "wmp": 8192,
+      "hmp": 221184,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "93": {
+      "xmp": -1359872,
+      "ymp": 253952,
+      "wmp": 32768,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "94": {
+      "xmp": -1368064,
+      "ymp": 32768,
+      "wmp": 327680,
+      "hmp": 8192,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.wall"
+    },
+    "95": {
+      "xmp": -1343488,
+      "ymp": 32768,
+      "z": 200,
+      "terraintype": 4
+    },
+    "96": {
+      "xmp": -1343488,
+      "ymp": 606208,
+      "z": 200,
+      "terraintype": 4
+    },
+    "97": {
+      "xmp": 393216,
+      "ymp": 32768,
+      "z": 200,
+      "terraintype": 4
+    },
+    "98": {
+      "xmp": 393216,
+      "ymp": 606208,
+      "z": 200,
+      "terraintype": 4
+    },
+    "99": {
+      "xmp": -1376256,
+      "ymp": 630784,
+      "wmp": 1802240,
+      "hmp": 8192,
+      "ownertype": 1,
+      "damage": 1000000
+    },
+    "100": {
+      "xmp": -1384448,
+      "ymp": 32768,
+      "wmp": 8192,
+      "hmp": 606208,
+      "terraintype": 1,
+      "draw": false
+    },
+    "101": {
+      "xmp": 425984,
+      "ymp": 32768,
+      "wmp": 8192,
+      "hmp": 606208,
+      "terraintype": 1,
+      "draw": false
+    },
+    "102": {
+      "xmp": -1384448,
+      "ymp": 24576,
+      "wmp": 1818624,
+      "hmp": 8192,
+      "terraintype": 1,
+      "draw": false
+    },
+    "103": {
+      "xmp": -1384448,
+      "ymp": 638976,
+      "wmp": 1818624,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 1000,
+      "terraintype": 1,
+      "draw": false,
+      "vid": "__empty_tiles__"
+    },
+    "104": {
+      "xmp": 253952,
+      "ymp": 225792,
+      "wmp": 40960,
+      "hmp": 24576,
+      "z": 62,
+      "terraintype": 2,
+      "vid": "sc.mledge160",
+      "facing": 180,
+      "move": {
+        "vel": {
+          "xvel": -14336,
+          "yvel": 0
+        }
+      }
+    },
+    "105": {
+      "xmp": -1196032,
+      "ymp": 227072,
+      "wmp": 40960,
+      "hmp": 24576,
+      "z": 62,
+      "terraintype": 2,
+      "vid": "sc.mledge160",
+      "move": {
+        "vel": {
+          "xvel": 11008,
+          "yvel": 0
+        }
+      }
+    }
+  },
+  "creators": {},
+  "links": {},
+  "switches": {},
+  "spawn": [
+    326912,
+    170496
+  ],
+  "entries": {
+    "door:15": [
+      326912,
+      170496
+    ],
+    "default": [
+      326912,
+      170496
+    ]
+  },
+  "metadata": {
+    "template": "scend05",
+    "spawn_marker_id": 16,
+    "spawn_footprint_mp": [
+      7680,
+      17920
+    ],
+    "ports": [
+      {
+        "id": 15,
+        "at": [
+          348160,
+          163840
+        ],
+        "side": "right",
+        "entry": "door:15",
+        "bounds": [
+          327680,
+          139264,
+          368640,
+          188416
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door"
+      }
+    ],
+    "bounds": [
+      -1384448,
+      24576,
+      434176,
+      647168
+    ],
+    "door_trigger_ids": [
+      17
+    ],
+    "sc_mledge_velocity": {
+      "104": {
+        "xvel": -14336,
+        "yvel": 0
+      },
+      "105": {
+        "xvel": 11008,
+        "yvel": 0
+      }
+    },
+    "sc_chest_guard_ids": [
+      89
+    ]
+  }
+}

@@ -9,7 +9,7 @@ import json
 import os
 import time
 
-RUN_MAPS=frozenset(('egy_run','eub_run','etl_run','est_run','efb_run','eff_run'))
+RUN_MAPS=frozenset(('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run'))
 
 def encoded(value):
     return json.dumps(value,ensure_ascii=True,separators=(',',':'),allow_nan=False).encode('ascii')

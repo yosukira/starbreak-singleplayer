@@ -1,0 +1,5609 @@
+{
+  "role": "sctask02",
+  "world": {
+    "worldid_": 2,
+    "worldprops_": {
+      "zoneid_": 1,
+      "gameid_": 1,
+      "zone_": "sc",
+      "floor_": 15,
+      "gdv_": 0,
+      "seed_": 215250040,
+      "music_": "sc",
+      "decoration_": {
+        "name_": "sctask02",
+        "inherit_": [
+          "scmaster2"
+        ],
+        "backgroundcolor_": 0,
+        "externaltiles_": [
+          {
+            "vid_": "sc.external"
+          }
+        ],
+        "scatter_": [
+          {
+            "type_": [
+              6
+            ],
+            "z_": 55,
+            "frequency_": 200,
+            "spacingwidth_": 50,
+            "spacingheight_": 50,
+            "vid_": "sc.ext",
+            "allowfliph_": true,
+            "widthoverride_": 350,
+            "heightoverride_": 350
+          },
+          {
+            "type_": [
+              1
+            ],
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5,
+              "right_": 0.5
+            },
+            "z_": 180,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.scbg2"
+          },
+          {
+            "xps_": -6,
+            "xpsjitter_": 7,
+            "yps_": -5,
+            "ypsjitter_": 7,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 100,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty"
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -5,
+            "ypsjitter_": 6,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 150,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty2"
+          },
+          {
+            "type_": [
+              1
+            ],
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5,
+              "right_": 0.5
+            },
+            "z_": 100,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.scbg2"
+          }
+        ],
+        "edge_": [
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 50,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 70,
+                "vid_": "sc.statue"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 15,
+            "spacingwidth_": 20,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 69,
+                "vid_": "sc.nub"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 9,
+            "widthoverride_": 200,
+            "spacingwidth_": 350,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 72,
+                "vid_": "sc.coffin"
+              }
+            ]
+          },
+          {
+            "type_": [
+              2
+            ],
+            "frequency_": 30,
+            "spacingwidth_": 60,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 72,
+                "vid_": "sc.ghost"
+              }
+            ]
+          },
+          {
+            "type_": [
+              2
+            ],
+            "frequency_": 36,
+            "spacingwidth_": 60,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 72,
+                "vid_": "sc.vat"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 200,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": -22,
+                "vid_": "sc.floormist"
+              }
+            ]
+          }
+        ],
+        "fill_": [
+          {
+            "z_": 135,
+            "mingq_": 0,
+            "maxgq_": 4,
+            "color_": 222448977,
+            "blendmode_": 4
+          }
+        ]
+      }
+    },
+    "worldstate_": {
+      "serverworld_": {
+        "ownerid_": 1,
+        "obj_": [
+          {
+            "objid_": 1,
+            "props_": {
+              "xmp_": 303104,
+              "ymp_": 155648,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 2,
+            "props_": {
+              "xmp_": 306176,
+              "ymp_": 204800,
+              "draw_": false,
+              "spawn_": true
+            }
+          },
+          {
+            "objid_": 3,
+            "props_": {
+              "xmp_": 323584,
+              "ymp_": 155648,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 0,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 4,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": 204800,
+              "wmp_": 245760,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 5,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": 114688,
+              "wmp_": 8192,
+              "hmp_": 90112,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 6,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": 114688,
+              "wmp_": 8192,
+              "hmp_": 90112,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 7,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 114688,
+              "wmp_": 24576,
+              "hmp_": 90112,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 8,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 204800,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 9,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": 114688,
+              "wmp_": 24576,
+              "hmp_": 90112,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 10,
+            "props_": {
+              "xmp_": 221184,
+              "ymp_": 114688,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 4
+            }
+          },
+          {
+            "objid_": 11,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 10
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 4000
+                }
+              },
+              "facing_": 9
+            }
+          },
+          {
+            "objid_": 12,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 11
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 13,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 11
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000,
+                  "pos_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 14,
+            "props_": {
+              "xmp_": 139264,
+              "ymp_": 139264,
+              "wmp_": 49152,
+              "hmp_": 65536,
+              "vid_": "sc.ccoredoor",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 15,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": 49152,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 16,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": 49152,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 17,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": 49152,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 18,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": 49152,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 4
+            }
+          },
+          {
+            "objid_": 19,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 18
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 4400
+                }
+              },
+              "facing_": -7
+            }
+          },
+          {
+            "objid_": 20,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 19
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2300
+                }
+              }
+            }
+          },
+          {
+            "objid_": 21,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 19
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2300,
+                  "pos_": 1150
+                }
+              }
+            }
+          },
+          {
+            "objid_": 22,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": 81920,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 23,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 22
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 24,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 22
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2800,
+                  "pos_": 1400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 25,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 49152,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 26,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -16384,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 27,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -16384,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 28,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -16384,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 29,
+            "props_": {
+              "xmp_": 245760,
+              "ymp_": -16384,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 30,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 29
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 5400
+                }
+              },
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 31,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 30
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 32,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 30
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2700,
+                  "pos_": 1350
+                }
+              }
+            }
+          },
+          {
+            "objid_": 33,
+            "props_": {
+              "xmp_": 180224,
+              "ymp_": 8192,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 34,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 33
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2900
+                }
+              }
+            }
+          },
+          {
+            "objid_": 35,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 33
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2900,
+                  "pos_": 1450
+                }
+              }
+            }
+          },
+          {
+            "objid_": 36,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -16384,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 37,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -81920,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 38,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -81920,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 39,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -81920,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 40,
+            "props_": {
+              "xmp_": 139264,
+              "ymp_": -57344,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 41,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 40
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2900
+                }
+              }
+            }
+          },
+          {
+            "objid_": 42,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -81920,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 43,
+            "props_": {
+              "xmp_": 294912,
+              "ymp_": -73728,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -8
+            }
+          },
+          {
+            "objid_": 44,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 43
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2200
+                }
+              }
+            }
+          },
+          {
+            "objid_": 45,
+            "props_": {
+              "xmp_": 196608,
+              "ymp_": -81920,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 46,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 45
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 47,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 45
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700,
+                  "pos_": 1350
+                }
+              }
+            }
+          },
+          {
+            "objid_": 48,
+            "props_": {
+              "xmp_": 245760,
+              "ymp_": -49152,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -8
+            }
+          },
+          {
+            "objid_": 49,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 48
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100
+                }
+              }
+            }
+          },
+          {
+            "objid_": 50,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 48
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100,
+                  "pos_": 1050
+                }
+              }
+            }
+          },
+          {
+            "objid_": 51,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -147456,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 52,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -147456,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 53,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -147456,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 54,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": -147456,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 55,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 54
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 5900
+                }
+              },
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 56,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 55
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 57,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 55
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700,
+                  "pos_": 1350
+                }
+              }
+            }
+          },
+          {
+            "objid_": 58,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": -114688,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 59,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 58
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2900
+                }
+              }
+            }
+          },
+          {
+            "objid_": 60,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 58
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2900,
+                  "pos_": 1450
+                }
+              }
+            }
+          },
+          {
+            "objid_": 61,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -147456,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 62,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -188416,
+              "wmp_": 8192,
+              "hmp_": 40960,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 63,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -188416,
+              "wmp_": 8192,
+              "hmp_": 40960,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 64,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -188416,
+              "wmp_": 24576,
+              "hmp_": 40960,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 65,
+            "props_": {
+              "xmp_": 245760,
+              "ymp_": -180224,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -7
+            }
+          },
+          {
+            "objid_": 66,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 65
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 67,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 65
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2400,
+                  "pos_": 1200
+                }
+              }
+            }
+          },
+          {
+            "objid_": 68,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -188416,
+              "wmp_": 24576,
+              "hmp_": 40960,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 69,
+            "props_": {
+              "xmp_": 163840,
+              "ymp_": -188416,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -9
+            }
+          },
+          {
+            "objid_": 70,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 69
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 71,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -253952,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 72,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -253952,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 73,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -253952,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 74,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": -253952,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 75,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 74
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 4700
+                }
+              },
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 76,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 75
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 77,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 75
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2800,
+                  "pos_": 1400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 78,
+            "props_": {
+              "xmp_": 163840,
+              "ymp_": -221184,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -7
+            }
+          },
+          {
+            "objid_": 79,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 78
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 80,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -253952,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 81,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -319488,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 82,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -319488,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 83,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -319488,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 84,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": -319488,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 85,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 84
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 4700
+                }
+              },
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 86,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 85
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 87,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 85
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2700,
+                  "pos_": 1350
+                }
+              }
+            }
+          },
+          {
+            "objid_": 88,
+            "props_": {
+              "xmp_": 139264,
+              "ymp_": -294912,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -9
+            }
+          },
+          {
+            "objid_": 89,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 88
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 90,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -319488,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 91,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -311296,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 92,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 91
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2900
+                }
+              }
+            }
+          },
+          {
+            "objid_": 93,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -385024,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 94,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -385024,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 95,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -385024,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 96,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -360448,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 97,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 96
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 98,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -385024,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 99,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": -376832,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 100,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 99
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 101,
+            "props_": {
+              "xmp_": 229376,
+              "ymp_": -385024,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -7
+            }
+          },
+          {
+            "objid_": 102,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 101
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2500
+                }
+              }
+            }
+          },
+          {
+            "objid_": 103,
+            "props_": {
+              "xmp_": 180224,
+              "ymp_": -352256,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 9
+            }
+          },
+          {
+            "objid_": 104,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 103
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 105,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 103
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000,
+                  "pos_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 106,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -450560,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 107,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -450560,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 108,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -450560,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 109,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": -450560,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 110,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 109
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 5000
+                }
+              },
+              "facing_": 8
+            }
+          },
+          {
+            "objid_": 111,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 110
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2200
+                }
+              }
+            }
+          },
+          {
+            "objid_": 112,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": -417792,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 113,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 112
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 3000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 114,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 112
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 3000,
+                  "pos_": 1500
+                }
+              }
+            }
+          },
+          {
+            "objid_": 115,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -450560,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 116,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -516096,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 117,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -516096,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 118,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -516096,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 119,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -491520,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -9
+            }
+          },
+          {
+            "objid_": 120,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 119
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 121,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -516096,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 122,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": -507904,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 123,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 122
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 124,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 122
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800,
+                  "pos_": 1400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 125,
+            "props_": {
+              "xmp_": 229376,
+              "ymp_": -516096,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 126,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 125
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 127,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 125
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800,
+                  "pos_": 1400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 128,
+            "props_": {
+              "xmp_": 180224,
+              "ymp_": -483328,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 129,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 128
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 130,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -581632,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 131,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -581632,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 132,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -581632,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 133,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -557056,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -7
+            }
+          },
+          {
+            "objid_": 134,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 133
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2500
+                }
+              }
+            }
+          },
+          {
+            "objid_": 135,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 133
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2500,
+                  "pos_": 1250
+                }
+              }
+            }
+          },
+          {
+            "objid_": 136,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -581632,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 137,
+            "props_": {
+              "xmp_": 131072,
+              "ymp_": -573440,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -8
+            }
+          },
+          {
+            "objid_": 138,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 137
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100
+                }
+              }
+            }
+          },
+          {
+            "objid_": 139,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 137
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100,
+                  "pos_": 1050
+                }
+              }
+            }
+          },
+          {
+            "objid_": 140,
+            "props_": {
+              "xmp_": 229376,
+              "ymp_": -581632,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 141,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 140
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 142,
+            "props_": {
+              "xmp_": 180224,
+              "ymp_": -548864,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 143,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 142
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 144,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 142
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800,
+                  "pos_": 1400
+                }
+              }
+            }
+          },
+          {
+            "objid_": 145,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -647168,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 146,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -647168,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 147,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -647168,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 148,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": -647168,
+              "wmp_": 65536,
+              "hmp_": 65536,
+              "vid_": "sc.wheel256",
+              "rotate_": true,
+              "facing_": 3
+            }
+          },
+          {
+            "objid_": 149,
+            "props_": {
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 148
+                },
+                "elliptical_": {
+                  "xmp_": 16384,
+                  "ymp_": 16384,
+                  "radiusamp_": 16384,
+                  "period_": 5500
+                }
+              },
+              "facing_": 8
+            }
+          },
+          {
+            "objid_": 150,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 149
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2100
+                }
+              }
+            }
+          },
+          {
+            "objid_": 151,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 149
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2100,
+                  "pos_": 1050
+                }
+              }
+            }
+          },
+          {
+            "objid_": 152,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -622592,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 9
+            }
+          },
+          {
+            "objid_": 153,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 152
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 154,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 152
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2000,
+                  "pos_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 155,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -647168,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 156,
+            "props_": {
+              "xmp_": 139264,
+              "ymp_": -638976,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -8
+            }
+          },
+          {
+            "objid_": 157,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 156
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100
+                }
+              }
+            }
+          },
+          {
+            "objid_": 158,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 156
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2100,
+                  "pos_": 1050
+                }
+              }
+            }
+          },
+          {
+            "objid_": 159,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -712704,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 160,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -712704,
+              "wmp_": 8192,
+              "hmp_": 65536,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 161,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -712704,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 162,
+            "props_": {
+              "xmp_": 139264,
+              "ymp_": -688128,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 163,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 162
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 2900
+                }
+              }
+            }
+          },
+          {
+            "objid_": 164,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -712704,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 165,
+            "props_": {
+              "xmp_": 294912,
+              "ymp_": -704512,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 166,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 165
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2700
+                }
+              }
+            }
+          },
+          {
+            "objid_": 167,
+            "props_": {
+              "xmp_": 196608,
+              "ymp_": -712704,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 7
+            }
+          },
+          {
+            "objid_": 168,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 167
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2300
+                }
+              }
+            }
+          },
+          {
+            "objid_": 169,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "ownertype_": 2,
+              "damage_": 20,
+              "terraintype_": 1,
+              "vid_": "sc.evilpeg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 167
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2300,
+                  "pos_": 1150
+                }
+              }
+            }
+          },
+          {
+            "objid_": 170,
+            "props_": {
+              "xmp_": 245760,
+              "ymp_": -679936,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": 6
+            }
+          },
+          {
+            "objid_": 171,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 170
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": 12288,
+                  "period_": 2800
+                }
+              }
+            }
+          },
+          {
+            "objid_": 172,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -843776,
+              "wmp_": 245760,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 173,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -835584,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 174,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": -835584,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 175,
+            "props_": {
+              "xmp_": 344064,
+              "ymp_": -835584,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 176,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -835584,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 177,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -860160,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 178,
+            "props_": {
+              "xmp_": 212992,
+              "ymp_": -745472,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "vid_": "sc.wheel128",
+              "rotate_": true,
+              "facing_": -6
+            }
+          },
+          {
+            "objid_": 179,
+            "props_": {
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.peg32",
+              "rotate_": true,
+              "move_": {
+                "relativeto_": {
+                  "worldid_": 1,
+                  "objid_": 178
+                },
+                "elliptical_": {
+                  "xmp_": 12288,
+                  "ymp_": 12288,
+                  "radiusamp_": 12288,
+                  "radiusbmp_": -12288,
+                  "period_": 3000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 180,
+            "props_": {
+              "xmp_": 253952,
+              "ymp_": -761856,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 253952,
+                  "ymp_": -761856,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 261,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 181,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": -791552,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "blocktype_": 1,
+              "interact_": 1,
+              "interactdescription_": {
+                "type_": 4
+              },
+              "vid_": "sc.switch",
+              "interactreaction_": {
+                "sound_": "sc.switch"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "spawnobj_": {
+      "worldid_": 1,
+      "objid_": 2
+    }
+  },
+  "objects": {
+    "1": {
+      "xmp": 303104,
+      "ymp": 155648,
+      "wmp": 40960,
+      "hmp": 49152,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "2": {
+      "xmp": 306176,
+      "ymp": 204800,
+      "draw": false,
+      "spawn": true
+    },
+    "3": {
+      "xmp": 323584,
+      "ymp": 155648,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 0,
+      "draw": false
+    },
+    "4": {
+      "xmp": 106496,
+      "ymp": 204800,
+      "wmp": 245760,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "5": {
+      "xmp": 106496,
+      "ymp": 114688,
+      "wmp": 8192,
+      "hmp": 90112,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "6": {
+      "xmp": 344064,
+      "ymp": 114688,
+      "wmp": 8192,
+      "hmp": 90112,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "7": {
+      "xmp": 90112,
+      "ymp": 114688,
+      "wmp": 24576,
+      "hmp": 90112,
+      "vid": "sc.wall"
+    },
+    "8": {
+      "xmp": 90112,
+      "ymp": 204800,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "9": {
+      "xmp": 344064,
+      "ymp": 114688,
+      "wmp": 24576,
+      "hmp": 90112,
+      "vid": "sc.wall"
+    },
+    "10": {
+      "xmp": 221184,
+      "ymp": 114688,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 4
+    },
+    "11": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 10
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 4000
+        }
+      },
+      "facing": 9
+    },
+    "12": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 11
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000
+        }
+      }
+    },
+    "13": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 11
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000,
+          "pos": 1000
+        }
+      }
+    },
+    "14": {
+      "xmp": 139264,
+      "ymp": 139264,
+      "wmp": 49152,
+      "hmp": 65536,
+      "vid": "sc.ccoredoor",
+      "interact": 0
+    },
+    "15": {
+      "xmp": 344064,
+      "ymp": 49152,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "16": {
+      "xmp": 106496,
+      "ymp": 49152,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "17": {
+      "xmp": 344064,
+      "ymp": 49152,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "18": {
+      "xmp": 131072,
+      "ymp": 49152,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 4
+    },
+    "19": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 18
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 4400
+        }
+      },
+      "facing": -7
+    },
+    "20": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 19
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2300
+        }
+      }
+    },
+    "21": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 19
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2300,
+          "pos": 1150
+        }
+      }
+    },
+    "22": {
+      "xmp": 262144,
+      "ymp": 81920,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "23": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 22
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2800
+        }
+      }
+    },
+    "24": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 22
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2800,
+          "pos": 1400
+        }
+      }
+    },
+    "25": {
+      "xmp": 90112,
+      "ymp": 49152,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "26": {
+      "xmp": 344064,
+      "ymp": -16384,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "27": {
+      "xmp": 106496,
+      "ymp": -16384,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "28": {
+      "xmp": 344064,
+      "ymp": -16384,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "29": {
+      "xmp": 245760,
+      "ymp": -16384,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "30": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 29
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 5400
+        }
+      },
+      "facing": -6
+    },
+    "31": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 30
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2700
+        }
+      }
+    },
+    "32": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 30
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2700,
+          "pos": 1350
+        }
+      }
+    },
+    "33": {
+      "xmp": 180224,
+      "ymp": 8192,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "34": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 33
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2900
+        }
+      }
+    },
+    "35": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 33
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2900,
+          "pos": 1450
+        }
+      }
+    },
+    "36": {
+      "xmp": 90112,
+      "ymp": -16384,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "37": {
+      "xmp": 106496,
+      "ymp": -81920,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "38": {
+      "xmp": 344064,
+      "ymp": -81920,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "39": {
+      "xmp": 90112,
+      "ymp": -81920,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "40": {
+      "xmp": 139264,
+      "ymp": -57344,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "41": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 40
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2900
+        }
+      }
+    },
+    "42": {
+      "xmp": 344064,
+      "ymp": -81920,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "43": {
+      "xmp": 294912,
+      "ymp": -73728,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -8
+    },
+    "44": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 43
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2200
+        }
+      }
+    },
+    "45": {
+      "xmp": 196608,
+      "ymp": -81920,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "46": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 45
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700
+        }
+      }
+    },
+    "47": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 45
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700,
+          "pos": 1350
+        }
+      }
+    },
+    "48": {
+      "xmp": 245760,
+      "ymp": -49152,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -8
+    },
+    "49": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 48
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100
+        }
+      }
+    },
+    "50": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 48
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100,
+          "pos": 1050
+        }
+      }
+    },
+    "51": {
+      "xmp": 344064,
+      "ymp": -147456,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "52": {
+      "xmp": 106496,
+      "ymp": -147456,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "53": {
+      "xmp": 344064,
+      "ymp": -147456,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "54": {
+      "xmp": 131072,
+      "ymp": -147456,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "55": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 54
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 5900
+        }
+      },
+      "facing": 6
+    },
+    "56": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 55
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700
+        }
+      }
+    },
+    "57": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 55
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700,
+          "pos": 1350
+        }
+      }
+    },
+    "58": {
+      "xmp": 262144,
+      "ymp": -114688,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "59": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 58
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2900
+        }
+      }
+    },
+    "60": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 58
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2900,
+          "pos": 1450
+        }
+      }
+    },
+    "61": {
+      "xmp": 90112,
+      "ymp": -147456,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "62": {
+      "xmp": 344064,
+      "ymp": -188416,
+      "wmp": 8192,
+      "hmp": 40960,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "63": {
+      "xmp": 106496,
+      "ymp": -188416,
+      "wmp": 8192,
+      "hmp": 40960,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "64": {
+      "xmp": 344064,
+      "ymp": -188416,
+      "wmp": 24576,
+      "hmp": 40960,
+      "vid": "sc.wall"
+    },
+    "65": {
+      "xmp": 245760,
+      "ymp": -180224,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -7
+    },
+    "66": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 65
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2400
+        }
+      }
+    },
+    "67": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 65
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2400,
+          "pos": 1200
+        }
+      }
+    },
+    "68": {
+      "xmp": 90112,
+      "ymp": -188416,
+      "wmp": 24576,
+      "hmp": 40960,
+      "vid": "sc.wall"
+    },
+    "69": {
+      "xmp": 163840,
+      "ymp": -188416,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -9
+    },
+    "70": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 69
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2000
+        }
+      }
+    },
+    "71": {
+      "xmp": 106496,
+      "ymp": -253952,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "72": {
+      "xmp": 344064,
+      "ymp": -253952,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "73": {
+      "xmp": 90112,
+      "ymp": -253952,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "74": {
+      "xmp": 262144,
+      "ymp": -253952,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "75": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 74
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 4700
+        }
+      },
+      "facing": -6
+    },
+    "76": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 75
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2800
+        }
+      }
+    },
+    "77": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 75
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2800,
+          "pos": 1400
+        }
+      }
+    },
+    "78": {
+      "xmp": 163840,
+      "ymp": -221184,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -7
+    },
+    "79": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 78
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2400
+        }
+      }
+    },
+    "80": {
+      "xmp": 344064,
+      "ymp": -253952,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "81": {
+      "xmp": 106496,
+      "ymp": -319488,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "82": {
+      "xmp": 344064,
+      "ymp": -319488,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "83": {
+      "xmp": 90112,
+      "ymp": -319488,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "84": {
+      "xmp": 204800,
+      "ymp": -319488,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "85": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 84
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 4700
+        }
+      },
+      "facing": -6
+    },
+    "86": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 85
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2700
+        }
+      }
+    },
+    "87": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 85
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2700,
+          "pos": 1350
+        }
+      }
+    },
+    "88": {
+      "xmp": 139264,
+      "ymp": -294912,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -9
+    },
+    "89": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 88
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2000
+        }
+      }
+    },
+    "90": {
+      "xmp": 344064,
+      "ymp": -319488,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "91": {
+      "xmp": 286720,
+      "ymp": -311296,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "92": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 91
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2900
+        }
+      }
+    },
+    "93": {
+      "xmp": 344064,
+      "ymp": -385024,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "94": {
+      "xmp": 106496,
+      "ymp": -385024,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "95": {
+      "xmp": 344064,
+      "ymp": -385024,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "96": {
+      "xmp": 286720,
+      "ymp": -360448,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "97": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 96
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800
+        }
+      }
+    },
+    "98": {
+      "xmp": 90112,
+      "ymp": -385024,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "99": {
+      "xmp": 131072,
+      "ymp": -376832,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "100": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 99
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700
+        }
+      }
+    },
+    "101": {
+      "xmp": 229376,
+      "ymp": -385024,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -7
+    },
+    "102": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 101
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2500
+        }
+      }
+    },
+    "103": {
+      "xmp": 180224,
+      "ymp": -352256,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 9
+    },
+    "104": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 103
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000
+        }
+      }
+    },
+    "105": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 103
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000,
+          "pos": 1000
+        }
+      }
+    },
+    "106": {
+      "xmp": 344064,
+      "ymp": -450560,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "107": {
+      "xmp": 106496,
+      "ymp": -450560,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "108": {
+      "xmp": 344064,
+      "ymp": -450560,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "109": {
+      "xmp": 131072,
+      "ymp": -450560,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "110": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 109
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 5000
+        }
+      },
+      "facing": 8
+    },
+    "111": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 110
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2200
+        }
+      }
+    },
+    "112": {
+      "xmp": 262144,
+      "ymp": -417792,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "113": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 112
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 3000
+        }
+      }
+    },
+    "114": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 112
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 3000,
+          "pos": 1500
+        }
+      }
+    },
+    "115": {
+      "xmp": 90112,
+      "ymp": -450560,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "116": {
+      "xmp": 344064,
+      "ymp": -516096,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "117": {
+      "xmp": 106496,
+      "ymp": -516096,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "118": {
+      "xmp": 344064,
+      "ymp": -516096,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "119": {
+      "xmp": 286720,
+      "ymp": -491520,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -9
+    },
+    "120": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 119
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2000
+        }
+      }
+    },
+    "121": {
+      "xmp": 90112,
+      "ymp": -516096,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "122": {
+      "xmp": 131072,
+      "ymp": -507904,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "123": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 122
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800
+        }
+      }
+    },
+    "124": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 122
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800,
+          "pos": 1400
+        }
+      }
+    },
+    "125": {
+      "xmp": 229376,
+      "ymp": -516096,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "126": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 125
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800
+        }
+      }
+    },
+    "127": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 125
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800,
+          "pos": 1400
+        }
+      }
+    },
+    "128": {
+      "xmp": 180224,
+      "ymp": -483328,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "129": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 128
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700
+        }
+      }
+    },
+    "130": {
+      "xmp": 344064,
+      "ymp": -581632,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "131": {
+      "xmp": 106496,
+      "ymp": -581632,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "132": {
+      "xmp": 344064,
+      "ymp": -581632,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "133": {
+      "xmp": 286720,
+      "ymp": -557056,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -7
+    },
+    "134": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 133
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2500
+        }
+      }
+    },
+    "135": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 133
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2500,
+          "pos": 1250
+        }
+      }
+    },
+    "136": {
+      "xmp": 90112,
+      "ymp": -581632,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "137": {
+      "xmp": 131072,
+      "ymp": -573440,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -8
+    },
+    "138": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 137
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100
+        }
+      }
+    },
+    "139": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 137
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100,
+          "pos": 1050
+        }
+      }
+    },
+    "140": {
+      "xmp": 229376,
+      "ymp": -581632,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "141": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 140
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2700
+        }
+      }
+    },
+    "142": {
+      "xmp": 180224,
+      "ymp": -548864,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "143": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 142
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800
+        }
+      }
+    },
+    "144": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 142
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800,
+          "pos": 1400
+        }
+      }
+    },
+    "145": {
+      "xmp": 344064,
+      "ymp": -647168,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "146": {
+      "xmp": 106496,
+      "ymp": -647168,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "147": {
+      "xmp": 344064,
+      "ymp": -647168,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "148": {
+      "xmp": 188416,
+      "ymp": -647168,
+      "wmp": 65536,
+      "hmp": 65536,
+      "vid": "sc.wheel256",
+      "rotate": true,
+      "facing": 3
+    },
+    "149": {
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 148
+        },
+        "elliptical": {
+          "xmp": 16384,
+          "ymp": 16384,
+          "radiusamp": 16384,
+          "period": 5500
+        }
+      },
+      "facing": 8
+    },
+    "150": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 149
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2100
+        }
+      }
+    },
+    "151": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 149
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2100,
+          "pos": 1050
+        }
+      }
+    },
+    "152": {
+      "xmp": 286720,
+      "ymp": -622592,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 9
+    },
+    "153": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 152
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000
+        }
+      }
+    },
+    "154": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 152
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2000,
+          "pos": 1000
+        }
+      }
+    },
+    "155": {
+      "xmp": 90112,
+      "ymp": -647168,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "156": {
+      "xmp": 139264,
+      "ymp": -638976,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -8
+    },
+    "157": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 156
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100
+        }
+      }
+    },
+    "158": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 156
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2100,
+          "pos": 1050
+        }
+      }
+    },
+    "159": {
+      "xmp": 106496,
+      "ymp": -712704,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "160": {
+      "xmp": 344064,
+      "ymp": -712704,
+      "wmp": 8192,
+      "hmp": 65536,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "161": {
+      "xmp": 90112,
+      "ymp": -712704,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "162": {
+      "xmp": 139264,
+      "ymp": -688128,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "163": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 162
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 2900
+        }
+      }
+    },
+    "164": {
+      "xmp": 344064,
+      "ymp": -712704,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "165": {
+      "xmp": 294912,
+      "ymp": -704512,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "166": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 165
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2700
+        }
+      }
+    },
+    "167": {
+      "xmp": 196608,
+      "ymp": -712704,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 7
+    },
+    "168": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 167
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2300
+        }
+      }
+    },
+    "169": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "ownertype": 2,
+      "damage": 20,
+      "terraintype": 1,
+      "vid": "sc.evilpeg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 167
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2300,
+          "pos": 1150
+        }
+      }
+    },
+    "170": {
+      "xmp": 245760,
+      "ymp": -679936,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": 6
+    },
+    "171": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 170
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": 12288,
+          "period": 2800
+        }
+      }
+    },
+    "172": {
+      "xmp": 106496,
+      "ymp": -843776,
+      "wmp": 245760,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "173": {
+      "xmp": 344064,
+      "ymp": -835584,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "174": {
+      "xmp": 106496,
+      "ymp": -835584,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "175": {
+      "xmp": 344064,
+      "ymp": -835584,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "176": {
+      "xmp": 90112,
+      "ymp": -835584,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "177": {
+      "xmp": 90112,
+      "ymp": -860160,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "178": {
+      "xmp": 212992,
+      "ymp": -745472,
+      "wmp": 32768,
+      "hmp": 32768,
+      "vid": "sc.wheel128",
+      "rotate": true,
+      "facing": -6
+    },
+    "179": {
+      "wmp": 8192,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.peg32",
+      "rotate": true,
+      "move": {
+        "relativeto": {
+          "worldid": 1,
+          "objid": 178
+        },
+        "elliptical": {
+          "xmp": 12288,
+          "ymp": 12288,
+          "radiusamp": 12288,
+          "radiusbmp": -12288,
+          "period": 3000
+        }
+      }
+    },
+    "180": {
+      "xmp": 253952,
+      "ymp": -761856,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 253952,
+          "ymp": -761856,
+          "vel": 0,
+          "period": 2000,
+          "offset": 261,
+          "amp": 1000
+        }
+      }
+    },
+    "181": {
+      "xmp": 262144,
+      "ymp": -791552,
+      "wmp": 24576,
+      "hmp": 24576,
+      "blocktype": 1,
+      "interact": 1,
+      "interactdescription": {
+        "type": 4
+      },
+      "vid": "sc.switch",
+      "interactreaction": {
+        "sound": "sc.switch"
+      }
+    }
+  },
+  "creators": {},
+  "links": {},
+  "switches": {},
+  "spawn": [
+    302336,
+    186880
+  ],
+  "entries": {
+    "door:1": [
+      302336,
+      186880
+    ],
+    "door:14": [
+      160000,
+      186880
+    ],
+    "default": [
+      302336,
+      186880
+    ]
+  },
+  "metadata": {
+    "template": "sctask02",
+    "spawn_marker_id": 2,
+    "spawn_footprint_mp": [
+      7680,
+      17920
+    ],
+    "ports": [
+      {
+        "id": 1,
+        "at": [
+          323584,
+          180224
+        ],
+        "side": "right",
+        "entry": "door:1",
+        "bounds": [
+          303104,
+          155648,
+          344064,
+          204800
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door"
+      },
+      {
+        "id": 14,
+        "at": [
+          163840,
+          172032
+        ],
+        "side": "bottom",
+        "entry": "door:14",
+        "bounds": [
+          139264,
+          139264,
+          188416,
+          204800
+        ],
+        "width": 49152,
+        "height": 65536,
+        "kind": "core",
+        "vid": "sc.ccoredoor"
+      }
+    ],
+    "bounds": [
+      0,
+      -843776,
+      352256,
+      212992
+    ],
+    "door_trigger_ids": [
+      3
+    ],
+    "type": "jump",
+    "encounter": "jump",
+    "encounter_kind": "jump"
+  }
+}

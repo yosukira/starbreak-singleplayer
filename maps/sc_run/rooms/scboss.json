@@ -1,0 +1,639 @@
+{
+  "role": "scboss",
+  "world": {
+    "worldid_": 2,
+    "worldprops_": {
+      "zoneid_": 1,
+      "gameid_": 1,
+      "zone_": "sc",
+      "floor_": 0,
+      "gdv_": 0,
+      "seed_": 1842080308,
+      "music_": "scboss",
+      "decoration_": {
+        "name_": "scboss",
+        "backgroundcolor_": 7102606,
+        "uniform_": [
+          {
+            "z_": 190,
+            "layer_": [
+              {
+                "depthend_": -1,
+                "tilewidth_": 300,
+                "tileheight_": 750,
+                "vid_": "scboss.skybottom"
+              },
+              {
+                "depthend_": 0,
+                "tilewidth_": 300,
+                "tileheight_": 200,
+                "vid_": "scboss.skymid"
+              },
+              {
+                "tilewidth_": 250,
+                "tileheight_": 500,
+                "vid_": "scboss.skytop"
+              }
+            ]
+          },
+          {
+            "z_": 180,
+            "mingq_": 0,
+            "layer_": [
+              {
+                "tilewidth_": 900,
+                "tileheight_": 900,
+                "vid_": "scboss.bglow"
+              }
+            ]
+          },
+          {
+            "z_": 180,
+            "layer_": [
+              {
+                "tilewidth_": 900,
+                "tileheight_": 900,
+                "vid_": "scboss.bglow"
+              }
+            ]
+          },
+          {
+            "z_": 140,
+            "layer_": [
+              {
+                "tilewidth_": 200,
+                "tileheight_": 200,
+                "vid_": "scboss.block2b"
+              }
+            ]
+          }
+        ],
+        "scatter_": [
+          {
+            "xps_": -26,
+            "xpsjitter_": 10,
+            "yps_": 25,
+            "ypsjitter_": 8,
+            "z_": 155,
+            "zjitter_": 35,
+            "frequency_": 100,
+            "spacingwidth_": 120,
+            "spacingheight_": 120,
+            "vid_": "scboss.thunder",
+            "blendmode_": 2,
+            "allowfliph_": true
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -6,
+            "ypsjitter_": 5,
+            "z_": 150,
+            "zjitter_": 20,
+            "frequency_": 220,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "scboss.backrock",
+            "allowfliph_": true
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -6,
+            "ypsjitter_": 5,
+            "z_": 140,
+            "zjitter_": 20,
+            "frequency_": 100,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "scboss.backrock",
+            "allowfliph_": true
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -6,
+            "ypsjitter_": 5,
+            "z_": 170,
+            "zjitter_": 20,
+            "frequency_": 10,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "vid_": "scboss.tentacle",
+            "allowfliph_": true
+          },
+          {
+            "xps_": -6,
+            "xpsjitter_": 5,
+            "yps_": 6,
+            "ypsjitter_": 5,
+            "z_": 161,
+            "zjitter_": 20,
+            "frequency_": 20,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "scboss.cloud",
+            "allowfliph_": true
+          }
+        ]
+      }
+    },
+    "worldstate_": {
+      "serverworld_": {
+        "ownerid_": 1,
+        "obj_": [
+          {
+            "objid_": 1,
+            "props_": {
+              "xmp_": -139264,
+              "ymp_": 8192,
+              "wmp_": 8192,
+              "hmp_": 1015808,
+              "terraintype_": 1,
+              "vid_": "",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": true
+            }
+          },
+          {
+            "objid_": 2,
+            "props_": {
+              "xmp_": 925696,
+              "ymp_": 8192,
+              "wmp_": 8192,
+              "hmp_": 1015808,
+              "terraintype_": 1,
+              "vid_": "",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": true
+            }
+          },
+          {
+            "objid_": 3,
+            "props_": {
+              "xmp_": -139264,
+              "ymp_": 0,
+              "wmp_": 1073152,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": true
+            }
+          },
+          {
+            "objid_": 4,
+            "props_": {
+              "xmp_": -131072,
+              "ymp_": 1015808,
+              "wmp_": 1056768,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": true
+            }
+          },
+          {
+            "objid_": 5,
+            "props_": {
+              "xmp_": -131072,
+              "ymp_": 1007616,
+              "wmp_": 1056768,
+              "hmp_": 8192,
+              "damage_": 1000000,
+              "vid_": "",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": false,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 6,
+            "props_": {
+              "xmp_": 302336,
+              "ymp_": 351488,
+              "wmp_": 122880,
+              "hmp_": 215040,
+              "ownertype_": 2,
+              "hitboxdamage_": 40,
+              "vid_": "scboss.bosshead",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false,
+              "hitpoints_": 1,
+              "removetype_": 0,
+              "invulnerable_": false,
+              "soundprefix_": "scboss.boss",
+              "armor_": 50
+            }
+          },
+          {
+            "objid_": 7,
+            "props_": {
+              "xmp_": 200704,
+              "ymp_": 295936,
+              "wmp_": 327680,
+              "hmp_": 655360,
+              "vid_": "scboss.bossbody",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 8,
+            "props_": {
+              "xmp_": 339200,
+              "ymp_": 422144,
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "vid_": "scboss.eye",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 9,
+            "props_": {
+              "xmp_": 380160,
+              "ymp_": 422144,
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "vid_": "scboss.eye",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 10,
+            "props_": {
+              "xmp_": 348416,
+              "ymp_": 475392,
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "vid_": "scboss.eye",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 11,
+            "props_": {
+              "xmp_": 371968,
+              "ymp_": 475392,
+              "wmp_": 8192,
+              "hmp_": 8192,
+              "vid_": "scboss.eye",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 12,
+            "props_": {
+              "xmp_": 180224,
+              "ymp_": 696320,
+              "wmp_": 376832,
+              "hmp_": 32768,
+              "terraintype_": 1,
+              "vid_": "scboss.lrledge",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false
+            }
+          },
+          {
+            "objid_": 13,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": 606208,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "blocktype_": 2,
+              "vid_": "scboss.summonsb",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false,
+              "animprops_": {
+                "animid_": 0,
+                "time_": 2508,
+                "loop_": true
+              }
+            }
+          },
+          {
+            "objid_": 14,
+            "props_": {
+              "xmp_": 516096,
+              "ymp_": 606208,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "blocktype_": 2,
+              "vid_": "scboss.summonsb",
+              "pose_": 1,
+              "facing_": 0,
+              "draw_": true,
+              "boundsworld_": false,
+              "animprops_": {
+                "animid_": 0,
+                "time_": 2508,
+                "loop_": true
+              }
+            }
+          },
+          {
+            "objid_": 20,
+            "props_": {
+              "xmp_": 352256,
+              "ymp_": 532480,
+              "wmp_": 28160,
+              "hmp_": 40960,
+              "interact_": 0,
+              "interactdescription_": {
+                "type_": 3,
+                "gatename_": "Eschaton",
+                "requireddeed_": -1,
+                "mk_": 0,
+                "numused_": 0
+              },
+              "draw_": false,
+              "vid_": "lobbyportal",
+              "posetime_": 0
+            }
+          },
+          {
+            "objid_": 21,
+            "props_": {
+              "xmp_": 368640,
+              "ymp_": 696320,
+              "draw_": false,
+              "spawn_": true
+            }
+          }
+        ]
+      }
+    },
+    "spawnobj_": {
+      "worldid_": 1,
+      "objid_": 21
+    }
+  },
+  "objects": {
+    "1": {
+      "xmp": -139264,
+      "ymp": 8192,
+      "wmp": 8192,
+      "hmp": 1015808,
+      "terraintype": 1,
+      "vid": "",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": true
+    },
+    "2": {
+      "xmp": 925696,
+      "ymp": 8192,
+      "wmp": 8192,
+      "hmp": 1015808,
+      "terraintype": 1,
+      "vid": "",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": true
+    },
+    "3": {
+      "xmp": -139264,
+      "ymp": 0,
+      "wmp": 1073152,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": true
+    },
+    "4": {
+      "xmp": -131072,
+      "ymp": 1015808,
+      "wmp": 1056768,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": true
+    },
+    "5": {
+      "xmp": -131072,
+      "ymp": 1007616,
+      "wmp": 1056768,
+      "hmp": 8192,
+      "damage": 1000000,
+      "vid": "",
+      "pose": 1,
+      "facing": 0,
+      "draw": false,
+      "boundsworld": false
+    },
+    "6": {
+      "xmp": 302336,
+      "ymp": 351488,
+      "wmp": 122880,
+      "hmp": 215040,
+      "ownertype": 2,
+      "hitboxdamage": 40,
+      "vid": "scboss.bosshead",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false,
+      "hitpoints": 1,
+      "removetype": 0,
+      "invulnerable": false,
+      "soundprefix": "scboss.boss",
+      "armor": 50
+    },
+    "7": {
+      "xmp": 200704,
+      "ymp": 295936,
+      "wmp": 327680,
+      "hmp": 655360,
+      "vid": "scboss.bossbody",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "8": {
+      "xmp": 339200,
+      "ymp": 422144,
+      "wmp": 8192,
+      "hmp": 8192,
+      "vid": "scboss.eye",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "9": {
+      "xmp": 380160,
+      "ymp": 422144,
+      "wmp": 8192,
+      "hmp": 8192,
+      "vid": "scboss.eye",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "10": {
+      "xmp": 348416,
+      "ymp": 475392,
+      "wmp": 8192,
+      "hmp": 8192,
+      "vid": "scboss.eye",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "11": {
+      "xmp": 371968,
+      "ymp": 475392,
+      "wmp": 8192,
+      "hmp": 8192,
+      "vid": "scboss.eye",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "12": {
+      "xmp": 180224,
+      "ymp": 696320,
+      "wmp": 376832,
+      "hmp": 32768,
+      "terraintype": 1,
+      "vid": "scboss.lrledge",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false
+    },
+    "13": {
+      "xmp": 204800,
+      "ymp": 606208,
+      "wmp": 24576,
+      "hmp": 24576,
+      "blocktype": 2,
+      "vid": "scboss.summonsb",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false,
+      "animprops": {
+        "animid": 0,
+        "time": 2508,
+        "loop": true
+      }
+    },
+    "14": {
+      "xmp": 516096,
+      "ymp": 606208,
+      "wmp": 24576,
+      "hmp": 24576,
+      "blocktype": 2,
+      "vid": "scboss.summonsb",
+      "pose": 1,
+      "facing": 0,
+      "draw": true,
+      "boundsworld": false,
+      "animprops": {
+        "animid": 0,
+        "time": 2508,
+        "loop": true
+      }
+    },
+    "20": {
+      "xmp": 352256,
+      "ymp": 532480,
+      "wmp": 28160,
+      "hmp": 40960,
+      "interact": 0,
+      "interactdescription": {
+        "type": 3,
+        "gatename": "Eschaton",
+        "requireddeed": -1,
+        "mk": 0,
+        "numused": 0
+      },
+      "draw": false,
+      "vid": "lobbyportal",
+      "posetime": 0
+    },
+    "21": {
+      "xmp": 368640,
+      "ymp": 696320,
+      "draw": false,
+      "spawn": true
+    }
+  },
+  "creators": {},
+  "links": {},
+  "switches": {},
+  "spawn": [
+    364800,
+    678400
+  ],
+  "entries": {
+    "default": [
+      364800,
+      678400
+    ]
+  },
+  "metadata": {
+    "template": "scboss",
+    "spawn_marker_id": 21,
+    "spawn_footprint_mp": [
+      7680,
+      17920
+    ],
+    "ports": [],
+    "bounds": [
+      -139264,
+      0,
+      933888,
+      1024000
+    ],
+    "door_trigger_ids": [],
+    "type": "boss",
+    "encounter": "boss",
+    "encounter_kind": "boss"
+  }
+}

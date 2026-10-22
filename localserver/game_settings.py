@@ -46,7 +46,7 @@ MAP_DISPLAY_ORDER = (
     'city_mid', 'city_boss', 'cave_boss', 'dumb_normal_wave', 'dumb_mid',
     'dumb_wave', 'dumb_boss', 'jungle_mid', 'jungle_boss', 'hulk_normal',
     'hulk_mid', 'egy_hulk', 'egy_run', 'lab_mid', 'lab_hard', 'sc_patriarch',
-    'sc_hive', 'sc_bonesaw', 'sc_boss', 'sc_boss_elite', 'eub_run', 'etl_run',
+    'sc_hive', 'sc_bonesaw', 'sc_boss', 'sc_boss_elite', 'sc_run', 'eub_run', 'etl_run',
     'est_run', 'efb_run', 'eff_run',
 )
 

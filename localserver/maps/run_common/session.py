@@ -305,4 +305,7 @@ def session_class(map_id):
     if map_id == 'eff_run':
         from ..eff_run.session import EffRunLiveSession
         return EffRunLiveSession
+    if map_id == 'sc_run':
+        from ..sc_run.session import ScRunLiveSession
+        return ScRunLiveSession
     return None

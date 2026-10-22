@@ -1480,7 +1480,7 @@ class LocalServer(object):
         run through request_live_restart; doors never take that reset path.
         """
         map_id = getattr(self.options, 'map', None)
-        if self._restart_in_progress or map_id not in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run'):
+        if self._restart_in_progress or map_id not in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run'):
             return False
         run = getattr(session, 'run', None)
         expected = getattr(self, 'egy_run' if map_id == 'egy_run' else 'level_run', None)
@@ -1613,7 +1613,7 @@ class LocalServer(object):
         from .live.session import LiveSession
         map_id = getattr(self.options, 'map', 'egy_hulk') or 'egy_hulk'
         room = None
-        if map_id not in ('eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run'):
+        if map_id not in ('eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run', 'sc_run'):
             create_world_hex = self.options.create_world_hex
             if not create_world_hex:
                 raise protocol.ProtocolError(

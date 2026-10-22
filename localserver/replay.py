@@ -27,7 +27,8 @@ SUPPORTED_MAPS = ('egy_hulk', 'hulk_normal', 'lab_hard', 'lab_mid',
     'dumb_normal_wave', 'dumb_wave', 'forest_boss', 'forest_mid', 'hulk_mid',
     'ice_boss', 'ice_mid', 'jungle_boss', 'jungle_mid', 'sc_bonesaw',
     'sc_boss', 'sc_boss_elite', 'sc_hive', 'sc_patriarch')
-FULL_RUN_MAPS = ('egy_run', 'eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run')
+FULL_RUN_MAPS = ('egy_run', 'eub_run', 'etl_run', 'est_run', 'efb_run', 'eff_run', 'sc_run')
+INVENTORY_RUN_MAPS = FULL_RUN_MAPS
 CLIENT_MAPS = SUPPORTED_MAPS + FULL_RUN_MAPS
 MAX_CALLS = 64
 MAX_FRAMES = 60 * 60 * 2 * 60
@@ -115,7 +116,7 @@ def inventory_document(value):
     from .maps.run_common.player_inventory import _message
     if value.get('schema') != 'full-run-inventory-v1':raise ValueError('Invalid replay inventory schema')
     scope=value.get('scope') or {}
-    if scope.get('map') not in FULL_RUN_MAPS:raise ValueError('Invalid replay inventory map')
+    if scope.get('map') not in INVENTORY_RUN_MAPS:raise ValueError('Invalid replay inventory map')
     clean=dict(schema='full-run-inventory-v1',sampled_at=finite(value['sampled_at'],0,1e12),
         scope=dict(map=scope['map']),quality={},items=[],slots=[])
     for key in ('room_token','room_seed','worldid','objid','charid','player_type'):

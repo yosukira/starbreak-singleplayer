@@ -1,0 +1,106 @@
+{
+  "schema": "sc-room-content-v1",
+  "units": "256mp=1px; Y down",
+  "templates": {
+    "scboss": [
+      "rooms/scboss.json"
+    ],
+    "sccore": [
+      "rooms/sccore.json"
+    ],
+    "scend01": [
+      "rooms/scend01.json"
+    ],
+    "scend02": [
+      "rooms/scend02.json"
+    ],
+    "scend03": [
+      "rooms/scend03.json"
+    ],
+    "scend04": [
+      "rooms/scend04.json"
+    ],
+    "scend05": [
+      "rooms/scend05.json"
+    ],
+    "scend06": [
+      "rooms/scend06.json"
+    ],
+    "scmid01": [
+      "rooms/scmid01.json"
+    ],
+    "scmid02": [
+      "rooms/scmid02.json"
+    ],
+    "scmid03": [
+      "rooms/scmid03.json"
+    ],
+    "scmid04": [
+      "rooms/scmid04.json"
+    ],
+    "scmid05": [
+      "rooms/scmid05.json"
+    ],
+    "scmid06": [
+      "rooms/scmid06.json"
+    ],
+    "scmid07": [
+      "rooms/scmid07.json"
+    ],
+    "scmid08": [
+      "rooms/scmid08.json"
+    ],
+    "scmid09": [
+      "rooms/scmid09.json"
+    ],
+    "scmid10": [
+      "rooms/scmid10.json"
+    ],
+    "scmid11": [
+      "rooms/scmid11.json"
+    ],
+    "scmid12": [
+      "rooms/scmid12.json"
+    ],
+    "scmid13": [
+      "rooms/scmid13.json"
+    ],
+    "scmid14": [
+      "rooms/scmid14.json"
+    ],
+    "scmid15": [
+      "rooms/scmid15.json"
+    ],
+    "scmid16": [
+      "rooms/scmid16.json"
+    ],
+    "scmid17": [
+      "rooms/scmid17.json"
+    ],
+    "scmid18": [
+      "rooms/scmid18.json"
+    ],
+    "scstart01": [
+      "rooms/scstart01.json"
+    ],
+    "sctask01": [
+      "rooms/sctask01.json"
+    ],
+    "sctask02": [
+      "rooms/sctask02.json"
+    ],
+    "sctask03": [
+      "rooms/sctask03.json"
+    ],
+    "sctask04": [
+      "rooms/sctask04.json"
+    ]
+  },
+  "aliases": {
+    "sc_patriarch": "sctask01",
+    "sc_bonesaw": "sctask03",
+    "sc_hive": "sctask04",
+    "sc_boss": "scboss",
+    "sctask02jump": "sctask02"
+  }
+}

@@ -50,6 +50,9 @@ def validate(document):
         input_serial=integer(document['input_serial'],1,10000),
         teleport_serial=integer(document.get('teleport_serial',0),0,2**31-1),
         parameters=parameters(document['parameters']),settings=gameplay_settings(document['settings']),options={},frames=[])
+    if result['map']=='sc_run':
+        if document.get('run_clock')!='elapsed-v1':raise ValueError('SC replay clock is missing')
+        result['run_clock']='elapsed-v1'
     for key,value in document.get('options',{}).items():
         if key not in OPTIONS:continue
         if key in ('live_demo_wait','live_player_gap'):value=finite(value,0,3600)
@@ -61,12 +64,14 @@ def validate(document):
     frames=document['frames']
     if not isinstance(frames,list) or not 1<=len(frames)<=MAX_FRAMES or frames[0].get('action')!='enter':
         raise ValueError('Invalid full-run lifecycle')
-    previous=0
+    previous=0;previous_run=0
     for row in frames:
         wall=finite(row['wall'],previous,1e12);previous=wall
         action=row['action']
         if action not in ('enter','step'):raise ValueError('Invalid full-run action')
         clean=dict(action=action,wall=wall,dt=finite(row['dt'],0,1),packets=integer(row['packets'],0,10000),sha256=row['sha256'],calls=[])
+        if result.get('run_clock'):
+            previous_run=clean['run_elapsed']=finite(row['run_elapsed'],previous_run,7*86400)
         if not isinstance(clean['sha256'],str) or len(clean['sha256'])!=64 or any(c not in '0123456789abcdef' for c in clean['sha256']):
             raise ValueError('Invalid run packet digest')
         calls=row['calls']
@@ -113,6 +118,15 @@ class RunCapture:
             teleport_serial=int(getattr(session.bridge,'_teleport_serial',0)),
             settings=copy.deepcopy(self.settings),parameters=snapshot(session))
         self.header['options']={key:getattr(session.options,key) for key in OPTIONS if hasattr(session.options,key)}
+        self.run_clock=None
+        if session.options.map=='sc_run':
+            run=session.run
+            self.run_clock=run._clock
+            self.run_elapsed=max(0.,run._room_seen.get(session.instance.role,self.run_clock())-run.started_at)
+            # Clock reads within a tick, room construction and loading use one
+            # observed time. Asset speed and HTTP status polls cannot move it.
+            run._clock=lambda:run.started_at+self.run_elapsed
+            self.header['run_clock']='elapsed-v1'
         import os,uuid
         if os.environ.get('SB_REPLAY_ATTEMPT'):self.header['attempt']=str(uuid.UUID(os.environ['SB_REPLAY_ATTEMPT']))
 
@@ -132,8 +146,10 @@ class RunCapture:
         session.current.bridge,session.current.channel=session.bridge,session.channel
         self.original_step=session.step
         if record:
-            self.emit(dict(action='enter',wall=time.time(),dt=0,role=session.instance.role,entry=session.run.entry,
-                world_sequence=int(getattr(session.server,'_live_world_sequence',1)),calls=[],packets=0,sha256=hashlib.sha256().hexdigest()))
+            row=dict(action='enter',wall=time.time(),dt=0,role=session.instance.role,entry=session.run.entry,
+                world_sequence=int(getattr(session.server,'_live_world_sequence',1)),calls=[],packets=0,sha256=hashlib.sha256().hexdigest())
+            if self.run_clock is not None:row['run_elapsed']=self.run_elapsed
+            self.emit(row)
 
     def observe(self,name,args,value):
         if self.active is None or self.failed or threading.get_ident()!=self.active_thread:return
@@ -160,6 +176,9 @@ class RunCapture:
         if self.frame_count>=MAX_FRAMES:
             self.failed='Replay duration limit exceeded';self.release_clock();return self.original_step(dt)
         self.active=dict(action='step',wall=time.time(),dt=dt,calls=[],packets=0)
+        if self.run_clock is not None:
+            self.run_elapsed=max(self.run_elapsed,self.run_clock()-self.session.run.started_at)
+            self.active['run_elapsed']=self.run_elapsed
         self.active_thread=threading.get_ident();self.digest=hashlib.sha256()
         settings=gameplay_settings(game_settings.load())
         if settings!=self.settings:self.active['settings']=settings
@@ -185,6 +204,7 @@ class RunCapture:
         self.release_clock()
 
     def release_clock(self):
+        if self.run_clock is not None:self.session.run._clock=self.run_clock
         self.session.__dict__.pop('_recorded_wall_time',None)
         ServerCapture._restore_clock(self.session.current)
 
@@ -302,6 +322,7 @@ class RunReplay:
         if self.failed:raise ReplayMismatch('Full-run replay has already diverged')
         if self.index>=len(self.frames):return False
         row=self.frames[self.index];self.digest,self.packets=hashlib.sha256(),0
+        if self.document.get('run_clock'):self.run_elapsed=row['run_elapsed']
         self.bridge.begin(row['calls'])
         settings=row.get('settings',self.settings)
         try:
@@ -314,6 +335,11 @@ class RunReplay:
                     self.server._live_world_sequence+=1
                     if self.server._live_world_sequence!=row['world_sequence']:
                         raise ReplayMismatch('Full-run world sequence changed')
+                    if self.document.get('run_clock') and self.session is None:
+                        run=self.server.level_run
+                        run.started_at=0.
+                        run._room_seen.clear()
+                        run._clock=lambda:self.run_elapsed
                     self.session=_map_session_class(options.map)(self.server,self.channel,options,bridge=self.bridge)
                     self.session.current._legacy_victory_presentation=self.document['victory_rules']==0
                     if (self.session.instance.role,self.session.run.entry)!=(row['role'],row['entry']):
@@ -344,6 +370,9 @@ class RunReplay:
         bridge._teleport_serial=self.bridge._teleport_serial
         session.bridge,session.channel=bridge,channel
         session.current.bridge,session.current.channel=bridge,channel
+        if self.document.get('run_clock'):
+            elapsed,anchor=self.run_elapsed,time.monotonic()
+            session.run._clock=lambda:elapsed+time.monotonic()-anchor
         session.__dict__.pop('_recorded_wall_time',None)
         for room in session.run.rooms.values():
             if room.runtime is not None:ServerCapture._restore_clock(room.runtime)

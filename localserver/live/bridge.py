@@ -136,7 +136,7 @@ class PlayerBridge(object):
         message = {'ack': int(seq or 0)}
         if self.player_protection is not None:message['player_protection']=dict(self.player_protection)
         context = self.native_context
-        if context and context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home'):
+        if context and context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home'):
             message.update(context)
         with self._lock:
             message.update(self._egress.fields())
@@ -213,7 +213,7 @@ class PlayerBridge(object):
         with self._lock:
             if self._egress.absorb(document):return
         context = self.native_context
-        scoped = context and context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','home')
+        scoped = context and context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run','home')
         if scoped:
             source = document.get('room_context') or {}
             if any(source.get(key) != context.get(key) for key in ('map','room_token','room_seed')):

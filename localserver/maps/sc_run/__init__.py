@@ -1,0 +1,1 @@
+"""Star Cathedral full level."""
