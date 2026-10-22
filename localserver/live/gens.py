@@ -29,6 +29,7 @@ class GenCycle(object):
         self.panel_state = 'idle'
         self.panel_timer = 0.0
         self.panel_interactable = False
+        self.pending_press = 0.0
         self.gen_state = 'closed'
         self.active_gen = None
         self.gen_timer = 0.0
@@ -61,6 +62,7 @@ class GenCycle(object):
         self.panel_state = 'lit'
         self.panel_timer = 0.0
         self.panel_interactable = False
+        self.pending_press = 0.0
         self.cycle_deadline = self.elapsed + self.rules.PANEL_LIT_INTERVAL
         batch = self.session.batch
         batch.modify(panel_id, 'INTERACT', intval=0)
@@ -90,6 +92,7 @@ class GenCycle(object):
         self.panel_state = 'activating'
         self.panel_timer = 0.0
         self.panel_interactable = False
+        self.pending_press = 0.0
         self.session.batch.modify(self.active_panel, 'INTERACT', intval=0)
         self.session.event('panel-interaction-start', panel=self.active_panel,
                            gen=self.active_gen)
@@ -202,7 +205,18 @@ class GenCycle(object):
         self._choose_pair()
         self.panel_state = 'idle'
         self.panel_timer = 0.0
+        self.pending_press = 0.0
         self.next_panel_delay = delay
+
+    def _log_dropped_press(self, reason):
+        """Leave one line per attempt so a missed press can be traced later."""
+        log = getattr(self.session, 'log', None)
+        if not callable(log):
+            return
+        if self.elapsed - getattr(self, '_press_log_at', -10.0) < 2.0:
+            return
+        self._press_log_at = self.elapsed
+        log('gen press: ' + reason)
 
     def step(self, dt):
         if not self.enabled or self.finished:
@@ -249,17 +263,42 @@ class GenCycle(object):
                         and panel_rect[0] < player_rect[0] + player_rect[2]
                         and player_rect[1] < panel_rect[1] + panel_rect[3]
                         and panel_rect[1] - reach <= player_rect[1] + player_rect[3])
+            def near(player):
+                """Same check with one reach of slack for a press still in flight."""
+                player_rect = player.rect()
+                return (can_interact(player) and player.alive
+                        and player_rect[0] < panel_rect[0] + panel_rect[2] + reach
+                        and panel_rect[0] - reach < player_rect[0] + player_rect[2]
+                        and player_rect[1] < panel_rect[1] + panel_rect[3] + reach
+                        and panel_rect[1] - reach - reach <= player_rect[1] + player_rect[3])
             overlaps = any(can_reach(p) for p in players)
             if overlaps:
                 self.overlap_seconds += dt
             else:
                 self.overlap_seconds = 0.0
             interacting = getattr(self.session, 'interacting_players', None)
-            pressed = (any(can_reach(p) for p in interacting()) if callable(interacting)
+            pressed_states = tuple(interacting()) if callable(interacting) else ()
+            pressed = (any(can_reach(p) for p in pressed_states) if callable(interacting)
                        else self.session.interact_edge())
             if self.auto_interact and overlaps and self.overlap_seconds > 0.4:
                 pressed = True
-            if pressed and overlaps and self.panel_interactable:
+            if pressed:
+                if overlaps and self.panel_interactable:
+                    self.pending_press = 0.0
+                    self._request_panel_activation()
+                    return
+                # Keep a press that lands while the panel is still coming up, or
+                # while the reported player rectangle is a step short of the
+                # panel, instead of dropping it and asking for another press.
+                if overlaps or any(near(p) for p in pressed_states):
+                    self.pending_press = self.rules.PANEL_ACTIVATION_DELAY
+                    self._log_dropped_press('kept until the panel was ready')
+                else:
+                    self._log_dropped_press('player was not on the panel')
+            else:
+                self.pending_press = max(0.0, self.pending_press - dt)
+            if self.pending_press > 0 and overlaps and self.panel_interactable:
+                self.pending_press = 0.0
                 self._request_panel_activation()
             return
 

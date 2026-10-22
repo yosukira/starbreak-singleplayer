@@ -218,6 +218,26 @@ class PlayerBridge(object):
                 **{key: context[key] for key in ('map', 'room_token', 'room_seed')})
         return True
 
+    def _accept_interaction(self, keys, seq):
+        """Return True once for an interact edge in a numbered packet stream.
+
+        Retried packets repeat a number, so they must not count twice.  A
+        restarted game or a reloaded plugin starts numbering again from zero;
+        that jump is adopted instead of ignoring every press until the counter
+        catches up with the previous stream.
+        """
+        edge = bool(keys.get('interact_edge')) or (bool(keys.get('interact'))
+               and not self.keys.get('interact'))
+        if type(seq) is not int:
+            return edge
+        if seq + 8 < self._interaction_seq:
+            self._log('bridge interaction sequence restarted at {0} (was {1})'
+                      .format(seq, self._interaction_seq))
+            self._interaction_seq = seq - 1
+        accepted = edge and seq > self._interaction_seq
+        self._interaction_seq = max(self._interaction_seq, seq)
+        return accepted
+
     def _absorb(self, document):
         if not isinstance(document,dict):return
         if self._restore.absorb(document):return
@@ -239,12 +259,7 @@ class PlayerBridge(object):
         with self._lock:
             self.state = state
             keys = document.get('keys') or {}
-            edge = bool(keys.get('interact_edge')) or (bool(keys.get('interact'))
-                   and not self.keys.get('interact'))
-            seq = document.get('seq')
-            if type(seq) is int:
-                edge = edge and seq > self._interaction_seq
-                self._interaction_seq = max(self._interaction_seq, seq)
+            edge = self._accept_interaction(keys, document.get('seq'))
             if edge and state is not None and not keys.get('interaction_blocked'):
                 self._interactions.append(state)
                 self._interactions = self._interactions[-64:]
