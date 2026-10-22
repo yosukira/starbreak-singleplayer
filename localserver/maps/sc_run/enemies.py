@@ -59,7 +59,7 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     laser_segment_px=32., laser_range_px=1600., laser_max_segments=50,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
     scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4), skeleton_melee_vertical_px=110.,
-    flytank_hover_span_px=260., golem_stand_px=520., golem_wave_gravity=180000.,
+    flytank_hover_span_px=180., golem_stand_px=520., golem_wave_gravity=180000., tank_patrol_px=112.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
     # OBS: 3796 same-owner dynamic wraiths leave at 4994-7474ms even though the
     # authored lifetime field is 30000ms; the native cleanup trigger is unknown,
@@ -365,6 +365,10 @@ class ScEnemies:
         c = center(row)
         busy = self.now < u['busy']
         vx = 0. if busy else u['direction']*self.policy(vid)['speed']
+        if vid == 'sc.tank' and abs(row['pos'][0]-u['home'][0]) > self.fit['tank_patrol_px']*256:
+            # OBS: captured tanks never leave their platform and patrol ~112px.
+            u['direction'] = 1 if row['pos'][0] < u['home'][0] else -1
+            vx = u['direction']*self.policy(vid)['speed']
         if vid == 'sc.golem' and point is not None:
             # USER: a golem mostly stands its ground and only closes a long gap.
             if math.dist(point, c) <= self.fit['golem_stand_px']*256:
