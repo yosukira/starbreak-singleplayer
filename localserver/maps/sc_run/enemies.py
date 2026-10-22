@@ -58,7 +58,8 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # OBS: a captured warning line is 13 segments of 64px (~832px).
     laser_segment_px=64., laser_range_px=1000.,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
-    scout_dive_s=.8, scout_cooldown_s=.56, skeleton_melee_vertical_px=110.,
+    scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4), skeleton_melee_vertical_px=110.,
+    flytank_hover_span_px=260., golem_stand_px=520., golem_wave_gravity=180000.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
     # OBS: 3796 same-owner dynamic wraiths leave at 4994-7474ms even though the
     # authored lifetime field is 30000ms; the native cleanup trigger is unknown,
@@ -364,6 +365,10 @@ class ScEnemies:
         c = center(row)
         busy = self.now < u['busy']
         vx = 0. if busy else u['direction']*self.policy(vid)['speed']
+        if vid == 'sc.golem' and point is not None:
+            # USER: a golem mostly stands its ground and only closes a long gap.
+            if math.dist(point, c) <= self.fit['golem_stand_px']*256:
+                vx = 0.
         drop = False
         if not busy and u.get('grounded') and point is not None and vid in ('sc.skeleton', 'sc.titan'):
             # OBS: a captured skeleton climbs +320px onto the player's platform.
@@ -415,6 +420,26 @@ class ScEnemies:
             return
         if vid == 'sc.assassin' and u['phase'] == 'ghost':
             self._assassin_ghost_step(oid, u, dt)
+            return
+        if vid == 'sc.flytank':
+            # USER: the flying tank hovers at its birth height and only drifts a
+            # short way left and right; it never descends or climbs.
+            hover_y = u.setdefault('hover_y', row['pos'][1])
+            home_x = u.setdefault('hover_x', row['pos'][0])
+            span = self.fit['flytank_hover_span_px']*256
+            if row['pos'][0] < home_x-span:
+                u['direction'] = 1
+            elif row['pos'][0] > home_x+span:
+                u['direction'] = -1
+            if point is not None and self.now >= u.get('steer_at', 0.):
+                u['direction'] = -1 if point[0] < row['pos'][0] else 1
+                u['steer_at'] = self.now+self.host.rng.uniform(*self.fit['steer_leg_s'])
+            speed = self.policy(vid)['speed']
+            end, hit = flight(self.terrain, row, (u['direction']*speed, 0.), dt)
+            end = (end[0], hover_y)
+            facing = None if self.now < u['lock'] else 0 if u['direction'] > 0 else 180
+            u['vx'], u['vy'] = u['direction']*speed, 0.
+            move(self.host, oid, end, dt, 2, facing)
             return
         # USER: a creature commits to a heading for a while and only re-decides
         # at intervals; it does not steer at the player's live position.
@@ -544,7 +569,7 @@ class ScEnemies:
             # OBS: the captured terminal segment carries z=61 while the plain
             # segments omit z, which made the beam render behind platforms.
             child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)),
-                                                       lifetime=2000, z=61))
+                                                       lifetime=1254, z=61, damage=15))
             self.own(child)
             self.effects.add(child)
 
@@ -554,7 +579,9 @@ class ScEnemies:
         for direction in (-1, 1):
             p = self.host.pack.props('sc.golemw')
             pos = (x+w if direction > 0 else x-p['wmp'], y+h-p['hmp'])
-            self.projectiles.spawn('sc.golemw', pos, (direction*148500., 0.), oid, creator=0)
+            # USER: the ground wave runs along the floor and cannot fly.
+            self.projectiles.spawn('sc.golemw', pos, (direction*148500., 0.), oid, creator=0,
+                                   gravity=self.fit['golem_wave_gravity'])
 
     def _assassin_ghost(self, oid, u):
         row = self.host.actors[oid]
