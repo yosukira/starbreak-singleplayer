@@ -7,6 +7,11 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'tools'))
 from update import application_lock,auto_update,recover
 
+# A hand-placed local snapshot is not part of the published update channel. It
+# records that intent in userdata/local-build.json so launching it never waits
+# on a download the owner did not ask for.
+LOCAL_ONLY=ROOT/'userdata/local-build.json'
+
 
 def main():
     mode,*arguments=sys.argv[1:]
@@ -15,6 +20,9 @@ def main():
     command=[sys.executable,*isolated,str(ROOT/'tools'/('web_app.py' if mode=='web' else 'play_hulk.py')),*arguments]
     # Runtime checks are offline and leave launch/update state untouched.
     if '--check-runtime' in arguments:return subprocess.call(command,cwd=ROOT)
+    if LOCAL_ONLY.is_file():
+        print('Local build: update channel skipped / 本地版：跳过在线更新',flush=True)
+        return subprocess.call(command,cwd=ROOT)
     try:
         with application_lock(ROOT):
             try:recover(ROOT)
