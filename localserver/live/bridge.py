@@ -91,6 +91,9 @@ class PlayerBridge(object):
             self.host, self.port))
 
     def stop(self):
+        if self._socket is not None:
+            import traceback
+            self._log('live bridge stop requested by:\n' + ''.join(traceback.format_stack(limit=8)))
         self._stop.set()
         if self._socket is not None:
             try:
@@ -100,7 +103,12 @@ class PlayerBridge(object):
             self._socket = None
 
     def _run(self):
+        _last_beat = 0.0
         while not self._stop.is_set():
+            _now = time.time()
+            if _now - _last_beat > 5.:
+                _last_beat = _now
+                self._log('bridge heartbeat datagrams={0} socket={1}'.format(self.datagrams, self._socket))
             try:
                 ready, _, _ = select.select([self._socket], [], [], 0.25)
             except Exception:
@@ -110,7 +118,10 @@ class PlayerBridge(object):
             try:
                 payload, address = self._socket.recvfrom(65535)
             except Exception as error:
-                self.last_error = str(error)
+                message = type(error).__name__ + ': ' + str(error)
+                if message != self.last_error:
+                    self.last_error = message
+                    self._log('bridge receive error: ' + message)
                 continue
             try:
                 document = json.loads(payload.decode('utf-8'))
