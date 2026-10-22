@@ -52,6 +52,13 @@ class LiveBridgeLifecycleTests(unittest.TestCase):
         plugin.onUnload();plugin.native_capture.close.assert_called_once();plugin.bridge.uninstall.assert_called_once()
         ast.parse(Path('plugins/hardlab_live.py').read_text(),feature_version=(3,5))
 
+    def test_cathedral_rooms_skip_the_native_input_reapply(self):
+        # USER: every Cathedral door froze telemetry. The bridge must never call
+        # the native reapply for sc_run, and the source has to say so.
+        source = Path('plugins/_hardlab_livebridge.py').read_text()
+        self.assertIn("== 'sc_run'", source)
+        self.assertIn('_input_handoff.reset()', source)
+
     def test_replay_progress_covers_reconstruction_and_restores_canvas_coordinates(self):
         plugin=object.__new__(hardlab_live.Plugin);plugin.session=True
         plugin.config=NS(hud_visible=False)
