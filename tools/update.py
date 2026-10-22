@@ -1,4 +1,4 @@
-﻿"""Verified source updates at launch; player data and portable runtime are excluded."""
+"""Verified source updates at launch; player data and portable runtime are excluded."""
 import argparse
 from contextlib import contextmanager
 import hashlib

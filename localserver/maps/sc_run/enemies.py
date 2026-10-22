@@ -1,4 +1,4 @@
-﻿"""Live SC creatures: observed actions, user lifecycle rules, configurable fits.
+"""Live SC creatures: observed actions, user lifecycle rules, configurable fits.
 
 Distances, search periods, navigation accelerations and random choices below
 are local FIT values. They are not reconstructed retail AI constants. Actions

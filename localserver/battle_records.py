@@ -1,4 +1,4 @@
-﻿"""Local, versioned battle records. Only explicit gameplay fields cross exports.
+"""Local, versioned battle records. Only explicit gameplay fields cross exports.
 
 Documents are JSON, never executable snapshots. SQLite owns the index and atomic
 writes, so the UI can read while the simulator records a battle in another process.

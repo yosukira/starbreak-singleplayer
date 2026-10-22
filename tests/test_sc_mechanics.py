@@ -1,4 +1,4 @@
-﻿import copy
+import copy
 import random
 import unittest
 from types import SimpleNamespace
@@ -228,6 +228,25 @@ class ScMechanicsTests(unittest.TestCase):
         self.assertEqual(h.actors[2]['props']['terraintype'], 2)
         self.assertNotIn('move', h.actors[2]['props'])
         self.assertNotEqual(h.actors[2]['pos'], [16*MP, 64*MP])
+
+    def test_each_meatball_device_replaces_its_ball_after_a_kill(self):
+        # USER: one ball belongs to one device; when the old one dies the
+        # device must produce a new one, and never two at once.
+        h = Host({1: body('sc.tshooter', x=0, y=0, w=128, h=128, damage=30,
+                          terraintype=1, facing=0)},
+                 dict(mechanics=dict(tshooter_initial_s=0., tshooter_respawn_s=(.2, .2))))
+        h.player_at(400, 0)
+        h.tick(.01)
+        h.tick(.400)
+        h.tick(.02)
+        first = next(oid for oid, r in h.actors.items() if r['vid'] == 'sc.tshot')
+        h.mechanics.retire(first, 'HITPOINTS')
+        h.tick(.25)
+        h.tick(.400)
+        h.tick(.02)
+        balls = [oid for oid, r in h.actors.items() if r['vid'] == 'sc.tshot']
+        self.assertEqual(len(balls), 1)
+        self.assertNotEqual(balls[0], first)
 
     def test_meatball_never_turns_mid_run_and_never_births_inside_a_wall(self):
         # USER: the meatball runs to the end of a corridor, pauses, chooses a

@@ -1,4 +1,4 @@
-﻿'Scavenger wave spawner and live enemy AI.'
+'Scavenger wave spawner and live enemy AI.'
 
 import json
 import math

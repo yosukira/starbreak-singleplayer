@@ -71,9 +71,12 @@ class RunLiveSession:
     # Fresh frames accepted before a room arms without the authored spawn
     # distance: a mismatched handoff position must never freeze a room.
     READY_FRAME_GRACE = 3
-    # Door telemetry is sparse on the native bridge; a boundary trigger may
-    # use an observation this old instead of treating the door as dead.
-    DOOR_TELEMETRY_S = 5.
+    # A room may arm as soon as its world exists instead of waiting for the
+    # first player frame. Opt-in per map: only the Cathedral run needs it.
+    ARM_ON_CREATE = False
+    # Door telemetry older than this is treated as dead. The native bridge can
+    # deliver sparsely during a room change, so the opt-in map widens it.
+    DOOR_TELEMETRY_S = .5
     MAP_ID = None
     PACK_CLASS = None
     RUN_CLASS = LevelRun
@@ -159,8 +162,8 @@ class RunLiveSession:
         # room may run immediately. Waiting for a telemetry frame to arm it
         # froze every room reached through a door: no tick, no creatures, no
         # doors. Player-gated actions (interact, boundary doors) still require
-        # fresh telemetry, so nothing fires without a live player.
-        self._ready = True
+        # telemetry, so nothing fires without a live player.
+        self._ready = bool(self.ARM_ON_CREATE)
         self._publish_input_context()
         if self.instance.runtime is None:
             child = SimpleNamespace(**vars(options))
@@ -253,15 +256,16 @@ class RunLiveSession:
         if not math.isfinite(dt) or not 0<=dt<=1:
             raise ValueError('Invalid full-level tick duration')
         player, keys = self.bridge.snapshot()
-        if player is None or player.age()>1.5:
+        if self.ARM_ON_CREATE and (player is None or player.age()>1.5):
             # A door that never fires looks identical to a room that never
             # armed. Name the missing telemetry instead of guessing.
             now=time.time()
             if now-getattr(self,'_telemetry_note_at',0.)>2.:
                 self._telemetry_note_at=now
-                self.log('{0} room {1} telemetry {2}'.format(
+                self.log('{0} room {1} telemetry {2} (bridge packets {3})'.format(
                     self.map_id,self.run.current,
-                    'missing' if player is None else 'stale %.1fs' % player.age()))
+                    'missing' if player is None else 'stale %.1fs' % player.age(),
+                    getattr(self.bridge,'datagrams',0)))
         fresh=player is not None and player.received_since(self._ready_after) and player.age()<=.5
         if not self._ready and fresh:
             x,y=self.run.destination_spawn(self.run.current,self.run.entry)
@@ -297,7 +301,8 @@ class RunLiveSession:
             self.run.mark_defeated(self.instance.role)
         self.apply_progress(self.run,self.instance,emit=True)
         if self.server.poll_live_room_inventory(self.channel,self):return
-        if player is not None and player.alive and player.age()<=self.DOOR_TELEMETRY_S:
+        door_ready = (player is not None and player.alive and player.age()<=self.DOOR_TELEMETRY_S)
+        if door_ready:
             for oid,link in self.instance.recipe.get('links',{}).items():
                 if link.get('trigger',link.get('interaction')) not in ('native-door-boundary','boundary'):continue
                 props=self.instance.snapshot.properties_at((1,int(oid)))

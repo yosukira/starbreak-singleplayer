@@ -1,4 +1,4 @@
-﻿"""Live Hulk Hard simulator bridge plugin (SBPE).
+"""Live Hulk Hard simulator bridge plugin (SBPE).
 
 Place this file plus ``_hardlab_livebridge.py`` in the SBPE plugins folder.
 Within an owned practice session the bridge stays active and sends

@@ -1,4 +1,4 @@
-﻿'Live ordinary EGY enemies; native capabilities with exploration policy.'
+'Live ordinary EGY enemies; native capabilities with exploration policy.'
 import copy
 import math
 from collections import Counter, deque
