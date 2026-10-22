@@ -576,7 +576,12 @@ class ScEnemies:
             # OBS: the captured terminal segment carries z=61 while the plain
             # segments omit z, which made the beam render behind platforms.
             child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)),
-                                                       lifetime=1254, z=61, damage=15))
+                                                       lifetime=2050, z=61))
+            # OBS: every captured segment carries animprops anim1/264ms and is
+            # removed about 2051ms later; without the animation the beam is an
+            # inert sprite and never damages.
+            self.host.batch.animprops(child, 1, 264, offset=self.host._offset())
+            self.host.actors[child]['props']['animprops'] = dict(animid=1, time=264)
             self.own(child)
             self.effects.add(child)
 
