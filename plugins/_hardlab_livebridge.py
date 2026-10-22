@@ -670,6 +670,7 @@ class LiveBridge(object):
         # inside this native reapply after a room load, so the run never performs
         # it: held keys are re-pressed by the player instead.
         if str((self.input_context or {}).get('map', '')) == 'sc_run':
+            self._sc_skipped = getattr(self, '_sc_skipped', 0)+1
             self._input_handoff.reset()
             return False
         """Restore held native input once after an EGY room becomes ready."""

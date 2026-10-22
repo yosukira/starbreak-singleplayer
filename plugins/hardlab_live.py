@@ -144,7 +144,8 @@ class Plugin(PluginBase):
                 udp_target=list(getattr(self.bridge,'_udp_target',None) or ()),
                 udp_host=getattr(self.bridge,'host',None),udp_port=getattr(self.bridge,'port',None),
                 send_error=getattr(self.bridge,'_send_error',None),stage=getattr(self,'last_stage',None),
-                session_flag=getattr(self,'session',None),active_flag=getattr(self,'active',None))
+                session_flag=getattr(self,'session',None),active_flag=getattr(self,'active',None),
+                sc_reapply_skipped=getattr(self.bridge,'_sc_skipped',0))
             delivery=getattr(self.native_capture,'delivery',None)
             if delivery is not None:
                 delivery.health(path,value)
