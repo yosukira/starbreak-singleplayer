@@ -1183,6 +1183,7 @@ class LocalServer(object):
                 and self.map_watch_thread.is_alive()):
             return
         self.map_watch_stop.clear()
+        log('map watch on ' + str(game_settings.PATH))
         self._map_settings_mtime = game_settings.settings_mtime()
         thread = threading.Thread(target=self._map_watch_loop,
                                   args=(channel,))
@@ -1588,8 +1589,11 @@ class LocalServer(object):
         CreateWorld).  Returns True when the switch was started.
         """
         if self._restart_in_progress:
+            log('map switch refused: native restart in progress')
             return False
-        if not self._ground_ack_ready(session.bridge):return False
+        if not self._ground_ack_ready(session.bridge):
+            log('map switch refused: ground egress acknowledgement pending')
+            return False
         map_id = str(map_id or '').strip()
         current = (getattr(self.options, 'map', None)
                    or game_settings.ORIGINAL_MAP)
