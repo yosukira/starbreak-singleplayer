@@ -1540,11 +1540,9 @@ class LocalServer(object):
                 self._restart_in_progress = False
                 return False
             blob = self._distinct_player_world_blob(world_blob(self, run))
-            spawn = run.destination_spawn(run.current, run.entry)
-            recipe = run.room().recipe
-            width, height = recipe['metadata'].get('spawn_footprint_mp', (10240, 20480))
-            position = (round(spawn[0] + (width-player.wmp)/2),
-                        round(spawn[1] + height-player.hmp), player.wmp, player.hmp)
+            # USER: land clear of the door just used, never inside its trigger.
+            spawn = session.entry_position(run, run.current, run.entry, player.wmp, player.hmp)
+            position = (spawn[0], spawn[1], player.wmp, player.hmp)
 
             message = self.layouts.decode('Delta', self.player_delta_blob)
             if inventory_create is not None:

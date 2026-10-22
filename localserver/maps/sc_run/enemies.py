@@ -9,7 +9,7 @@ import math
 from collections import Counter
 
 from .abilities import ScProjectiles, center, move, players, prop, stop_motion
-from .physics import clear, edge_ahead, flight, geometry, ground, rect, sinusoid
+from .physics import clear, edge_ahead, flight, geometry, ground, rect, sinusoid, sweep
 
 
 GHOSTS = ('sc.scout', 'sc.bomber', 'sc.sniper', 'sc.assassin', 'sc.titan')
@@ -364,7 +364,7 @@ class ScEnemies:
         if not busy and u.get('grounded') and edge_ahead(self.terrain, row, u, u['direction'], 8*256):
             # Patrol respects edges; pursuit can leave a platform for a lower
             # target, while upward pursuit uses its independent jump.
-            if point is None or point[1] <= c[1]+96*256:
+            if vid in ('sc.tank', 'sc.golem') or point is None or point[1] <= c[1]+96*256:
                 u['direction'] *= -1
                 vx *= -1
         previous = u.get('grounded', False)
@@ -418,6 +418,13 @@ class ScEnemies:
         if vid == 'sc.scout' and self.now < u.get('dive_until', 0.):
             u['vy'] += self.fit['scout_dive_acceleration']*dt
         end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
+        size = (row['props'].get('wmp', 0), row['props'].get('hmp', 0))
+        if sweep(self.terrain, end, end, size, (oid,)):
+            # A carried platform can push a body into geometry; never accept a
+            # position that is already inside a wall or floor.
+            end = (row['pos'][0], row['pos'][1])
+            u['vx'] = -u['vx']*.3
+            u['vy'] = -abs(u['vy'])*.3
         if hit:
             u['vx'] = -u['vx']*.3
             u['vy'] = -abs(u['vy'])*.3
@@ -489,8 +496,14 @@ class ScEnemies:
         # Titan has contact damage and height navigation, no invented attack.
 
     def _laser(self, oid, point):
-        c = center(self.host.actors[oid])
+        row = self.host.actors[oid]
+        c = center(row)
         angle = math.atan2(point[1]-c[1], point[0]-c[0])
+        # USER: the beam left the middle of the body. Start it on the body edge
+        # along the aim instead of at the centre.
+        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+        reach = (w*abs(math.cos(angle))+h*abs(math.sin(angle)))/2
+        c = (c[0]+math.cos(angle)*reach, c[1]+math.sin(angle)*reach)
         length = min(self.fit['laser_range_px']*256, math.dist(point, c))
         step = max(1., self.fit['laser_segment_px']*256)
         count = max(1, math.ceil(length/step))
@@ -499,7 +512,10 @@ class ScEnemies:
             p = self.host.pack.props(vid)
             d = min(length, index*step)
             pos = (c[0]+math.cos(angle)*d-p['wmp']/2, c[1]+math.sin(angle)*d-p['hmp']/2)
-            child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)), lifetime=2000))
+            # OBS: the captured terminal segment carries z=61 while the plain
+            # segments omit z, which made the beam render behind platforms.
+            child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)),
+                                                       lifetime=2000, z=61))
             self.own(child)
             self.effects.add(child)
 
@@ -576,7 +592,7 @@ class ScEnemies:
         base = self.host.rng.uniform(-math.pi, math.pi)
         for index in range(8):
             angle = base+index*math.pi/4+self.host.rng.uniform(-self.fit['burst_jitter_rad'], self.fit['burst_jitter_rad'])
-            speed = self.fit['burst_speed']*self.host.rng.uniform(.8, 1.2)
+            speed = self.fit['burst_speed']*self.host.rng.uniform(.7, 1.3)
             self.projectiles.spawn('sc.burst', self._origin(oid, 'sc.burst'),
                                    (math.cos(angle)*speed, math.sin(angle)*speed), 0)
         self.counts['bursts'] += 1

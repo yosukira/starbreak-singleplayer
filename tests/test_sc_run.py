@@ -101,6 +101,24 @@ class ScRunTests(unittest.TestCase):
             player=dict(worldid=2, objid=1, xmp=x, ymp=y, wmp=10240, hmp=20480,
                         hp=500, maxhp=500, alive=True, room_seed=context['room_seed'])))
 
+    def test_every_door_arrival_lands_clear_of_its_own_door(self):
+        # USER: arriving inside the door just used bounced the player between
+        # two rooms forever. No room may spawn the player over the door rect.
+        run, _ = self.make_run(seed=5)
+        overlaps = []
+        for role in run.pack.room_names:
+            recipe = run.room(role).recipe
+            for entry in (recipe.get('entries') or {}):
+                if not entry.startswith('door_'):
+                    continue
+                x, y = ScRunLiveSession.entry_position(run, role, entry, 10240, 20480)
+                door = recipe['objects'][int(entry.split('_')[-1])]
+                dx, dy = door.get('xmp', 0), door.get('ymp', 0)
+                dw, dh = door.get('wmp', 0), door.get('hmp', 0)
+                if x < dx+dw and x+10240 > dx and y < dy+dh and y+20480 > dy:
+                    overlaps.append((role, entry))
+        self.assertEqual(overlaps, [])
+
     def test_room_ticks_without_any_player_telemetry(self):
         # USER: every room reached through a door stayed inert. A session only
         # exists after the client answered CreateWorld, so the room must run

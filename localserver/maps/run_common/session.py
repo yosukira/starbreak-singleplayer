@@ -77,9 +77,38 @@ class RunLiveSession:
     # Door telemetry older than this is treated as dead. The native bridge can
     # deliver sparsely during a room change, so the opt-in map widens it.
     DOOR_TELEMETRY_S = .5
+    # USER: arriving inside the door just used made the player bounce back and
+    # forth between two rooms. Land this far inside the room instead.
+    ENTRY_CLEARANCE_MP = 24*256
     MAP_ID = None
     PACK_CLASS = None
     RUN_CLASS = LevelRun
+
+    @classmethod
+    def entry_position(cls, run, role, entry, wmp, hmp):
+        """Position the arriving player clear of the door they came through."""
+        recipe = run.room(role).recipe
+        x, y = run.destination_spawn(role, entry)
+        door = None
+        if isinstance(entry, str) and entry.startswith('door_'):
+            try:
+                door = recipe['objects'].get(int(entry.split('_')[-1]))
+            except (TypeError, ValueError):
+                door = None
+        if door and door.get('wmp') and door.get('hmp'):
+            dx, dy = door.get('xmp', 0), door.get('ymp', 0)
+            dw, dh = door['wmp'], door['hmp']
+            spans = [(o.get('xmp', 0), o.get('wmp', 0)) for o in recipe['objects'].values()]
+            left = min(span[0] for span in spans)
+            right = max(span[0]+span[1] for span in spans)
+            if dx+dw/2 <= (left+right)/2:
+                x = dx+dw+cls.ENTRY_CLEARANCE_MP
+            else:
+                x = dx-wmp-cls.ENTRY_CLEARANCE_MP
+            y = dy+dh-hmp
+            return (round(x), round(y))
+        width, height = recipe['metadata'].get('spawn_footprint_mp', (10240, 20480))
+        return (round(x+(width-wmp)/2), round(y+height-hmp))
 
     @classmethod
     def prepare_document(cls, run, instance, document):

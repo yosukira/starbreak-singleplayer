@@ -15,9 +15,25 @@ class ScRunLiveSession(RunLiveSession):
     ARM_ON_CREATE=True
     DOOR_TELEMETRY_S=5.
 
+    # Projectiles and beam effects are transient: leaving a room must not leave
+    # its shots hanging in mid air for the next visit.
+    TRANSIENT = ('sc.aim', 'sc.aimend', 'sc.sliver', 'sc.sliverx', 'sc.burst',
+                 'sc.shard', 'sc.golemb', 'sc.golemw', 'sc.wraith', 'sc.enginefire',
+                 'sc.enginefireseed')
+
     @classmethod
     def initial_snapshot(cls,server,run,instance):
+        recipe=instance.recipe
+        stale=[oid for oid,row in recipe['objects'].items()
+               if row.get('vid') in cls.TRANSIENT]
+        for oid in stale:
+            recipe['objects'].pop(oid,None)
         super().initial_snapshot(server,run,instance)
+        runtime=getattr(instance,'runtime',None)
+        if runtime is not None:
+            for oid in stale:
+                try:runtime._retire(oid,'INTERNAL',native=True)
+                except Exception:pass
         # Respawn/expiry clocks continue while a room is unoccupied. Resume
         # reconciles deadlines without replaying old attacks or simulating an
         # unobserved fight against stale players.
