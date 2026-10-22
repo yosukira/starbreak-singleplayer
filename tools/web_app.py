@@ -713,7 +713,7 @@ class Handler(BaseHTTPRequestHandler):
                     preferences = dict(key='LocalStorage.pb', revision=0, content=document['preferences'])
                 data = 'var STARBREAK_WEB_BOOT=' + json.dumps(dict(wsPort=prototype.options.ws_port,keybindings=prototype.workspace.preferences()['keys'],gamePreferences=preferences,replay=replay)) + ';'
                 return self.send(data.encode('utf8'), 'text/javascript')
-            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/visuals.js', '/visuals.css', '/visual-engine.js', '/canvas.js', '/zoom.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/native-replay.js', '/replay.js', '/replay-storage.js', '/style.css'):
+            if path in ('/', '/index.html', '/game.html', '/app.js', '/editor.js', '/records.js', '/records.css', '/guide.js', '/guide.css', '/visuals.js', '/visuals.css', '/visual-engine.js', '/canvas.js', '/zoom.js', '/game-preferences.js', '/inventory.js', '/bridge.js', '/shortcuts.js', '/battle-view.js', '/native-replay.js', '/replay.js', '/replay-storage.js', '/style.css'):
                 filename = 'index.html' if path == '/' else path[1:]
                 data = (ROOT / 'web' / filename).read_bytes()
                 if path == '/game.html':

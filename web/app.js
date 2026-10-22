@@ -4,7 +4,7 @@
   if(desktop){
     document.body.classList.add('desktop-workspace');
     document.querySelector('.main-tabs').prepend($('tab-equipment'));
-    $('tab-visuals').hidden=true;$('tab-equipment').hidden=false;$('tab-guide').hidden=false;$('tab-battle').hidden=true;$('open-editor').hidden=true;
+    $('tab-visuals').hidden=true;$('tab-equipment').hidden=false;$('tab-guide').hidden=false;$('tab-battle').hidden=true;$('open-editor').hidden=true;$('battle-fullscreen').hidden=true;
     $('editor-keys-tab').dataset.en='Keys';$('editor-keys-tab').dataset.zh='按键设置';
     $('tab-equipment').onclick=()=>setTab('equipment');
     $('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
@@ -13,7 +13,7 @@
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
   let activeTab='battle',replayKeyboardKeys=new Set();
-  const battleView=StarBreakBattleView({document,arena:document.querySelector('.arena-panel'),button:$('battle-fullscreen'),enabled:!desktop});
+  const battleView=desktop?null:StarBreakBattleView({document,arena:document.querySelector('.arena-panel'),button:$('battle-fullscreen')});
   for(const [id,direction] of [['view-zoom-out',-1],['view-zoom-in',1]]){
     $(id).hidden=desktop;$(id).onclick=()=>document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(direction);
   }
@@ -191,7 +191,7 @@
     if(loading)return;
     activeTab=view==='equipment'&&desktop?'equipment':view===true?'records':view==='guide'?'guide':view==='visuals'&&!desktop?'visuals':'battle';
     if(activeTab!=='battle'&&replayRecord&&!replayPaused){replayPaused=true;playbackControl('pause',{paused:true});updatePause();}
-    if(activeTab!=='battle')void battleView.leave();
+    if(activeTab!=='battle')void battleView?.leave();
     document.querySelector('.game-layout').hidden=activeTab!=='battle';
     $('guide-page').hidden=activeTab!=='guide';$('visuals-page').hidden=activeTab!=='visuals';
     if(desktop){

@@ -365,6 +365,19 @@ class WebRuntimeTests(unittest.TestCase):
             finally:
                 connection.close()
         try:
+            # Exercise what the real entry page loads, rather than checking
+            # one known script and missing a newly added startup dependency.
+            code, entry = request('GET', '/?desktop=1')
+            self.assertEqual(code, 200)
+            import re
+            dependencies = re.findall(rb'(?:src|href)="([^"?#]+\.(?:js|css))"', entry)
+            self.assertIn(b'battle-view.js', dependencies)
+            for dependency in dependencies:
+                route = '/' + dependency.decode().lstrip('/')
+                with self.subTest(dependency=route):
+                    code, body = request('GET', route)
+                    self.assertEqual(code, 200)
+                    self.assertEqual(body, (Path(__file__).resolve().parents[1]/'web'/dependency.decode()).read_bytes())
             connection=http.client.HTTPConnection('127.0.0.1',server.server_port)
             connection.request('GET','/editor.js');response=connection.getresponse();response.read()
             tag=response.getheader('ETag');self.assertTrue(tag)

@@ -335,7 +335,7 @@ def main(argv=None):
             except Exception as error:
                 report(state='failed',error=str(error)[-2000:])
                 if not stopped.is_set():window.load_html(startup_page(
-                    'The local equipment service could not start. Error details:\n本地装备服务启动失败，错误详情：\n'+str(error)[-4000:]+
+                    'The local equipment service could not start. This is a local startup error; no internet connection is required.\n本地装备服务启动失败；单机配装无需联网，请查看以下本地错误：\n'+str(error)[-4000:]+
                     '\n\nLog / 日志: '+str(folder/'web.log'),failed=True))
         def toggle():
             nonlocal visible
@@ -376,7 +376,7 @@ def main(argv=None):
         report(state='failed',error=str(error)[:2000],details=str(folder/'startup-error.log'))
         if os.name=='nt' and not options.check_runtime and alive(options.owner_pid):
             import ctypes
-            message=('Equipment & records could not start.\n装备与战绩窗口启动失败。\n\n'+str(error)[:300]+
+            message=('Equipment & records could not start (local startup error).\n装备与战绩窗口启动失败（本地启动错误，无需检查网络）。\n\n'+str(error)[:300]+
                 '\n\nDetails / 日志: '+str(folder/'window-status.json')+
                 '\nRetry / 重试: tools\\open-editor.cmd')
             ctypes.windll.user32.MessageBoxW(None,message,'StarBreak',0x10)

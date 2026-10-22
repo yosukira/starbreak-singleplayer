@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 (async()=>{
  const ids=[...fs.readFileSync('web/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>m[1]),elements=new Map();let frame=null,nativePlay=null,nativeWatch=false,shortcut=null;
- const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{add(){},toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},close(){this.open=false;},focus(){}});
+ const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{add(){},toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},prepend(){},show(){this.open=true;},close(){this.open=false;},focus(){}});
  for(const id of ids)elements.set(id,element());elements.get('map').value='egy_hulk';
  const layout=element(),events={};
  class Editor{constructor(){this.map='egy_hulk';this.shell=1;this.profile={settings:{map:'egy_hulk'}};this.preferences={keys:{}};this.data={stats:[],items:[]};}async load(){}render(){}remember(){}async save(){}async post(){return {assets_ready:true};}}
@@ -27,5 +27,16 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
  elements.get('tab-records').onclick();assert.equal(layout.hidden,true);
  await nativePlay({id:'owned-native-record',platform:'web',map_title:'Native fixture',replay:{id:'native-attempt',engine:'native'}});
  assert.equal(nativeWatch,true);assert.equal(frame,null,'Native replays never create a browser game iframe');
+ // The native editor must initialize even without the browser-only fullscreen
+ // controller. A missing optional game helper cannot disable every editor tab.
+ context.location.search='?desktop=1';document.body=element();
+ context.setTimeout=(fn,delay)=>delay===2000?0:setTimeout(fn,delay);
+ delete context.StarBreakBattleView;
+ vm.runInContext(fs.readFileSync('web/app.js','utf8'),context);
+ await new Promise(r=>setTimeout(r,10));
+ assert.equal(elements.get('equipment-dialog').open,true,'Native equipment opens without a fullscreen helper');
+ assert.equal(elements.get('battle-fullscreen').hidden,true);
+ elements.get('tab-guide').onclick();assert.equal(elements.get('equipment-dialog').open,false);
+ elements.get('tab-equipment').onclick();assert.equal(elements.get('equipment-dialog').open,true);
  console.log('Continuous world-ready events and loading navigation lock passed.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
