@@ -101,6 +101,25 @@ class ScRunTests(unittest.TestCase):
             player=dict(worldid=2, objid=1, xmp=x, ymp=y, wmp=10240, hmp=20480,
                         hp=500, maxhp=500, alive=True, room_seed=context['room_seed'])))
 
+    def test_room_arms_by_frame_grace_when_the_handoff_position_differs(self):
+        # USER: one door followed by a frozen room. The native client may adopt
+        # a different position than the committed arrival point, so a short run
+        # of fresh frames must arm the room instead of leaving it tickless.
+        run, _ = self.make_run(seed=5)
+        run.current, run.entry = 'engine', 'default'
+        server = Transport(run)
+        wrapper = ScRunLiveSession(server, None, SimpleNamespace(player_type=1, bridge_port=0),
+                                   bridge=PlayerBridge(0))
+        x, y = run.destination_spawn('engine')
+        far = (x + 1024*256, y)
+        for _ in range(ScRunLiveSession.READY_FRAME_GRACE):
+            self.feedback(wrapper, far)
+            wrapper.step(.02)
+        self.assertTrue(wrapper._ready)
+        self.feedback(wrapper, far)
+        wrapper.step(.02)
+        self.assertGreater(wrapper.current.room_time, 0., 'the room must actually tick')
+
     def test_every_planned_room_runs_without_errors(self):
         # Broad regression net over every generated room: activations, moving
         # ledges, projectiles and doors must survive a few real ticks.

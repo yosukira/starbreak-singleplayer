@@ -1,4 +1,4 @@
-'Native full-level transport and persistent room coordination.'
+﻿'Native full-level transport and persistent room coordination.'
 import copy
 import math
 import threading
@@ -68,6 +68,9 @@ def change(instance, oid, field, value, emit=False):
 class RunLiveSession:
     HZ = 60.
     INTERACT_RANGE = 96*256
+    # Fresh frames accepted before a room arms without the authored spawn
+    # distance: a mismatched handoff position must never freeze a room.
+    READY_FRAME_GRACE = 3
     MAP_ID = None
     PACK_CLASS = None
     RUN_CLASS = LevelRun
@@ -246,6 +249,17 @@ class RunLiveSession:
             x,y=self.run.destination_spawn(self.run.current,self.run.entry)
             if math.hypot(player.xmp-x,player.ymp-y)<256*256:
                 self._ready=True; self._publish_input_context()
+            else:
+                # The committed arrival point and the position the native client
+                # actually adopts can differ by more than the spawn tolerance
+                # after a room handoff. A frozen room (no tick, no doors, no
+                # creatures) is far worse than arming a few frames early, so a
+                # short run of fresh frames opens the gate and records why.
+                self._ready_frames=getattr(self,'_ready_frames',0)+1
+                if self._ready_frames>=self.READY_FRAME_GRACE:
+                    self._ready=True; self._publish_input_context()
+                    self.log('{0} room ready by frame grace: {1} expected ({2},{3}) reported ({4},{5})'.format(
+                        self.map_id,self.run.current,int(x),int(y),int(player.xmp),int(player.ymp)))
         if not self._ready:
             self.server._send_raw(self.channel,12,DeltaBatch(self.layouts,1).encode(),self.map_id+'-loading',record=False)
             return
