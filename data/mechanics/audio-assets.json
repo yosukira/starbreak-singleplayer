@@ -1,0 +1,2525 @@
+{
+  "schema": 1,
+  "files": {
+    "/client/data/music/cave.ogg": {
+      "size": 2655295,
+      "sha256": "ac4d7bc6b181e92d5fabb2f4a51dd4325c44a9095336855b139de41dc79ba7eb"
+    },
+    "/client/data/music/cave_boss.ogg": {
+      "size": 1523104,
+      "sha256": "0aac720657178132991aa1d500adff3049ee52e459578329d1a07e3e9aadee20"
+    },
+    "/client/data/music/city.ogg": {
+      "size": 2521858,
+      "sha256": "8d742698f81a5f4491578fb0b9692b4e3c0415ee792c3e5b65a13eb5f84c68d9"
+    },
+    "/client/data/music/city_boss.ogg": {
+      "size": 1412579,
+      "sha256": "bc679cb56e33c9648102adc24e6e11817b946c9cfa396c03f4f431193f1bc79c"
+    },
+    "/client/data/music/dumb.ogg": {
+      "size": 2488956,
+      "sha256": "067e8c0f4bd69c41d1e4bca970a76a6dc913f105f709028c8b20a423e9876de4"
+    },
+    "/client/data/music/dumb_boss.ogg": {
+      "size": 1527336,
+      "sha256": "69a759ed07a28f1d2f1b438698c4376d67c8003b17234b269ddf0cd00116467e"
+    },
+    "/client/data/music/forest.ogg": {
+      "size": 2754344,
+      "sha256": "0282e33496db45a13cdd90f4eed0f17a0648f2501436545d4bd8976e9b7f9eaf"
+    },
+    "/client/data/music/forest_boss.ogg": {
+      "size": 1341575,
+      "sha256": "cd26ccaa87d1f0e7642d57400f68941037b0669b8a6e2951a57edb64377d086d"
+    },
+    "/client/data/music/home.ogg": {
+      "size": 2226619,
+      "sha256": "ff678515d85081d835a0fb17f72be26fe5d426207eae06a7eac44d86b0a7d2f0"
+    },
+    "/client/data/music/hulk.ogg": {
+      "size": 2469029,
+      "sha256": "42a38889d8c82c5bf3b1f7de58fb95ae5b7c9074e9be0a1223a4de1a9a4429fc"
+    },
+    "/client/data/music/hulk_boss.ogg": {
+      "size": 1371396,
+      "sha256": "e9aebba95365d081aff7303efd9a001fdce5ad6f8a681f9f5033ad95dfce0ddd"
+    },
+    "/client/data/music/ice.ogg": {
+      "size": 1659084,
+      "sha256": "6ec4c37861001f27241df7fbd50f01871f7bcc4b3f807b30ef92eee52ef9b3ca"
+    },
+    "/client/data/music/ice_boss.ogg": {
+      "size": 820657,
+      "sha256": "5ba5d63a1284048af89f20e203e1ea76022db5021a88ce77f3d82d355415c6aa"
+    },
+    "/client/data/music/jungle.ogg": {
+      "size": 2884632,
+      "sha256": "ed52645341101b14a56e2b830489229d7be8c49c172678f5f85511fe89f6eeec"
+    },
+    "/client/data/music/jungle_boss.ogg": {
+      "size": 1326970,
+      "sha256": "b068c10205097f89a7bc0ce57f65b63c4fa0d58b35f657eb5cf39c47ba7ca023"
+    },
+    "/client/data/music/lab.ogg": {
+      "size": 2433530,
+      "sha256": "9e7aaf21eeeab93360b47856dbecf007d5ed6020bad5990365164f025437ed06"
+    },
+    "/client/data/music/lab_boss.ogg": {
+      "size": 1650527,
+      "sha256": "0f99914c6c6c7b03df086adcc3bae0c68839a975475c37d52342deaf2911d65f"
+    },
+    "/client/data/music/lobby.ogg": {
+      "size": 4041955,
+      "sha256": "08b73c6a6f1b34380db50fdcab9d47b7b683175eb7997d57d8823cc24a9de22d"
+    },
+    "/client/data/music/sc.ogg": {
+      "size": 2940475,
+      "sha256": "c8884447be15be3a8c20a3a588f820e0811708d984034f8f6932c101904470b9"
+    },
+    "/client/data/music/sc_boss.ogg": {
+      "size": 1297888,
+      "sha256": "ef947fd49a20399604dacaa65e1c77bcec6df51878ca6d469a28c9b39bc132b0"
+    },
+    "/client/data/music/shop.ogg": {
+      "size": 1009014,
+      "sha256": "6f289734886f3b0ceb142bbabc2e85252c19cf826453203175f8a98b97d42f74"
+    },
+    "/client/data/music/title.ogg": {
+      "size": 2406808,
+      "sha256": "74a8dfd5269a0188ec384db82e5370bcf0cbbaa6bdc7a23b96a9b750d4bfc1aa"
+    },
+    "/client/data/music/tutorial.ogg": {
+      "size": 2602003,
+      "sha256": "854d110b097180382b9c72ed3591a5b44be3598b28df52658f60dc852df2c11a"
+    },
+    "/client/data/sfx/cave/armorsegmentdeath.ogg": {
+      "size": 9985,
+      "sha256": "4d18adf9f289cafb8a34d25778f07b27b8646c026d90a6a6787e71c3aae54173"
+    },
+    "/client/data/sfx/cave/armorsegmenthit.ogg": {
+      "size": 5916,
+      "sha256": "a08585513c662467124910e005aae482f4369e7ba89d3700f66cb31de0863dfc"
+    },
+    "/client/data/sfx/cave/bossclawdeath.ogg": {
+      "size": 7820,
+      "sha256": "d1de60e403caf05e4fa71f8e09c4afbfb7865331895dc1d1b4b63b00582ae409"
+    },
+    "/client/data/sfx/cave/bossclawhit.ogg": {
+      "size": 8967,
+      "sha256": "c0857f112b182c3a16b11e76aaff6f25bfdbd9ee0de4c1a9bd169c33a7ef850e"
+    },
+    "/client/data/sfx/cave/bossclawinvhit.ogg": {
+      "size": 6084,
+      "sha256": "ef435f534b2e3dfeea47a9bd9d2bc82dcbccfe07fa521ee6fc3abee42a275561"
+    },
+    "/client/data/sfx/cave/bossscream.ogg": {
+      "size": 23844,
+      "sha256": "33bccc1726896a95cf04f3dff0a13068bbe6e668e3e8bf6d5ac152778140ec48"
+    },
+    "/client/data/sfx/cave/bossx.ogg": {
+      "size": 18151,
+      "sha256": "78ebdfd213a28ad91ae9028fa9735187d236a017399c74db8597805f8bba4c1d"
+    },
+    "/client/data/sfx/cave/bwormdeath.ogg": {
+      "size": 12952,
+      "sha256": "bbe7872451a87ac736d98ea42870cbbcb150059584ee72d43ad8278365ff3980"
+    },
+    "/client/data/sfx/cave/bwormhit.ogg": {
+      "size": 5585,
+      "sha256": "955e5df25860a442ccad98d87b853a686e674a346ed7a5d6cd0badeea1b43112"
+    },
+    "/client/data/sfx/cave/bworminvhit.ogg": {
+      "size": 6986,
+      "sha256": "10481f0174913cf26f4f28768ebe531867fa3320a6c869fac1184a21373d743a"
+    },
+    "/client/data/sfx/cave/bwormspin.ogg": {
+      "size": 14100,
+      "sha256": "7e6fb1280867a8ef16bde78da81ce02961baf5634c75ea385bd79c9667631c2f"
+    },
+    "/client/data/sfx/cave/darterspawnerdeath.ogg": {
+      "size": 10551,
+      "sha256": "d1e3e896d68667e17f4c90448b9c26be6d42fc8e57985f67a7d05a73239aa318"
+    },
+    "/client/data/sfx/cave/darterspawnerhit.ogg": {
+      "size": 9250,
+      "sha256": "d20b025d4bc13e2543c23898daf9c9c166f20f28eacecf8d47f791aebb8b34f2"
+    },
+    "/client/data/sfx/cave/destdeath.ogg": {
+      "size": 10297,
+      "sha256": "a5b29f6899b425c77f5fd1418d7447890a58292f545578b43ce489b32e3daee2"
+    },
+    "/client/data/sfx/cave/desthit.ogg": {
+      "size": 4609,
+      "sha256": "4ca9431905a9ff1027a787b78050004ad3eb5cf255b96f89d9736d572edb69da"
+    },
+    "/client/data/sfx/cave/drillbatdeath.ogg": {
+      "size": 6475,
+      "sha256": "b5d6d835b18f9b0c663a7febbe01f698075bd9018238d48756b710129d67b6d6"
+    },
+    "/client/data/sfx/cave/drillbatfall.ogg": {
+      "size": 7352,
+      "sha256": "6a2cf5fe84c0d84cef369681ce1527acaf8a71332441fa72cd7a400dbb925c8c"
+    },
+    "/client/data/sfx/cave/drip.ogg": {
+      "size": 7998,
+      "sha256": "398328da4afb1df04ce078cf4a4ad537d104cdf7dd817634df7750eec4ef6609"
+    },
+    "/client/data/sfx/cave/dripdeath.ogg": {
+      "size": 11293,
+      "sha256": "054907235cb5df776d3a35540c5ea463ec67c572ff0487c83e56b2adc613ae35"
+    },
+    "/client/data/sfx/cave/dripslimedeath.ogg": {
+      "size": 14116,
+      "sha256": "1cd81c6e17efc866730deec736f84c00e47d5eb34f7552f457c1c03cfdbef97f"
+    },
+    "/client/data/sfx/cave/dripslimehit.ogg": {
+      "size": 6176,
+      "sha256": "c8acb81747a9b541bbe34b2af67483be0a282b9857c0c3889ea6b3ed304a2435"
+    },
+    "/client/data/sfx/cave/energyglobedeath.ogg": {
+      "size": 6801,
+      "sha256": "d9ca324cfecf7411edaf6bafdbf8415115a6fc87af55a17f3481dab703bfeae5"
+    },
+    "/client/data/sfx/cave/energyglobegen.ogg": {
+      "size": 11085,
+      "sha256": "23a4386c24e63a99a6dcae8f3628290d6ce9f32c188b15958b8dd046fe0d5349"
+    },
+    "/client/data/sfx/cave/energyglobehit.ogg": {
+      "size": 7922,
+      "sha256": "7675af9933d0f3f52c217a9a140628cc96801014fc23587df2f92d45a1c8c7ff"
+    },
+    "/client/data/sfx/cave/heal.ogg": {
+      "size": 9653,
+      "sha256": "7e1827456c6304baf9699a7c58f7aa962698b97ff038a2c058fa0412bdddbdab"
+    },
+    "/client/data/sfx/cave/hostileshroomdeath.ogg": {
+      "size": 13008,
+      "sha256": "dbf7a3be1ba74f5ccea23a527f8ce91d0c15132fec12b41b06c35f28cb1b287f"
+    },
+    "/client/data/sfx/cave/hostileshroomhit.ogg": {
+      "size": 9652,
+      "sha256": "e6f135ddda9a4654e881dd8d1bb2df28eb770d28d8b32f0325a55b853c3f3863"
+    },
+    "/client/data/sfx/cave/kingnativeblock.ogg": {
+      "size": 10495,
+      "sha256": "b94f65134395de85c13ea8e7965776161c306494d80bed1b1ea54cfde7f77b49"
+    },
+    "/client/data/sfx/cave/kingnativeboomgen.ogg": {
+      "size": 12379,
+      "sha256": "da24d6ef78caad4c16bd78f8d5565b1e7a2e36767a1c9105c2cb48f157431525"
+    },
+    "/client/data/sfx/cave/kingnativedeath.ogg": {
+      "size": 11833,
+      "sha256": "7e62598f6beb7884657345fddddc870df77a0bfe3712f7eb1175df257465368c"
+    },
+    "/client/data/sfx/cave/kingnativeearthwave.ogg": {
+      "size": 9856,
+      "sha256": "572222894cd616b002e034402be07e907c60b6064f18c9fae2315d015560e03d"
+    },
+    "/client/data/sfx/cave/kingnativehit.ogg": {
+      "size": 8661,
+      "sha256": "d29ec26cd9c6e9ca57f9844f95385fa29d6ac22e975919522d0a56dc36e2725d"
+    },
+    "/client/data/sfx/cave/kingnativeinvhit.ogg": {
+      "size": 5935,
+      "sha256": "14844da367ee4ffaa1ab8115c8af72d9531c80e99809b2df5fe5024793a7c063"
+    },
+    "/client/data/sfx/cave/kingnativewavegen.ogg": {
+      "size": 9146,
+      "sha256": "1d992a0bff7e91394aefc366c492364014092daeb4731798bfc068c84a1c7dd7"
+    },
+    "/client/data/sfx/cave/lwormdart.ogg": {
+      "size": 6475,
+      "sha256": "019bd496dd7b22ac1832b334970cd2d4c7d9b33015813e3a0a0166254cd0fbfe"
+    },
+    "/client/data/sfx/cave/lwormdeath.ogg": {
+      "size": 7703,
+      "sha256": "7a276a8488c88b6fc0c217ddd1e744b2f36d1ce6b27a44e52ef609ea5934f698"
+    },
+    "/client/data/sfx/cave/lwormhit.ogg": {
+      "size": 5868,
+      "sha256": "44b6beb93ccb55a5676f03fc8f2c7674fc3784f88942b7cdbe3f7d419dbca3d5"
+    },
+    "/client/data/sfx/cave/lwormspawn.ogg": {
+      "size": 8180,
+      "sha256": "0b535a33c04e25a9c5bd4ffd39471147b36817017affcabb3857da32b55bcf5d"
+    },
+    "/client/data/sfx/cave/munchroomdeath.ogg": {
+      "size": 7138,
+      "sha256": "8cc59ef325e263c32de3992f9ec996f8cdcee11b6ed3c743adba6c117edb62b9"
+    },
+    "/client/data/sfx/cave/munchroomhit.ogg": {
+      "size": 5619,
+      "sha256": "958c1205ba119018829971cd0da210a71544af4c31ce79d628a01cc4802f8648"
+    },
+    "/client/data/sfx/cave/munchroomjump.ogg": {
+      "size": 5776,
+      "sha256": "67dbb88f6f06f7cf1f2be7a202a732c60f66b402b4a5738137a9a6a8af054b09"
+    },
+    "/client/data/sfx/cave/mushroomsporegen.ogg": {
+      "size": 14525,
+      "sha256": "83ba6b387060b633c5175039f174ee991dd0127d56a4f39ce9d8b46b1966dc64"
+    },
+    "/client/data/sfx/cave/nativedeath.ogg": {
+      "size": 15033,
+      "sha256": "215bf9c49089800682b2d9ed8f194b52819f2f786c4f46bc3ef4f7c60c9c3d97"
+    },
+    "/client/data/sfx/cave/nativehit.ogg": {
+      "size": 5460,
+      "sha256": "d6a341c465799b0f078e2cad00db4bfa23af2f4d4c2a7c459b1ddd460786035c"
+    },
+    "/client/data/sfx/cave/nativepop.ogg": {
+      "size": 7423,
+      "sha256": "0e103538b6d0fd9325750a81bc1ce43067f720a393aef5403439fe67c9baaaa0"
+    },
+    "/client/data/sfx/cave/nativespearthrow.ogg": {
+      "size": 6622,
+      "sha256": "8313043bee4b44db5b9c1cc54a8e0314d4c455332f551cc0a175a5c517f47493"
+    },
+    "/client/data/sfx/cave/nativeswarmerdeath.ogg": {
+      "size": 9657,
+      "sha256": "d042350626b032f0b691f08d57b488af881ede32225980bc484ee108b053b535"
+    },
+    "/client/data/sfx/cave/nativeswarmerhit.ogg": {
+      "size": 6942,
+      "sha256": "ecb6113de02acccf86e4d6d7d605b1a7c4f75926178692137e8b26c7d21447b1"
+    },
+    "/client/data/sfx/cave/slimedeath.ogg": {
+      "size": 11742,
+      "sha256": "0cdc932baaebc598c7a1d88b18f766c58ceef105594f880197bdd94e24f2cd41"
+    },
+    "/client/data/sfx/cave/slimedripattack.ogg": {
+      "size": 6637,
+      "sha256": "456513f01d000ddfa58130646157d539c47a95bf0670e9002b05249672721dcb"
+    },
+    "/client/data/sfx/cave/slimehit.ogg": {
+      "size": 5916,
+      "sha256": "737f083a6605cdf0909e9f203480723a2fbd766dc5566b22a346f40aba39f639"
+    },
+    "/client/data/sfx/cave/smallslimedeath.ogg": {
+      "size": 9083,
+      "sha256": "e0308734e694965f6a003a72d59c86d5b6c29838ec79878fab103ed6aea4c80b"
+    },
+    "/client/data/sfx/cave/smallslimehit.ogg": {
+      "size": 5862,
+      "sha256": "9b5bcb377509d1aeec6308dbe993356ec00086c63745670d8876c9b643077087"
+    },
+    "/client/data/sfx/cave/twormdeath.ogg": {
+      "size": 48732,
+      "sha256": "537d18a22b6c97e4199911770cb5259513c30e7424a84cc5b10f4c1f4f190141"
+    },
+    "/client/data/sfx/cave/twormhit.ogg": {
+      "size": 19555,
+      "sha256": "f9ceba323450940ceeb080798e0f66b211f94e1466fc6d1ee421793c3d6154e4"
+    },
+    "/client/data/sfx/cave/tworminvhit.ogg": {
+      "size": 4547,
+      "sha256": "ac5eef597b770c26d9d2162865ea8801c4f313d01d8f9f51c92bf529fd810da5"
+    },
+    "/client/data/sfx/cave/twormshoot.ogg": {
+      "size": 11944,
+      "sha256": "cf9a7665dc938647d4dbdbc84eeda3795adcfb964e7f0e003e5240c992cdee18"
+    },
+    "/client/data/sfx/cave/twormspray.ogg": {
+      "size": 16121,
+      "sha256": "95bb2cf55e61c85cecd31523efda308ec2e2b63f04a4a5ef18cec5a027d142ff"
+    },
+    "/client/data/sfx/city/baller.ogg": {
+      "size": 8894,
+      "sha256": "4fd1d87f41e79b24ea31dfaad77b7591f5c04105641bfee6de097850a346de51"
+    },
+    "/client/data/sfx/city/barricadedeath.ogg": {
+      "size": 14901,
+      "sha256": "cd994c3b80e582b530ba59fb0fa923524d3b08b146b746cba2d68ae08cfff360"
+    },
+    "/client/data/sfx/city/barricadehit.ogg": {
+      "size": 8836,
+      "sha256": "148e3fd738441fd0d098e892fc62269f78a139f200a272430a2b7c371ed8f35a"
+    },
+    "/client/data/sfx/city/bigslam.ogg": {
+      "size": 45632,
+      "sha256": "ba4c44d4584992c2b256f7946b898eb86aa71ff0c9fe9c59212bde8125753b5c"
+    },
+    "/client/data/sfx/city/bomb.ogg": {
+      "size": 7260,
+      "sha256": "f3bab814f94dc02fa0cd6c4e55734c3ce16558970a3b8af53f1a3e754b549d52"
+    },
+    "/client/data/sfx/city/bombx.ogg": {
+      "size": 9469,
+      "sha256": "69a9cc3f3590f9e0792e88d6c365e1aac2b225d098217b4f854fac6a8ed2e948"
+    },
+    "/client/data/sfx/city/bossx.ogg": {
+      "size": 44743,
+      "sha256": "caea7c57c8a93fb45e89c9fdf73ceee9ad48a647cd77e32c4e4e0a70a656c40e"
+    },
+    "/client/data/sfx/city/coptermissile.ogg": {
+      "size": 18176,
+      "sha256": "cf08d03d2771b3a9bba0ff5e312f1dc9f7f463752d3085abbb14a90fddcf96db"
+    },
+    "/client/data/sfx/city/coptermissilex.ogg": {
+      "size": 9948,
+      "sha256": "6195b92ee9a20edcd1f4f7773ac90e19bfc58e477ba06bb9ece9d5da9ff56b33"
+    },
+    "/client/data/sfx/city/dronedeath.ogg": {
+      "size": 11824,
+      "sha256": "f88c18e7c6027abb271557b89cd2193fa5be92d3a863ea6034d53c32fd18113e"
+    },
+    "/client/data/sfx/city/dronehit.ogg": {
+      "size": 6320,
+      "sha256": "868e8859d1e9648244e853a631f7b384040da930ae38e6e5803d1bc2e72eb1c3"
+    },
+    "/client/data/sfx/city/dronespear.ogg": {
+      "size": 10620,
+      "sha256": "e10fc15c8971bb48c7c5707bf1d8a12670bc6e1fd8580140634715869b1e99e1"
+    },
+    "/client/data/sfx/city/hawkdeath.ogg": {
+      "size": 11235,
+      "sha256": "8f79c1b28df98bea07457e54fe994f125f7c14a4aa64d0b1a9eef4f6d32183a8"
+    },
+    "/client/data/sfx/city/hawkhit.ogg": {
+      "size": 7831,
+      "sha256": "85918cd3ccb7567196e2776d319b7a79a27a2b8849e9b49d7e4a8cc840aa68eb"
+    },
+    "/client/data/sfx/city/hologram.ogg": {
+      "size": 11433,
+      "sha256": "f9261e16f38115016e3575395f86bddeaeb5e90943bedb3166db66d3ea7827dc"
+    },
+    "/client/data/sfx/city/hologramdeath.ogg": {
+      "size": 9388,
+      "sha256": "c2206ae52b6ec9d6d635665c5763128e490ffebea62076d92a1ccdbd8c9b9db9"
+    },
+    "/client/data/sfx/city/hologramzap.ogg": {
+      "size": 8752,
+      "sha256": "ccf0475650550b36838c46e3decebe888cdaa40297aa71cfb1974384f1ebce7e"
+    },
+    "/client/data/sfx/city/mbdeath.ogg": {
+      "size": 22702,
+      "sha256": "6e7750beea39bfbdda5b2900c0591f7dcf1bc34971c212fbf9541030a32b8da6"
+    },
+    "/client/data/sfx/city/mbhit.ogg": {
+      "size": 10215,
+      "sha256": "8d4455bdb5e05e92eb95b705c486043b2c6643bcd536a159bb0b595fe2a95951"
+    },
+    "/client/data/sfx/city/mbjump.ogg": {
+      "size": 9974,
+      "sha256": "c386dc53e7ced578538dd7196eeab4c393cb0d2326ded427ca20301c4e0eb0b1"
+    },
+    "/client/data/sfx/city/mbland.ogg": {
+      "size": 9455,
+      "sha256": "05a7c3ea247406f5ffaa7690832309f2f617ac0a031cf32be682078f30c21536"
+    },
+    "/client/data/sfx/city/mbshoot.ogg": {
+      "size": 11663,
+      "sha256": "711e027ff9de12b1f6c9402c83f03192bdfd3cd57116896dec6579a9c461b4e5"
+    },
+    "/client/data/sfx/city/mechdeath.ogg": {
+      "size": 29226,
+      "sha256": "15f47607cb25f2d75709ce6f5ae344fd1ed4273efd8a312ecc9f282ecf0d914e"
+    },
+    "/client/data/sfx/city/mechfist.ogg": {
+      "size": 16804,
+      "sha256": "84664ff1fe75446cc11296c1147ed6b2c939a45bd5b11831dbfe96df1b0ec8ff"
+    },
+    "/client/data/sfx/city/mechfistt.ogg": {
+      "size": 11338,
+      "sha256": "4d7ca2265a46f57533a370f6888e225e0d442b262b6c636b9a4a17fdeea05ede"
+    },
+    "/client/data/sfx/city/mechflame.ogg": {
+      "size": 12756,
+      "sha256": "ca0fb887739b09e105f0d3803208fe48e5bc6a7c9860eb3fe1805dc10407844c"
+    },
+    "/client/data/sfx/city/mechflamet.ogg": {
+      "size": 11855,
+      "sha256": "eb5c97c1de131dc29754ee2a3e94f586a5128761f6697e4cbf0f69d9433e9a45"
+    },
+    "/client/data/sfx/city/mechhit.ogg": {
+      "size": 5500,
+      "sha256": "79adeee94550d8c1f5e2992c6abc7ba1ccdc9e973bb128e62185838b9a78a044"
+    },
+    "/client/data/sfx/city/occudeath.ogg": {
+      "size": 13339,
+      "sha256": "7212f84376892c5331a3641432825b5a9b867a3933cb1c8e07ae1d0f0a322162"
+    },
+    "/client/data/sfx/city/occuhit.ogg": {
+      "size": 5738,
+      "sha256": "cf7f180b77aef5801a7d3c2a7029666c3b95c0833dd5b9305c69d2de7b099ec3"
+    },
+    "/client/data/sfx/city/sentryshootc.ogg": {
+      "size": 9413,
+      "sha256": "cd192ff6b5098bc9db283ed2d972cf9655e403df8d7a6a1b722f4540e720fc34"
+    },
+    "/client/data/sfx/city/sentryshoott.ogg": {
+      "size": 8416,
+      "sha256": "e07bd877791f0f3dd8d63fc42cea7aae2a55459dee2dca1ecf2d8b163d966098"
+    },
+    "/client/data/sfx/city/shoot.ogg": {
+      "size": 8323,
+      "sha256": "b93a77fdfd38f08ba9fec40001c0de731b372dcd7b22adee5fa613de55199c9a"
+    },
+    "/client/data/sfx/city/snipe.ogg": {
+      "size": 7361,
+      "sha256": "e7fb3f88ddf3993435b7f0b1f3ab33c367a9790205986c31cb6c3015ebf2d80a"
+    },
+    "/client/data/sfx/city/transpmissile.ogg": {
+      "size": 29429,
+      "sha256": "3673654491ec6b2dca08cb06646c7eb133cfce7fd16228de963c74bccb0f6e7a"
+    },
+    "/client/data/sfx/city/transpmissilex.ogg": {
+      "size": 19117,
+      "sha256": "b6a3c95c81365298743a7882987ee8397b0aecb52cd357c22a5749faa5e8407d"
+    },
+    "/client/data/sfx/city/transproll.ogg": {
+      "size": 32620,
+      "sha256": "9a62ccb08292f659eb1cdd40c4abb27e0819019bfb44b1c71bf9f29d3079770a"
+    },
+    "/client/data/sfx/city/transpslam.ogg": {
+      "size": 27920,
+      "sha256": "fc08019e2e1270cb4f17900ef53ffed42da8fbdf678ca0a4b7cc768d068204b7"
+    },
+    "/client/data/sfx/dumb/bettypogo.ogg": {
+      "size": 10755,
+      "sha256": "9b87fd6f1872cb3570882fde797f1c96231bbefc8069cf9f346c33baeb3d8f24"
+    },
+    "/client/data/sfx/dumb/bettysplit.ogg": {
+      "size": 10628,
+      "sha256": "39f388d027dbcbb542696e4dc116fe3b46a173f17ffdd8d2702f20d7f12661e9"
+    },
+    "/client/data/sfx/dumb/bettysquash.ogg": {
+      "size": 9615,
+      "sha256": "9ec7035400ffff66de2947bd0445162f227cd79dde61235bdc0d4f1af54cf4ae"
+    },
+    "/client/data/sfx/dumb/bigdoor.ogg": {
+      "size": 18129,
+      "sha256": "9dd5652f086a07a2334f3e56a94542b535665cf2eaafdf5d3a7f620ccabf7c6b"
+    },
+    "/client/data/sfx/dumb/bossdoor.ogg": {
+      "size": 55555,
+      "sha256": "97a4725525402f927111a8eddd4c935c52da12bbec7a07c5878811016c3064aa"
+    },
+    "/client/data/sfx/dumb/bosslasercharge.ogg": {
+      "size": 13504,
+      "sha256": "8514c13ffb46c1fe1f5f6b22b98012aa7bb640d6eed10db501914fae28b092a3"
+    },
+    "/client/data/sfx/dumb/bossreveal.ogg": {
+      "size": 8963,
+      "sha256": "cd14c50718aab33cabc478b84632a81fdd9ec334ca494899473f7fcf000c0407"
+    },
+    "/client/data/sfx/dumb/bossx.ogg": {
+      "size": 81555,
+      "sha256": "c3f161594cd3fb6651a706925daef623c06a6d537cdb0def17113d8f778c8e42"
+    },
+    "/client/data/sfx/dumb/bouncegen.ogg": {
+      "size": 7316,
+      "sha256": "3eb2f5e00456ad6fa81f367f2eea13c045873129574d649fe9a18dae6a13f429"
+    },
+    "/client/data/sfx/dumb/boundinggen.ogg": {
+      "size": 7025,
+      "sha256": "097ba9db5d3b14ae805a6cfcd66f028ad1b8f13da1069d2354edbdaa2b7abcad"
+    },
+    "/client/data/sfx/dumb/bulletgen.ogg": {
+      "size": 9225,
+      "sha256": "e0fadbf359fd896e747a6efce763e058acaa5515b297aba85120ffecdca0299c"
+    },
+    "/client/data/sfx/dumb/dronegen.ogg": {
+      "size": 8384,
+      "sha256": "2ced5f3dd7057e9cf66b6b217b59a161818ecf3d150de510f28af02ce08e6e6d"
+    },
+    "/client/data/sfx/dumb/dronesplit.ogg": {
+      "size": 12419,
+      "sha256": "90ba6fdf8001c5c757adcf5953718e3deceeef1e6ecc517a4723d4b74813fb25"
+    },
+    "/client/data/sfx/dumb/explodegen.ogg": {
+      "size": 9373,
+      "sha256": "f64011276d3d80e6a9513ec00659551ebeb7de705fb74931de70d881b1b98629"
+    },
+    "/client/data/sfx/dumb/explodex.ogg": {
+      "size": 9651,
+      "sha256": "9c3ad5b06d44cb6fff5f9ff366fcff1e9178da02bf9a05f29de330c11adeee12"
+    },
+    "/client/data/sfx/dumb/flamegen.ogg": {
+      "size": 23467,
+      "sha256": "bd160a3cccf45ebd261c88725529aaf4da01dcaafeca104d4162acddbe0c149b"
+    },
+    "/client/data/sfx/dumb/flametelegraph.ogg": {
+      "size": 9019,
+      "sha256": "096d82ea93a497857ba7532ed850c016d8119d6eae49b7fb6b7ce5732be782ce"
+    },
+    "/client/data/sfx/dumb/grenadegen.ogg": {
+      "size": 11850,
+      "sha256": "d3c0a2c6e3a7ab97f46914b0062d1b890316ae4210cfb431f4a43e0ee06c1c0b"
+    },
+    "/client/data/sfx/dumb/gruntdeath.ogg": {
+      "size": 10949,
+      "sha256": "8c1b8323434537cd14e42303f3be4d66167324230cbbf3ad548ea2f7e70f42d1"
+    },
+    "/client/data/sfx/dumb/grunthit.ogg": {
+      "size": 7886,
+      "sha256": "5820138ed9ead5ad09d06cd7778adb1d10b57ebc7f993b2e314dfb4ed2da0ac3"
+    },
+    "/client/data/sfx/dumb/heavybeam.ogg": {
+      "size": 12152,
+      "sha256": "2c453fdd8612a976c2ae272abf89fe161aac10ff66ad9e3741e46adbb3fd476d"
+    },
+    "/client/data/sfx/dumb/inorgdeath.ogg": {
+      "size": 28549,
+      "sha256": "6e533f11342796ff693c72c66728ae6c11d1230962d68dadd99393e51dc7f8e1"
+    },
+    "/client/data/sfx/dumb/inorghit.ogg": {
+      "size": 6145,
+      "sha256": "53d67c9d7fb0e6de92a65672fe725ccc6c1ad95a056634019ecc75d8153e0d0f"
+    },
+    "/client/data/sfx/dumb/inorginvhit.ogg": {
+      "size": 5588,
+      "sha256": "6993928bb4228db6591ef2f5f50bf647750844ffc75562d4442b36275e25d760"
+    },
+    "/client/data/sfx/dumb/lasercharge.ogg": {
+      "size": 17608,
+      "sha256": "883cff183cdbc4a566bf4a3b417618c09e40f536d6abef5da290478d2ec974bd"
+    },
+    "/client/data/sfx/dumb/lasergen.ogg": {
+      "size": 12077,
+      "sha256": "ad1a8988a4b4477c833bb9d4a93f3e640ce23ebc684470f4efaecfefe65c5a93"
+    },
+    "/client/data/sfx/dumb/missilegen.ogg": {
+      "size": 13030,
+      "sha256": "a9b55b6e794f10d25b120afa53a1be670328028760793ae6c23bb46692369acc"
+    },
+    "/client/data/sfx/dumb/missilex.ogg": {
+      "size": 13545,
+      "sha256": "7818a11ccb243329112706451376c322fae74a3184a8315f1e7641e31e8403f0"
+    },
+    "/client/data/sfx/dumb/mortargen.ogg": {
+      "size": 10002,
+      "sha256": "45ad2efdcb67398a09815e17d1d3f9deef65df72d0828a0af84db94e3b63e26c"
+    },
+    "/client/data/sfx/dumb/munitionsgen.ogg": {
+      "size": 9088,
+      "sha256": "f9939a57387b13e374e3e35f58e6e2f9c7fe4f4b007b2ac0cb373ba2e7159a26"
+    },
+    "/client/data/sfx/dumb/rocketeerjump.ogg": {
+      "size": 13992,
+      "sha256": "9c252b98ba2eddaf6631b6d67d966617b31b9d30ec92c0c503561adee1b66de9"
+    },
+    "/client/data/sfx/dumb/rocketgen.ogg": {
+      "size": 14255,
+      "sha256": "72eb00ff9b77dd73fa8cc30e46157dab2f6d009cbf1b5ba9c8c88743d91c1270"
+    },
+    "/client/data/sfx/dumb/sbulletgen.ogg": {
+      "size": 10815,
+      "sha256": "e7939162374eaabad0492c8eb057f1f290f0640fff4d8432a3aa445a02e6adea"
+    },
+    "/client/data/sfx/dumb/shieldwalldeath.ogg": {
+      "size": 18323,
+      "sha256": "da2ae5c4adfa152cbcf1fdf136cfe0dbc05a544db74191a97d3ffb5b1638817d"
+    },
+    "/client/data/sfx/dumb/shieldwallgen.ogg": {
+      "size": 7263,
+      "sha256": "b4832bace1fda978d1ba79381f007facfb63f1ebcbbd79185c740d9c08291bee"
+    },
+    "/client/data/sfx/dumb/shieldwallhit.ogg": {
+      "size": 7157,
+      "sha256": "b4abd5205fdac651d138241c975f9cfcb4b5bde4f0037b679b60b856daa41b73"
+    },
+    "/client/data/sfx/dumb/shrapnelgen.ogg": {
+      "size": 14001,
+      "sha256": "dc61c0f6a1dd9cb9f57121ee985eeef728c04813f524115da23f4dca76cab75d"
+    },
+    "/client/data/sfx/dumb/steam.ogg": {
+      "size": 9595,
+      "sha256": "45f26a00feb6be9ef82e7586f679725436451cb0b953ed5e2fc1826751a91f5a"
+    },
+    "/client/data/sfx/dumb/switch.ogg": {
+      "size": 5403,
+      "sha256": "38a41a0bdd0415259d28cef33b6f2f08711cfedc10f1b3f9cd35b448cbfbd899"
+    },
+    "/client/data/sfx/dumb/tankturret.ogg": {
+      "size": 14572,
+      "sha256": "269d3602ae76bcd0a4d4cee1b8fd55e06a39a8ef536cca5989970656a525f6a2"
+    },
+    "/client/data/sfx/dumb/teleport.ogg": {
+      "size": 7800,
+      "sha256": "86e481cb716667044f54af664a180e788853c13b78dc7de7ddbf860a22590385"
+    },
+    "/client/data/sfx/dumb/teleportenemy.ogg": {
+      "size": 14522,
+      "sha256": "8eef181e5f451bc46bf320ef241ea966f65862f87b29cd1c631261b38cb5d7f2"
+    },
+    "/client/data/sfx/dumb/wavegen.ogg": {
+      "size": 6318,
+      "sha256": "82cc3f365c7dd2d44b25a96f9f40a741fd7b6ad608c554b0b9bbf3ce2669617a"
+    },
+    "/client/data/sfx/flappy/birddeath.ogg": {
+      "size": 4357,
+      "sha256": "1d10e405ce8f8ed5180629e74d310d76da1b5cadd175dda162126fd42c6d1758"
+    },
+    "/client/data/sfx/flappy/jump.ogg": {
+      "size": 4517,
+      "sha256": "82920be1bcc10272a7c20442228dd05d4150bada699d6d30ec08ee3cbc250cfd"
+    },
+    "/client/data/sfx/forest/bombcrawlerdeath.ogg": {
+      "size": 10950,
+      "sha256": "65a7dbdbb710badb8afb2dba6c4701c84d2955d988feb60c7594ab30b7c22fec"
+    },
+    "/client/data/sfx/forest/bombcrawlerhit.ogg": {
+      "size": 6860,
+      "sha256": "fe6cd1b1885273711cc192b4438533dd7de7e43e42a098163279aa11708de8e1"
+    },
+    "/client/data/sfx/forest/bombdropperdeath.ogg": {
+      "size": 11070,
+      "sha256": "f8c8a80fa382989d0ee63bb6258fc16aec82be4ae72880e1e68d28516f9f4c75"
+    },
+    "/client/data/sfx/forest/bombdropperhit.ogg": {
+      "size": 8797,
+      "sha256": "c446ffda53b8a0c24aea00f2ea62117cb7e513c37fec9b0c9dbc31665cbaf19b"
+    },
+    "/client/data/sfx/forest/bomblaunch.ogg": {
+      "size": 8147,
+      "sha256": "d14034b1a8fd038ae90074fba1ddda82cec8e979fe318ed0d8cdd9ae63cfe271"
+    },
+    "/client/data/sfx/forest/bombx.ogg": {
+      "size": 11913,
+      "sha256": "7d38e2cd226fe75ab77a335cef3ad8b6f40553903ec3a2954b82894982ee9793"
+    },
+    "/client/data/sfx/forest/bulletgen.ogg": {
+      "size": 9225,
+      "sha256": "e0fadbf359fd896e747a6efce763e058acaa5515b297aba85120ffecdca0299c"
+    },
+    "/client/data/sfx/forest/firex.ogg": {
+      "size": 8903,
+      "sha256": "c78fea5b2f0203f7f42b493ff98c5b9904c2d3ad8d28cfd0ca576c74917ff337"
+    },
+    "/client/data/sfx/forest/gatepowerdown.ogg": {
+      "size": 8852,
+      "sha256": "dfe277ed90cdf5842db647beb30337c824e26e0b05b2c25f76828fdf89685069"
+    },
+    "/client/data/sfx/forest/gmjump.ogg": {
+      "size": 8360,
+      "sha256": "2ba227f23f96a31b5877aa45e056c5a752d6d1796b50bb493d29c8edf22a20dc"
+    },
+    "/client/data/sfx/forest/gmland.ogg": {
+      "size": 7997,
+      "sha256": "5c1e4dcf21588015b2355aac9b21c49db787f8dd8a46672313cd3796820cc1e7"
+    },
+    "/client/data/sfx/forest/gmlaunch.ogg": {
+      "size": 8788,
+      "sha256": "b305de09d5b86fa25a0065693c7af2aaf8a50ef9b5074070fc7ba6950bc17b75"
+    },
+    "/client/data/sfx/forest/goblindeath.ogg": {
+      "size": 10731,
+      "sha256": "77f801538853025eb2ae3dcdbd87757eca52dbb3fc096ba6a17e55ac27573e5f"
+    },
+    "/client/data/sfx/forest/goblingdeath.ogg": {
+      "size": 7726,
+      "sha256": "4043c2cd49c2d705e6cdb0044bfa1902f91801a5b8f228e1ecb80a54db89e4a7"
+    },
+    "/client/data/sfx/forest/goblinghit.ogg": {
+      "size": 6069,
+      "sha256": "a1a6cf564bf5b7c19d4fe3555d6496027a2c03d5b33a522f90e18f9ccb23e4c6"
+    },
+    "/client/data/sfx/forest/goblinhit.ogg": {
+      "size": 7723,
+      "sha256": "a1310af06c6c14607079c91fbb00b56e11abd70bf5e4fc3a88ed06e98cd7a297"
+    },
+    "/client/data/sfx/forest/goblinhivedeath.ogg": {
+      "size": 9356,
+      "sha256": "a268cef612aced96c142092f3d9c7f488681c7a7e0f9c137883a552de43b1fb1"
+    },
+    "/client/data/sfx/forest/goblinhivehit.ogg": {
+      "size": 7812,
+      "sha256": "be23ee7e0f52e0b1d5680cfc7b28ea7e191bb951edabe0880e5f880be178bee2"
+    },
+    "/client/data/sfx/forest/goblinhivespawn.ogg": {
+      "size": 9331,
+      "sha256": "cf6cfabcf6d59d0f32cc0185deace65283526525bf8f7473dca0bf64846985d7"
+    },
+    "/client/data/sfx/forest/goblinmasterdeath.ogg": {
+      "size": 11348,
+      "sha256": "1d179cd7b6a3c3911bfc720a97d0f3fb66bdd322ef7c7c7945b31127f29c5923"
+    },
+    "/client/data/sfx/forest/goblinmasterhit.ogg": {
+      "size": 7089,
+      "sha256": "ec7ac7e4ab17f28cd1e2d343c520b86b4b5ca2196130c427c23e0b615e46312b"
+    },
+    "/client/data/sfx/forest/goblinmotherdeath.ogg": {
+      "size": 14613,
+      "sha256": "78a85db9656ab0c1ce0aa77da877b53cca7ead4fefd9415ec2a9991445cc3e4b"
+    },
+    "/client/data/sfx/forest/goblinmotherhit.ogg": {
+      "size": 8882,
+      "sha256": "5de0b490ed4d71e66649665faa066908d3af2e698932bbb9467d48c3f56edb28"
+    },
+    "/client/data/sfx/forest/gthrow.ogg": {
+      "size": 10281,
+      "sha256": "0e8e5c5a9a1df6840975ebdeb8a6b82ddcab8ed9980fdaf409d82a5a7e6fe53f"
+    },
+    "/client/data/sfx/forest/jumperdeath.ogg": {
+      "size": 7860,
+      "sha256": "86388cf47cddcdb5748aec63a8d5ef665e023b1bde69653d37aa2eda84d809bb"
+    },
+    "/client/data/sfx/forest/jumperhit.ogg": {
+      "size": 8482,
+      "sha256": "4981f95462ddccef6bbacaf350a958d1639744e8b100caf0fe6f5e76120aa798"
+    },
+    "/client/data/sfx/forest/jumperjump.ogg": {
+      "size": 7098,
+      "sha256": "30018169e8622d64a36c5936a295f40e4759249d0c8850644ae8c961355a3a47"
+    },
+    "/client/data/sfx/forest/largeplantdeath.ogg": {
+      "size": 16867,
+      "sha256": "d980623db44ccfd6d79876c2c3695e58268e366b8c42512dd407a3e183c59fc4"
+    },
+    "/client/data/sfx/forest/largeplanthit.ogg": {
+      "size": 8365,
+      "sha256": "ea13538b7d1540b88578784e75842697943557ec4996b24319051363f747274c"
+    },
+    "/client/data/sfx/forest/lpseedsplit.ogg": {
+      "size": 8003,
+      "sha256": "1d8554f8fc15e4904bef8168be2303f64709f02b819a94dffd8fada5a10cb587"
+    },
+    "/client/data/sfx/hulk/barrelx.ogg": {
+      "size": 11707,
+      "sha256": "814e6075e581eeb4583f73b8ad98353770be726ed60413a04ff05222f9902970"
+    },
+    "/client/data/sfx/hulk/bombroverdeath.ogg": {
+      "size": 10435,
+      "sha256": "ecae6baacbd24d169c243049ff7647d3cbd81f5d036a804f51749bf050c388df"
+    },
+    "/client/data/sfx/hulk/bombroverhit.ogg": {
+      "size": 6522,
+      "sha256": "bd469d90dbe353527a23f03537b052df3721c002f018927de718d291a976a44d"
+    },
+    "/client/data/sfx/hulk/bossdeath.ogg": {
+      "size": 17579,
+      "sha256": "9cce15f2e7c3b61c8496f92a7fa4cd2db42e9cf9f56d63b37c5da905ace8a3f5"
+    },
+    "/client/data/sfx/hulk/bossturretdeath.ogg": {
+      "size": 17239,
+      "sha256": "66dbc50a4878663474198cd9409b3fca86db5ff6cb9b74ba5456b54aee173f87"
+    },
+    "/client/data/sfx/hulk/bossturrethit.ogg": {
+      "size": 7074,
+      "sha256": "54bc581888380b9e59446a59dcf21763fabe6f15dadbd7bd603c3a81cef9359b"
+    },
+    "/client/data/sfx/hulk/bossx.ogg": {
+      "size": 22168,
+      "sha256": "7c7121b61a8523e7184700882cf0fcd05debe3bfd4de681930b835129577e8ce"
+    },
+    "/client/data/sfx/hulk/bulletgen.ogg": {
+      "size": 10863,
+      "sha256": "d1d6c1746c3f141f417b7a07f2c72fbc480b7bcbe172b89ef131e439e41ae242"
+    },
+    "/client/data/sfx/hulk/bulletshoot.ogg": {
+      "size": 12031,
+      "sha256": "4975d775f02b45317f27f0a54a3a00c8d649218da94f2ee28f1d0779f0af3647"
+    },
+    "/client/data/sfx/hulk/bullettelegraph.ogg": {
+      "size": 11984,
+      "sha256": "20a13cbb3edd5c0af43b89e07f6997e6805f4f42116838f393b8f6ebd2853548"
+    },
+    "/client/data/sfx/hulk/canisteractivate.ogg": {
+      "size": 9132,
+      "sha256": "f135a56e6fe769b2d6786b6176628eac3e855707c1abe54a95b4f579cd0248e1"
+    },
+    "/client/data/sfx/hulk/canisterdeath.ogg": {
+      "size": 12063,
+      "sha256": "b84fec8f5a20d7c49eb1091d34711fcb2da76ddfb1f25958ba3d050087668db3"
+    },
+    "/client/data/sfx/hulk/cranehookdeath.ogg": {
+      "size": 15523,
+      "sha256": "eccc335ec355948f0112f160164b02df885c272d78995e4902b45e342dada60a"
+    },
+    "/client/data/sfx/hulk/cranehookhit.ogg": {
+      "size": 5612,
+      "sha256": "dc427ea84251d634ef1731d592e8d8da094942b607f4aa171ce96d8750623177"
+    },
+    "/client/data/sfx/hulk/cratedeath.ogg": {
+      "size": 23603,
+      "sha256": "7d2cb6760bc7ab07f85ffd7c70bb3b02bbb7096f49b6121bda884363cf51f81b"
+    },
+    "/client/data/sfx/hulk/drop.ogg": {
+      "size": 6239,
+      "sha256": "eb014a4649b7d77f86075eef04873634b4bdb5d64050ed027bdd5d7fe923f2f8"
+    },
+    "/client/data/sfx/hulk/eland.ogg": {
+      "size": 8442,
+      "sha256": "a3b162e4fbe6349f56f647eae1e26142353394c5a9f31a776214a5bae0aaadec"
+    },
+    "/client/data/sfx/hulk/elizarddeath.ogg": {
+      "size": 13066,
+      "sha256": "2e1c0bd465cc84750cf601edcf0616c713be22026e9d18c87c9720dc39eaecaa"
+    },
+    "/client/data/sfx/hulk/elizardhit.ogg": {
+      "size": 9114,
+      "sha256": "a9629fbb2c9960d7e3822ec2dd09819c021bc783e4ef8bcd92391991d18aa45b"
+    },
+    "/client/data/sfx/hulk/energyconduitdeath.ogg": {
+      "size": 11374,
+      "sha256": "8284f6998029507bdc0d2f4a4776ba44bb93651775e85aa8f95f7459b6de9c45"
+    },
+    "/client/data/sfx/hulk/energyconduithit.ogg": {
+      "size": 6430,
+      "sha256": "4d01de34de3e5b77a6fb47511d61b168b171fdae65ec49aac09bc4c525b049ed"
+    },
+    "/client/data/sfx/hulk/epunch.ogg": {
+      "size": 8121,
+      "sha256": "c4683ea7e9add8197f566c61bedfa7e3736425ec1c84fc69e114fe9b710be8d6"
+    },
+    "/client/data/sfx/hulk/etail.ogg": {
+      "size": 8433,
+      "sha256": "baa8c0b5443b4e6db5cc4bcdb469cddfa01f2ed49c0b683fab166c9a03f26181"
+    },
+    "/client/data/sfx/hulk/grenadebounce.ogg": {
+      "size": 6440,
+      "sha256": "373dd6c0261f3e7d34fa2995a766d68399c0791a5292b2a860a6245298ab630a"
+    },
+    "/client/data/sfx/hulk/grenadex.ogg": {
+      "size": 12872,
+      "sha256": "22e00d1bb14f1697b6110d37e96a87778a10a991a279df2b706634d978c5ed9b"
+    },
+    "/client/data/sfx/hulk/land.ogg": {
+      "size": 10830,
+      "sha256": "73842afe3e6c888af6d6b86baaa48a69b5875510d1b41dcf488e97afb4bd2d79"
+    },
+    "/client/data/sfx/hulk/ledgeextend.ogg": {
+      "size": 17897,
+      "sha256": "9de4ec38355b600cc7e95f069744d35965b9360ce34b4d9fc10d124cb94ade12"
+    },
+    "/client/data/sfx/hulk/ledgeretract.ogg": {
+      "size": 18752,
+      "sha256": "c6cdbb88b30b99c9269521f31d2c5f920af1ec62a02ad6a0578e297756d1fd84"
+    },
+    "/client/data/sfx/hulk/lizarddeath.ogg": {
+      "size": 13818,
+      "sha256": "34208d2a115e2dbc1e84caa8794a7ff17b63bd3fda267826fd10e5fd292f19b9"
+    },
+    "/client/data/sfx/hulk/lizardhit.ogg": {
+      "size": 7016,
+      "sha256": "111ca8bbfb435990b1c26020335aee4aba0f2164beccd6f4fc48866e37efcac1"
+    },
+    "/client/data/sfx/hulk/loaderdrill.ogg": {
+      "size": 15514,
+      "sha256": "e416f489216a9d7c2a3206e6615697f9604153f83aaba4c8905a1cf4ff69bbc4"
+    },
+    "/client/data/sfx/hulk/loaderthrow.ogg": {
+      "size": 15572,
+      "sha256": "960086e996b7ea5a94c83026d6ac672782f9f59aef34c2608389e86b095f0469"
+    },
+    "/client/data/sfx/hulk/miniseekerdeath.ogg": {
+      "size": 8719,
+      "sha256": "5b54c0d8b5ed96a955a25fd16fc110f1ba31fb4c7fc2f671615c157b52158632"
+    },
+    "/client/data/sfx/hulk/miniseekergen.ogg": {
+      "size": 7428,
+      "sha256": "9c2df41ffb5569003ebdaac28bff58f205e43560b22b4974415a0155f30e41a8"
+    },
+    "/client/data/sfx/hulk/miniseekerhit.ogg": {
+      "size": 5383,
+      "sha256": "842a20f592edf12ed8b14b7596e069f47b8b05650dcf9ab9c9aeefe778f43e85"
+    },
+    "/client/data/sfx/hulk/missilegen.ogg": {
+      "size": 13467,
+      "sha256": "2062c98b0ca5f0ee8ed1f97941e092bec097540b775bc80b1e9efae010a3b862"
+    },
+    "/client/data/sfx/hulk/missilex.ogg": {
+      "size": 11114,
+      "sha256": "0ea629ebc870808a987bf1ee8f93108acfefcc683bf548aa7f5032c0afefa3d1"
+    },
+    "/client/data/sfx/hulk/mortaregen.ogg": {
+      "size": 10916,
+      "sha256": "a03daf23dc3aebae83ddbaa57ac9e241a46f889e3e0d6adf26760718cef3aa6c"
+    },
+    "/client/data/sfx/hulk/mortarex.ogg": {
+      "size": 9413,
+      "sha256": "d46ca98eb5e62376cc6bbe3ba6acde203fbc2df66806ccf3d2239f1bacc9c707"
+    },
+    "/client/data/sfx/hulk/mortargen.ogg": {
+      "size": 9520,
+      "sha256": "980d3e9e09491004e38483790663fddb268b803e0f1a0ab6fe800beb5b64d0e9"
+    },
+    "/client/data/sfx/hulk/mortarx.ogg": {
+      "size": 9786,
+      "sha256": "51f794cef7ac87e896c3cc4dc17a73d80a79f5c28e81ad4f7b7512664c2e873a"
+    },
+    "/client/data/sfx/hulk/panelclose.ogg": {
+      "size": 12146,
+      "sha256": "9c5e165d6bd6274b3baea662be513fc5338bf788fecbe196d88f0bed006581d5"
+    },
+    "/client/data/sfx/hulk/paneldeath.ogg": {
+      "size": 19199,
+      "sha256": "3c4e1b0120830667f76117e45f8c085854f048b9d918d8df48732e8ac812db68"
+    },
+    "/client/data/sfx/hulk/panelhit.ogg": {
+      "size": 8792,
+      "sha256": "6e2e3071e378d9f6aeaf37a3750b889b29e388903b24f30aad6eb2170c121bcd"
+    },
+    "/client/data/sfx/hulk/panelinvhit.ogg": {
+      "size": 7489,
+      "sha256": "5f31e67734fa478acafaa9a3343fdb71fad675c85294c2dab01c12a0e84c6bcb"
+    },
+    "/client/data/sfx/hulk/panelopen.ogg": {
+      "size": 8967,
+      "sha256": "21e44cf69a72b96508a382d89cda8c21dd42eca6df73a27480ff1a5f8c2eafd6"
+    },
+    "/client/data/sfx/hulk/plasmagen.ogg": {
+      "size": 8950,
+      "sha256": "83ab662ad276ab9f448defa54f7246b165abf0f3a9b598e17737e69e0287eb9a"
+    },
+    "/client/data/sfx/hulk/punch.ogg": {
+      "size": 8060,
+      "sha256": "fa35ff0e4b8fa136561b6b80fc4ac98e1ae3b50061959d1d34ea9a90f604c0c7"
+    },
+    "/client/data/sfx/hulk/scavengerloaderdeath.ogg": {
+      "size": 16583,
+      "sha256": "16966908b39cb52b25262c6ed15ab1c2c8c9b94646ddb2bfd66c027564ca7098"
+    },
+    "/client/data/sfx/hulk/scavengerloaderdie.ogg": {
+      "size": 14615,
+      "sha256": "b0070254b76f1838dd02db9abe3a9ec44a5a15992a8276361e1512fc6dc1ee54"
+    },
+    "/client/data/sfx/hulk/scavengerloaderhit.ogg": {
+      "size": 7518,
+      "sha256": "172cc9d7458a177f66bae9687e0fe64b24ffb3b7173c6d390c7ac5baff03d8da"
+    },
+    "/client/data/sfx/hulk/seekerdeath.ogg": {
+      "size": 36568,
+      "sha256": "69cce6ae3c2812bc1c98243ef473cdc656088481c171bc0a2875ee1278bd2f14"
+    },
+    "/client/data/sfx/hulk/seekerhit.ogg": {
+      "size": 7812,
+      "sha256": "486ea4eb3812fd5fe127c53ff82833a90d7179d1f4a376b6bff167827ae8b975"
+    },
+    "/client/data/sfx/hulk/seekerspawngen.ogg": {
+      "size": 10779,
+      "sha256": "b2a206e98342f8516b88c6e2ba2a20509f8a6c01766f9988389d374487112f09"
+    },
+    "/client/data/sfx/hulk/seekertelegraph.ogg": {
+      "size": 13151,
+      "sha256": "8dd9f6965ce9bc73bd71a6631698a4bdf2b6df38c732e037f1b1c592e455736f"
+    },
+    "/client/data/sfx/hulk/shotgungen.ogg": {
+      "size": 15656,
+      "sha256": "2efed6ab6965ea0d63e3423a3a89dee2c01fd570daff3ac3c66e76a63d384aea"
+    },
+    "/client/data/sfx/hulk/shotx.ogg": {
+      "size": 12999,
+      "sha256": "b67e3d025b30ab5747df3202505e5d5419edb4847d83b267bd448d921bb576bd"
+    },
+    "/client/data/sfx/hulk/switch.ogg": {
+      "size": 5885,
+      "sha256": "22f3015907d25e0d7d79cf2ddc1ae8f51b43ecf59965caf9bb5113523b862897"
+    },
+    "/client/data/sfx/hulk/tail.ogg": {
+      "size": 7833,
+      "sha256": "c3d98a4da7005537d547e792d9f409ced4813610670a6f0798664d46890f68d1"
+    },
+    "/client/data/sfx/hulk/teleport.ogg": {
+      "size": 10391,
+      "sha256": "e525f031740860475ac77cbf602a74f59ef12e8aaac9b3a0ea3fd4f2f86548e5"
+    },
+    "/client/data/sfx/hulk/throw.ogg": {
+      "size": 10269,
+      "sha256": "43815d2a63cc538670a67d989fba06962ac457d24a25f70b560494adfd9a253b"
+    },
+    "/client/data/sfx/hulk/wallgen.ogg": {
+      "size": 8190,
+      "sha256": "ef66f760c08869a62a8984e9f67f5e05169581d290683f4ae67f0ab44199249a"
+    },
+    "/client/data/sfx/hulk/wallsegmentdeath.ogg": {
+      "size": 16239,
+      "sha256": "af4efd4ec6b9ae9f2838f4ae5fef24d2a1999da043b2be206d4a8ba1889618a3"
+    },
+    "/client/data/sfx/hulk/wallsegmenthit.ogg": {
+      "size": 7727,
+      "sha256": "54e9587f4e7a37b245b983b649327f839d11cce4c0e6ca83fa7acfa3dddb6459"
+    },
+    "/client/data/sfx/ice/bugdeath.ogg": {
+      "size": 10753,
+      "sha256": "6a348a6abfd89da293a8887449848adfb906bff9350c2de5687fdce6fc868c3b"
+    },
+    "/client/data/sfx/ice/bughit.ogg": {
+      "size": 7327,
+      "sha256": "049b1d55eadbe1c65860ee043cc50b3bbeb1f2153373ba59b65e03c417202cf6"
+    },
+    "/client/data/sfx/ice/crossbeastdeath.ogg": {
+      "size": 22344,
+      "sha256": "0ebf16e94d8a05d7b77922193cce492fb59c936007443a4271bd505e55b81195"
+    },
+    "/client/data/sfx/ice/crossbeasthit.ogg": {
+      "size": 8176,
+      "sha256": "da6d9573013d664fae9f790ad35b504afbbc3ddecb43b09471a76a21d0c8ecc7"
+    },
+    "/client/data/sfx/ice/crossseed.ogg": {
+      "size": 16491,
+      "sha256": "449a3515ea6b532b13fd217f149a55117ed3beb89b6f32f5598d10cd35d333e3"
+    },
+    "/client/data/sfx/ice/crossx.ogg": {
+      "size": 13510,
+      "sha256": "65fa39d961849e54505a9e9ea63dd337501e6778c99d619fa808eae0911324be"
+    },
+    "/client/data/sfx/ice/debrisshake.ogg": {
+      "size": 7928,
+      "sha256": "8bd90fae5c11194f5fff44eab3ed484b9b68cbffdd0533d63e861e4bc6b0ea67"
+    },
+    "/client/data/sfx/ice/dinojump.ogg": {
+      "size": 16958,
+      "sha256": "14913c04084056e531bda6500bc41c6da7c93ff9aaea22a652cded3f34c269a1"
+    },
+    "/client/data/sfx/ice/genaxe.ogg": {
+      "size": 5934,
+      "sha256": "b8fedb01ff3c7df18124ea5533e0cfe67928b1f95b12b8ec4a31a149c7d4fb7a"
+    },
+    "/client/data/sfx/ice/genball.ogg": {
+      "size": 9857,
+      "sha256": "922dd6c9e48e7f8fc51eb51a703c75b4f2c908ff24969dc49ad8a4d0994642ea"
+    },
+    "/client/data/sfx/ice/genflame.ogg": {
+      "size": 11882,
+      "sha256": "d3729b5983694c80a0f4e056cf9059f7cf1bf0ff4b85092a57f6e6d98778522c"
+    },
+    "/client/data/sfx/ice/genrang.ogg": {
+      "size": 10804,
+      "sha256": "5bb308998d4d0caeed8778afd00f254c98f79b8f8fc99157844752091d578637"
+    },
+    "/client/data/sfx/ice/genshard.ogg": {
+      "size": 11173,
+      "sha256": "a989fa9e5ead2c7c660d6ae243813a86e40079f669d317b684cb86901c52e46f"
+    },
+    "/client/data/sfx/ice/genspine.ogg": {
+      "size": 9489,
+      "sha256": "851b623c4126bb6f84546e885576326f6dcdfbd286b7cb091c84dc2213c8994c"
+    },
+    "/client/data/sfx/ice/largea.ogg": {
+      "size": 11936,
+      "sha256": "b151393fd3daf1e5c63584789a20c5e0d3bd6eb5489e8d8b033d52416ebc56e3"
+    },
+    "/client/data/sfx/ice/maxehit.ogg": {
+      "size": 4998,
+      "sha256": "57bf1d2eba7cf73a13bd8a8d610cadcfb58a0a50b179ae32748cb11248fd02e2"
+    },
+    "/client/data/sfx/ice/mitedeath.ogg": {
+      "size": 10415,
+      "sha256": "ac0d40b4bc14b81e509be3c58656e3788d2dca3e8daf5b6fdd14ccc4bfce7479"
+    },
+    "/client/data/sfx/ice/mitehit.ogg": {
+      "size": 7859,
+      "sha256": "59d9db26036b870b488bdcb9766994fe0e7f59e3327127449ab2e48817561670"
+    },
+    "/client/data/sfx/ice/miteslash.ogg": {
+      "size": 4903,
+      "sha256": "737baca0106d4c5e136cdb26fd4cb4a146e661e4222b7164ef617a50c939a923"
+    },
+    "/client/data/sfx/ice/msswing.ogg": {
+      "size": 8131,
+      "sha256": "7153cd0afe4e4f5b35c01b5ddd5fd084dd30a5bf8f78b916eaef8060773ffba1"
+    },
+    "/client/data/sfx/ice/rdinodeath.ogg": {
+      "size": 19175,
+      "sha256": "2a98b8abc4378cbbba99ae0b7ec68e582236eb7b8faa54468c5d65720800ba27"
+    },
+    "/client/data/sfx/ice/rdinohit.ogg": {
+      "size": 6065,
+      "sha256": "e4f8b0cc286fa91f6a9be527b05743aeca438115a1b76eb999d168928859c9d4"
+    },
+    "/client/data/sfx/ice/smalla.ogg": {
+      "size": 9654,
+      "sha256": "fd80ad11323a032d5df89dc95246c6141c6dc213cfc1602db3781067a9ae92da"
+    },
+    "/client/data/sfx/ice/spinerdeath.ogg": {
+      "size": 12781,
+      "sha256": "013a6ff0c04b1aaa63c3ce020405e8f65236f7be7d96a2ebc7a91bc33c3aa0c8"
+    },
+    "/client/data/sfx/ice/spinerhit.ogg": {
+      "size": 6330,
+      "sha256": "ff328346c8f9290fe051a3c5be0842233da9148c132163810bc70ace5310c702"
+    },
+    "/client/data/sfx/ice/throwa.ogg": {
+      "size": 11548,
+      "sha256": "12c3a4be57aa5ccf4b835cc3ec003bd65021e21f998c97eb43d2144b450fe66f"
+    },
+    "/client/data/sfx/ice/throwballhit.ogg": {
+      "size": 12699,
+      "sha256": "42e1c8b9ac1c967b8ae815f31818265166504c01676836c5e0f94531071c4f1d"
+    },
+    "/client/data/sfx/ice/tunnelerdeath.ogg": {
+      "size": 13601,
+      "sha256": "d3809ac11e4608fda5b229344292462436005977cc241e94c5bf2cae1feba22e"
+    },
+    "/client/data/sfx/ice/tunnelerhit.ogg": {
+      "size": 8334,
+      "sha256": "09c2e98240089f97ce8a5735f0b0960b399bd26a68dbd6bfd1790a2c93a20b5a"
+    },
+    "/client/data/sfx/ice/turretdeath.ogg": {
+      "size": 18253,
+      "sha256": "224c6dc5dc34740158efac54ddbebc9d14827b54365bb3ae05efa73361576d71"
+    },
+    "/client/data/sfx/ice/turrethit.ogg": {
+      "size": 6330,
+      "sha256": "ff328346c8f9290fe051a3c5be0842233da9148c132163810bc70ace5310c702"
+    },
+    "/client/data/sfx/ice/yetikongdeath.ogg": {
+      "size": 21156,
+      "sha256": "e6a01de05b8c9f4ada65d7ee116dc883a4375abfba32677281f00d932719b230"
+    },
+    "/client/data/sfx/ice/yetikonghit.ogg": {
+      "size": 8243,
+      "sha256": "291f86f311f558a31f0b4f17e13630f16cfe462129c9072e75d3428141a0e05d"
+    },
+    "/client/data/sfx/interact/chest.ogg": {
+      "size": 8826,
+      "sha256": "2b0a051431cf7ced61bbee4b7ff35fb8e432b91491a4fbfcc69927ced0ebbc5b"
+    },
+    "/client/data/sfx/interact/purchase.ogg": {
+      "size": 6158,
+      "sha256": "3790c28ef05229b4e851cefa251207fa82adb27561766173d8cc81754faad050"
+    },
+    "/client/data/sfx/jungle/bossheadhit.ogg": {
+      "size": 9144,
+      "sha256": "1841ccd0739f7fd6e285da04cbd0ae1396b38dd38d4ebecd6f53ea81b6afde2b"
+    },
+    "/client/data/sfx/jungle/bossscream.ogg": {
+      "size": 21771,
+      "sha256": "f14cd527c56823fc032db4d4c38b193bd7ccefb8841e2bb83737010abbbcb506"
+    },
+    "/client/data/sfx/jungle/bosssegmenthit.ogg": {
+      "size": 7333,
+      "sha256": "bb7b4652ab7aa4fe266351208c90384e170d9bfae131d279e232493239d151a5"
+    },
+    "/client/data/sfx/jungle/bossshoot.ogg": {
+      "size": 12391,
+      "sha256": "bab25af655a618c933dc0b86aaf7a901a797c3e3ac2d59b8477a5c14962f98a7"
+    },
+    "/client/data/sfx/jungle/bosstailhit.ogg": {
+      "size": 8291,
+      "sha256": "88a2427775e22bfc0c59124df0a0bd75900a1bfff7abf799f1f83ceb5e7a34c3"
+    },
+    "/client/data/sfx/jungle/bossx.ogg": {
+      "size": 64007,
+      "sha256": "0074542450a47cc2bde8ed951c2d780d27667178fffc40b073bd4da79b79485e"
+    },
+    "/client/data/sfx/jungle/chrysalisdeath.ogg": {
+      "size": 11766,
+      "sha256": "44ffa7dfcf7b0c968bfa570da9a23c916ab5d4f277da73339e003fd37b599322"
+    },
+    "/client/data/sfx/jungle/chrysalishit.ogg": {
+      "size": 6344,
+      "sha256": "25e2ee79aaecd030759d71e86162198dfb6bf218bd9b025d1c2901f6a24a1bc0"
+    },
+    "/client/data/sfx/jungle/chrysalispop.ogg": {
+      "size": 13074,
+      "sha256": "7d631acb15b6e3661ae8cc180fa1baa3a9897422d3818fd2c349a79cae78b8c6"
+    },
+    "/client/data/sfx/jungle/dropsgen.ogg": {
+      "size": 10043,
+      "sha256": "7f874f126f847c4cc71c691cdd59d4e1dacc05d180de957613e340ff7d4c5b71"
+    },
+    "/client/data/sfx/jungle/eggcrack.ogg": {
+      "size": 11313,
+      "sha256": "732ef870cbae4a3fec1c44d893ec31a331c68c524ea003879080afdcdee5f3fc"
+    },
+    "/client/data/sfx/jungle/egggen.ogg": {
+      "size": 8043,
+      "sha256": "4e7304520edbcdbc73c254d450fa09cdffaaaddfed90380d900d067d3f1b3419"
+    },
+    "/client/data/sfx/jungle/flyingturtleinvhit.ogg": {
+      "size": 4334,
+      "sha256": "526be3fd9f3ce1aa993058a78766d83fbeccf24c58af8522d328ccd24b2a8d88"
+    },
+    "/client/data/sfx/jungle/frogdeath.ogg": {
+      "size": 14960,
+      "sha256": "656bd9e84ce7f9904da57275c38de406dffad7cdbb7afb12f2edd6f5d9595823"
+    },
+    "/client/data/sfx/jungle/froghit.ogg": {
+      "size": 6972,
+      "sha256": "9463f0116bb0b5b299395fdeff19751c281076f7c6ee1be3074c2b912420765e"
+    },
+    "/client/data/sfx/jungle/frogjump.ogg": {
+      "size": 8440,
+      "sha256": "f06e1665a0338818d2c479be2b76e1d2dada3f2fc21f2a828b61b0ae11270d05"
+    },
+    "/client/data/sfx/jungle/frogtongue.ogg": {
+      "size": 17285,
+      "sha256": "2d1297e9337474a6b192d1f16a4c123429c7d0b6d93934c54a549d5362491c85"
+    },
+    "/client/data/sfx/jungle/gnatsdeath.ogg": {
+      "size": 15137,
+      "sha256": "96f3bc2b3908930063fa841a91a03a3bf0251d0d85e047eb2284360d0157ceab"
+    },
+    "/client/data/sfx/jungle/gnatshit.ogg": {
+      "size": 6809,
+      "sha256": "f8da8a3d5e24c6b2d1e125de182519f77e69f9a198d1cc2ab1ac42f9817f5a0a"
+    },
+    "/client/data/sfx/jungle/gnatssplit.ogg": {
+      "size": 11196,
+      "sha256": "cd1261de67879649087e6c60f1c533a4cb2413bf6f6d4affaf88c887a62ff81d"
+    },
+    "/client/data/sfx/jungle/hopperdeath.ogg": {
+      "size": 14038,
+      "sha256": "64a0c83c9b20f105a447c2b231cc36c598d09c515f018996d97b7decc14d7324"
+    },
+    "/client/data/sfx/jungle/hopperhit.ogg": {
+      "size": 8018,
+      "sha256": "ea16195a8ec2be9efbba892e42a446cf85c0f8eb2e258ce56af2ba23c944b70b"
+    },
+    "/client/data/sfx/jungle/hopperhivedeath.ogg": {
+      "size": 13441,
+      "sha256": "0de62879e0ec03b585555aea0c7ec62804a1e5a91ea0f3f29c082273b0484256"
+    },
+    "/client/data/sfx/jungle/hopperhivehit.ogg": {
+      "size": 8834,
+      "sha256": "3be40f630e583954c7cf6693f9f4dbb8c45279987102113b2735755a8efd2b49"
+    },
+    "/client/data/sfx/jungle/hopperjump.ogg": {
+      "size": 7658,
+      "sha256": "e7061cb98fb1cdbcc50f2a97ea99da99d4f7a7b6efa5ed774891cdb34fa05728"
+    },
+    "/client/data/sfx/jungle/hopperspawn.ogg": {
+      "size": 12530,
+      "sha256": "019ad165029159cdd06a71fc73555e31da8793b0f88babb870e6cdd16f4f5a53"
+    },
+    "/client/data/sfx/jungle/hopperxgen.ogg": {
+      "size": 16361,
+      "sha256": "af6fb5966da5154495e6f81f3a5d392f0d72164672f06e052c121482fb8b17a0"
+    },
+    "/client/data/sfx/jungle/larvadeath.ogg": {
+      "size": 7142,
+      "sha256": "e68ec3ae180b83958ea7b694171efc0993515527874e9fe2f61895a8aef89dbe"
+    },
+    "/client/data/sfx/jungle/larvahit.ogg": {
+      "size": 5322,
+      "sha256": "fec09b83e6a2dbc1edde562d0742e2c8baa179a10b0d358d2aaa03aeeea7bba0"
+    },
+    "/client/data/sfx/jungle/petalclose.ogg": {
+      "size": 11236,
+      "sha256": "e7539b04994954f9067f76d07f7893c01033f43ef192a06071a598bbe332683f"
+    },
+    "/client/data/sfx/jungle/petalhit.ogg": {
+      "size": 8581,
+      "sha256": "adbd82dcce3a7164563d4ab432e960af7c5967e1c2d330f5486feef2780dbb35"
+    },
+    "/client/data/sfx/jungle/petalopen.ogg": {
+      "size": 11326,
+      "sha256": "107674365183951b9ab2037a380e0a5e80c0d115db234d2528536ef845e501ef"
+    },
+    "/client/data/sfx/jungle/pincerattack.ogg": {
+      "size": 17616,
+      "sha256": "15d2eb17af2b7f099b88c0cb8566cca393f3dd88353fb756ba84928cf9d77937"
+    },
+    "/client/data/sfx/jungle/pinwheeldeath.ogg": {
+      "size": 12555,
+      "sha256": "296e30305e5f1f337509bc877375d313e895ae9393d2b9bb70ddfa4f3006f4f7"
+    },
+    "/client/data/sfx/jungle/pinwheelhit.ogg": {
+      "size": 5529,
+      "sha256": "931b6cdbc6826a6a0206e693c2b905468757c0dc64f157ac1d61d1562d9371d8"
+    },
+    "/client/data/sfx/jungle/pollengen.ogg": {
+      "size": 16764,
+      "sha256": "ca9b5750c6a81f8875ce17f3b9162821da3bedc40cde3ed356b221c2e4fe0174"
+    },
+    "/client/data/sfx/jungle/shotgen.ogg": {
+      "size": 11996,
+      "sha256": "a62f3336e965708413c14b32fca392ccea3dd2b55993c88a89458c6d9858a691"
+    },
+    "/client/data/sfx/jungle/shotsplit.ogg": {
+      "size": 8414,
+      "sha256": "c6333e1d8bfd6a3dfd5a54938605a119236258ecfca55031da7c2fbd97eb2ece"
+    },
+    "/client/data/sfx/jungle/skitterdeath.ogg": {
+      "size": 7431,
+      "sha256": "77f5afa99f5a023059b8ea1c78391b80d8f81e886057604a36599a64a24fadff"
+    },
+    "/client/data/sfx/jungle/skitterhit.ogg": {
+      "size": 6235,
+      "sha256": "7b9abe18c49a1b4b50784d4281077d366b9970f0bbf381003920357f62f4ab6a"
+    },
+    "/client/data/sfx/jungle/slinkymove.ogg": {
+      "size": 14433,
+      "sha256": "264185fd4358e935a42750ed25193e5f8c7291ea087a393fbd17af39e2d9f32b"
+    },
+    "/client/data/sfx/jungle/slinkypartdeath.ogg": {
+      "size": 11212,
+      "sha256": "84d2a7065c5c57aa46b5758dd8de4cd862bf3831a63a32a89092ff3e19a0dcbf"
+    },
+    "/client/data/sfx/jungle/slinkyparthit.ogg": {
+      "size": 7308,
+      "sha256": "2ccda0f75e2acd624e1bd0be67068d0a209399f217e41a7f4148af3a9732bfd6"
+    },
+    "/client/data/sfx/jungle/snakedeath.ogg": {
+      "size": 16466,
+      "sha256": "dfcc7373bcc8b1efad77ac744a5c02994aa63b03c553f27f77afdae376d215a0"
+    },
+    "/client/data/sfx/jungle/snakehit.ogg": {
+      "size": 8741,
+      "sha256": "0af0862943ebfcf981a3f510982d40b2f9dab228cbdf920048f97b2a78ac0b08"
+    },
+    "/client/data/sfx/jungle/snakeinvhit.ogg": {
+      "size": 5245,
+      "sha256": "713359d23066004121816a77285dd963e1ea0111e0f969d3c03642b26e554dfb"
+    },
+    "/client/data/sfx/jungle/spawnsnake.ogg": {
+      "size": 15594,
+      "sha256": "d4eb738ce11f22e56fd52b189250c72f1378ea57c632d7d602257e5dd6c5dc0f"
+    },
+    "/client/data/sfx/jungle/spiderdeath.ogg": {
+      "size": 13578,
+      "sha256": "09864e234a3b23afb4f24b88ee212537570e5e4d936ef3fa9a5b19d60c314039"
+    },
+    "/client/data/sfx/jungle/spiderdrop.ogg": {
+      "size": 12064,
+      "sha256": "becaa69c0ea67303444983362ed6d0c9e6dda94ddd20863093cf08b0de4802c1"
+    },
+    "/client/data/sfx/jungle/spiderhit.ogg": {
+      "size": 6850,
+      "sha256": "75ee918690680600dfec7105f4959554737b3ca4a256a573ece7dbfc06e58576"
+    },
+    "/client/data/sfx/jungle/spitterdeath.ogg": {
+      "size": 15196,
+      "sha256": "aceb3d51b7f4f32046660b679dca905ebdfd502a5ab9a0d6476f1a1b2508d318"
+    },
+    "/client/data/sfx/jungle/spitterhit.ogg": {
+      "size": 6993,
+      "sha256": "906d71659233564bbc0fc5f9863f654aac811c01bd00eb65ab8b980a3478c276"
+    },
+    "/client/data/sfx/jungle/stingergen.ogg": {
+      "size": 12983,
+      "sha256": "c2e2f533ad73e23109efe68d0def4b6a8549ecd1c32e19d02fa33900016620d4"
+    },
+    "/client/data/sfx/jungle/stonepusherinvhit.ogg": {
+      "size": 7551,
+      "sha256": "31a0e934a9b71f58371a8683289257daa0201eae83263bdeb32a56d1450b646d"
+    },
+    "/client/data/sfx/jungle/swirlbdeath.ogg": {
+      "size": 11459,
+      "sha256": "e9f82d2dbfa47d1f9a17013e5c8a7377c2edd71d31f3c0640e364718eeef5e4f"
+    },
+    "/client/data/sfx/jungle/swirlbhit.ogg": {
+      "size": 7572,
+      "sha256": "1301f266e909eee7bed5240c479e3fec6205f6a8594583339d1d869c0a70867d"
+    },
+    "/client/data/sfx/jungle/swirlbshoot.ogg": {
+      "size": 8455,
+      "sha256": "df5492d04550af8dba8ee7d7f2a18fcb7fef4d1193700ab6be2a60222f2a6a23"
+    },
+    "/client/data/sfx/jungle/swirldeath.ogg": {
+      "size": 29804,
+      "sha256": "917f409e7d15e4a484edbf3b89e70a973951df97f9a7ab00a1a47f70761e038f"
+    },
+    "/client/data/sfx/jungle/swirlmouthhit.ogg": {
+      "size": 9709,
+      "sha256": "9a5103af5b8920a844286774cc34f55d037166e905e08dcd238109621ca22d89"
+    },
+    "/client/data/sfx/jungle/swirlmouthinvhit.ogg": {
+      "size": 5278,
+      "sha256": "1f3fc2473eb505ac33d0a073c9c3fdb7b8699d51d1a245884cd4bc18c6916154"
+    },
+    "/client/data/sfx/jungle/turtleheaddeath.ogg": {
+      "size": 14671,
+      "sha256": "bf108908c53723ed7c502678d0702999e70c9d5c142d91dfbc74e33bab209b3b"
+    },
+    "/client/data/sfx/jungle/turtleheadhit.ogg": {
+      "size": 8449,
+      "sha256": "b54c7088d2a37921ea638cbe28418dc218ae937396ce930ef433d4709ded4e97"
+    },
+    "/client/data/sfx/jungle/waspdeath.ogg": {
+      "size": 16783,
+      "sha256": "b941d3a7add2c941a554a5950b2285c24c9547ac8727c82c5c323628121344c3"
+    },
+    "/client/data/sfx/jungle/wasphit.ogg": {
+      "size": 7848,
+      "sha256": "dbc11c6bc8fb3ba6a5491e40563413bbe132508b2769088af6d32f2f4b272b43"
+    },
+    "/client/data/sfx/lab/bbullet.ogg": {
+      "size": 12361,
+      "sha256": "260b7fddda1c231dddaa30dc6fa61fe946287660e4870c1c0f065afd2012fe22"
+    },
+    "/client/data/sfx/lab/bdooropen.ogg": {
+      "size": 35255,
+      "sha256": "1c5a5d7a39061e262f991d8ec24ab43f39a41131b06c461cd9699777641b9264"
+    },
+    "/client/data/sfx/lab/blaser.ogg": {
+      "size": 19990,
+      "sha256": "c8483076445a52fe86c6c2fd9af06d4816eb72c5c95094560781f4956070b514"
+    },
+    "/client/data/sfx/lab/bossx.ogg": {
+      "size": 17717,
+      "sha256": "cd526076205f59ca1642dc9ad28cf8fd79f720f62fa49fe367370eafa5fc5fe4"
+    },
+    "/client/data/sfx/lab/bramble.ogg": {
+      "size": 11159,
+      "sha256": "ba00c6b8dd9a59d582664440040bb1db1c184464cd173df4a1edc3a399f4bbef"
+    },
+    "/client/data/sfx/lab/brambledeath.ogg": {
+      "size": 7238,
+      "sha256": "f63f0b4cd1ab688bdb5d092735f52de3fedf8846d5b19f7e58fca02744f5a1de"
+    },
+    "/client/data/sfx/lab/bramblehit.ogg": {
+      "size": 6331,
+      "sha256": "eeaffcd47668b6f9eb0a8cf183c641506b6cf532218c449e9ad9f5c48ee888d0"
+    },
+    "/client/data/sfx/lab/brambleshielddeath.ogg": {
+      "size": 14610,
+      "sha256": "82480680d9bb74b226126fab9be1e2888daae1e438f45cc642aaa05028baa4bc"
+    },
+    "/client/data/sfx/lab/brambleshieldhit.ogg": {
+      "size": 8509,
+      "sha256": "ce1b0c364567947c4b905cb1f5115cf67afe832954326ec4549df660eb8f97f6"
+    },
+    "/client/data/sfx/lab/brise.ogg": {
+      "size": 19517,
+      "sha256": "504d03d93093189d670652925b27295156157521744621e7bccdf0e19cdcb7e0"
+    },
+    "/client/data/sfx/lab/bulkhead.ogg": {
+      "size": 24451,
+      "sha256": "14b049a4672fdde811bd92a590f3fa6cd560aeeaa63c3d6090a844a853d7bbf7"
+    },
+    "/client/data/sfx/lab/bulkheaddown.ogg": {
+      "size": 7495,
+      "sha256": "7e3b917e77d15848b78a8169fc7b1119cb0b946d1273abbc90f0762d1b0a094c"
+    },
+    "/client/data/sfx/lab/bulkheadup.ogg": {
+      "size": 7558,
+      "sha256": "d833a63907b01f472961cf0b913cebea2f8876d6d9fb57946936edec08025ffd"
+    },
+    "/client/data/sfx/lab/bullet.ogg": {
+      "size": 9198,
+      "sha256": "a3c4c2315b82154f3b5326238c387ef6e38c0c91e77216c86741965672ae79d2"
+    },
+    "/client/data/sfx/lab/chargerdeath.ogg": {
+      "size": 16919,
+      "sha256": "188859c9e13eeca6170084108e639eae37c8691bd2acf80dcbcee93692c4cb4d"
+    },
+    "/client/data/sfx/lab/chargerhit.ogg": {
+      "size": 6322,
+      "sha256": "8d925eaf07225beae8cc19f5c9f245c553611dfaedf11cf0173bcd083aed806f"
+    },
+    "/client/data/sfx/lab/clingvinedeath.ogg": {
+      "size": 13945,
+      "sha256": "33029ae380825101d00216d9c0da9b21eafb3d9f0728b39bc073fd31996a1875"
+    },
+    "/client/data/sfx/lab/clingvinehit.ogg": {
+      "size": 7413,
+      "sha256": "287c5c40a90e127ddd7d56a793806873c48eda338926712cc651a396c0d5980a"
+    },
+    "/client/data/sfx/lab/creeparmdeath.ogg": {
+      "size": 12344,
+      "sha256": "6776421fd85aab219b5e5577731f548b102571f0bd68b457b7800223fa355d0d"
+    },
+    "/client/data/sfx/lab/creeparmhit.ogg": {
+      "size": 9250,
+      "sha256": "1efda0a63b0e1d0fad95725990ce9e8abb75fdb2166ef6e18ee15231dc568454"
+    },
+    "/client/data/sfx/lab/creepingmolddeath.ogg": {
+      "size": 16999,
+      "sha256": "776b502dd1c11df9199aba2fb1e33efbb853167002477a39d0386b78542e94c9"
+    },
+    "/client/data/sfx/lab/creepingmoldhit.ogg": {
+      "size": 7185,
+      "sha256": "630a52acf49440bc8394b2b372982b6c046ee1edb06249196950f265df699704"
+    },
+    "/client/data/sfx/lab/cshieldinvhit.ogg": {
+      "size": 7369,
+      "sha256": "767ac0e0f2257e190d3f3b3e5a931eb5a9eccc00a4879bdd77e84e3872b53526"
+    },
+    "/client/data/sfx/lab/cvineregen.ogg": {
+      "size": 14395,
+      "sha256": "346db37977a484f02fad42f1186d021339784e6569cde0c5f35fb962a6ef0b8d"
+    },
+    "/client/data/sfx/lab/eatercritspotdeath.ogg": {
+      "size": 15046,
+      "sha256": "12d08a7a25987cb8c76ef2972a5c66235b3dbb498667e118ffb986fbb3b6e6c0"
+    },
+    "/client/data/sfx/lab/eatercritspothit.ogg": {
+      "size": 8561,
+      "sha256": "e6deb7a9509adb37b0e66df354550cd8cab10614f24c608db49b0f67d37d7846"
+    },
+    "/client/data/sfx/lab/epmove.ogg": {
+      "size": 9002,
+      "sha256": "8449aa15c901e698062492b1f696d5dc15f012017a5cfeade1bee93105b228e6"
+    },
+    "/client/data/sfx/lab/epturretdeath.ogg": {
+      "size": 18261,
+      "sha256": "bfb5dacfab7b860b1ca8556d6f6cc49885c9bd99eb6e82be40c7ede14fa7d35c"
+    },
+    "/client/data/sfx/lab/epturrethit.ogg": {
+      "size": 7914,
+      "sha256": "d0eaac845dfaf029c9c5a93d52e9c9d5b12ad31e8560467bc39674bf4f1bfc93"
+    },
+    "/client/data/sfx/lab/epulse.ogg": {
+      "size": 27427,
+      "sha256": "fe14c1cc8996c4ec19206b21c4199463036e77d529029664b3b9289c7f86435c"
+    },
+    "/client/data/sfx/lab/flower.ogg": {
+      "size": 11754,
+      "sha256": "97a3c3dbd51fb2d11bff4daea33f420fc8d4ff4e26786669518366628edb9406"
+    },
+    "/client/data/sfx/lab/flowerdropperdeath.ogg": {
+      "size": 15439,
+      "sha256": "49a46b86b3c44e056decaafd8548bb70f9fc0448ccd7e419d3ec10242ccfd3c4"
+    },
+    "/client/data/sfx/lab/flowerdropperhit.ogg": {
+      "size": 5833,
+      "sha256": "b8a40fd06140e5d119bc31e50baa40b364c9ca4132ea6b6c59becb872001076b"
+    },
+    "/client/data/sfx/lab/flowerregen.ogg": {
+      "size": 18028,
+      "sha256": "119487487bc7553362baf8838176d702af4cd54559722de1ea6d1c3ba03268e2"
+    },
+    "/client/data/sfx/lab/flowerx.ogg": {
+      "size": 14376,
+      "sha256": "3f363d611e6487cc1748fe7ce7a9215c4c52bb22b0c45345347e19da300f1917"
+    },
+    "/client/data/sfx/lab/leaf.ogg": {
+      "size": 8394,
+      "sha256": "07c5ad4ecf794a05b490547b84c03bb95ea7973c708ff6a72aba4d4737f12531"
+    },
+    "/client/data/sfx/lab/leafdeath.ogg": {
+      "size": 10467,
+      "sha256": "37e9cc9b6a2d881549d22770ee34f38749ecc4a1aee3e2cbc12b2944d4909726"
+    },
+    "/client/data/sfx/lab/leafhit.ogg": {
+      "size": 6912,
+      "sha256": "3c889a657c808557ccb923e317522da875a43745e2f8fed0ee41556f5bdb0209"
+    },
+    "/client/data/sfx/lab/meleavesinvhit.ogg": {
+      "size": 5546,
+      "sha256": "e8edb809a11018dbed41caaba154af34555ea4779699ccd0fe3568399211d293"
+    },
+    "/client/data/sfx/lab/midbossdeath.ogg": {
+      "size": 32520,
+      "sha256": "bd169acd296480374e990e4bf2d3a96c9348d9c0b96366109e40110930973d9e"
+    },
+    "/client/data/sfx/lab/midbosshit.ogg": {
+      "size": 7586,
+      "sha256": "af4d6617f33bdd97bb8d93196ab3a3cf5682b60ebd7726a0fb47e3b709a3584c"
+    },
+    "/client/data/sfx/lab/midbossinvhit.ogg": {
+      "size": 4970,
+      "sha256": "2d766bd3a43ad83d1ef5e031d35767f44a9637f41c4249a1a161a43854933980"
+    },
+    "/client/data/sfx/lab/plantsnakedeath.ogg": {
+      "size": 13385,
+      "sha256": "2148dee4eed7969a86f2a13464b7b49f4dcd479f385fb1e143423eac3bc1d8c9"
+    },
+    "/client/data/sfx/lab/plantsnakehit.ogg": {
+      "size": 6712,
+      "sha256": "2c2676394f596c00b4be11bbd1339b88c51e13eb885a13075bd9da04cb3738fa"
+    },
+    "/client/data/sfx/lab/pogo.ogg": {
+      "size": 8544,
+      "sha256": "21d24f4bfb0adf90a7e17cb945979377befb4b78ae711d214c0c81fe2553129e"
+    },
+    "/client/data/sfx/lab/pogozombiedeath.ogg": {
+      "size": 14862,
+      "sha256": "70fe979c4440e3c51b17685f3574b0ad4eb9d2fe788af3a591c469921a90b334"
+    },
+    "/client/data/sfx/lab/pogozombiehit.ogg": {
+      "size": 8225,
+      "sha256": "5e3b5de8043aa433f4a235df2b7947fb8c0a2a7cdf7a9103006a6e2bc9314aac"
+    },
+    "/client/data/sfx/lab/pplatetrigger.ogg": {
+      "size": 7300,
+      "sha256": "813c844662ee1560d7332d0a5ffdd53b916ce7d1b406a069b776f730775a851b"
+    },
+    "/client/data/sfx/lab/pulsecharge.ogg": {
+      "size": 14073,
+      "sha256": "57dc36460dd47e438e08997e8e1dcbefe13749ceeac79fb915b7fc93b44e27ea"
+    },
+    "/client/data/sfx/lab/rapidattacktell.ogg": {
+      "size": 17287,
+      "sha256": "73760129ee93e38989a9ac251b9d665bf587a8b7f10f148936e313ea7a8759a5"
+    },
+    "/client/data/sfx/lab/rise.ogg": {
+      "size": 15194,
+      "sha256": "dadec672bc0fb372609d1cdb54bdff48110f2dac6b014e090ebb9e79ae565c59"
+    },
+    "/client/data/sfx/lab/risingzombiedeath.ogg": {
+      "size": 16004,
+      "sha256": "6b539af7bbc7a042d66ffac00b0ee96622b7e2d492a26c4fd8cb6c1d4788d0d9"
+    },
+    "/client/data/sfx/lab/risingzombiehit.ogg": {
+      "size": 6721,
+      "sha256": "3e59bb75c44eab01455936b88654a6d69b7807ee614db0b998e57c19f15f8466"
+    },
+    "/client/data/sfx/lab/rovingturretbasedeath.ogg": {
+      "size": 20738,
+      "sha256": "b0eab9f409006a0419d7c79b8a4a2ed3762dca356d9a056da6ec54fdf4d72da7"
+    },
+    "/client/data/sfx/lab/rovingturretbasehit.ogg": {
+      "size": 9237,
+      "sha256": "a9073fecb0640aeb3bca9c6598c1e97e750f611be9b496ca112dfb622f92959c"
+    },
+    "/client/data/sfx/lab/sbullet.ogg": {
+      "size": 10225,
+      "sha256": "88e7bca1e331f03ba6a15f5fcfce1e2958ac5f49377c29838dfd4730706f1cbd"
+    },
+    "/client/data/sfx/lab/seed.ogg": {
+      "size": 8427,
+      "sha256": "c957c16e81391d2208a200f6b2b480a7f700301753b4b2cc0acbab302d40f2c7"
+    },
+    "/client/data/sfx/lab/seekerc.ogg": {
+      "size": 12407,
+      "sha256": "fb165faacf86f07a94c2b2a91c9b744fdee46a2ff053d5a5831719c32de4db80"
+    },
+    "/client/data/sfx/lab/seekerdeath.ogg": {
+      "size": 19874,
+      "sha256": "34c9c588fc05c92fe6fed73684a7d1e2084710d348bdd6254e1d47ec69255f1d"
+    },
+    "/client/data/sfx/lab/seekerhit.ogg": {
+      "size": 7419,
+      "sha256": "020e2f879b503961d3fc5b484b146608558c198c42c6491f9276a94e3d174b54"
+    },
+    "/client/data/sfx/lab/seekerx.ogg": {
+      "size": 14003,
+      "sha256": "d87819fea581c43c373e706dba74510f1556c53755cb2bd4efd934282ba41fc5"
+    },
+    "/client/data/sfx/lab/shamblerattack.ogg": {
+      "size": 17254,
+      "sha256": "6b73d491a99f9e573c80f2cf6583ff0bae319577aef1dd3b552a7f29ed3371b6"
+    },
+    "/client/data/sfx/lab/shamblerdeath.ogg": {
+      "size": 13853,
+      "sha256": "c479cb1ea90b924a0957bc42d809f7fbb36127ecf600496241ba05c3e9998eb1"
+    },
+    "/client/data/sfx/lab/shamblerhit.ogg": {
+      "size": 6108,
+      "sha256": "a23fe373426843c17337e9c23d55215397545f5d70fd30c64def869d49e5d1d9"
+    },
+    "/client/data/sfx/lab/snakeattack.ogg": {
+      "size": 11313,
+      "sha256": "5819ed08d5aa22acf9b05870a09613618ab75289c9b552ed2a3b9971eb1d0a7e"
+    },
+    "/client/data/sfx/lab/snakeregen.ogg": {
+      "size": 17320,
+      "sha256": "5f860a77c152fe03ebc5bd7a79a08f22b71463e8199b04f2e11a15f19ff30fcc"
+    },
+    "/client/data/sfx/lab/switch.ogg": {
+      "size": 6223,
+      "sha256": "a9554ee9bc549a0af2a4973e288927623d67c79763971890933124dc9bcf3bfe"
+    },
+    "/client/data/sfx/lab/swoopingmolddeath.ogg": {
+      "size": 7916,
+      "sha256": "b4efa8620fc0becddc3b711388ef2a8280b9b2eec50fff936c6dbe0a494ceb0a"
+    },
+    "/client/data/sfx/lab/swoopingmolddrop.ogg": {
+      "size": 7935,
+      "sha256": "811b55f66afee0f55e507053bfe656997383eb67bb59065babe260d519471f86"
+    },
+    "/client/data/sfx/lab/swoopingmoldhit.ogg": {
+      "size": 6768,
+      "sha256": "d1bea93b89ee4aaa67f62c2924b5e61c9b0883eb6caca9fef96216eb2dc3f995"
+    },
+    "/client/data/sfx/lab/thumper.ogg": {
+      "size": 11590,
+      "sha256": "1aee38d00477b321da4da654c96275ae4e247b02fb4021720bec852c8b962e2c"
+    },
+    "/client/data/sfx/lab/trap.ogg": {
+      "size": 9381,
+      "sha256": "b97e4d8d2f832c25d8e82210c757bca3709f55f9ff3806738b94c333df97370a"
+    },
+    "/client/data/sfx/lab/tumbledeath.ogg": {
+      "size": 14736,
+      "sha256": "a51de6f14a95c6d31a905d1f8366ae1a50389bd9ce389373b92dcf7dc8e72745"
+    },
+    "/client/data/sfx/lab/tumblehit.ogg": {
+      "size": 9144,
+      "sha256": "f4da0e490923c6026b5f9bb24467e66372772267e760b1facdabbe24537dc6e5"
+    },
+    "/client/data/sfx/lab/turretdeath.ogg": {
+      "size": 16391,
+      "sha256": "e32f39091c72a1e45ddb44aaa1cdde21e743394877584f7f6e2301f2dccf7b02"
+    },
+    "/client/data/sfx/lab/turrethit.ogg": {
+      "size": 8968,
+      "sha256": "3d17fa1b303dfa0d82045f832419600fc9232f0c50b205bf9f70a66f97a00222"
+    },
+    "/client/data/sfx/lab/vcritspotdeath.ogg": {
+      "size": 16231,
+      "sha256": "e08f956640e77fe70a90afab9dbb72a9e02f784cae0362d3256ff22a11b944ee"
+    },
+    "/client/data/sfx/lab/vcritspothit.ogg": {
+      "size": 6279,
+      "sha256": "9f386ab8648132bd8672bb191d4808102b5daa39ca1913837b0c3ed0ac97a61c"
+    },
+    "/client/data/sfx/lab/vflapinvhit.ogg": {
+      "size": 5318,
+      "sha256": "a4585f31a7865949d9d22517e71e8e509aeb68848948177fb7289c3c0a3ad2af"
+    },
+    "/client/data/sfx/lab/zomputerdeath.ogg": {
+      "size": 25171,
+      "sha256": "de21ff17440b95cd4f37244524ecf2ba95c1b56e92484a2f877299d4ac9807f2"
+    },
+    "/client/data/sfx/lab/zomputerhit.ogg": {
+      "size": 8533,
+      "sha256": "53cfda191faa68e67b28d0ad85085068b924f3b1a4e35a7d17c7dccf20e0b4e8"
+    },
+    "/client/data/sfx/lab/zshielddeath.ogg": {
+      "size": 13922,
+      "sha256": "466e600679dda2687c5f93b377d1376bf5cf94346294c758d172cc0dc90beeef"
+    },
+    "/client/data/sfx/lab/zshieldhit.ogg": {
+      "size": 5539,
+      "sha256": "705561c204cffcfc21f8991ba4b771a1f095a4ad6a26eca6462502d36a276e65"
+    },
+    "/client/data/sfx/lab/zspawn.ogg": {
+      "size": 13320,
+      "sha256": "77c04244fdf403a6cfecd62bb0ce269a379bbdaffa11058507dc387f5525c780"
+    },
+    "/client/data/sfx/loot/ammo.ogg": {
+      "size": 6701,
+      "sha256": "dbaa74c809d4295f1eb6de69a7fda017529448495f2c7c2f3a66e5765932d5f4"
+    },
+    "/client/data/sfx/loot/boost.ogg": {
+      "size": 18716,
+      "sha256": "5ef3587fe87c1db0d4856494d43675d647ca776dd8a8b52ca32ab110c8575da0"
+    },
+    "/client/data/sfx/loot/chest.ogg": {
+      "size": 14856,
+      "sha256": "579ea45fe141f9198dc9da0f9ee6129e86920cb36072c66bd28bd28d6d6bff08"
+    },
+    "/client/data/sfx/loot/ec.ogg": {
+      "size": 4290,
+      "sha256": "a4ddcfb8c1cfe4821528cbb1385cee734e1fec843a90384e0988f4c1f5b8b88d"
+    },
+    "/client/data/sfx/loot/equip.ogg": {
+      "size": 6825,
+      "sha256": "6a648b4c200c59b55705ac90f9bbf76f2fdbc5a10ec3dae910f841af2f89fa68"
+    },
+    "/client/data/sfx/loot/health.ogg": {
+      "size": 6268,
+      "sha256": "631334a4616341eec31939b351326a20418d096ede009b48396eda6bf9e84adb"
+    },
+    "/client/data/sfx/loot/key.ogg": {
+      "size": 9804,
+      "sha256": "e3a4745e676773ae96d528a6d164cbd9462d62d7fc2f1f0cb71baf0a800ebb4d"
+    },
+    "/client/data/sfx/loot/pickup.ogg": {
+      "size": 5292,
+      "sha256": "fb71a98a2fc843c66aca780c85694ac92018dfe479eb480fbb395b9b6c0c279c"
+    },
+    "/client/data/sfx/loot/slot.ogg": {
+      "size": 15907,
+      "sha256": "707b5586e9bcd43a0329706a9c4fe6a3093f0c84edef2a276a28bc098d349e03"
+    },
+    "/client/data/sfx/pc/ancient/death.ogg": {
+      "size": 22527,
+      "sha256": "1de3fa3c66147ae5cd88fca3f9944d65ab168d546c76333bdc0632fcd7707b06"
+    },
+    "/client/data/sfx/pc/ancient/fragx.ogg": {
+      "size": 11093,
+      "sha256": "df5f3eea2c0682f23f95c40cc7fc104a0775b442944d506e493ec8ad0797e609"
+    },
+    "/client/data/sfx/pc/ancient/hit.ogg": {
+      "size": 5327,
+      "sha256": "51d455f9edb882383a1159afeb9b647c9d4b54a5afeb0750de4a6fd1fced7981"
+    },
+    "/client/data/sfx/pc/ancient/jump.ogg": {
+      "size": 5365,
+      "sha256": "8628e3c8bf0d8b9a306e870db652da7217a9c3d4c0dd8a1db6c32452294c93e8"
+    },
+    "/client/data/sfx/pc/ancient/krepeater.ogg": {
+      "size": 4317,
+      "sha256": "5d47dcca62ea80b8a7debad8613fbc92343c5c6c0c83a8ca72801c1ba545d4f2"
+    },
+    "/client/data/sfx/pc/ancient/repeater.ogg": {
+      "size": 4090,
+      "sha256": "c26221d272f51ab3d0574099c523be876f1953fcdfb131816864ea03b1325dcd"
+    },
+    "/client/data/sfx/pc/ancient/throw.ogg": {
+      "size": 4475,
+      "sha256": "e0df2651e13ca7d69d466cd82f7169695ea6aa4d1a455b137f266882fb4b48e5"
+    },
+    "/client/data/sfx/pc/duskwing/aesc.ogg": {
+      "size": 9437,
+      "sha256": "adf4575207e829497ecf73f2b83851532436fd41754a3efb53efe2e44ab5435d"
+    },
+    "/client/data/sfx/pc/duskwing/aeschit.ogg": {
+      "size": 6397,
+      "sha256": "baec25320e53845507e151b58911d51f68aab5970764bec8a9c889bb89291917"
+    },
+    "/client/data/sfx/pc/duskwing/awarp.ogg": {
+      "size": 7899,
+      "sha256": "7a17795237bdca489549fbae1a06c129406f71fb59329b2054f61dbc04dfc622"
+    },
+    "/client/data/sfx/pc/duskwing/baeschit.ogg": {
+      "size": 6549,
+      "sha256": "9ec4c1d38354ecb2292c5a3fa33c744e594654a917c9be515432c89fbc3858c5"
+    },
+    "/client/data/sfx/pc/duskwing/baetyl.ogg": {
+      "size": 13635,
+      "sha256": "0d1eb7590ce00cbc420e658b291d8d564356f741efaaca06b0f0a35e3518426b"
+    },
+    "/client/data/sfx/pc/duskwing/bskein.ogg": {
+      "size": 5583,
+      "sha256": "d9d2ae27d5eeb45d502ce1c9d1ff6931ae31c4ab7f32da87f9183b51255d4c23"
+    },
+    "/client/data/sfx/pc/duskwing/bskeinspin.ogg": {
+      "size": 7145,
+      "sha256": "05c3b4feb043df2ded75d2e7a92135b6f608fe81c46de8eecc4d2042d77ecd64"
+    },
+    "/client/data/sfx/pc/duskwing/bwarp.ogg": {
+      "size": 7281,
+      "sha256": "e39884316398f1f812776f18efbdb7815ade7bca20a69a1dbcf0695340c493ff"
+    },
+    "/client/data/sfx/pc/duskwing/bwarpsub.ogg": {
+      "size": 6478,
+      "sha256": "f14f4a9f9910af96442789d991eae0b5f300ce0184fd258c50725a4dd0b141cb"
+    },
+    "/client/data/sfx/pc/duskwing/death.ogg": {
+      "size": 14475,
+      "sha256": "99328f21e9b430481fd9e04e3c73d73a959404f5c2c1b5d831063119bdd95c81"
+    },
+    "/client/data/sfx/pc/duskwing/hit.ogg": {
+      "size": 8354,
+      "sha256": "3648307c106f4d176aeaadbe6f19dcb53838f592743285c328207d578dc7a8ac"
+    },
+    "/client/data/sfx/pc/duskwing/jump.ogg": {
+      "size": 7939,
+      "sha256": "e21179110995faedc3787128c141787793189b8602bc3cb93c8402dafa544267"
+    },
+    "/client/data/sfx/pc/duskwing/mwarp.ogg": {
+      "size": 11646,
+      "sha256": "11ac00e3df91b2321c7262c9bbcb4b6723b6fe1dbf152ce99e385234ac77183c"
+    },
+    "/client/data/sfx/pc/duskwing/nskein.ogg": {
+      "size": 5235,
+      "sha256": "c16dc9b52ac9af9b5748113c708b54fdaf29420d7c03ca9ce04dc914fe6b069d"
+    },
+    "/client/data/sfx/pc/duskwing/nskeinspin.ogg": {
+      "size": 4544,
+      "sha256": "575eb0c8dd2cb3c62dd5f9b834f9ae91a368391ab609e1ef3f95aee9123f840d"
+    },
+    "/client/data/sfx/pc/duskwing/pskein.ogg": {
+      "size": 8742,
+      "sha256": "7977ba593d360b7f14b61e8cf630bdf8813c2b7a32855960b47bf6cdcb689ddb"
+    },
+    "/client/data/sfx/pc/duskwing/pskeinspin.ogg": {
+      "size": 4269,
+      "sha256": "ecb035b4efcc7a58772fc6494d6539d65bf195ec6a5cc8812d105ea40034ef3e"
+    },
+    "/client/data/sfx/pc/duskwing/skein.ogg": {
+      "size": 5193,
+      "sha256": "0ba0f798f0b7d81d396b36f0015a72e5de51332c5693ba83a212a1645962a49b"
+    },
+    "/client/data/sfx/pc/duskwing/skeinspin.ogg": {
+      "size": 4499,
+      "sha256": "3874f7fb538e48a3482898af634b3c2d3018e52de1f097786c4c7df198977dcd"
+    },
+    "/client/data/sfx/pc/duskwing/throw.ogg": {
+      "size": 5664,
+      "sha256": "ffc65d6161e94526363e235e672cc42a5295f56575964c6c11d5978cfa423828"
+    },
+    "/client/data/sfx/pc/duskwing/warp.ogg": {
+      "size": 7103,
+      "sha256": "41dddaf34583dd1112ca4f75e7a904c89cda33686931a49661ab1b8d706282f3"
+    },
+    "/client/data/sfx/pc/fabricator/antiphonb.ogg": {
+      "size": 5265,
+      "sha256": "f56a5dcd8e794b68f83bf3ed3d966db9f93b178b37684c783cb32416be42c42d"
+    },
+    "/client/data/sfx/pc/fabricator/antiphondeath.ogg": {
+      "size": 12680,
+      "sha256": "37dd970bdd530637e14984559756043eb93bc822f6b2168aa8940b3acd9e7d8b"
+    },
+    "/client/data/sfx/pc/fabricator/antiphonhit.ogg": {
+      "size": 4818,
+      "sha256": "4caf6e652749c5d48db6a666fda401d70afff4ffce968d6124681dc38fdc9a80"
+    },
+    "/client/data/sfx/pc/fabricator/dancerx.ogg": {
+      "size": 11047,
+      "sha256": "f011d036a06f200b152c222c95493f905f19e338da7ee329a6467e985980c16c"
+    },
+    "/client/data/sfx/pc/fabricator/dantiphonb.ogg": {
+      "size": 4842,
+      "sha256": "3aa2ab1abe820bfee6c83607886aaac937b0aa3b3f8c9451043d1030cebb1bc5"
+    },
+    "/client/data/sfx/pc/fabricator/dantiphondeath.ogg": {
+      "size": 15380,
+      "sha256": "9bf11d5a4bac3782d4338a2c19f21d721b9c877516309c7f310fcac61e66e5da"
+    },
+    "/client/data/sfx/pc/fabricator/dantiphonhit.ogg": {
+      "size": 4735,
+      "sha256": "2b8c5634e4416cd74662ae895c0ef694815c7d90a1dcf6059e5598b82d1de6f5"
+    },
+    "/client/data/sfx/pc/fabricator/ddancerx.ogg": {
+      "size": 11116,
+      "sha256": "8a09ff69f8db3e6843acde5bfb716e7922899cfb67223e885b609e8df4eba052"
+    },
+    "/client/data/sfx/pc/fabricator/death.ogg": {
+      "size": 19929,
+      "sha256": "8e5ca904f4e39e1e43508a9ca59bcbb18ce83d50c2f73e506c0b6f52e5205086"
+    },
+    "/client/data/sfx/pc/fabricator/gavottex.ogg": {
+      "size": 8737,
+      "sha256": "15fa6c6436f21c72abea90f00564cf64769536e9eb8740e9546a6a441001621e"
+    },
+    "/client/data/sfx/pc/fabricator/hit.ogg": {
+      "size": 7070,
+      "sha256": "87b59509f39e7006edae72696f786f86fc937823ee0a4b5ba167297dc71f289d"
+    },
+    "/client/data/sfx/pc/fabricator/jump.ogg": {
+      "size": 8046,
+      "sha256": "cae7a5e00b92353102632a679e8f464e0851d34302024e29c06d72b8d02514f5"
+    },
+    "/client/data/sfx/pc/fabricator/launch.ogg": {
+      "size": 13313,
+      "sha256": "ae607b1d16d99827cd0402194dc476c11ef46a13b6d1d2485ee2ab75a2762b4c"
+    },
+    "/client/data/sfx/pc/fabricator/macron.ogg": {
+      "size": 5956,
+      "sha256": "dec13f8696686bc483425a6f84abc6ec05c3ba807b5af6d398cb85eb03934165"
+    },
+    "/client/data/sfx/pc/fabricator/quickstepx.ogg": {
+      "size": 6901,
+      "sha256": "9136741752b2ed26fe48d60198fe747a996553f8a92f2464700b557a7e0cb3b8"
+    },
+    "/client/data/sfx/pc/fabricator/shoot.ogg": {
+      "size": 6272,
+      "sha256": "b0c0a2fe4ab96efcee37d864a4c25289e02b5f3db79fa907f68b619ed210b53c"
+    },
+    "/client/data/sfx/pc/fabricator/trinityx.ogg": {
+      "size": 11045,
+      "sha256": "9caaabc8cfa6aceb3fefc95ec8d4afe7fdcedc6090870e3b8a16a296f2c683bb"
+    },
+    "/client/data/sfx/pc/fabricator/wantiphonb.ogg": {
+      "size": 4058,
+      "sha256": "07b70b36191909eefe7f67d3e1bd1d0fcd0abcb2247b83c9e08294d8b039bd93"
+    },
+    "/client/data/sfx/pc/fabricator/wantiphondeath.ogg": {
+      "size": 17220,
+      "sha256": "6e7fa3d114de8b42a00a30d3447fde633b092a17f7bdf8cc4c31266d16003bbc"
+    },
+    "/client/data/sfx/pc/fabricator/wantiphonhit.ogg": {
+      "size": 4801,
+      "sha256": "bf4623707eee90482c4f826a44bd0f42e96bdf757464aed83f9a56e3e0e17145"
+    },
+    "/client/data/sfx/pc/ironclad/adjparticle.ogg": {
+      "size": 10229,
+      "sha256": "4de77da50d8df51d37347a13c161606637195dfba235fbeb50e3fc7b0c996d88"
+    },
+    "/client/data/sfx/pc/ironclad/adjudicator.ogg": {
+      "size": 12172,
+      "sha256": "7c93b445ea715e8cbd084618798960e772a9069d77f0e2a9119fb4eed000bb93"
+    },
+    "/client/data/sfx/pc/ironclad/baculus.ogg": {
+      "size": 9516,
+      "sha256": "f9bf50fbda66cee5354948f032f4f797bc397eef9aafa83ca0c8e50477749b16"
+    },
+    "/client/data/sfx/pc/ironclad/burnerb.ogg": {
+      "size": 20259,
+      "sha256": "8faab25f18a6e2c47b4a587cd76ebdb122c8a035384cb60c8eb44cd7dcaf4f7c"
+    },
+    "/client/data/sfx/pc/ironclad/csledge.ogg": {
+      "size": 7572,
+      "sha256": "f5da555e55c428a6e1536567d2ca55d086327a16f02b804ec8c548c43727d705"
+    },
+    "/client/data/sfx/pc/ironclad/death.ogg": {
+      "size": 15062,
+      "sha256": "9372cac72353522b6b9401fa6ebaf2650fa9b75659bf067b1dd40e8ead7d09d2"
+    },
+    "/client/data/sfx/pc/ironclad/hit.ogg": {
+      "size": 6303,
+      "sha256": "5a3637fe50bb4a80a735572edb69e24bb44772557f37303358873f0a789572a9"
+    },
+    "/client/data/sfx/pc/ironclad/ikyeserx.ogg": {
+      "size": 11782,
+      "sha256": "36f79edb0a42e955259f2fef64a1be206cf90a54fb8ddcc80c2f36eb2030740d"
+    },
+    "/client/data/sfx/pc/ironclad/jump.ogg": {
+      "size": 5088,
+      "sha256": "97daffffc157c2249243f29b01120e3fbe3e857c48dd0e3036097788942b943c"
+    },
+    "/client/data/sfx/pc/ironclad/kyeser.ogg": {
+      "size": 8637,
+      "sha256": "b89dc57d48a02dea983d23c97d9cc456cf78384ea47377563a9c0daa765cf2eb"
+    },
+    "/client/data/sfx/pc/ironclad/kyeserx.ogg": {
+      "size": 11181,
+      "sha256": "dcdf5c9898cbc184197793ed2601417ac4e6fb4ba752307a762f4f234430fd53"
+    },
+    "/client/data/sfx/pc/ironclad/launch.ogg": {
+      "size": 8832,
+      "sha256": "17d85a35a4eceb7ca6b54875a975487457d1f67d4a46f945476471ed256a5192"
+    },
+    "/client/data/sfx/pc/ironclad/mantle.ogg": {
+      "size": 7298,
+      "sha256": "b6c7598399ade13f0a99ef1c8d172806b7030ebe59e237945c719b5a6cd67a28"
+    },
+    "/client/data/sfx/pc/ironclad/preceptor.ogg": {
+      "size": 7810,
+      "sha256": "110d8cfe7b1a65fac0649de74a44c1cd40b34c15ea6b05b68c4ced0b3d731ed1"
+    },
+    "/client/data/sfx/pc/ironclad/preceptorsub.ogg": {
+      "size": 14105,
+      "sha256": "006a97683f1b431307cdb3b8df1dc019b0f250dda63ea351bfda4f05d7ba6900"
+    },
+    "/client/data/sfx/pc/ironclad/sledge.ogg": {
+      "size": 12504,
+      "sha256": "8af67ad7711d0638af42323f730b1da5f836ffac9e7cd17604b1971b735208c2"
+    },
+    "/client/data/sfx/pc/ironclad/swarmerx.ogg": {
+      "size": 11419,
+      "sha256": "7165106174aedaa91805c8c25f11d80b65c26e657315c4dde515be060dcc8d5c"
+    },
+    "/client/data/sfx/pc/toaster/clone.ogg": {
+      "size": 10647,
+      "sha256": "cddcde3eb8ac189171063b044ef5a3daeec0240288ca10113a427064a1115a04"
+    },
+    "/client/data/sfx/pc/toaster/death.ogg": {
+      "size": 13260,
+      "sha256": "ce2a06e59e18d4e0ca8d74268eb2ba1b34d69352aef18804fcac7f2d24fc2995"
+    },
+    "/client/data/sfx/pc/toaster/hit.ogg": {
+      "size": 6900,
+      "sha256": "07a2fdeb4055e9fbc6a844c40b33f6047830bb3e25320011da2719a9418c0154"
+    },
+    "/client/data/sfx/pc/toaster/jump.ogg": {
+      "size": 6242,
+      "sha256": "1064dc1073e0be2244c8b30ea4532a5fb7b366879fb33194a1e34b07d0b87d12"
+    },
+    "/client/data/sfx/pc/toaster/kick.ogg": {
+      "size": 6730,
+      "sha256": "e1cf8a082e6d106ad820ffc66b38a4322d8c5b02c6f0356dfe1e3571f7a572c4"
+    },
+    "/client/data/sfx/pc/toaster/star.ogg": {
+      "size": 8845,
+      "sha256": "0792515bf53617eb9efec1b6323e07d5aeb75d58e7449a4292df86f98601a111"
+    },
+    "/client/data/sfx/pc/wildfire/arblast.ogg": {
+      "size": 13420,
+      "sha256": "f8cf6fcec7ca1e5e0986b4e1e7f60026124f9b832c6c4d6995790096d2fd8e42"
+    },
+    "/client/data/sfx/pc/wildfire/blast.ogg": {
+      "size": 6669,
+      "sha256": "473826c11c573155acdec6155bf523335283ef856937ffed6c1713c2c6d4a4c4"
+    },
+    "/client/data/sfx/pc/wildfire/bthrower.ogg": {
+      "size": 11842,
+      "sha256": "47a658828323835e5f0622d74ce6eb17754bf178770c1d5f9af414226de239a5"
+    },
+    "/client/data/sfx/pc/wildfire/cluster.ogg": {
+      "size": 10862,
+      "sha256": "3675754ce032017c6f89aa19a98d5686d820516fcad7090d372c82d75997218d"
+    },
+    "/client/data/sfx/pc/wildfire/death.ogg": {
+      "size": 17418,
+      "sha256": "f0bc9c4b296d914c5445dff415e15ed827610db7b0f504313befbbc60ac4c475"
+    },
+    "/client/data/sfx/pc/wildfire/death2.ogg": {
+      "size": 17442,
+      "sha256": "3bc6d4ecff908de604693f6b88fb039282e85f940efa00d079a8b91ee905d550"
+    },
+    "/client/data/sfx/pc/wildfire/eblast.ogg": {
+      "size": 9941,
+      "sha256": "b85181b22bae1419e8274773b46213521905a346b9f47b61fdc0c1e8959f488d"
+    },
+    "/client/data/sfx/pc/wildfire/fblast.ogg": {
+      "size": 11101,
+      "sha256": "5f1bd555d09e5581ded54db7ebe8c24e6c5848a62d1dde5f8bb1ee872b31eb40"
+    },
+    "/client/data/sfx/pc/wildfire/fragx.ogg": {
+      "size": 8478,
+      "sha256": "3d7fdfb986b04f3fb2ed56a711ba88ba3574f5a46d48ee2bf3d045e3f92afef1"
+    },
+    "/client/data/sfx/pc/wildfire/hit.ogg": {
+      "size": 5152,
+      "sha256": "e37f563590a2df1832db53a5be42115f99e456bdd2f609ea5f654b1dcf987f10"
+    },
+    "/client/data/sfx/pc/wildfire/ifragx.ogg": {
+      "size": 11901,
+      "sha256": "cb904b3318decbc23f7b9fdf2421a01d18150b1b9fe030d0f3d7b1731e9c1225"
+    },
+    "/client/data/sfx/pc/wildfire/jump.ogg": {
+      "size": 5280,
+      "sha256": "94e60a7f3717e874aa8f3ffedff9b6c29d6e36da066c82df854042fb69c91ce9"
+    },
+    "/client/data/sfx/pc/wildfire/kick.ogg": {
+      "size": 11541,
+      "sha256": "4b219c61571cfcdccc8289a11bbc3159a13610d40e4b07152972df96b4c95811"
+    },
+    "/client/data/sfx/pc/wildfire/krepeater.ogg": {
+      "size": 5782,
+      "sha256": "0520aa4e79dfe681a293abe8be5404c36b93107b14749989520ffbf39cb0b8d6"
+    },
+    "/client/data/sfx/pc/wildfire/nbow.ogg": {
+      "size": 6683,
+      "sha256": "dab74ca4897dd170aa42b781662f7ee5e9679ae23a99c8275480303399ef725a"
+    },
+    "/client/data/sfx/pc/wildfire/repeater.ogg": {
+      "size": 4797,
+      "sha256": "e95801a79e6f5c247f46a10012656c744fd4a380f2636517c03690fe481345be"
+    },
+    "/client/data/sfx/pc/wildfire/sblast.ogg": {
+      "size": 11046,
+      "sha256": "21d7eed0a3320241abf851a43961e459510d93a4ed95ccfc2b9bbcc38566980b"
+    },
+    "/client/data/sfx/pc/wildfire/srepeater.ogg": {
+      "size": 6705,
+      "sha256": "964959fa1b4a666aff42dfab41c271926faf28996c97be66b1ad9cb3d1304f65"
+    },
+    "/client/data/sfx/pc/wildfire/stonebow.ogg": {
+      "size": 9651,
+      "sha256": "61c8b6046a2125327aeb37c4e7a0af7ee33fdf755062a9983d075322e313251d"
+    },
+    "/client/data/sfx/pc/wildfire/swarmx.ogg": {
+      "size": 12195,
+      "sha256": "0f114cd6744e423425b03326bd070c633064d7ec7e58faec6060acc25c597c4b"
+    },
+    "/client/data/sfx/sc/bombdrop.ogg": {
+      "size": 10419,
+      "sha256": "9e390ddf97cd3ce22301d74f85caecda5a20f7000642ea44208dcd2d7c25c03e"
+    },
+    "/client/data/sfx/sc/bombx.ogg": {
+      "size": 13225,
+      "sha256": "457d07f96c27ad30bfde2744d3ef5d0d368caaa1d3162f1464158f4696baf53b"
+    },
+    "/client/data/sfx/sc/burst.ogg": {
+      "size": 13136,
+      "sha256": "d1d3f95c438ec2d38ac96f4e99657847bd9bcedfe8f8cedb41fc1b3386f898db"
+    },
+    "/client/data/sfx/sc/coredeath.ogg": {
+      "size": 27848,
+      "sha256": "5b7b77ca83e100609e1d160d6874c03d48a81747730ff5e2b5de2df645c3caf2"
+    },
+    "/client/data/sfx/sc/corehit.ogg": {
+      "size": 8563,
+      "sha256": "3c04b31a155369c49efc341734d53296969397f875a58980db1828878b33b9d0"
+    },
+    "/client/data/sfx/sc/cturret1.ogg": {
+      "size": 11633,
+      "sha256": "b875990952513ba990604af77603162a7cff07d7b3b4cb3fcbea4b273d6fb812"
+    },
+    "/client/data/sfx/sc/cturret2.ogg": {
+      "size": 8949,
+      "sha256": "cfb72efe248043decfe8a262136ffdd05090dc3f2ea726e837f0f640cc22641e"
+    },
+    "/client/data/sfx/sc/enginecoredeath.ogg": {
+      "size": 28567,
+      "sha256": "1674471c0cb09514c00ec39ad01bf6ed6590e7817ddbcc4700a2e470d75cde76"
+    },
+    "/client/data/sfx/sc/enginecorehit.ogg": {
+      "size": 8148,
+      "sha256": "1c0749b24edf252a4da3c8a5a3c4178373963fc48c9269883ba8ce769c6031b2"
+    },
+    "/client/data/sfx/sc/engineshoot.ogg": {
+      "size": 11752,
+      "sha256": "d077d42abedeee8f141ee43763bcf68321c39fcf49bcbf2e2a2cc6e74729fff8"
+    },
+    "/client/data/sfx/sc/enginesummon.ogg": {
+      "size": 13270,
+      "sha256": "3cce7329cdbcebe42221bd797369c65159d876f0083d294fc635f98c49dc81cf"
+    },
+    "/client/data/sfx/sc/ghost.ogg": {
+      "size": 11279,
+      "sha256": "a721c0f8d0047c0910bdd3522db25da2aba4bea87b45874df07f6107d524942d"
+    },
+    "/client/data/sfx/sc/golemdeath.ogg": {
+      "size": 18461,
+      "sha256": "ed5d793b549163f500ea55cdb70d3899cffc4d34c9e6744ac03aeb2f001ec386"
+    },
+    "/client/data/sfx/sc/golemhit.ogg": {
+      "size": 6649,
+      "sha256": "8cf2e3d64aa27aa9350800064532334f91a90281fb79aa5c03003a1d7989789e"
+    },
+    "/client/data/sfx/sc/golemjump.ogg": {
+      "size": 25127,
+      "sha256": "a33b424b19be3f42ed3f9b035c3a8a1aae4f2b7e7e2032231daf2226b469d7a3"
+    },
+    "/client/data/sfx/sc/golemthrow.ogg": {
+      "size": 21479,
+      "sha256": "7b59a1976c5a5d4021205d2bdedb7ad43fc290532ceb84571b1c218054c52edf"
+    },
+    "/client/data/sfx/sc/laser.ogg": {
+      "size": 17473,
+      "sha256": "8a0b2322704f3b48bce531848af63cbc8ffa9a97ee497aa542d888e254513817"
+    },
+    "/client/data/sfx/sc/manifest.ogg": {
+      "size": 9637,
+      "sha256": "d60bde949eac1234b8e22c0f9d56e38b67cdc1536d8bb29ac31eaa0d595d3386"
+    },
+    "/client/data/sfx/sc/monkdeath.ogg": {
+      "size": 16129,
+      "sha256": "2d4ae4bf15e4d765476d319d479b9a9ba0d28cd172629c6f553035fa8dfe8acc"
+    },
+    "/client/data/sfx/sc/monkhit.ogg": {
+      "size": 7362,
+      "sha256": "c00b56f520da4d337f9c099fe9ea59d61aa06d0148377a9a31a14e003a37cbdd"
+    },
+    "/client/data/sfx/sc/monkshoot.ogg": {
+      "size": 7669,
+      "sha256": "c1fc63483d2547e9dd91437f8cbc2d52430159f0289717e9436b45e5f5684a59"
+    },
+    "/client/data/sfx/sc/patcharge.ogg": {
+      "size": 9431,
+      "sha256": "d9b09ef84ae1f409af509550e1edf409295c85d6b20daddf091dfc7529f9b21c"
+    },
+    "/client/data/sfx/sc/patdrop.ogg": {
+      "size": 8676,
+      "sha256": "989d71cb5193bfee536d420cd970a3e7864ad388d01012c1a0ed838edf2bbb5d"
+    },
+    "/client/data/sfx/sc/patlob.ogg": {
+      "size": 9243,
+      "sha256": "e529389bf7e27490aa635353b131208966d0ceae68b02fab8632eb4e1fbe8977"
+    },
+    "/client/data/sfx/sc/patriarchdeath.ogg": {
+      "size": 38331,
+      "sha256": "e5a848e6ee6ec924a99c87646762343c37c6d5cffd96cb80465828c536f9835f"
+    },
+    "/client/data/sfx/sc/patriarchhit.ogg": {
+      "size": 9078,
+      "sha256": "d99b981ffe07b48fd75855fa58312a16bfa7da5f1d78fe4a13b8e2f7c1aa686a"
+    },
+    "/client/data/sfx/sc/patshoot.ogg": {
+      "size": 15157,
+      "sha256": "edb4550efdba6f40747bbbb69dbf3586cd937c8381558b7c3e70f4199b4ff78b"
+    },
+    "/client/data/sfx/sc/saw.ogg": {
+      "size": 12782,
+      "sha256": "75b30e8fe005ff7a097e4f7f25288c07f7c7cd58f7a1e900beba9d5f8fd19d57"
+    },
+    "/client/data/sfx/sc/scoutattack.ogg": {
+      "size": 11890,
+      "sha256": "ace7c1c410b848ee7d834c0784551125ac6dfb335be9cca6ec28d12592fc8e3c"
+    },
+    "/client/data/sfx/sc/skeletondeath.ogg": {
+      "size": 17198,
+      "sha256": "d997fc2f1ded24c1b9a27df2bc60c6adcc2de15f14061bde8cafb109493c12cb"
+    },
+    "/client/data/sfx/sc/skeletonhit.ogg": {
+      "size": 6169,
+      "sha256": "ac2f9720b072eb114a9d5e9569af0bf9a26dfe53d75b86376c7e0497990b4f8d"
+    },
+    "/client/data/sfx/sc/skeletonjump.ogg": {
+      "size": 8731,
+      "sha256": "335c1238b72747ae0f1ff39554dd05ff8e943cc364a0bbc2f92db2d9510070c6"
+    },
+    "/client/data/sfx/sc/skeletonswing.ogg": {
+      "size": 10025,
+      "sha256": "a9e5d8bc88f85c121be3f73bb4cea7fda73e973a9a3753351057ec76fe7ec605"
+    },
+    "/client/data/sfx/sc/sliver.ogg": {
+      "size": 7574,
+      "sha256": "7c6fa24bc5fca4e4251983fe6535b7cf33ad3bbccc05e6bb37dede71a3323134"
+    },
+    "/client/data/sfx/sc/sliverx.ogg": {
+      "size": 10763,
+      "sha256": "da904ca1be248ac520c66a5228a58e079c8e4ea3dc4693977006b11dc0e82b51"
+    },
+    "/client/data/sfx/sc/spectredeath.ogg": {
+      "size": 10599,
+      "sha256": "cfd1ee315067686005aad0138300ac7dc076160f693e47c2214db20f8b754828"
+    },
+    "/client/data/sfx/sc/spectrehit.ogg": {
+      "size": 7884,
+      "sha256": "cf2c88cbf26b7f514882d63e4a024ce4c5c54af8e70d0c2a10db21aacdf060d4"
+    },
+    "/client/data/sfx/sc/spirit.ogg": {
+      "size": 9459,
+      "sha256": "09d66d3e419522a0ab47f0f222bb9fbfa8070dde6bd04eb37f740f02d5b5ca2f"
+    },
+    "/client/data/sfx/sc/spirithivedeath.ogg": {
+      "size": 10991,
+      "sha256": "65ddf52fd041d198459dd643e9cedd7222f04abec5aa9af367a0bc6da7c2d235"
+    },
+    "/client/data/sfx/sc/spirithivehit.ogg": {
+      "size": 7510,
+      "sha256": "aa71c831d703ed9f6e1690b0aab803bfd84c53e5cc12dfcb8ace1956bf7e6c72"
+    },
+    "/client/data/sfx/sc/switch.ogg": {
+      "size": 10216,
+      "sha256": "73a35e2b97b2d25665b431669b00ea42ae034df6f67c29dee2156db69d016ab0"
+    },
+    "/client/data/sfx/sc/tankdeath.ogg": {
+      "size": 11788,
+      "sha256": "09e172ba1e2e7cd7d2efa7262774110e022510693d9c758d50fab9fec64f837c"
+    },
+    "/client/data/sfx/sc/tankhit.ogg": {
+      "size": 9145,
+      "sha256": "529b0eae26012c3d2fb183357448e57215ac35952448faa12e2991051068e483"
+    },
+    "/client/data/sfx/sc/tbullet.ogg": {
+      "size": 7864,
+      "sha256": "92701e7aeb6d1ffff8130c535b2549e39a43b22d6fd6332f6f6ba9e9de5055d9"
+    },
+    "/client/data/sfx/sc/titandeath.ogg": {
+      "size": 24747,
+      "sha256": "2380773b461268b599f3961cad7a44f452652902c74d8c54e6390df9d95516d0"
+    },
+    "/client/data/sfx/sc/titanhit.ogg": {
+      "size": 7016,
+      "sha256": "234ec5d43f700c2b55c481e214e2c7514454adb88fb5d7228ab0236cca2a86e9"
+    },
+    "/client/data/sfx/sc/vermindeath.ogg": {
+      "size": 9576,
+      "sha256": "547f897d99da4b0ad3ae4c0beea5a6840bb1964f5284dc1627b5920a6c256f5a"
+    },
+    "/client/data/sfx/sc/verminhit.ogg": {
+      "size": 7231,
+      "sha256": "0c9ca07a2c210c00061ada29769161580439329739b2a88508e0dddafd6f2d5f"
+    },
+    "/client/data/sfx/sc/wraithdeath.ogg": {
+      "size": 13219,
+      "sha256": "7f6110921f43b63307d23e05449011d04a38f639d7683159cbc18045a68b6529"
+    },
+    "/client/data/sfx/sc/wraithhit.ogg": {
+      "size": 9266,
+      "sha256": "89fbed9f7b0fad4ad930c634a224373aca103addbc166e3032f6d2ef0878c205"
+    },
+    "/client/data/sfx/scboss/bits.ogg": {
+      "size": 12277,
+      "sha256": "b5044f5ca46632ba5bc4b353d6bcd2981c6b49b29836f843cada17cdf8aaf220"
+    },
+    "/client/data/sfx/scboss/bomb.ogg": {
+      "size": 9706,
+      "sha256": "7167d4a7a84f2f46a5999ffea2be0a20b38644eeb79d63fa74fcf4e28c9fb45c"
+    },
+    "/client/data/sfx/scboss/bosshit.ogg": {
+      "size": 5529,
+      "sha256": "9b06bf9070ee4325cbe4714a67bcc1abc4452a459e73f9a84e8917dbc50b0cd3"
+    },
+    "/client/data/sfx/scboss/dshot.ogg": {
+      "size": 10174,
+      "sha256": "cfc9cac0564c5673127c022ede1a33be1795eee62bc93f25574d03e3939a92d8"
+    },
+    "/client/data/sfx/scboss/fracture.ogg": {
+      "size": 19198,
+      "sha256": "9c16f4bf3a04ae0705adc4710d7be2aa8371f74bc16d856b17ae84819cd8b3cc"
+    },
+    "/client/data/sfx/scboss/grow.ogg": {
+      "size": 11906,
+      "sha256": "c84be0a149ab7605cba79198a1cefa7ab8cca27173cfd3092db00a675ab3303a"
+    },
+    "/client/data/sfx/scboss/gshot.ogg": {
+      "size": 9835,
+      "sha256": "6a4b55aa08bfcf915ea92cc272ac7163205193452b452473263fd260e125bf21"
+    },
+    "/client/data/sfx/scboss/pshot.ogg": {
+      "size": 8670,
+      "sha256": "281f641d037cd119cb761daf5a9286ebc6658c6a33442aa38c6f64581a90b949"
+    },
+    "/client/data/sfx/scboss/pshotp.ogg": {
+      "size": 5943,
+      "sha256": "cf76b65576a3fd913f46b504cd9a961d784783edf92c6673c2a326a4f917cdea"
+    },
+    "/client/data/sfx/scboss/rshot.ogg": {
+      "size": 23456,
+      "sha256": "3619c9849104f29baa92b4795b94984e8f6a26555656a88bcc0381f61f9bbd2a"
+    },
+    "/client/data/sfx/scboss/scream.ogg": {
+      "size": 19221,
+      "sha256": "c80ba5bb20475d5fae8017c32717e057b7512ade22f938b66c266fe72332b56d"
+    },
+    "/client/data/sfx/scboss/shatter.ogg": {
+      "size": 12817,
+      "sha256": "e2cb0d31a23f76fc417292fddbb85fac5b5a8ae906274d0b7cb00c0d0373965c"
+    },
+    "/client/data/sfx/scboss/sshot.ogg": {
+      "size": 9389,
+      "sha256": "639b8f075d3c9ccba1d966a3d8587f5ee1eb9fa2b676947612d5702569c32ae8"
+    },
+    "/client/data/sfx/scboss/summon.ogg": {
+      "size": 13499,
+      "sha256": "ec3f4d3a54cbec0648837fe58a0f6a3fc4948266d61fe33593577005e6fd8ad1"
+    },
+    "/client/data/sfx/test/monstersoldierdeath.ogg": {
+      "size": 8732,
+      "sha256": "29c6200f6d0f07134deb5a9a23b34a658c3bd6fc46f186715d8dc78eec5494ee"
+    },
+    "/client/data/sfx/test/monstersoldierhit.ogg": {
+      "size": 5385,
+      "sha256": "77c7a7f9d095fc1453ad9c6d864aa3d3fc82e320a26140204813870262796ad2"
+    },
+    "/client/data/sfx/test/shoot.ogg": {
+      "size": 5475,
+      "sha256": "c82a278417a2ae1abbe128dbc56f7e173cbfb09b301113de9f460be69dd0872e"
+    },
+    "/client/data/sfx/test/slash.ogg": {
+      "size": 5703,
+      "sha256": "0467161ba7c45e3b0271028f20b979d2ce01779edb52ef974e87e7f16bd98948"
+    },
+    "/client/data/sfx/tutorial/attack.ogg": {
+      "size": 16510,
+      "sha256": "0ddee4cb2811ecf2fc2ef6eb9a3a8f52f486cda8921fe3aa3f42217451ea4ffa"
+    },
+    "/client/data/sfx/tutorial/bomblaunch.ogg": {
+      "size": 11712,
+      "sha256": "f8d0265724f45de07e2a11f4b67835277d23c37c0d8e453dae0cdef38697ab54"
+    },
+    "/client/data/sfx/tutorial/bombx.ogg": {
+      "size": 13265,
+      "sha256": "4371ccdd5f00ebdeedf1417def1f63526646ecf2c397531a195ba5e754c27668"
+    },
+    "/client/data/sfx/tutorial/destwalldeath.ogg": {
+      "size": 18670,
+      "sha256": "6671e289a49c818975583671bf0c45d2fd11a39f9faa2f4bbf86d88ae4fa153a"
+    },
+    "/client/data/sfx/tutorial/destwallhit.ogg": {
+      "size": 8180,
+      "sha256": "34234e6dc21294a5a0654b7f7cf5fc8308ff221cdd3595942186873032746e1c"
+    },
+    "/client/data/sfx/tutorial/gremlinbossdeath.ogg": {
+      "size": 28414,
+      "sha256": "6ee62fdd6410c4c9d5394336b089eda50624cb3bb3372e6ecf2fe7b0446afed6"
+    },
+    "/client/data/sfx/tutorial/gremlinbosshit.ogg": {
+      "size": 8268,
+      "sha256": "cdfbcb76d66a23a25a2694f3dd3ed9e492601802cb3aa46180b74f6927db723c"
+    },
+    "/client/data/sfx/tutorial/gremlindeath.ogg": {
+      "size": 10192,
+      "sha256": "1aba16ca50789b66fb13b4d986b7ff41dbe227a583229f5718136fe25dcf3cdd"
+    },
+    "/client/data/sfx/tutorial/gremlinhit.ogg": {
+      "size": 6330,
+      "sha256": "3a47bb5c5fd83d1a2c84b6dd0ba6cc7564ea3352dfaaeac597b7d3996af42562"
+    },
+    "/client/data/sfx/tutorial/gremlinshoot.ogg": {
+      "size": 10367,
+      "sha256": "22e0d9de0b175c0a149b3e736de5cb6cfe1b2c0c98d616206e0871031b25cc76"
+    },
+    "/client/data/sfx/tutorial/gremlinslash.ogg": {
+      "size": 12674,
+      "sha256": "f8ef73b542aa33677333e58bb86de9a95eb8a21de59eb589a8c5f19a761a5236"
+    },
+    "/client/data/sfx/tutorial/watcherinvhit.ogg": {
+      "size": 6638,
+      "sha256": "567b366dbd91276219568dbb940aab4b17108598a6c418615707ec41a133b278"
+    },
+    "/client/data/sfx/tutorial/watcherteleport.ogg": {
+      "size": 16772,
+      "sha256": "5b09981dd0d46c98f318ac9b1bfceffeed44036917ea4ca15fcf083e7478d1e3"
+    },
+    "/client/data/sfx/ui/buttonclick.ogg": {
+      "size": 5423,
+      "sha256": "5711775f9fed1444d44b51ccabe001c23389c99185fe7db73259ece0f9748cf4"
+    },
+    "/client/data/sfx/ui/error.ogg": {
+      "size": 15392,
+      "sha256": "ef11bcdf139ec951d89d0da8b3898b24e212cf85e9ebcf8f18dcab83528810a5"
+    },
+    "/client/data/sfx/wings/bossdeath.ogg": {
+      "size": 16652,
+      "sha256": "4a00122dcb9a753ae9bfd20863d345c68682edd83bc36c3806b1bdffd827eef2"
+    },
+    "/client/data/sfx/wings/bosshit.ogg": {
+      "size": 5511,
+      "sha256": "c63caf888e4f8b9f71946a4d52b0e200841701e9412209466059ead965c1cb7b"
+    },
+    "/client/data/sfx/wings/enemydeath.ogg": {
+      "size": 7131,
+      "sha256": "0934de13a63b6273534d656f75228cc7a0f2a56b1cd1f2a9adc4f1d7346de3b9"
+    },
+    "/client/data/sfx/wings/enemyhit.ogg": {
+      "size": 4526,
+      "sha256": "952fd21189e699d387f4e49d7fce994ed99c0782eb3afec2c02c561e20670fe1"
+    },
+    "/client/data/sfx/wings/shoot.ogg": {
+      "size": 4714,
+      "sha256": "779161541c8d4d6fed9b9e80932743bee078bf9cac268dbba4e46b7d5a613ed5"
+    },
+    "/client/data/sfx/wings/wingsdeath.ogg": {
+      "size": 12110,
+      "sha256": "8e29f5e999852132ba17f7dae85fc0ec8bf2768bb0945e8af414286fee45e91a"
+    }
+  }
+}
