@@ -1,4 +1,4 @@
-"""Verified source updates at launch; player data and portable runtime are excluded."""
+﻿"""Verified source updates at launch; player data and portable runtime are excluded."""
 import argparse
 from contextlib import contextmanager
 import hashlib
@@ -63,7 +63,7 @@ def atomic_json(path, value):
 
 
 def version(root=ROOT):
-    try:return json.loads((root/'data/version.json').read_text(encoding='utf8'))
+    try:return json.loads((root/'data/version.json').read_text(encoding='utf-8-sig'))
     except (OSError,ValueError):return {'version':'source','sequence':0}
 
 
