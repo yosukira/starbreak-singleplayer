@@ -117,6 +117,14 @@ class ScRunTests(unittest.TestCase):
                 dw, dh = door.get('wmp', 0), door.get('hmp', 0)
                 if x < dx+dw and x+10240 > dx and y < dy+dh and y+20480 > dy:
                     overlaps.append((role, entry))
+                for other in recipe['objects'].values():
+                    if other.get('terraintype') not in (1, 2):
+                        continue
+                    ox, oy = other.get('xmp', 0), other.get('ymp', 0)
+                    ow, oh = other.get('wmp', 0), other.get('hmp', 0)
+                    if x < ox+ow and x+10240 > ox and y < oy+oh and y+20480 > oy:
+                        overlaps.append((role, entry, 'solid'))
+                        break
         self.assertEqual(overlaps, [])
 
     def test_room_ticks_without_any_player_telemetry(self):

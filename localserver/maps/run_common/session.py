@@ -120,12 +120,24 @@ class RunLiveSession:
                     return False
             return True
 
+        def supported(px, py):
+            feet = py+hmp
+            return any(sx < px+wmp and sx+sw > px and sy >= feet-8*256 and sy <= feet+200*256
+                       for sx, sy, sw, sh in solids)
+
+        fallback = None
         for depth in (cls.ENTRY_CLEARANCE_MP, 48*256, 72*256, 96*256, 128*256, 160*256):
             px = dx+dw+depth if inward > 0 else dx-wmp-depth
             for lift in (dh-hmp, 0, -16*256, 16*256, -32*256):
                 py = dy+lift
-                if free(px, py):
+                if not free(px, py):
+                    continue
+                if supported(px, py):
                     return (round(px), round(py))
+                if fallback is None:
+                    fallback = (round(px), round(py))
+        if fallback is not None:
+            return fallback
         return (round(x), round(y))
         return (round(x+(width-wmp)/2), round(y+height-hmp))
 
