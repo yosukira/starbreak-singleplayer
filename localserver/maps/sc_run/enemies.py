@@ -59,7 +59,7 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     laser_segment_px=32., laser_range_px=1600., laser_max_segments=50,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
     scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4), skeleton_melee_vertical_px=110.,
-    flytank_hover_span_px=180., golem_stand_px=520., golem_wave_gravity=180000., tank_patrol_px=112.,
+    flytank_hover_span_px=180., golem_stand_px=520., golem_stand_scale=.25, golem_wave_gravity=180000., tank_patrol_px=112.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
     # OBS: 3796 same-owner dynamic wraiths leave at 4994-7474ms even though the
     # authored lifetime field is 30000ms; the native cleanup trigger is unknown,
@@ -370,9 +370,11 @@ class ScEnemies:
             u['direction'] = 1 if row['pos'][0] < u['home'][0] else -1
             vx = u['direction']*self.policy(vid)['speed']
         if vid == 'sc.golem' and point is not None:
-            # USER: a golem mostly stands its ground and only closes a long gap.
+            # USER: a golem mostly stands its ground; OBS tracks only shuffle
+            # about 100px, so inside the stand range it creeps instead of
+            # striding at full speed.
             if math.dist(point, c) <= self.fit['golem_stand_px']*256:
-                vx = 0.
+                vx *= self.fit['golem_stand_scale']
         drop = False
         if not busy and u.get('grounded') and point is not None and vid in ('sc.skeleton', 'sc.titan'):
             # OBS: a captured skeleton climbs +320px onto the player's platform.
