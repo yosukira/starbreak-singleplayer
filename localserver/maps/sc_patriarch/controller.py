@@ -244,8 +244,17 @@ class PatriarchController(MapController):
             r=self.pack.entities['snakes'];self.animate(6,r['interval_s']);self.action='snake_emit';self.until=self.time+r['emit_s']
         elif self.action=='snake_emit':self._snakes()
 
+    # The wire only carries a move when one is emitted; actors that integrate
+    # locally must publish their position or the client keeps the birth point.
+    MOVE_INTERVAL=0.05
+
+    def _emit_move(self,actor):
+        if self.time+1e-9<float(actor.get('next_move',0)):return False
+        actor['next_move']=self.time+self.MOVE_INTERVAL
+        self.emit('move',id=actor['id'],pos=[round(actor['pos'][0],3),round(actor['pos'][1],3)])
+        return True
+
     def _advance_actors(self,dt):
-        boxes=self.pack.solids+[(32,224,960,32)]
         for a in list(self.actors.values()):
             if a['id'] not in self.actors:continue
             if self.time>=a['until']:
@@ -256,6 +265,7 @@ class PatriarchController(MapController):
                     f=min(1,(self.time-a['born'])/(a['rise_end']-a['born']))
                     a['pos'][1]=a['rise_from']+(a['rise_to']-a['rise_from'])*f
                     if f>=1:a['phase']='waiting'
+                    self._emit_move(a)
                     continue
                 if a['phase']=='waiting':continue
                 r=self.pack.entities['rocks'];goal=a['target_velocity']
@@ -278,12 +288,26 @@ class PatriarchController(MapController):
                 self.emit('move',id=a['id'],pos=a['pos'])
                 continue
             delta=[v*dt for v in a['vel']]
-            hits=[(hit,box) for box in boxes if (hit:=sweep(old,delta,box,a['size'])) is not None]
+            hits=[(hit,box) for box in self._collision_boxes(a) if (hit:=sweep(old,delta,box,a['size'])) is not None]
             if hits:
                 hit,box=min(hits,key=lambda h:h[0]);a['pos']=[old[j]+delta[j]*hit for j in (0,1)]
                 if kind=='bomb' and delta[1]>0 and box[1]==736:self.splash(a['pos'])
                 self.remove(a['id'],'BLOCKED');continue
             a['pos']=[old[j]+delta[j] for j in (0,1)]
+            self._emit_move(a)
+
+    def _collision_boxes(self,actor):
+        """Static walls plus the living boss body for the thrown projectiles.
+
+        USER: the large thrown bodies are solid and collide with the boss
+        itself, not only with the arena walls. The body extent is the authored
+        160x256 native body anchored at the current boss position.
+        """
+        boxes=self.pack.solids+[(32,224,960,32)]
+        if actor['kind'] in ('bomb','rock','spirit'):
+            x,y=self.boss_pos
+            boxes=boxes+[(x-80,y-128,160,256)]
+        return boxes
 
     def step(self,dt):
         if not math.isfinite(dt) or dt<0:raise ValueError('invalid dt')
