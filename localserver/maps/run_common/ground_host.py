@@ -151,10 +151,11 @@ class GroundEgressHost:
         candidate=self.tx.candidate()
         created=copy.deepcopy(candidate['create_player']);vitals=candidate['vitals']
         if self.purpose=='room':
-            spawn=self.run.destination_spawn(self.link['destination'],self.link.get('entry','default'))
-            width,height=self.run.room(self.link['destination']).recipe['metadata'].get('spawn_footprint_mp',(10240,20480))
             w,h=vitals['wmp'],vitals['hmp']
-            created['pos_']=dict(xmp_=round(spawn[0]+(width-w)/2),ymp_=round(spawn[1]+height-h),wmp_=w,hmp_=h)
+            # USER: never arrive inside the door just used.
+            spawn=type(self.source).entry_position(self.run,self.link['destination'],
+                self.link.get('entry','default'),w,h)
+            created['pos_']=dict(xmp_=spawn[0],ymp_=spawn[1],wmp_=w,hmp_=h)
         else:created.pop('pos_',None)
         message=self.server.layouts.decode('Delta',self.server.player_delta_blob)
         message['createplayer_']=created

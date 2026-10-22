@@ -42,7 +42,7 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     hunter_manifest_px=160., urn_wake_px=1700., urn_step_s=.25,
     urn_emit_s=.105, manifest_s=.83, titan_manifest_s=1.62,
     skeleton_thrust_cooldown=.605, skeleton_cleave_cooldown=.8,
-    skeleton_variant_policy='object_id_fit', patrol_px=240., patrol_leg_s=1.1,
+    skeleton_variant_policy='object_id_fit', patrol_px=240., patrol_leg_s=1.1, steer_leg_s=(.45, 1.0),
     assassin_visible_s=2.4, assassin_initial_wait_s=.1,
     assassin_ghost_wait_s=.325, assassin_pause_s=.78, assassin_move_s=.35,
     assassin_segments=(1, 2, 3, 4),
@@ -55,7 +55,7 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     monk_interval_s=16., monk_refill_s=1.92, monk_orb_interval_s=.25,
     monk_mode_choices=('sequential', 'radial', 'focused'),
     # OBS: a captured warning line is 13 segments of 64px (~832px).
-    laser_segment_px=64., laser_range_px=850.,
+    laser_segment_px=64., laser_range_px=1000.,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
     scout_dive_s=.8, scout_cooldown_s=.56, skeleton_melee_vertical_px=110.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
@@ -399,9 +399,11 @@ class ScEnemies:
         if vid == 'sc.assassin' and u['phase'] == 'ghost':
             self._assassin_ghost_step(oid, u, dt)
             return
+        # USER: a creature commits to a heading for a while and only re-decides
+        # at intervals; it does not steer at the player's live position.
         if point is None:
             desired = (u['direction']*self.policy(vid)['speed'], math.sin(self.now*2)*5000.)
-        else:
+        elif self.now >= u.get('steer_at', 0.) or 'steer' not in u:
             c = center(row)
             dx, dy = point[0]-c[0], point[1]-c[1]
             if vid == 'sc.bomber':
@@ -411,7 +413,11 @@ class ScEnemies:
                 dx, dy = dx*scale, dy*scale
             length = max(1., math.hypot(dx, dy))
             speed = min(self.policy(vid)['speed'], length*2.)
-            desired = (dx/length*speed, dy/length*speed)
+            u['steer'] = (dx/length*speed, dy/length*speed)
+            u['steer_at'] = self.now+self.host.rng.uniform(*self.fit['steer_leg_s'])
+            desired = u['steer']
+        else:
+            desired = u['steer']
         acceleration = self.fit['fly_acceleration']*dt
         for axis, wanted in zip(('vx', 'vy'), desired):
             u[axis] += max(-acceleration, min(acceleration, wanted-u[axis]))
@@ -504,7 +510,13 @@ class ScEnemies:
         w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
         reach = (w*abs(math.cos(angle))+h*abs(math.sin(angle)))/2
         c = (c[0]+math.cos(angle)*reach, c[1]+math.sin(angle)*reach)
-        length = min(self.fit['laser_range_px']*256, math.dist(point, c))
+        # USER: the beam is one fixed length and only a solid wall stops it;
+        # platforms never shorten it and it does not stop at the player.
+        length = self.fit['laser_range_px']*256
+        hit = sweep(geometry(self.host), c,
+                    (c[0]+math.cos(angle)*length, c[1]+math.sin(angle)*length), (0, 0), (oid,))
+        if hit:
+            length = max(0., hit[0]*length-8*256)
         step = max(1., self.fit['laser_segment_px']*256)
         count = max(1, math.ceil(length/step))
         for index in range(count+1):

@@ -1,4 +1,4 @@
-﻿"""SC room mechanisms, responding to current players and real damage inputs.
+"""SC room mechanisms, responding to current players and real damage inputs.
 
 D values retain native fields and observed action timings. FIT values below
 are local policies where captures do not establish a retail decision rule.
@@ -49,7 +49,7 @@ DEFAULTS = {
     'switch_interact_radius_px': 160,
     'hive_active_radius_px': 1200, 'hive_max_children': 4,
     'hive_spawn_s': (4., 7.), 'hive_first_s': (.5, 2.),
-    'vermin_speed_px_s': 180,
+    'vermin_speed_px_s': 260,
     # D: captured scmid11 snapshots place Cathedral maze ledges on a fixed
     # 192px row grid, and one vermin's own vertical steps between snapshots
     # are whole rows. A hop therefore has to clear one row: with the FIT
@@ -60,7 +60,10 @@ DEFAULTS = {
     # patrol speed, ledge-change cadence and the chase jump height are local
     # policies; captures do not establish a retail decision rule.
     'vermin_aggro_px': 900, 'vermin_release_px': 1400,
-    'vermin_patrol_speed_px_s': 90, 'vermin_hop_s': (2.5, 6.),
+    'vermin_patrol_speed_px_s': 150,
+    # USER: a vermin chases for a while, gives up, and only re-acquires later;
+    # the static snapshot has no motion evidence, so these are FIT windows.
+    'vermin_chase_s': (2.5, 5.), 'vermin_reaggro_s': (3., 7.), 'vermin_aim_s': (.3, .7), 'vermin_hop_s': (2.5, 6.),
     'vermin_climb_px': 48, 'vermin_climb_jump_px_s': 700,
 }
 
@@ -132,6 +135,24 @@ class ScMechanics(Ownership):
                 row['props'].pop('move', None)
                 self.mledge_hold[oid] = (direction, movement)
                 self.states[oid]['native_move'] = movement
+        # Authored vermin can overlap a wall in the snapshot; move them out.
+        for oid, state in list(self.states.items()):
+            if state['vid'] != 'sc.vermin':
+                continue
+            row = self.host.actors.get(oid)
+            if row is None:
+                continue
+            w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+            if clear(self.host, (row['pos'][0], row['pos'][1], w, h), (oid,)):
+                continue
+            for dx in (0, -16*256, 16*256, -32*256, 32*256, 0, 0):
+                for dy in (0, 0, 0, 0, 0, -16*256, 16*256):
+                    if clear(self.host, (row['pos'][0]+dx, row['pos'][1]+dy, w, h), (oid,)):
+                        place(self.host, oid, (row['pos'][0]+dx, row['pos'][1]+dy))
+                        break
+                else:
+                    continue
+                break
         # A carried book is a separate terrain entity, with a real carrier ID.
         for oid, state in self.states.items():
             if state['vid'] not in BOOKS:
@@ -575,7 +596,22 @@ class ScMechanics(Ownership):
         if distance_to_rect(center(target), rect(row)) > self.config['hive_active_radius_px']*256:
             return
         x, y, w, h = rect(row)
-        point = (x-48*256 if row['props'].get('facing') == 180 else x+w, y+h-48*256)
+        base = (x-48*256 if row['props'].get('facing') == 180 else x+w, y+h-48*256)
+        # USER: a vermin must never be born inside a wall; try nearby openings
+        # and wait for the next cycle when there is none.
+        size = (48*256, 48*256)
+        point = None
+        for dx in (0, -32*256, 32*256, -64*256, 64*256):
+            for dy in (0, -32*256, 32*256):
+                candidate = (base[0]+dx, base[1]+dy)
+                if clear(self.host, (candidate[0], candidate[1], size[0], size[1]), (oid,)):
+                    point = candidate
+                    break
+            if point:
+                break
+        if point is None:
+            s['next'] = self.now+self._range('hive_spawn_s')
+            return
         child = self._spawn('sc.vermin', point, oid)
         s['children'].add(child)
         s['next'] = self.now+self._range('hive_spawn_s')
@@ -591,16 +627,23 @@ class ScMechanics(Ownership):
         # USER: acquisition and release are independent of the wake distance;
         # an idle vermin keeps patrolling instead of standing at a wall.
         if s['aggro']:
-            if reach is None or reach > self.config['vermin_release_px']*256:
+            if (reach is None or reach > self.config['vermin_release_px']*256
+                    or self.now >= s.get('aggro_until', math.inf)):
                 s['aggro'] = False
-        elif reach is not None and reach <= self.config['vermin_aggro_px']*256:
+                s['reaggro_at'] = self.now+self._range('vermin_reaggro_s')
+        elif (reach is not None and reach <= self.config['vermin_aggro_px']*256
+              and self.now >= s.get('reaggro_at', 0.)):
             s['aggro'] = True
+            s['aggro_until'] = self.now+self._range('vermin_chase_s')
             s['direction'] = -1 if px < cx else 1
         if not s['aggro'] and b.get('blocked'):
             s['direction'] *= -1
         vx = 0.
         if s['aggro'] and px is not None:
-            s['direction'] = -1 if px < cx else 1
+            # USER: pick a direction, commit to it for a while, then re-aim.
+            if self.now >= s.get('aim_at', 0.):
+                s['direction'] = -1 if px < cx else 1
+                s['aim_at'] = self.now+self._range('vermin_aim_s')
             if abs(px-cx) > 8*256:
                 vx = s['direction']*self.config['vermin_speed_px_s']*256
         elif not s['aggro']:
