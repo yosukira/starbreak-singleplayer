@@ -1,4 +1,4 @@
-import copy
+﻿import copy
 import random
 import unittest
 from types import SimpleNamespace
@@ -228,6 +228,38 @@ class ScMechanicsTests(unittest.TestCase):
         self.assertEqual(h.actors[2]['props']['terraintype'], 2)
         self.assertNotIn('move', h.actors[2]['props'])
         self.assertNotEqual(h.actors[2]['pos'], [16*MP, 64*MP])
+
+    def test_meatball_never_turns_mid_run_and_never_births_inside_a_wall(self):
+        # USER: the meatball runs to the end of a corridor, pauses, chooses a
+        # direction and moves again; it never flips while travelling and never
+        # starts inside geometry.
+        h = Host({1: body('sc.tshooter', x=0, y=0, w=128, h=128, damage=30,
+                          terraintype=1, facing=0),
+                  2: body('sc.wall', x=400, y=-200, w=64, h=400, terraintype=1)},
+                 dict(mechanics=dict(tshooter_initial_s=0.)))
+        h.player_at(800, 0)
+        h.tick(.01)
+        h.tick(.400)
+        h.tick(.02)
+        shot = next(oid for oid, r in h.actors.items() if r['vid'] == 'sc.tshot')
+        h.tick(.02)
+        state = h.mechanics.states[shot]
+        first = state['heading']
+        self.assertIsNotNone(first)
+        for _ in range(20):
+            h.tick(.02)
+            # A heading may only change while the ball is stopped.
+            if h.mechanics.states[shot]['heading'] != first:
+                self.assertEqual(h.mechanics.states[shot]['speed'], 0.)
+                break
+            self.assertGreater(h.mechanics.states[shot]['speed'], 0.)
+        # The wall stops the ball, so it is at rest and awaiting a new heading.
+        for _ in range(80):
+            h.tick(.02)
+            if h.mechanics.states[shot]['heading'] is None:
+                break
+        self.assertIsNone(h.mechanics.states[shot]['heading'])
+        self.assertEqual(h.mechanics.states[shot]['speed'], 0.)
 
     def test_tshooter_native_windup_precedes_permanent_collidable_tshot(self):
         h = Host({1: body('sc.tshooter', w=128, h=128, damage=30, terraintype=1, facing=90)},

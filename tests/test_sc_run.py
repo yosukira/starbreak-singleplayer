@@ -101,6 +101,21 @@ class ScRunTests(unittest.TestCase):
             player=dict(worldid=2, objid=1, xmp=x, ymp=y, wmp=10240, hmp=20480,
                         hp=500, maxhp=500, alive=True, room_seed=context['room_seed'])))
 
+    def test_room_ticks_without_any_player_telemetry(self):
+        # USER: every room reached through a door stayed inert. A session only
+        # exists after the client answered CreateWorld, so the room must run
+        # even when no player frame ever arrives.
+        run, _ = self.make_run(seed=5)
+        run.current, run.entry = 'path_0_1', 'default'
+        server = Transport(run)
+        wrapper = ScRunLiveSession(server, None, SimpleNamespace(player_type=1, bridge_port=0),
+                                   bridge=PlayerBridge(0))
+        self.assertTrue(wrapper._ready)
+        for _ in range(20):
+            wrapper.step(.05)
+        self.assertGreater(wrapper.current.room_time, .5)
+        self.assertFalse(server.transitions)
+
     def test_room_arms_by_frame_grace_when_the_handoff_position_differs(self):
         # USER: one door followed by a frozen room. The native client may adopt
         # a different position than the committed arrival point, so a short run
@@ -187,7 +202,9 @@ class ScRunTests(unittest.TestCase):
         wrapper = ScRunLiveSession(server,None,SimpleNamespace(player_type=1,bridge_port=0),bridge=PlayerBridge(0))
         clock.advance(1441)
         wrapper.step(.02)
-        self.assertFalse(wrapper._ready)
+        # The room arms as soon as its world exists; a missing native character
+        # is still never fabricated, so no door may fire without telemetry.
+        self.assertTrue(wrapper._ready)
         self.assertEqual(run.remaining(),0)
         self.assertTrue(run.allows(next(iter(wrapper.instance.recipe['links'].values()))))
         # A missing native character must not be fabricated as an alive one.

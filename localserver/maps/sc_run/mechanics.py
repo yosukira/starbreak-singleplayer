@@ -342,43 +342,101 @@ class ScMechanics(Ownership):
         x, y, w, h = rect(row)
         heading = int(row['props'].get('facing', 90))%360
         angle = math.radians(heading)
-        child = self._spawn('sc.tshot', (x+54*256*math.cos(angle), y+54*256*math.sin(angle)), oid,
-                            dict(facing=heading, lifetime=0))
+        size = self.host.pack.props('sc.tshot')
+        terrain = geometry(self.host)
+        # Never birth a meatball inside a wall: try the muzzle, then the
+        # shooter, then small offsets. A blocked device retries later.
+        candidates = [(x+54*256*math.cos(angle), y+54*256*math.sin(angle)),
+                      (x+w/2-size.get('wmp', 0)/2, y+h/2-size.get('hmp', 0)/2)]
+        for step in range(0, 360, 45):
+            candidates.append((x+w/2+math.cos(math.radians(step))*48*256,
+                               y+h/2+math.sin(math.radians(step))*48*256))
+        point = None
+        for candidate in candidates:
+            if not solid_sweep(terrain, candidate, candidate,
+                               (size.get('wmp', 0), size.get('hmp', 0)), ignore=(oid,)):
+                point = candidate
+                break
+        if point is None:
+            s.update(phase='idle', next=self.now+self._range('tshooter_respawn_s'))
+            return
+        child = self._spawn('sc.tshot', point, oid, dict(facing=heading, lifetime=0))
         self.states[child]['owner'] = oid
+        self.states[child]['heading'] = None
         s.update(child=child, phase='idle', next=self.now+self._range('tshooter_respawn_s'))
+
+    def _tshot_heading(self, oid, s, terrain, point=None):
+        """Pick a heading only while stopped, preferring a clear corridor.
+
+        USER: the meatball runs to the end of a corridor, pauses, chooses a
+        direction and only then moves; it never changes direction mid-run.
+        """
+        row = self.host.actors[oid]
+        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+        x, y = point if point is not None else row['pos']
+        ignore = (oid, s.get('owner', 0))
+        options = [0, 90, 180, 270]
+        self.host.rng.shuffle(options)
+        target = s.get('target_center')
+        if target:
+            options.sort(key=lambda a: -((target[0]-x-w/2)*math.cos(math.radians(a))+
+                                         (target[1]-y-h/2)*math.sin(math.radians(a))))
+        for a in options:
+            probe = (x+math.cos(math.radians(a))*8*256, y+math.sin(math.radians(a))*8*256)
+            if not solid_sweep(terrain, (x, y), probe, (w, h), ignore=ignore):
+                return a
+        return None
+
+    def _tshot_unstick(self, oid, s):
+        """A meatball that cannot move must never stay inside a wall."""
+        row = self.host.actors[oid]
+        owner = self.host.actors.get(s.get('owner'))
+        terrain = geometry(self.host)
+        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+        seeds = []
+        if owner is not None:
+            seeds.append(tuple(owner['pos']))
+        seeds.append(tuple(row['pos']))
+        for x, y in seeds:
+            for radius in (0, 32*256, 64*256, 128*256):
+                for step in range(0, 360, 45):
+                    point = (x+math.cos(math.radians(step))*radius,
+                             y+math.sin(math.radians(step))*radius)
+                    if not solid_sweep(terrain, point, point, (w, h), ignore=(oid,)):
+                        place(self.host, oid, point)
+                        s.update(speed=0., wait_until=self.now+self._range('tshot_turn_pause_s'))
+                        return True
+        self.retire(oid, 'INTERNAL')
+        return False
 
     def _tshot(self, oid, s, dt, target):
         row = self.host.actors[oid]
         if s.get('wait_until', 0) > self.now:
             return
-        if self.now >= s['next']:
-            headings = [0, 90, 180, 270]
-            self.host.rng.shuffle(headings)
-            if target:
-                px, py = center(target)
-                x, y, w, h = rect(row)
-                headings.sort(key=lambda a: -((px-x-w/2)*math.cos(math.radians(a))+(py-y-h/2)*math.sin(math.radians(a))))
-            s['heading'] = headings[0]
-            s['next'] = self.now+self._range('tshot_decide_s')
+        terrain = geometry(self.host)
+        if target is not None:
+            s['target_center'] = center(target)
+        if s.get('heading') is None:
+            heading = self._tshot_heading(oid, s, terrain)
+            if heading is None:
+                self._tshot_unstick(oid, s)
+                return
+            s['heading'] = heading
         s['speed'] = min(self.config['tshot_speed_px_s']*256, s['speed']+self.config['tshot_accel_px_s2']*256*dt)
         x, y, w, h = rect(row)
         angle = math.radians(s['heading'])
         end = (x+math.cos(angle)*s['speed']*dt, y+math.sin(angle)*s['speed']*dt)
-        terrain = geometry(self.host)
         hit = solid_sweep(terrain, (x, y), end, (w, h), ignore=(oid, s.get('owner', 0)))
         if hit:
             f = max(0., hit[0]-1e-6)
             end = (x+(end[0]-x)*f, y+(end[1]-y)*f)
-            candidates = [a for a in (0, 90, 180, 270) if a != s['heading']]
-            self.host.rng.shuffle(candidates)
-            for a in candidates:
-                probe = (end[0]+math.cos(math.radians(a))*4*256, end[1]+math.sin(math.radians(a))*4*256)
-                if not solid_sweep(terrain, end, probe, (w, h), ignore=(oid, s.get('owner', 0))):
-                    s['heading'] = a
-                    break
-            s.update(speed=0., wait_until=self.now+self._range('tshot_turn_pause_s'),
-                     next=self.now+self._range('tshot_decide_s'))
-        move(self.host, oid, end, dt, pose=1 if hit else 3, facing=s['heading'])
+            s.update(goal=end)
+            # Stop at the end of the corridor, pause, then choose a direction.
+            s.update(speed=0., heading=None, wait_until=self.now+self._range('tshot_turn_pause_s'))
+            if f <= 0.:
+                self._tshot_unstick(oid, s)
+                return
+        move(self.host, oid, end, dt, pose=1 if hit else 3, facing=s['heading'] or 0)
 
     def _book_attach(self, worker, book):
         row = self.host.actors[book]
