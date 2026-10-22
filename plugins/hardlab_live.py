@@ -138,7 +138,13 @@ class Plugin(PluginBase):
                 replay_ready=self.native_capture is not None,replay_initialized=getattr(self,'replay_initialized',False),
                 recording_error=(self.native_capture.tape.error or self.native_capture.delivery.error) if self.native_capture is not None else None,
                 recording_error_detail=(getattr(self.native_capture.tape,'error_detail',None) or getattr(self.native_capture.delivery,'error_detail',None)) if self.native_capture is not None else self.native_capture_error,
-                tick_error=getattr(self,'tick_error',None))
+                tick_error=getattr(self,'tick_error',None),socket_open=bool(self.bridge.socket),
+                socket_missing=int(getattr(self.bridge,'_socket_missing',0)),
+                network_error=getattr(self.bridge,'_network_last_error',None),
+                udp_target=list(getattr(self.bridge,'_udp_target',None) or ()),
+                udp_host=getattr(self.bridge,'host',None),udp_port=getattr(self.bridge,'port',None),
+                send_error=getattr(self.bridge,'_send_error',None),stage=getattr(self,'last_stage',None),
+                session_flag=getattr(self,'session',None),active_flag=getattr(self,'active',None))
             delivery=getattr(self.native_capture,'delivery',None)
             if delivery is not None:
                 delivery.health(path,value)
@@ -213,7 +219,8 @@ class Plugin(PluginBase):
             except Exception:pass
             try:self._report_health()
             except Exception:pass
-        except BaseException:pass
+        except BaseException as error:
+            self.tick_error = type(error).__name__ + ': ' + str(error)[:160]
 
     def _replay_post_frame(self):
         player=self.native_capture.player if self.native_capture is not None else None
@@ -221,46 +228,58 @@ class Plugin(PluginBase):
         self.bridge.begin_native_frame()
 
     def _after_update_live(self):
+        self.last_stage = 'session'
         if not self.session:
             return
         if self.native_capture is not None and self.native_capture.player is not None and self.native_capture.player.blocked():
+            self.last_stage = 'replay-blocked'
             state=self.native_capture.player.status()
             self.status='Replay {0}  {1:.1f}/{2:.1f}s'.format(state['state'],state['seconds'],state['duration'])
             return
         try:
             # Editor/recorder keys must never disconnect player feedback.
             if not self.active:
+                self.last_stage = 'inactive'
                 return
 
             if bool(self.config.keep_time_reserve):
                 self.bridge.top_up_reserve()
+            self.last_stage = 'top-up'
             self.bridge.begin_native_frame()
+            self.last_stage = 'begin-frame'
 
             if self.bridge.ground_restore_attached():
                 self.bridge._drain_ack()
                 self.bridge.send_ground_restore(time.time())
+            self.last_stage = 'before-keys'
             if self.key_reader.refresh():
                 self.bridge._hold_since.clear()
                 self.bridge._hold_fired.clear()
                 self._pending_interact_edge = False
                 self.bridge._old_interact = True
                 self.bridge._interaction_held_blocked = True
+            self.last_stage = 'keys'
             keyboard = self.key_reader.document
             interact_code = self.keybindings.scancode(keyboard, 'interact')
             if interact_code:
                 interact_code = (self.bridge._keyboard_scancode(self.keybindings.keycode(keyboard['interact']))
                                  or interact_code)
             self.bridge.sample_interaction_context(interact_code)
+            self.last_stage = 'before-interact'
             down, edge = self.bridge.interact_edge(interact_code)
+            self.last_stage = 'interact'
             if self.bridge.interaction_blocked():
                 self._pending_interact_edge = False
             else:
                 self._pending_interact_edge = self._pending_interact_edge or edge
 
+            self.last_stage = 'before-reapply'
             if self.bridge.reapply_room_input():
                 self._pending_interact_edge = False
+            self.last_stage = 'reapply'
             now = time.time()
             if now < self.next_send:
+                self.last_stage = 'waiting-next-send'
                 return
             self.last_send = now
 
@@ -294,6 +313,7 @@ class Plugin(PluginBase):
             self.bridge.seq = document['seq']
             sent_before = self.bridge.sent
             self.bridge.send(document)
+            self.last_stage = 'sent' if self.bridge.sent > sent_before else 'send-failed'
             if self.bridge.sent > sent_before:
                 self._pending_interact_edge = False
             self.bridge.send_ground_egress(now)

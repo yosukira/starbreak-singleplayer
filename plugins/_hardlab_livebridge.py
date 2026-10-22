@@ -979,6 +979,7 @@ class LiveBridge(object):
         sink=getattr(self,'feedback_sink',None)
         if sink is not None and sink(payload):return
         if self.socket is None:
+            self._socket_missing = getattr(self, '_socket_missing', 0) + 1
             return
         try:
             document = json.dumps(payload,ensure_ascii=True,separators=(',',':'),allow_nan=False)
@@ -986,8 +987,9 @@ class LiveBridge(object):
                                self._udp_target or (self.host, self.port))
             self.sent += 1
             self._drain_ack()
-        except Exception:
-            pass
+        except Exception as error:
+            self._send_error = type(error).__name__ + ': ' + str(error)[:160]
+            self._network_reject(self._send_error)
 
     def top_up_reserve(self):
         """Keep the client's world-time credit pinned at its retail cap.
@@ -1166,6 +1168,7 @@ class LiveBridge(object):
         if getattr(self,'feedback_isolated',False):
             return
         if self.socket is None:
+            self._socket_missing = getattr(self, '_socket_missing', 0) + 1
             return
         frame = self._network_frame
         frame['drain_calls'] += 1
