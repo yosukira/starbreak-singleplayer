@@ -1,4 +1,4 @@
-"""SC room mechanisms, responding to current players and real damage inputs.
+﻿"""SC room mechanisms, responding to current players and real damage inputs.
 
 D values retain native fields and observed action timings. FIT values below
 are local policies where captures do not establish a retail decision rule.
@@ -123,12 +123,10 @@ class ScMechanics(Ownership):
                 velocity = (movement.get('vel') or {}).get('xvel') or 0
                 if velocity:
                     direction = -1 if velocity < 0 else 1
-                if direction > 0:
-                    x = self.mledge_bounds['left'] - width - left*width
-                    left += 1
-                else:
-                    x = self.mledge_bounds['right'] + right*width
-                    right += 1
+                # Shift the whole lane one room-width outward so it keeps its
+                # authored spacing and streams back in together.
+                span = self.mledge_bounds['right'] - self.mledge_bounds['left']
+                x = row['pos'][0] - span - width if direction > 0 else row['pos'][0] + span
                 place(self.host, oid, (x, row['pos'][1]))
                 self.tracks.pop(oid, None)
                 row['props'].pop('move', None)
