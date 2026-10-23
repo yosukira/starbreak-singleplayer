@@ -1922,12 +1922,14 @@ def main(argv=None):
     parser.add_argument('--show', action='store_true', help='show on startup')
     parser.add_argument('--self-test', action='store_true',
                         help='build the panel and exit without mainloop')
+    parser.add_argument('--legacy', action='store_true',
+                        help='Use the offline Tk editor when the embedded browser is unavailable')
     parser.add_argument('--log', default=os.path.join(
         LAB, 'userdata', 'logs', 'gear-editor.log'), help='hotkey/debug log path')
     parser.add_argument('--owner-pid', type=int,
                         help='launcher process; the panel closes when it exits')
     options = parser.parse_args(argv)
-    if not options.self_test:
+    if not options.self_test and not options.legacy:
         from tools.desktop_view import main as shared_editor
         return shared_editor(['--owner-pid', str(options.owner_pid or os.getpid()), *(['--show'] if options.show else [])])
     _ensure_bundled_tcl()

@@ -19,6 +19,33 @@ from tools import web_dependencies
 ROOT=Path(__file__).resolve().parents[1]
 
 
+class OfflineEditorFallbackTests(unittest.TestCase):
+    def test_close_waits_for_the_native_window_to_exist(self):
+        from types import SimpleNamespace as NS
+        window=NS(native=None);actions=WindowActions(window)
+        with mock.patch('tools.desktop_view.os.name','nt'),mock.patch.dict(sys.modules,{'System':NS(Action=lambda callback:callback)}):
+            actions.post('close')
+            native=mock.Mock(IsDisposed=False);queued=[]
+            native.BeginInvoke.side_effect=queued.append;window.native=native
+            actions.flush();self.assertEqual(len(queued),1)
+            queued[0]();native.Close.assert_called_once()
+
+    def test_old_ie_is_never_accepted_as_a_working_equipment_editor(self):
+        self.assertTrue(desktop_view.needs_native_editor('mshtml'))
+        self.assertTrue(desktop_view.needs_native_editor(None))
+        self.assertFalse(desktop_view.needs_native_editor('edgechromium'))
+
+    def test_fallback_opens_the_bundled_editor_with_the_same_owner(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as directory,mock.patch('tools.gear_editor.main') as editor:
+            options=SimpleNamespace(owner_pid=123,show=True)
+            desktop_view.offline_editor(options,Path(directory),{},'mshtml')
+            arguments=editor.call_args.args[0]
+            self.assertIn('--legacy',arguments);self.assertIn('--show',arguments)
+            self.assertEqual(arguments[arguments.index('--owner-pid')+1],'123')
+            self.assertEqual(json.loads((Path(directory)/'window-status.json').read_text())['backend'],'tk')
+
+
 class DesktopStartupTests(unittest.TestCase):
     def viewer_fixture(self,root):
         files={'webview/__init__.py':b'# viewer\n','pythonnet/runtime/Python.Runtime.dll':b'pinned assembly'}

@@ -13,7 +13,7 @@ class ScRunLiveSession(RunLiveSession):
     # The Cathedral run arms a room as soon as its world exists and accepts
     # sparse player telemetry at a door. Other full runs keep the old timing.
     ARM_ON_CREATE=True
-    DOOR_TELEMETRY_S=5.
+    DOOR_TELEMETRY_S=.5
 
     # Projectiles and beam effects are transient: leaving a room must not leave
     # its shots hanging in mid air for the next visit.

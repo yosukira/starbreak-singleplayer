@@ -1423,44 +1423,30 @@ class LocalServer(object):
         return self._commit_live_room_transition(channel,session,outcome['link'],player,
             inventory_create=outcome['create_player'])
 
-    # A native ACK that never arrives must not wedge every later door and
-    # restart in this run: the gate is released once it is provably stale.
-    GROUND_EGRESS_ACK_TIMEOUT_S=8.
-
-    def _release_ground_ack(self, reason):
-        self._ground_egress_ack_pending=None
-        log('ground egress acknowledgement released the door gate: '+reason)
+    def _retry_ground_ack(self, pending):
+        # Lost UDP packets are retried with the same immutable receipt. Time
+        # passing alone cannot prove that the native load gate was removed.
+        now=time.monotonic()
+        if now<pending.get('retry_at',0.):return
+        pending['retry_at']=now+.5
+        pending['bridge'].acknowledge_ground_egress(pending['ack'])
 
     def _ground_ack_ready(self,bridge):
-        """Publishing an ACK cannot authorize a new same-PVID native load.
-
-        Wait for the native coordinator to confirm consuming that exact ACK
-        and removing its gate, including for R/editor/class restarts. A missing
-        or mismatched acknowledgement is bounded: an unreachable native gate
-        would otherwise leave the whole run unable to change rooms or restart.
-        """
         pending=getattr(self,'_ground_egress_ack_pending',None)
         if pending is None:return True
-        if pending['bridge'] is not bridge:
-            self._release_ground_ack('the acknowledgement belongs to a retired bridge')
-            return True
-        since=pending.get('since')
-        stale=isinstance(since,(int,float)) and time.time()-since>self.GROUND_EGRESS_ACK_TIMEOUT_S
+        self._retry_ground_ack(pending)
+        if pending['bridge'] is not bridge:return False
         from .maps.run_common.ground_transition import fingerprint
         small=bridge.ground_egress_status()
         try:
             if (not isinstance(small,dict) or small.get('schema')!='full-run-egress-ready-v1' or
                     small.get('status')!='acknowledged' or
                     fingerprint(small.get('acknowledged_receipt'))!=fingerprint(pending['ack'])):
-                if stale:self._release_ground_ack('the native receipt never matched within the deadline')
-                return stale
+                return False
             fields=('request_id','request_attempt','issued_at','scope','expected_pvid','expected_cw_sha256')
             if fingerprint({k:small.get(k) for k in fields})!=fingerprint({k:pending['control'][k] for k in fields}):
-                if stale:self._release_ground_ack('the native receipt carried another request within the deadline')
-                return stale
-        except (ValueError,TypeError,KeyError,UnicodeError):
-            if stale:self._release_ground_ack('the native receipt was unreadable within the deadline')
-            return stale
+                return False
+        except (ValueError,TypeError,KeyError,UnicodeError):return False
         self._ground_egress_ack_pending=None
         bridge.finish_ground_egress_ack()
         return True

@@ -9,7 +9,7 @@
     $('tab-equipment').onclick=()=>setTab('equipment');
     $('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
   }
-  let language=localStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
+  let language=StarBreakStorage.getItem('starbreak-web-language')||(navigator.language.startsWith('zh')?'zh':'en');
   if(!['en','zh','zh-affixes'].includes(language))language='en';
   let catalogue=[],busy=false,liveMap=null,runMap=null,replayRecord=null,replayPaused=false,lastReplayState=null,battleEnded=false,seekDragging=false,pendingSeek=0;
   let activeTab='battle',replayKeyboardKeys=new Set();
@@ -252,7 +252,7 @@
   }
   function setLanguage(value){
     if(!['en','zh','zh-affixes'].includes(value))return;
-    language=value;localStorage.setItem('starbreak-web-language',language);editor.remember();translate();
+    language=value;StarBreakStorage.setItem('starbreak-web-language',language);editor.remember();translate();
   }
   $('language').onchange=event=>setLanguage(event.target.value);
   $('map').onchange=()=>{const row=catalogue.find(map=>map.id===$('map').value);editor.mapTitle=title(row);editor.setMap(row.id);if(!liveMap)$('arena-title').textContent=title(row);};
@@ -332,7 +332,7 @@
       const frame=document.createElement('iframe');frame.src=(globalThis.StarBreakBrowser?.assetURL('/game.html')||'/game.html')+'?replay='+encodeURIComponent(record.replay.id)+'&record='+encodeURIComponent(record.id);frame.title=t('StarBreak 录像回放','StarBreak replay');frame.allow='autoplay; fullscreen';
       $('stage').classList.remove('native-stage');
       $('stage').replaceChildren(frame);
-    }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
+    }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;return false;}
     finally{setBusy(false);}
   }
   addEventListener('message',event=>{
@@ -382,12 +382,17 @@
     setBusy(true);if(globalThis.StarBreakBrowser){showLoading('environment');const p=StarBreakBrowser.progress;if(p){loadingPercent=p.percent;loading.step=p.step;}}translate();
     try{
       const [info]=await Promise.all([fetch('/api/info').then(response=>response.json()),editor.load()]);catalogue=info.maps;window.STARBREAK_RECORD_STAT_LABELS=Object.fromEntries((editor.data?.stats||[]).map(s=>[s.id,s]));
-      if(editor.preferences.language){language=editor.preferences.language;localStorage.setItem('starbreak-web-language',language);}
+      if(editor.preferences.language){language=editor.preferences.language;StarBreakStorage.setItem('starbreak-web-language',language);}
       const saved=editor.profile.settings.map;editor.map=catalogue.some(map=>map.id===saved&&map.ready)?saved:'hulk_mid';
       mapOptions();$('map').value=editor.map;translate();
     }catch(error){showLoading(null);$('error').textContent=error.message;$('error').hidden=false;}
     finally{if(loading?.phase==='environment')finishLoading();setBusy(false);}
   }
   if(desktop)$('close-editor').onclick=()=>void window.pywebview?.api?.hide_window();
-  void init().then(()=>{const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:view==='guide'?'guide':'equipment');else if(['records','guide','visuals'].includes(view))setTab(view==='records'?true:view);});
+  void init().then(ready=>{
+    const notify=()=>{if(desktop){if(ready===false)window.pywebview?.api?.ui_error?.($('error').textContent);else window.pywebview?.api?.ui_ready?.();}};
+    if(ready!==false){const view=new URLSearchParams(location.search).get('view');showLoading(null);if(desktop)setTab(view==='records'?true:view==='guide'?'guide':'equipment');else if(['records','guide','visuals'].includes(view))setTab(view==='records'?true:view);}
+    window.STARBREAK_UI_READY=ready!==false;
+    addEventListener('pywebviewready',notify,{once:true});notify();
+  });
 })();

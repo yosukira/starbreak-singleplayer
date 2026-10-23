@@ -23,24 +23,29 @@ class DoorGateTests(unittest.TestCase):
                                                              'status': 'pending'}
         host = SimpleNamespace(
             _ground_egress_ack_pending=dict(bridge=bridge, since=since,
-                                            control={'request_id': 1}, ack={'receipt': 1}),
-            GROUND_EGRESS_ACK_TIMEOUT_S=LocalServer.GROUND_EGRESS_ACK_TIMEOUT_S)
-        host._release_ground_ack = lambda reason: setattr(host, '_ground_egress_ack_pending', None)
+                                            control={k:1 for k in ('request_id','request_attempt','issued_at','scope','expected_pvid','expected_cw_sha256')}, ack={'receipt': 1}))
+        host._retry_ground_ack=lambda pending:LocalServer._retry_ground_ack(host,pending)
         return host, bridge
 
     def test_fresh_ack_keeps_the_gate_closed(self):
         host, bridge = self.host(time.time())
         self.assertFalse(LocalServer._ground_ack_ready(host, bridge))
 
-    def test_missing_ack_releases_the_gate_after_the_deadline(self):
-        host, bridge = self.host(time.time()-LocalServer.GROUND_EGRESS_ACK_TIMEOUT_S-1.)
-        self.assertTrue(LocalServer._ground_ack_ready(host, bridge))
+    def test_lost_ack_is_retried_without_authorizing_an_unconfirmed_load(self):
+        host, bridge = self.host(time.time()-60.)
+        self.assertFalse(LocalServer._ground_ack_ready(host, bridge))
+        bridge.acknowledge_ground_egress.assert_called_once_with({'receipt':1})
+        pending=host._ground_egress_ack_pending
+        bridge.ground_egress_status.return_value=dict(pending['control'],
+            schema='full-run-egress-ready-v1',status='acknowledged',acknowledged_receipt=pending['ack'])
+        self.assertTrue(LocalServer._ground_ack_ready(host,bridge))
+        bridge.finish_ground_egress_ack.assert_called_once()
         self.assertIsNone(host._ground_egress_ack_pending)
 
-    def test_retired_bridge_releases_the_gate_immediately(self):
+    def test_another_bridge_cannot_confirm_the_original_load(self):
         host, _bridge = self.host(time.time())
-        self.assertTrue(LocalServer._ground_ack_ready(host, object()))
-        self.assertIsNone(host._ground_egress_ack_pending)
+        self.assertFalse(LocalServer._ground_ack_ready(host, object()))
+        self.assertIsNotNone(host._ground_egress_ack_pending)
 
 
 class Clock:

@@ -1,6 +1,10 @@
 /* Battle history shared by browser and native desktop windows. */
 (() => {
   'use strict';
+  const recordStorage={
+    getItem(key){try{return localStorage.getItem(key);}catch(_){return null;}},
+    setItem(key,value){try{localStorage.setItem(key,value);}catch(_){}}
+  };
   const classes={1:'Wildfire',2:'Duskwing',5:'Fabricator',3:'Ironclad'};
   const abbreviations={1:'WF',2:'DW',5:'FAB',3:'IC'};
   const metricLabels={damage_dealt:['造成伤害','Damage dealt'],kills:['击杀','Kills'],health_packs:['血包','Health packs'],ammo_packs:['弹药包','Ammo packs'],healing:['恢复生命','Healing'],damage_taken:['承受伤害','Damage taken'],generators_destroyed:['摧毁 Gen','Generators destroyed']};
@@ -57,9 +61,9 @@
   window.BattleRecords=class {
     constructor(root,language,catalogue=()=>[],play=()=>{},maps=()=>[]){
       this.root=root;this.language=language;this.catalogue=catalogue;this.maps=maps;this.sharedFilters={};this.sharedRequest=0;this.play=play;this.rows=[];this.selected=new Set();this.current=null;this.visible=false;this.timer=null;this.notice='';this.shareResults={};this.view='local';this.sharedRows=[];this.sharedDetails=new Map();this.sharedNotice='';this.shareDraft=null;this.comments=new Map();this.commentDrafts=new Map();this.expandedEquipment=new Map();this.codeOpen=false;this.codeDraft='';
-      try{this.filters=JSON.parse(localStorage.getItem('starbreak-record-filters'))||{};}catch(_){this.filters={};}
-      this.filters=normalizeFilters(this.filters);this.page=0;this.pageSize=[10,50,100].includes(Number(localStorage.getItem('starbreak-record-page-size')))?Number(localStorage.getItem('starbreak-record-page-size')):50;
-      try{const saved=JSON.parse(localStorage.getItem('starbreak-shared-filters'));if(saved&&typeof saved==='object')for(const key of ['map','shell','front','upper','lower'])if(typeof saved[key]==='string'&&saved[key].length<80)this.sharedFilters[key]=saved[key];}catch(_){}
+      try{this.filters=JSON.parse(recordStorage.getItem('starbreak-record-filters'))||{};}catch(_){this.filters={};}
+      this.filters=normalizeFilters(this.filters);this.page=0;this.pageSize=[10,50,100].includes(Number(recordStorage.getItem('starbreak-record-page-size')))?Number(recordStorage.getItem('starbreak-record-page-size')):50;
+      try{const saved=JSON.parse(recordStorage.getItem('starbreak-shared-filters'));if(saved&&typeof saved==='object')for(const key of ['map','shell','front','upper','lower'])if(typeof saved[key]==='string'&&saved[key].length<80)this.sharedFilters[key]=saved[key];}catch(_){}
       this.root.addEventListener('click',e=>this.click(e));
       this.root.addEventListener('change',e=>this.change(e));
       this.root.addEventListener('toggle',e=>{if(!e.target.matches?.('.record-equipped')||!this.root.contains(e.target))return;const {record,slot}=e.target.dataset;const open=this.expandedEquipment.get(record)||new Set();e.target.open?open.add(Number(slot)):open.delete(Number(slot));this.expandedEquipment.set(record,open);},true);
@@ -78,7 +82,7 @@
       catch(_){this.notice=this.t('无法读取战斗记录，请稍后重试。','Could not load battle records. Try again.');this.render();}
       if(this.visible)this.timer=setTimeout(()=>this.refresh(),5000);
     }
-    remember(){try{localStorage.setItem('starbreak-record-filters',JSON.stringify(this.filters));}catch(_){}this.render();}
+    remember(){try{recordStorage.setItem('starbreak-record-filters',JSON.stringify(this.filters));}catch(_){}this.render();}
     checks(group,options){return options.map(([value,label])=>`<label class="record-check"><input type="checkbox" data-filter="${group}" value="${escape(value)}" ${this.filters[group]?.includes(String(value))?'checked':''}><span>${escape(label)}</span></label>`).join('');}
     render(force=false){
       if(!this.visible)return;
@@ -163,7 +167,7 @@
       const thread=this.comments.get(code);
       if(!thread){this.comments.set(code,{rows:[],loading:true});queueMicrotask(()=>this.loadComments(r));}
       let draft=this.commentDrafts.get(r.id);
-      if(!draft){let name='';try{name=nickname(this.identity?.()||localStorage.getItem('starbreak-comment-id')||localStorage.getItem('starbreak-share-nickname')||'');}catch(_){}draft={nickname:name,text:''};this.commentDrafts.set(r.id,draft);}
+      if(!draft){let name='';try{name=nickname(this.identity?.()||recordStorage.getItem('starbreak-comment-id')||recordStorage.getItem('starbreak-share-nickname')||'');}catch(_){}draft={nickname:name,text:''};this.commentDrafts.set(r.id,draft);}
       const value=thread||{rows:[],loading:true};
       return `<section class="record-comments"><div class="record-loadout-heading"><h3>${this.t('录像评论','Replay comments')}</h3><button class="secondary" data-action="refresh-comments" ${value.loading?'disabled':''}>${this.t('刷新','Refresh')}</button></div><p class="record-muted">${this.t('此分享码下的评论公开可见；ID 会在本机记住。','Comments are public for this sharing code. Your ID is remembered on this device.')}</p>${value.more?`<button class="secondary" data-action="older-comments">${this.t('加载更早的评论','Load older comments')}</button>`:''}<div class="record-comment-list">${value.rows.map(c=>`<article><div><b>${escape(c.nickname)}</b><time>${escape(new Date(c.created*1000).toLocaleString(this.language().startsWith('zh')?'zh-CN':'en-US'))}</time></div><p>${escape(c.text)}</p></article>`).join('')}</div><p role="status">${escape(value.error||'')}${value.loading?this.t('正在读取评论…','Loading comments…'):!value.rows.length?this.t('还没有评论。','No comments yet.'):''}</p><label>${this.t('你的 ID（英文，必填）','Your ID (English, required)')}<input data-comment-id maxlength="32" value="${escape(draft.nickname)}" autocomplete="nickname"></label><label>${this.t('评论','Comment')}<textarea data-comment-text maxlength="1000" rows="3">${escape(draft.text)}</textarea></label><button class="secondary" data-action="post-comment" ${value.posting?'disabled':''}>${value.posting?this.t('正在发送…','Sending…'):this.t('发表评论','Post comment')}</button></section>`;
     }
@@ -185,7 +189,7 @@
       thread.posting=true;thread.error='';this.comments.set(code,thread);this.detail(row.id);
       try{
         const response=await fetch('/api/records/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,nickname:author,text:draft.text})});const data=await response.json();if(!response.ok)throw Error(data.error||'');if(!data.comment)throw Error();
-        try{localStorage.setItem('starbreak-comment-id',author);}catch(_){}
+        try{recordStorage.setItem('starbreak-comment-id',author);}catch(_){}
         thread.rows.push(data.comment);draft.text='';this.commentDrafts.set(row.id,draft);
       }catch(error){thread.error=error.message==='political-content'?this.t('评论包含政治相关内容，请修改后再发送。','Political content is not allowed. Please edit your comment.'):error.message==='political-nickname'?this.t('此 ID 不可使用，请换一个英文 ID。','This ID is not allowed. Choose another English ID.'):this.t('评论发送失败，请稍后重试。','Could not post comment. Please try again later.');}
       thread.posting=false;if(this.current===row.id)this.detail(row.id);
@@ -209,7 +213,7 @@
       if(button.dataset.open){this.detail(button.dataset.open);document.querySelector('[data-action=close-detail]')?.focus();return;}
       if(button.dataset.view){this.view=button.dataset.view;this.current=null;await this.refresh();this.render();return;}
       if(button.dataset.redeem){await this.redeemCode(button,button.dataset.redeem);return;}
-      if(button.dataset.share){const row=this.rows.find(r=>r.id===button.dataset.share);if(row?.source==='import'){await this.originalCode(row,button);return;}if(this.shareResults[button.dataset.share]){this.detail(button.dataset.share);return;}let previous='';try{previous=nickname(this.identity?.()||localStorage.getItem('starbreak-share-nickname'));}catch(_){}this.shareDraft={id:button.dataset.share,nickname:previous};this.shareError='';this.detail(button.dataset.share);this.root.querySelector('[data-share-nickname]')?.focus();return;}
+      if(button.dataset.share){const row=this.rows.find(r=>r.id===button.dataset.share);if(row?.source==='import'){await this.originalCode(row,button);return;}if(this.shareResults[button.dataset.share]){this.detail(button.dataset.share);return;}let previous='';try{previous=nickname(this.identity?.()||recordStorage.getItem('starbreak-share-nickname'));}catch(_){}this.shareDraft={id:button.dataset.share,nickname:previous};this.shareError='';this.detail(button.dataset.share);this.root.querySelector('[data-share-nickname]')?.focus();return;}
       if(button.hasAttribute('data-copy-share')){const input=this.root.querySelector('[data-share-result]');try{await navigator.clipboard.writeText(input.value);button.textContent=this.t('已复制','Copied');}catch(_){input.focus();input.select();button.textContent=this.t('已选中，请复制','Selected; copy now');}return;}
       if(button.dataset.delete){await this.deleteRecords([button.dataset.delete]);return;}
       if(button.dataset.page){this.page+=button.dataset.page==='next'?1:-1;this.render(true);return;}
@@ -239,7 +243,7 @@
     }
     async change(event){
       const e=event.target;
-      if(e.hasAttribute('data-page-size')){this.pageSize=Number(e.value);this.page=0;localStorage.setItem('starbreak-record-page-size',e.value);this.render(true);return;}
+      if(e.hasAttribute('data-page-size')){this.pageSize=Number(e.value);this.page=0;recordStorage.setItem('starbreak-record-page-size',e.value);this.render(true);return;}
       if(e.dataset.filter||e.dataset.date||e.dataset.value)this.page=0;
       if(e.dataset.sharedFilter){clearTimeout(this.sharedFilterTimer);this.sharedFilters[e.dataset.sharedFilter]=e.value;if(!['egy_hulk','hulk_normal','egy_run'].includes(this.sharedFilters.map))for(const key of ['front','upper','lower'])delete this.sharedFilters[key];this.rememberSharedFilters();await this.refreshShared();return;}
       if(e.hasAttribute('data-share-nickname'))return;
@@ -254,7 +258,7 @@
     }
     viewTabs(){return `<nav class="record-view-tabs" aria-label="${this.t('记录与分享','Records and sharing')}">${[['local',this.t('本地战绩','Local history')],['latest',this.t('最新分享','Latest shares')],['popular',this.t('近 7 天热门','Popular this week')]].map(([value,label])=>`<button class="secondary ${this.view===value?'selected':''}" data-view="${value}" aria-pressed="${this.view===value}">${label}</button>`).join('')}</nav>`;}
     shareForm(){return `<div class="record-share-compose"><label for="record-share-nickname">${this.t('ID / 昵称（选填，英文）','ID / nickname (optional, English)')}</label><input id="record-share-nickname" data-share-nickname maxlength="32" autocomplete="off" value="${escape(this.shareDraft.nickname)}" placeholder="${this.t('留空显示 Unknown','Leave empty for Unknown')}"><div><button class="secondary" data-action="submit-share">${this.t('生成并分享','Create sharing code')}</button><button class="secondary" data-action="cancel-share">${this.t('取消','Cancel')}</button></div><small>${this.t('该昵称会随录像公开；下次自动填入。','This nickname will be public with the replay and remembered for next time.')}</small></div>`;}
-    rememberSharedFilters(){try{localStorage.setItem('starbreak-shared-filters',JSON.stringify(this.sharedFilters));}catch(_){}}
+    rememberSharedFilters(){try{recordStorage.setItem('starbreak-shared-filters',JSON.stringify(this.sharedFilters));}catch(_){}}
     sharedFilterHTML(){
       const filters=this.sharedFilters,maps=this.maps()||[];
       const choices=maps.length?maps:Array.from(new Map(this.sharedRows.map(r=>[r.map,{id:r.map,title:r.map_title}])).values());
@@ -280,7 +284,7 @@
     }
     async share(identifier,button){
       if(this.shareResults[identifier]){this.detail(identifier);return;}const row=this.rows.find(r=>r.id===identifier);if(row?.source==='import'){await this.originalCode(row,button);return;}
-      let author;try{author=nickname(this.shareDraft?.nickname);localStorage.setItem('starbreak-share-nickname',author);}catch(_){this.shareError=this.t('昵称限 32 个英文字母、数字、空格或 . _ -，不能用 null、unknown 等占位名或政治相关名称。','Use up to 32 English letters, numbers, spaces or . _ -. Placeholder and political names are not allowed.');this.detail(identifier);return;}
+      let author;try{author=nickname(this.shareDraft?.nickname);recordStorage.setItem('starbreak-share-nickname',author);}catch(_){this.shareError=this.t('昵称限 32 个英文字母、数字、空格或 . _ -，不能用 null、unknown 等占位名或政治相关名称。','Use up to 32 English letters, numbers, spaces or . _ -. Placeholder and political names are not allowed.');this.detail(identifier);return;}
       if(this.shareBusy)return;this.shareBusy=true;button.disabled=true;button.textContent=this.t('正在上传录像…','Uploading replay…');
       this.shareError='';const transferID=crypto.randomUUID(),started=Date.now();let last={stage:'preparing'},polling=false;
       const update=event=>{if(event)last=event.detail;const {stage,loaded=0,total=0}=last;

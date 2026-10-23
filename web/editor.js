@@ -1,7 +1,17 @@
 /* Equipment drafts are validated by the Python model before being saved. */
+// Files remain authoritative on desktop. A disabled or full browser store must
+// not prevent the editor from opening or saving through the local service.
+const StarBreakStorage=(()=>{
+  const memory=new Map();
+  return {
+    getItem(key){if(memory.has(key))return memory.get(key);try{return localStorage.getItem(key);}catch(_){return null;}},
+    setItem(key,value){memory.set(key,String(value));try{localStorage.setItem(key,String(value));}catch(_){}},
+    removeItem(key){memory.set(key,null);try{localStorage.removeItem(key);}catch(_){}}
+  };
+})();
 class WebEquipment {
   constructor(language, changed) {
-    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=localStorage.getItem('starbreak-item-sort')==='name'?'name':'id';this.affixSort=localStorage.getItem('starbreak-affix-sort')==='name'?'name':'id';
+    this.language=language;this.changed=changed;this.shell=1;this.slot=256;this.map='hulk_mid';this.dirty=false;this.itemSort=StarBreakStorage.getItem('starbreak-item-sort')==='name'?'name':'id';this.affixSort=StarBreakStorage.getItem('starbreak-affix-sort')==='name'?'name':'id';
     this.$=id=>document.getElementById(id);
     const tabs=[...document.querySelectorAll('#editor-settings-tabs [role="tab"]')];
     for(const [index,tab] of tabs.entries()){
@@ -22,8 +32,8 @@ class WebEquipment {
     this.$('editor-mk').oninput=event=>{this.row().mk_=+event.target.value;this.touch();};
     this.$('editor-implants').oninput=event=>{this.row().impslots_=+event.target.value;this.touch();};
     this.$('item-search').oninput=()=>{this.itemOptions();this.remember();};
-    this.$('sort-items').onclick=()=>{this.itemSort=this.itemSort==='id'?'name':'id';localStorage.setItem('starbreak-item-sort',this.itemSort);this.itemOptions();this.remember();};
-    this.$('sort-modifiers').onclick=()=>{this.affixSort=this.affixSort==='id'?'name':'id';localStorage.setItem('starbreak-affix-sort',this.affixSort);this.modifiers();};
+    this.$('sort-items').onclick=()=>{this.itemSort=this.itemSort==='id'?'name':'id';StarBreakStorage.setItem('starbreak-item-sort',this.itemSort);this.itemOptions();this.remember();};
+    this.$('sort-modifiers').onclick=()=>{this.affixSort=this.affixSort==='id'?'name':'id';StarBreakStorage.setItem('starbreak-affix-sort',this.affixSort);this.modifiers();};
     this.$('all-classes').onchange=()=>{this.itemOptions();this.remember();};
     this.$('record-replays').onchange=()=>this.action(async()=>{
       const input=this.$('record-replays'),enabled=input.checked;input.disabled=true;
@@ -51,7 +61,7 @@ class WebEquipment {
       clearTimeout(this.draftTimer);
       this.$('restore-defaults').disabled=true;
       try{this.profile=await this.post('/api/reset',{revision:this.profile.revision});this.dirty=false;
-        localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;
+        StarBreakStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;
         this.changed();this.render();this.notice(this.t('全部配装与战斗设置已恢复默认，原配置已备份；下一局生效。','All loadouts and encounter settings restored. Previous settings backed up; applies to the next attempt.'));
       }finally{this.$('restore-defaults').disabled=false;}
     });
@@ -78,7 +88,7 @@ class WebEquipment {
   }
   row(){return this.profile.loadouts[this.shell];}
   current(){return this.row().items_.find(item=>item.slotpos_===this.slot);}
-  touch(){this.dirty=true;localStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
+  touch(){this.dirty=true;StarBreakStorage.setItem('starbreak-web-draft',JSON.stringify(this.profile));this.changed();
     clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>this.post('/api/draft',this.profile).catch(()=>{}),250);
   }
   flush(){clearTimeout(this.updateTimer);clearInterval(this.autoUpdateTimer);if(!this.preferences)return;clearTimeout(this.preferenceTimer);clearTimeout(this.draftTimer);navigator.sendBeacon('/api/preferences',JSON.stringify(this.preferenceDocument()));if(this.dirty)navigator.sendBeacon('/api/draft',JSON.stringify(this.profile));}
@@ -142,10 +152,10 @@ class WebEquipment {
     if(!this.preferences){this.preferences=data.preferences;this.shell=this.preferences.shell;this.slot=this.preferences.slot;this.itemSort=this.preferences.item_sort;this.$('item-search').value=this.preferences.query;this.$('all-classes').checked=this.preferences.all_classes;}
     if(restoreDraft&&data.draft){this.profile=data.draft;this.dirty=true;}
     this.catalogue=new Map(data.items.map(item=>[item.type,item]));this.dirty=!!(restoreDraft&&data.draft);
-    if(restoreDraft){try{const draft=JSON.parse(localStorage.getItem('starbreak-web-draft'));if(draft&&draft.revision===this.profile.revision){this.profile=await this.post('/api/validate',draft);this.dirty=true;}}catch(_){}}
-    else {clearTimeout(this.draftTimer);await this.post('/api/draft',{discard:true,revision:this.profile.revision});localStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;}
+    if(restoreDraft){try{const draft=JSON.parse(StarBreakStorage.getItem('starbreak-web-draft'));if(draft&&draft.revision===this.profile.revision){this.profile=await this.post('/api/validate',draft);this.dirty=true;}}catch(_){}}
+    else {clearTimeout(this.draftTimer);await this.post('/api/draft',{discard:true,revision:this.profile.revision});StarBreakStorage.removeItem('starbreak-web-draft');this.map=this.profile.settings.map;}
   }
-  async save(){clearTimeout(this.draftTimer);if(this.dirty){this.profile=await this.post('/api/editor',this.profile);this.dirty=false;localStorage.removeItem('starbreak-web-draft');this.changed();}}
+  async save(){clearTimeout(this.draftTimer);if(this.dirty){this.profile=await this.post('/api/editor',this.profile);this.dirty=false;StarBreakStorage.removeItem('starbreak-web-draft');this.changed();}}
   selectClass(shell){this.shell=Number(shell);this.$('item-search').value='';this.remember();this.render();}
   setMap(map){this.map=map;this.profile.settings.map=map;this.touch();this.settings();}
   replaceItem(type,slot=this.slot){

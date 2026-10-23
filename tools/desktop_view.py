@@ -210,16 +210,40 @@ def service_failure(path, offset, code):
     return 'Local equipment service exited ('+str(code)+').\n'+detail
 
 
+def needs_native_editor(renderer):
+    """MSHTML can paint our HTML but cannot execute the editor's JavaScript."""
+    return renderer not in ('edgechromium', 'cef')
+
+
+def offline_editor(options, folder, diagnostics, reason):
+    """Use the bundled editor, rather than a window with inert controls."""
+    from tools.web_workspace import atomic_json
+    from tools.gear_editor import main as editor
+    diagnostics.update(renderer_fallback=str(reason), editor_backend='tk')
+    atomic_json(folder/'runtime-diagnostics.json', diagnostics)
+    atomic_json(folder/'window-status.json', dict(pid=os.getpid(),state='ready',backend='tk'))
+    arguments=['--legacy','--owner-pid',str(options.owner_pid),
+               '--log',str(folder/'fallback-editor.log')]
+    if options.show:arguments.append('--show')
+    return editor(arguments)
+
+
 class WindowActions:
     """Post native changes to their owning UI thread without waiting on it."""
-    def __init__(self,window):self.window=window
+    def __init__(self,window):self.window=window;self.pending=[]
+
+    def flush(self,*args):
+        pending,self.pending=self.pending,[]
+        for action in pending:self.post(action)
 
     def post(self,action):
         window=self.window
         if os.name=='nt':
             from System import Action
             native=window.native
-            if native is None or native.IsDisposed:return
+            if native is None:
+                self.pending.append(action);return
+            if native.IsDisposed:return
             def apply():
                 if native.IsDisposed:return
                 if action=='hide':native.Hide()
@@ -229,7 +253,8 @@ class WindowActions:
                     if action=='show':
                         from System.Windows.Forms import FormWindowState
                         native.Show();native.WindowState=FormWindowState.Normal;native.Activate()
-            native.BeginInvoke(Action(apply))
+            try:native.BeginInvoke(Action(apply))
+            except Exception:self.pending.append(action)
         elif action=='hide':window.hide()
         elif action=='close':window.destroy()
         elif action=='show':window.show();window.restore();window.on_top=True
@@ -259,7 +284,8 @@ def main(argv=None):
                 return
         except (OSError,ValueError):pass
     def report(**value):atomic_json(status,dict(pid=os.getpid(),**value))
-    process=None;url=None;diagnostics=dict(python=sys.version,executable=sys.executable,bits=64 if sys.maxsize>2**32 else 32)
+    process=None;url=None;fallback_reason=None
+    diagnostics=dict(python=sys.version,executable=sys.executable,bits=64 if sys.maxsize>2**32 else 32)
     try:
         report(state='preparing',current=0,total=1)
         library=install(folder,lambda current,total:report(state='preparing',current=current,total=total))
@@ -281,6 +307,16 @@ def main(argv=None):
                 '<style>body{background:#0b141d;color:#e1edf5;font:16px system-ui;padding:40px;line-height:1.7}p{max-width:65em;white-space:pre-wrap}</style>'
                 '<h2>'+title+'</h2><p id="startup-message">'+html.escape(message)+'</p></html>')
         class Bridge:
+            def ui_ready(self):
+                ui_ready.set()
+                diagnostics['ui_ready']=True
+                atomic_json(folder/'runtime-diagnostics.json',diagnostics)
+            def ui_error(self, message):
+                nonlocal fallback_reason
+                if ui_ready.is_set():return
+                fallback_reason='Equipment UI startup: '+str(message)[:1000]
+                options.show=visible
+                stopped.set();actions.post('close')
             def show_native_game(self):
                 nonlocal visible
                 visible=False;actions.post('hide')
@@ -301,14 +337,18 @@ def main(argv=None):
                 width=min(width,max(640,bounds.right-bounds.left-40));height=min(height,max(480,bounds.bottom-bounds.top-50))
         window=webview.create_window('StarBreak',html=startup_page('Preparing equipment and records…\n正在准备装备与战绩…'),js_api=Bridge(),width=width,height=height,min_size=(640,420),hidden=not options.show,background_color='#0b141d',on_top=True)
         actions=WindowActions(window)
+        window.events.loaded+=actions.flush
+        window.events.shown+=actions.flush
         def pin_window():actions.post('pin')
         stopped=threading.Event()
+        ui_ready=threading.Event()
+        ui_started=None
         pin_pending=threading.Event()
         window.events.loaded+=pin_pending.set
         window.events.shown+=pin_pending.set
         visible=options.show
         def prepare():
-            nonlocal process,url
+            nonlocal process,url,ui_started
             try:
                 http,ws,game,bridge=ports()
                 from tools.web_client import CLIENT_FILENAME
@@ -331,7 +371,8 @@ def main(argv=None):
                         if time.monotonic()>deadline:raise RuntimeError('Local records service timed out')
                         time.sleep(.2)
                 if stopped.is_set():return
-                window.load_url(url+'/?desktop=1');report(state='ready')
+                ui_started=time.monotonic()
+                window.load_url(url+'/?desktop=1');report(state='loading-ui')
             except Exception as error:
                 report(state='failed',error=str(error)[-2000:])
                 if not stopped.is_set():window.load_html(startup_page(
@@ -348,11 +389,22 @@ def main(argv=None):
                 visible=False;actions.post('hide');return False
         window.events.closing+=closing
         def monitor():
-            nonlocal visible
+            nonlocal visible,fallback_reason
+            renderer=getattr(getattr(webview,'guilib',None),'renderer',None)
+            diagnostics['renderer']=renderer
+            atomic_json(folder/'runtime-diagnostics.json',diagnostics)
+            if os.name=='nt' and needs_native_editor(renderer):
+                fallback_reason='Unsupported embedded browser: '+str(renderer)
+                stopped.set();actions.post('close');return
             pin_window()
             threading.Thread(target=prepare,daemon=True).start()
-            stamp=0;held={};next_keys=0;keys=()
+            stamp=0;held={};next_keys=0;keys=();reported_ui=False
             while not stopped.wait(.04):
+                if ui_ready.is_set() and not reported_ui:
+                    report(state='ready');reported_ui=True
+                if ui_started and not ui_ready.is_set() and time.monotonic()-ui_started>30:
+                    fallback_reason='Equipment UI did not initialize'
+                    options.show=visible;stopped.set();actions.post('close');return
                 if pin_pending.is_set():pin_pending.clear();pin_window()
                 if not alive(options.owner_pid):stopped.set();actions.post('close');return
                 control=folder/'show.json'
@@ -368,12 +420,20 @@ def main(argv=None):
                         held[key]=down
         window.events.closed+=lambda:stopped.set()
         webview.start(monitor,private_mode=False,storage_path=str(folder/'browser'))
+        if fallback_reason:
+            offline_editor(options,folder,diagnostics,fallback_reason)
         report(state='closed')
     except (Exception,SystemExit) as error:
         diagnostics['error']=str(error)
         (folder/'startup-error.log').write_text(traceback.format_exc(),encoding='utf8')
         atomic_json(folder/'runtime-diagnostics.json',diagnostics)
         report(state='failed',error=str(error)[:2000],details=str(folder/'startup-error.log'))
+        if os.name=='nt' and not options.check_runtime and alive(options.owner_pid):
+            try:
+                offline_editor(options,folder,diagnostics,error)
+                report(state='closed');return
+            except Exception:
+                (folder/'fallback-error.log').write_text(traceback.format_exc(),encoding='utf8')
         if os.name=='nt' and not options.check_runtime and alive(options.owner_pid):
             import ctypes
             message=('Equipment & records could not start (local startup error).\n装备与战绩窗口启动失败（本地启动错误，无需检查网络）。\n\n'+str(error)[:300]+

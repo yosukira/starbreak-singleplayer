@@ -38,6 +38,17 @@ for(const valid of ['Player_34','ChinaPlayer','Xi']){
 const vm=require('node:vm'),fs=require('node:fs');
 const ui={window:{},localStorage:{getItem(){return null;}}};
 vm.runInNewContext(fs.readFileSync(require.resolve('../web/records.js'),'utf8'),ui);
+// A blocked browser store used to abort construction before app.js bound the
+// equipment button, leaving the desktop welcome screen with inert controls.
+const blocked={window:{}};
+Object.defineProperty(blocked,'localStorage',{get(){throw Error('Storage disabled');}});
+vm.runInNewContext(fs.readFileSync(require.resolve('../web/records.js'),'utf8'),blocked);
+const blockedRecords=new blocked.window.BattleRecords({addEventListener(){}},()=> 'en');
+assert.equal(blockedRecords.pageSize,50);
+vm.runInNewContext(fs.readFileSync(require.resolve('../web/editor.js'),'utf8'),blocked);
+assert.equal(vm.runInNewContext("StarBreakStorage.getItem('missing')",blocked),null);
+vm.runInNewContext("StarBreakStorage.setItem('draft','kept')",blocked);
+assert.equal(vm.runInNewContext("StarBreakStorage.getItem('draft')",blocked),'kept');
 const original={id:'local',parameters:{loadout:{items_:[equipped,implant,bag]}}};
 const shared={...original,id:'shared'};
 for(const row of [original,shared]){

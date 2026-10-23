@@ -682,6 +682,8 @@ class LiveBridge(object):
             return False
         if getattr(self, '_context_frames', 0) < self.REAPPLY_SETTLE_FRAMES:
             return False
+        if time.monotonic()-getattr(self, '_context_ready_at', time.monotonic()) < .05:
+            return False
         cw = self._current_world()
         seed = int(cw.asWorld.props.seed) if cw is not None else None
         if not self._input_handoff.due(self.input_context, seed):
@@ -696,7 +698,8 @@ class LiveBridge(object):
             self._interaction_held_blocked = True
         mask = total & ~(1 << INTERACT_INPUT)
         before = int(cw.total)
-        self._native_set_input(mask)
+        if before != mask:
+            self._native_set_input(mask)
         if int(cw.total) != mask:
             return False
         self._input_handoff.committed()
@@ -1119,10 +1122,11 @@ class LiveBridge(object):
     def begin_native_frame(self):
         """Once per native frame; send/drain NEVER reset these budgets."""
         identity = (self.input_context.get('map'), self.input_context.get('room_token'),
-                    self.input_context.get('room_seed'))
-        if identity != getattr(self, '_context_identity', None):
+                    self.input_context.get('room_seed'), self.input_context.get('room_ready') is True)
+        if not identity[-1] or identity != getattr(self, '_context_identity', None):
             self._context_identity = identity
             self._context_frames = 0
+            self._context_ready_at = time.monotonic()
         else:
             self._context_frames = getattr(self, '_context_frames', 0)+1
         self._network_previous_frame = self._network_frame

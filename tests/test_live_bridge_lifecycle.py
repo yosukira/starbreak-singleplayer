@@ -53,12 +53,27 @@ class LiveBridgeLifecycleTests(unittest.TestCase):
         ast.parse(Path('plugins/hardlab_live.py').read_text(),feature_version=(3,5))
 
     def test_native_input_reapply_waits_for_a_settled_room(self):
-        # The reapply must never touch the game on the first ready frame of a
-        # handoff, and must not special-case any map.
-        source = Path('plugins/_hardlab_livebridge.py').read_text()
-        self.assertIn('REAPPLY_SETTLE_FRAMES', source)
-        self.assertIn("context.get('room_ready') is not True", source)
-        self.assertNotIn("== 'sc_run'", source)
+        from plugins._hardlab_livebridge import LiveBridge,RoomInputHandoff
+        b=object.__new__(LiveBridge)
+        b.enabled=True;b.input_context=dict(map='sc_run',room_token=2,room_seed=33,room_ready=False,room_handoff=True)
+        b._network_frame={};b._network_frame_id=0;b._input_handoff=RoomInputHandoff()
+        cw=NS(asWorld=NS(props=NS(seed=33)),player=object(),total=0,inputBuffer=0)
+        b._current_world=lambda:cw;b.ffi=NS(NULL=None);b.refs=NS(WorldClient=NS(overlay=None))
+        b.physical_input_mask=lambda:1;b.input_handoffs=0
+        b._native_set_input=mock.Mock(side_effect=lambda mask:setattr(cw,'total',mask))
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic',return_value=100.) as clock:
+            for _ in range(20):b.begin_native_frame();self.assertFalse(b.reapply_room_input())
+            b.input_context['room_ready']=True;b.begin_native_frame()
+            self.assertFalse(b.reapply_room_input())
+            # A fast display cannot turn three frames into a settled handoff.
+            for _ in range(10):b.begin_native_frame()
+            clock.return_value=100.01;self.assertFalse(b.reapply_room_input())
+            b._native_set_input.assert_not_called()
+            clock.return_value=100.06
+            self.assertTrue(b.reapply_room_input())
+            b._native_set_input.assert_called_once_with(1)
+            b.input_context.update(room_token=3,room_seed=34);b.begin_native_frame()
+            self.assertFalse(b.reapply_room_input())
 
     def test_replay_progress_covers_reconstruction_and_restores_canvas_coordinates(self):
         plugin=object.__new__(hardlab_live.Plugin);plugin.session=True
