@@ -273,7 +273,7 @@ class Enemy(object):
                  'attacks', 'rule', 'emits', 'emits_done', 'knockback', 'age',
                  'emitted', 'contact_cd', 'rng', 'launch_until',
                  'launch_vx', 'launch_vy', 'motion', 'state', 'pose',
-                 'next_jump', 'recovery_until', 'attack', 'attack_target', 'run_ready_at',
+                 'next_jump', 'landing_seen', 'recovery_until', 'attack', 'attack_target', 'run_ready_at',
                  'summon_timer', 'summoned_objid', 'flying', 'melee_hit_done', 'climb_side',
                  'coop_attack', 'coop_melee_hits', 'coop_contact_due',
                  'climb_started', 'climb_route', 'climb_start_y', 'climb_hold_until', 'wall_jump_until', 'wall_jump_vx',
@@ -330,6 +330,7 @@ class Enemy(object):
         self.state = 'falling'
         self.pose = 1
         self.next_jump = 0.0
+        self.landing_seen = 0
         self.recovery_until = 0.0
         self.run_ready_at = 0.0
         self.attack = None
@@ -385,6 +386,8 @@ class Enemy(object):
         self.bomb_direction = 0
         if room is not None:
             self.motion.step(self, 0.0, 0.0, 0.0)
+            if self.vid in SHREDDER_VIDS and self.motion.grounded:
+                self.next_jump = max(self.next_jump, self.rules.SHREDDER_PURSUIT_JUMP_INTERVAL)
 
     def rect(self):
         return (int(self.x), int(self.y), self.w, self.h)
@@ -393,6 +396,19 @@ class Enemy(object):
         return (self.x + self.w // 2, self.y + self.h // 2)
 
     def step(self, dt, player, now):
+        """Every melee-lizard landing restarts its existing jump cooldown."""
+        self._landing_cooldown(now)
+        try:
+            return self._step(dt, player, now)
+        finally:
+            self._landing_cooldown(now)
+
+    def _landing_cooldown(self, now):
+        if self.vid in SHREDDER_VIDS and self.motion.landing_serial != self.landing_seen:
+            self.next_jump = max(self.next_jump, now + self.rules.SHREDDER_PURSUIT_JUMP_INTERVAL)
+        self.landing_seen = self.motion.landing_serial
+
+    def _step(self, dt, player, now):
         """Advance one tick; return the events this unit produced."""
         results = []
         self.age += dt

@@ -14,6 +14,7 @@ class GroundMotion(object):
         self.support = None
         self.support_rect = None
         self.grounded = False
+        self.landing_serial = 0
         self.blocked = False
         self.drop_until = 0.0
         self.edge_blocked = False
@@ -160,6 +161,7 @@ class GroundMotion(object):
                     ceiling=(objid,rect,fraction)
         self.grounded = landing is not None
         if landing:
+            self.landing_serial += 1
             self.support, self.support_rect = landing[:2]
             body.y = landing[1][1] - body.h
             self.vy = 0.0

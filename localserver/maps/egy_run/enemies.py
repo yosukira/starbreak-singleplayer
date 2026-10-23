@@ -422,6 +422,8 @@ class ExplorationEnemies:
         if family not in ('drone','mini') and initial_pose in (4,5,6):
 
             state['motion'].step(body,0.,0.,self.now)
+            if family=='melee' and state['motion'].grounded:
+                state['jump_after']=self.now+constants.SHREDDER_PURSUIT_JUMP_INTERVAL
         if family=='melee':state['climber']=_Climber(oid,state)
         if family=='drone':state['flight']=_ExplorationFlight(body,policy)
         if family=='mini':
@@ -1184,6 +1186,14 @@ class ExplorationEnemies:
         self._sync(oid,state,dt,2)
 
     def _step_unit(self,oid,state,dt):
+        motion=state['motion'];landing=getattr(motion,'landing_serial',0)
+        try:
+            return self._advance_unit(oid,state,dt)
+        finally:
+            if state['family']=='melee' and getattr(motion,'landing_serial',0)!=landing:
+                state['jump_after']=max(state['jump_after'],self.now+constants.SHREDDER_PURSUIT_JUMP_INTERVAL)
+
+    def _advance_unit(self,oid,state,dt):
         b=state['body'];policy=state['policy']
         if state['family'] in ('mini','drone'):
             self._step_flying(oid,state,dt,self._target(b.center()));return
