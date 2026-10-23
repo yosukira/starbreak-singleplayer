@@ -380,6 +380,13 @@ class RunReplayTests(unittest.TestCase):
                     self.assertEqual(replay.server.player_delta_blob,source.server.player_delta_blob)
                     for role,room in source.session.run.rooms.items():
                         restored=replay.session.run.rooms[role]
+                        if room.snapshot is None:
+                            # SC preloads recipes before entering a room; this
+                            # must remain uninstantiated after reconstruction.
+                            self.assertIsNone(restored.snapshot)
+                            self.assertIsNone(restored.runtime)
+                            self.assertEqual(restored.recipe,room.recipe)
+                            continue
                         self.assertEqual(restored.snapshot.document(2),room.snapshot.document(2))
                         if room.runtime is not None:self.assertEqual(restored.runtime.room_time,room.runtime.room_time)
                 finally:replay.close()
