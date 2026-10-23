@@ -666,17 +666,21 @@ class LiveBridge(object):
         self._input_setter(self.refs.WorldClient, int(mask))
 
     def reapply_room_input(self):
-        # USER: every door in the Cathedral run froze telemetry. The stall sits
-        # inside this native reapply after a room load, so the run never performs
-        # it: held keys are re-pressed by the player instead.
-        if str((self.input_context or {}).get('map', '')) == 'sc_run':
-            self._sc_skipped = getattr(self, '_sc_skipped', 0)+1
-            self._input_handoff.reset()
-            return False
-        """Restore held native input once after an EGY room becomes ready."""
+        """Restore held native input once after a room becomes ready.
+
+        The native reapply must only run against a fully live world: calling it
+        on the first ready frame of a handoff stalled the game thread in the
+        Cathedral run. Wait for a few settled frames instead of special-casing
+        any map, and give up on a handoff that never reaches that state.
+        """
         marker = str(os.environ.get('HARDLAB_LIVE_SESSION', '')).strip().lower()
         if not self.enabled or marker not in ('1', 'yes', 'true', 'on'):
             self._input_handoff.reset()
+            return False
+        context = self.input_context or {}
+        if context.get('room_ready') is not True:
+            return False
+        if getattr(self, '_context_frames', 0) < self.REAPPLY_SETTLE_FRAMES:
             return False
         cw = self._current_world()
         seed = int(cw.asWorld.props.seed) if cw is not None else None
@@ -1110,8 +1114,17 @@ class LiveBridge(object):
             result['error'] = type(error).__name__ + ': ' + str(error)
         return result
 
+    REAPPLY_SETTLE_FRAMES = 3
+
     def begin_native_frame(self):
         """Once per native frame; send/drain NEVER reset these budgets."""
+        identity = (self.input_context.get('map'), self.input_context.get('room_token'),
+                    self.input_context.get('room_seed'))
+        if identity != getattr(self, '_context_identity', None):
+            self._context_identity = identity
+            self._context_frames = 0
+        else:
+            self._context_frames = getattr(self, '_context_frames', 0)+1
         self._network_previous_frame = self._network_frame
         self._network_frame_id += 1
         self._network_frame = dict(frame_id=self._network_frame_id, packets=0, bytes=0,

@@ -145,7 +145,8 @@ class Plugin(PluginBase):
                 udp_host=getattr(self.bridge,'host',None),udp_port=getattr(self.bridge,'port',None),
                 send_error=getattr(self.bridge,'_send_error',None),stage=getattr(self,'last_stage',None),
                 session_flag=getattr(self,'session',None),active_flag=getattr(self,'active',None),
-                sc_reapply_skipped=getattr(self.bridge,'_sc_skipped',0))
+                context_frames=getattr(self.bridge,'_context_frames',0),
+                handoff_pending=bool(getattr(getattr(self.bridge,'_input_handoff',None),'pending',False)))
             delivery=getattr(self.native_capture,'delivery',None)
             if delivery is not None:
                 delivery.health(path,value)
