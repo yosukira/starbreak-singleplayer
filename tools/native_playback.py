@@ -40,6 +40,15 @@ class NativePlayback:
         self.preparing=False;self.warming=False;self.closed=False;self.error=None;self.branches=set()
         self.practice_pending=False
         self.load_thread=None
+        self.takeover_generation=0;self.error_revision=0
+        self.failed_takeover=None
+
+    def cancel_takeover(self):
+        """Invalidate an outstanding offer under lock without waiting for IO."""
+        self.takeover_generation+=1;self.preparing=False
+        host=self.host
+        self.host=None;self.branch=None;self.packets.clear();self.error=None
+        return host
 
     def availability(self,identifiers):return self.clients.statuses(identifiers,adapter_digest(),self.client)
 
@@ -50,6 +59,7 @@ class NativePlayback:
             self.warm=WarmTakeovers();self.controls=[];self.packets.clear();self.error=None
             self.preparing=self.warming=False;self.warm_cursor=None;self.status=dict(state='idle')
             self.practice_pending=False
+            self.takeover_generation+=1
         if host:host.stop()
         warm.close()
 
@@ -63,6 +73,7 @@ class NativePlayback:
                 if record.get('replay',{}).get('format',record['platform'])!='native':raise ValueError('This recording uses the browser replay engine')
                 old_host,old_warm=self.host,self.warm
                 self.host=None;self.warm=WarmTakeovers();self.source=record;self.serial+=1;self.error=None
+                self.takeover_generation+=1
                 serial=self.serial;self.command=None;warm_host=self.warm
                 self.branch=None;self.packets.clear();self.controls=[]
                 self.preparing=False;self.warming=False;self.warm_cursor=None
@@ -103,18 +114,25 @@ class NativePlayback:
                 if self.branch:raise ValueError('The native battle is already under live control')
                 if action not in ('pause','speed','seek','takeover','stop'):raise ValueError('Unknown native replay action')
                 if action=='stop':
+                    old_host=self.cancel_takeover()
                     self.serial+=1;self.command=None;self.source=None;self.error=None;self.controls=[value];self.status=dict(state='stopped')
-                    return dict(accepted=True)
-                if action=='seek':self.controls=[row for row in self.controls if row.get('action')!='seek']
-                if len(self.controls)>=16:raise ValueError('Native controls are busy')
-                self.controls.append(value);result=dict(accepted=True)
+                else:
+                    if action in ('seek','pause'):
+                        old_host=self.cancel_takeover()
+                        self.controls=[row for row in self.controls if row.get('action')!='takeover'
+                                       and not (action=='seek' and row.get('action')=='seek')]
+                    if action=='takeover':self.error=None
+                    if len(self.controls)>=16:raise ValueError('Native controls are busy')
+                    self.controls.append(value)
+                result=dict(accepted=True)
         if old_host:old_host.stop()
         if old_warm:old_warm.close()
         return result
 
     def poll(self,serial):
         with self.lock:
-            value=dict(serial=self.serial,controls=[],error=self.error)
+            value=dict(serial=self.serial,controls=[],error=self.error,error_revision=self.error_revision,
+                       takeover_generation=self.takeover_generation)
             if self.status.get('state')=='stopped':
                 value['controls']=self.controls;self.controls=[]
             if self.command:
@@ -193,12 +211,16 @@ class NativePlayback:
                 return
             request=value.get('checkpoint')
             if not request or status.get('state')not in ('playing','paused','taking-over'):return
+            if value.get('takeover_generation',self.takeover_generation)!=self.takeover_generation:return
             request=dict(request,record=self.source['id'])
             serial=self.serial
             warm_host=self.warm
             if value.get('takeover'):
                 if self.preparing:return
+                attempt=(self.takeover_generation,value.get('takeover_attempt'),request.get('cursor'))
+                if attempt==self.failed_takeover:return
                 self.preparing=True
+                self.error=None;generation=self.takeover_generation
                 source_document=self.command['document']
                 def prepare():
                     created=None
@@ -213,19 +235,20 @@ class NativePlayback:
                             def send(_self,data):
                                 with owner.lock:
                                     if serial==owner.serial and not owner.closed:owner.send(data)
-                        created.bind(Transport())
                         with self.lock:
-                            stale=self.closed or serial!=self.serial
+                            stale=self.closed or serial!=self.serial or generation!=self.takeover_generation
                             if not stale:
-                                self.host=created;self.branch=created.description();self.branches.add(self.branch['id'])
+                                created.bind(Transport())
+                                self.host=created;self.branch=dict(created.description(),cursor=request['cursor']);self.branches.add(self.branch['id'])
                         if stale:created.stop()
                     except Exception as error:
                         if created:created.stop()
                         with self.lock:
-                            if serial==self.serial:self.error=str(error)[:200]
+                            if serial==self.serial and generation==self.takeover_generation:
+                                self.error=str(error)[:200];self.error_revision+=1;self.failed_takeover=attempt
                     finally:
                         with self.lock:
-                            if serial==self.serial:self.preparing=False
+                            if serial==self.serial and generation==self.takeover_generation:self.preparing=False
                 threading.Thread(target=prepare,daemon=True).start()
             elif (not self.warming and not self.preparing and getattr(self,'warm_cursor',None)!=request.get('cursor')
                     and time.monotonic()-getattr(self,'last_warm',0)>=.5):

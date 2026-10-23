@@ -68,6 +68,8 @@ class WholeRun:
         oid,link=next((oid,link)for oid,link in old.instance.recipe['links'].items()
             if link['destination']==destination and old.run.allows(link))
         props=old.instance.snapshot.properties_at((1,int(oid)))
+        if link.get('trigger') in ('boundary', 'native-door-boundary'):
+            props=old.boundary_properties(oid,link)
         point=(props['xmp_'],props['ymp_'])
         self.feedback((point[0]-100000,point[1]),False)
         self.feedback(point,True)

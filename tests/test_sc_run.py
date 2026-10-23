@@ -106,9 +106,9 @@ class ScRunTests(unittest.TestCase):
             player=dict(worldid=2, objid=1, xmp=x, ymp=y, wmp=10240, hmp=20480,
                         hp=500, maxhp=500, alive=True, room_seed=context['room_seed'])))
 
-    def test_every_door_arrival_lands_clear_of_its_own_door(self):
-        # USER: arriving inside the door just used bounced the player between
-        # two rooms forever. No room may spawn the player over the door rect.
+    def test_every_door_arrival_lands_clear_of_its_trigger(self):
+        # USER: the purple trigger is narrower than the yellow sprite. The
+        # original arrival can overlap the sprite while remaining outside it.
         run, _ = self.make_run(seed=5)
         overlaps = []
         for role in run.pack.room_names:
@@ -117,7 +117,8 @@ class ScRunTests(unittest.TestCase):
                 if not entry.startswith('door_'):
                     continue
                 x, y = ScRunLiveSession.entry_position(run, role, entry, 10240, 20480)
-                door = recipe['objects'][int(entry.split('_')[-1])]
+                port = next(p for p in recipe['metadata']['ports'] if p['entry'] == entry)
+                door = recipe['objects'][port.get('trigger_id', int(entry.split('_')[-1]))]
                 dx, dy = door.get('xmp', 0), door.get('ymp', 0)
                 dw, dh = door.get('wmp', 0), door.get('hmp', 0)
                 if x < dx+dw and x+10240 > dx and y < dy+dh and y+20480 > dy:
@@ -217,6 +218,7 @@ class ScRunTests(unittest.TestCase):
         self.assertEqual(link.get('trigger'), 'boundary')
         props = wrapper.instance.snapshot.properties_at((1, oid))
         self.assertEqual(props['interact_'], 0)
+        props = wrapper.boundary_properties(oid, link)
         self.feedback(wrapper, (props['xmp_']-props['wmp_']*2, props['ymp_']))
         wrapper.step(.02)
         self.feedback(wrapper, (props['xmp_'], props['ymp_']))
@@ -523,11 +525,63 @@ class ScRunTests(unittest.TestCase):
         self.assertEqual(runtime.actors[core]['hp'], 59679)
         self.assertFalse(any(r['vid'] == 'sc.enginefireseed' for r in runtime.actors.values()))
         self.assertFalse(any(r['vid'] == 'sc.enginefire' for r in runtime.actors.values()))
-        self.assertEqual(sum(r['vid'] == 'sc.enginespawner' for r in runtime.actors.values()), 3)
+        self.assertEqual(sum(r['vid'] == 'sc.enginespawner' for r in runtime.actors.values()), 0,
+                         'Discarded flight seeds must not plant while the room is absent')
         revisit.step(.02)
         self.assertFalse(any(r['vid'] == 'sc.enginefire' for r in runtime.actors.values()))
         self.assertAlmostEqual(runtime.room_time, runtime._sent_ms/1000.)
         self.assertAlmostEqual(runtime.instance.snapshot.time, runtime.room_time)
+
+    def test_immediate_revisit_clears_committed_dynamic_shots_and_their_controller_state(self):
+        run, clock = self.make_run()
+        wrapper, server = self.open_room(run, 'engine')
+        runtime = wrapper.current
+        point = (0, -50000*256)
+        beam = runtime._create('sc.aim', point, 0, dict(lifetime=2050))
+        runtime.enemies.add_actor(beam)
+        seed = runtime.mechanics._spawn('sc.enginefireseed', point)
+        ball = runtime.enemies.projectiles.spawn('sc.golemb', point, (1000., 0.), 0)
+        permanent = runtime.mechanics._spawn('sc.enginespawner', point, changes=dict(hitpoints=300))
+        wrapper.step(.001)
+        transient = {beam, seed, ball}
+        for oid in transient:
+            self.assertNotIn(oid, wrapper.instance.recipe['objects'])
+            self.assertIn((1, oid), wrapper.instance.snapshot.objects)
+        clock.advance(.05)  # Below both natural expiry and the resume threshold.
+        revisit, _ = self.open_room(run, 'engine', server)
+        self.assertIs(revisit.current, runtime)
+        for oid in transient:
+            self.assertNotIn(oid, runtime.actors)
+            self.assertNotIn((1, oid), revisit.instance.snapshot.objects)
+            self.assertNotIn(oid, runtime.enemies.effects)
+            self.assertNotIn(oid, runtime.enemies.projectiles.shots)
+            self.assertNotIn(oid, runtime.mechanics.states)
+        self.assertIn(permanent, runtime.actors)
+        self.assertIn((1, permanent), revisit.instance.snapshot.objects)
+        self.assertFalse(runtime.batch.general or runtime.batch.objects or runtime.batch.extra)
+        self.assertFalse(runtime._pending_creates)
+
+    def test_revisit_preserves_monk_orbit_inventory_but_clears_a_released_ball(self):
+        run, clock = self.make_run()
+        role = next(name for name, room in run.pack.plan['rooms'].items()
+                    if room['metadata']['template'] == 'scmid04')
+        wrapper, server = self.open_room(run, role)
+        runtime = wrapper.current
+        shots = runtime.enemies.projectiles.shots
+        orbit = next(oid for oid, shot in shots.items() if shot['vid'] == 'sc.monkb'
+                     and shot['orbit'] is not None)
+        owner = shots[orbit]['owner']
+        released = runtime.enemies.projectiles.spawn('sc.monkb', (0, -50000*256), (1000., 0.), owner,
+            changes=dict(lifetime=8000, blocktype=4, removetype=3))
+        wrapper.step(.001)
+        self.assertIn((1, released), wrapper.instance.snapshot.objects)
+        clock.advance(.05)
+        revisit, _ = self.open_room(run, role, server)
+        self.assertIn(orbit, shots)
+        self.assertIn((1, orbit), revisit.instance.snapshot.objects)
+        self.assertNotIn(released, shots)
+        self.assertNotIn(released, runtime.actors)
+        self.assertNotIn((1, released), revisit.instance.snapshot.objects)
 
     def test_revisit_new_streamed_platforms_have_the_same_position_in_cw_and_runtime(self):
         run, clock = self.make_run()

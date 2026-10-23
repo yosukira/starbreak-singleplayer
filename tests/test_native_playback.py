@@ -479,6 +479,94 @@ class NativePlayerTests(unittest.TestCase):
         self.assertEqual(target.props.xmp,before+17,'A tap must not become a held key')
         self.assertIsNone(target.capture.tape.error)
 
+    def test_pending_keyboard_takeover_reaches_a_checkpoint_before_freezing(self):
+        target=Engine();player=target.play(Engine().record())
+        # A living world can be visible before a usable last checkpoint exists.
+        player.update();self.assertTrue(player.world_created)
+        target.capture.tape.last_state=None
+        player.paused=True;player.keyboard_input(4,True)
+        self.assertTrue(player.requested);self.assertFalse(player.can_takeover())
+        target.capture.before()
+        self.assertTrue(player.can_takeover())
+        self.assertTrue(player.requested)
+        cursor=target.capture.tape.cursor
+        target.mono+=1;target.capture.before()
+        self.assertEqual(target.capture.tape.cursor,cursor,'Only a verified boundary may freeze for handoff')
+
+    def test_cancel_pending_takeover_clears_tapped_inputs_and_allows_seek(self):
+        target=Engine();player=target.play(Engine().record(100));target.mono=.1;player.update()
+        player.keyboard_input(4,True);player.keyboard_input(4,False)
+        player.control(dict(action='seek',seconds=.4,paused=False))
+        self.assertFalse(player.requested);self.assertEqual(player.pending_keys,[])
+        target.capture.before()
+        self.assertFalse(player.seeking);self.assertGreater(player.seconds,.35)
+        old=player.seconds;target.mono+=.1;target.capture.before()
+        self.assertGreater(player.seconds,old)
+
+    def test_failed_takeover_notification_restores_playback_once_and_ignores_stale_offer(self):
+        import queue
+        target=Engine();player=target.play(Engine().record(100));target.mono=.1;player.update()
+        capture=target.capture
+        capture.delivery=NS(incoming=queue.Queue(),feedback=mock.Mock(),put=mock.Mock())
+        player.keyboard_input(4,True)
+        failed=dict(serial=0,error='Could not reconstruct server',error_revision=1)
+        capture.delivery.incoming.put(failed);capture.poll()
+        self.assertFalse(player.requested);self.assertFalse(player.paused)
+        self.assertEqual(player.pending_keys,[])
+        old=player.seconds;target.mono+=.1;capture.before();self.assertGreater(player.seconds,old)
+        # A delayed copy of the same failure must not cancel the user's retry.
+        player.keyboard_input(4,True)
+        capture.delivery.incoming.put(failed);capture.poll();self.assertTrue(player.requested)
+        player.control(dict(action='seek',seconds=.4,paused=True));capture.before()
+        capture.delivery.incoming.put(dict(serial=0,branch=dict(id='stale',sequence=0,cursor=1)))
+        capture.poll();self.assertIsNone(capture.branch);self.assertEqual(player.phase,'playing')
+
+    def test_cancelled_server_preparation_cannot_offer_a_branch_or_restart_from_stale_feedback(self):
+        import threading
+        with tempfile.TemporaryDirectory() as directory:
+            service=NativePlayback(directory,'a'*64)
+            service.serial=3;service.source=dict(id='source');service.command=dict(document={})
+            service.clients.mark_runner=mock.Mock()
+            entered=threading.Event();release=threading.Event();finished=threading.Event()
+            host=NS(branch=dict(id='branch'),bind=mock.Mock(),description=lambda:dict(id='branch'),
+                    stop=lambda:finished.set())
+            def take(*_):entered.set();release.wait(3);return host
+            service.warm=NS(take=mock.Mock(side_effect=take),close=mock.Mock())
+            request=dict(serial=3,status=dict(state='taking-over'),checkpoint=dict(cursor=5),takeover=True,takeover_generation=0)
+            try:
+                service.feedback(request);self.assertTrue(entered.wait(1))
+                service.action(dict(action='seek',seconds=.3))
+                service.feedback(request)
+                self.assertEqual(service.warm.take.call_count,1)
+                release.set();self.assertTrue(finished.wait(2))
+                host.bind.assert_not_called();self.assertIsNone(service.branch);self.assertIsNone(service.host)
+                self.assertFalse(service.preparing)
+            finally:release.set();service.close()
+
+    def test_server_takeover_failure_waits_for_a_new_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service=NativePlayback(directory,'a'*64)
+            service.serial=3;service.source=dict(id='source');service.command=dict(document={})
+            service.warm=NS(take=mock.Mock(side_effect=ValueError('bad checkpoint')),close=mock.Mock())
+            request=dict(serial=3,status=dict(state='taking-over'),checkpoint=dict(cursor=5),takeover=True,takeover_attempt=1)
+            for attempt in (1,1,2):
+                request['takeover_attempt']=attempt;service.feedback(request)
+                deadline=time.monotonic()+2
+                while service.preparing and time.monotonic()<deadline:time.sleep(.01)
+                self.assertEqual(service.warm.take.call_count,attempt)
+            self.assertEqual(service.error_revision,2)
+            service.close()
+
+    def test_pause_cancels_takeover_without_dropping_an_already_queued_seek(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service=NativePlayback(directory,'a'*64)
+            service.source=dict(id='source');service.command=dict(document={})
+            service.action(dict(action='takeover'))
+            service.action(dict(action='seek',seconds=.7))
+            service.action(dict(action='pause',paused=True))
+            self.assertEqual(service.poll(0)['controls'],[dict(action='seek',seconds=.7),dict(action='pause',paused=True)])
+            service.close()
+
     def test_divergence_and_missing_bootstrap_fail_without_a_takeover(self):
         document=Engine().record();target=Engine();player=target.play(document);target.diverge=True;target.mono=1;player.update()
         self.assertEqual(player.phase,'failed');self.assertFalse(player.can_takeover())

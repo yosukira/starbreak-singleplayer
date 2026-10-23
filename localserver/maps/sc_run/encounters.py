@@ -1,5 +1,6 @@
 """Existing SC encounters bound to the full run's persistent room instances."""
 import copy
+from functools import lru_cache
 
 from ...live.room import BossRoom
 
@@ -7,7 +8,9 @@ from ...live.room import BossRoom
 _MAPS = dict(patriarch='sc_patriarch', bonesaw='sc_bonesaw', hive='sc_hive', boss='sc_boss')
 
 
+@lru_cache(maxsize=4)
 def _pack(kind):
+    # Immutable disk-loaded source. Every encounter receives its own copy.
     if kind == 'patriarch':
         from ..sc_patriarch.scene import PatriarchPack
         return PatriarchPack()
@@ -25,7 +28,8 @@ def _pack(kind):
 
 def bound_pack(level_pack, instance):
     kind = instance.recipe['metadata']['encounter_kind']
-    pack = _pack(kind)
+    cached = getattr(level_pack, 'encounter_packs', {}).get(kind)
+    pack = copy.deepcopy(cached if cached is not None else _pack(kind))
     objects = copy.deepcopy(instance.recipe['objects'])
     pack.templates = {str(oid): props for oid, props in objects.items()}
     # Each dedicated controller keeps its configured projectile defaults.

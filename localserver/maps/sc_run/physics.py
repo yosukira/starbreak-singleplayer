@@ -11,13 +11,13 @@ def rect(row):
 def geometry(host):
     # Actors are live geometry: moving ledges and opening walls cannot use a
     # room-load-only collision cache. The controller refreshes once per slice.
-    # A live projectile is not world terrain for its own controller: the native
-    # ball is solid for everyone else, but counting it here made its thrower
-    # collide with it and flip facing every frame.
+    # Native stone balls are solid for other bodies. Motion helpers already
+    # exclude the moving object's own ID; the thrower overlap is handled only
+    # while a ball is leaving its birth socket.
     return [(oid, rect(row), int(row['props']['terraintype']),
              int(row['props'].get('shapetype', 0)))
             for oid, row in host.actors.items()
-            if not row.get('dead') and not row.get('_sc_projectile')
+            if not row.get('dead') and (not row.get('_sc_projectile') or row['vid'] == 'sc.golemb')
             and row['props'].get('terraintype') in (1, 2)]
 
 
@@ -41,7 +41,7 @@ def sweep(terrain, start, end, size, ignore=()):
     return min(hits) if hits else None
 
 
-def ground(terrain, row, state, dt, vx, gravity, *, drop=False):
+def ground(terrain, row, state, dt, vx, gravity, *, drop=False, terminal_velocity=220000.):
     """Separate horizontal blocking, ceilings, and one-way/sloped landing."""
     x, y, w, h = rect(row)
     vy = state.get('vy', 0.)
@@ -51,7 +51,7 @@ def ground(terrain, row, state, dt, vx, gravity, *, drop=False):
     if hit:
         nx = x + (nx-x) * max(0., hit[0]-1e-7)
     ny = y + vy * dt + .5 * gravity * dt * dt
-    state['vy'] = min(vy+gravity*dt, 220000.)
+    state['vy'] = min(vy+gravity*dt, terminal_velocity)
     state.update(grounded=False, support=None, blocked=hit is not None)
     if drop:
         # Preserve the old support until the body has really crossed it.
@@ -105,6 +105,27 @@ def flight(terrain, row, velocity, dt, ignore=()):
         f = max(0., hit[0]-1e-7)
         end = (x+(end[0]-x)*f, y+(end[1]-y)*f)
     return end, hit
+
+
+def ground_wave(terrain, row, vx, dt):
+    """Advance over continuous ground; an edge terminates a ground wave."""
+    x, y, w, h = rect(row)
+    target = x+vx*dt
+    steps = max(1, math.ceil(abs(target-x)/(8*256)))
+    last = (x, y)
+    for index in range(steps+1):
+        nx = x+(target-x)*index/steps
+        # Use the centre of the footprint, not an overlap with a distant ledge.
+        tops = [top for oid, bounds, kind, shape in terrain if oid != row['id']
+                and (top := surface(bounds, shape, nx+w/2, 1)) is not None
+                and abs(top-(last[1]+h)) <= 8*256]
+        if not tops:
+            return last, False
+        ny = min(tops, key=lambda top: abs(top-last[1]-h))-h
+        if sweep(terrain, last, (nx, ny), (w, h), (row['id'],)):
+            return last, False
+        last = (nx, ny)
+    return last, True
 
 
 def sinusoid(movement, origin, elapsed):

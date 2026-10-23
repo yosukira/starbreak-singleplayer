@@ -46,6 +46,8 @@ class NativeCaptureTests(unittest.TestCase):
 
     def test_incomplete_older_battle_does_not_block_finalizing_newer_records(self):
         recorder=NativeRecording.__new__(NativeRecording)
+        import threading
+        recorder.finalize_lock=threading.RLock()
         db=mock.MagicMock();db.__enter__.return_value.execute.return_value.fetchall.return_value=[('older','{}'),('newer','{}')]
         records=NS(connect=lambda:db);recorder.playback=NS(records=records,branches=set())
         recorder.started_wall=0;recorder.identifiers=set()

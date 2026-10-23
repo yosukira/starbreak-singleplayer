@@ -131,12 +131,13 @@ class ReplayStream:
         if not boundaries:
             raise ValueError('Replay contains no matching controller output')
         self.boundaries = boundaries
+        self.boundaries_by_frame = {row.frame: row for row in boundaries}
         self.ends = [row.end for row in self.boundaries]
 
     def reconcile(self, frame, ordinal, kind, payload, session):
         if kind!=12:return payload
         if getattr(self,'_packet_frame',None)!=frame:
-            boundary=next((b for b in self.boundaries if b.frame==frame),None)
+            boundary=self.boundaries_by_frame.get(frame)
             self._packet_frame=frame;self._packet_rows=[]
             if boundary:
                 pos=boundary.start

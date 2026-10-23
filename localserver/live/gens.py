@@ -257,12 +257,26 @@ class GenCycle(object):
             panel_rect = panel.rect()
 
             reach = 24 * 256
-            def can_reach(player):
+            def can_reach(player, press=False):
                 player_rect = player.rect()
-                return (can_interact(player) and player.alive and player_rect[0] < panel_rect[0] + panel_rect[2]
-                        and panel_rect[0] < player_rect[0] + player_rect[2]
-                        and player_rect[1] < panel_rect[1] + panel_rect[3]
-                        and panel_rect[1] - reach <= player_rect[1] + player_rect[3])
+                target = panel_rect
+                raw = getattr(player, 'raw', {})
+                if press and 'gen_press' in raw:
+                    from ..interactions import gen_press_document
+                    try:
+                        sample = gen_press_document(raw['gen_press'])
+                        if (sample['seed'] != raw.get('room_seed') or
+                                sample['objid'] != getattr(player, 'objid', 0) or
+                                sample['worldid'] != getattr(player, 'worldid', 0)):
+                            return False
+                        target = next(row['rect'] for row in sample['panels'] if row['objid'] == self.active_panel)
+                        if tuple(target[2:]) != tuple(panel_rect[2:]):return False
+                        player_rect = sample['rect']
+                    except (ValueError, TypeError, KeyError, StopIteration):return False
+                return (can_interact(player) and player.alive and player_rect[0] < target[0] + target[2]
+                        and target[0] < player_rect[0] + player_rect[2]
+                        and player_rect[1] < target[1] + target[3]
+                        and target[1] - reach <= player_rect[1] + player_rect[3])
             def near(player):
                 """Same check with one reach of slack for a press still in flight."""
                 player_rect = player.rect()
@@ -278,12 +292,13 @@ class GenCycle(object):
                 self.overlap_seconds = 0.0
             interacting = getattr(self.session, 'interacting_players', None)
             pressed_states = tuple(interacting()) if callable(interacting) else ()
-            pressed = (any(can_reach(p) for p in pressed_states) if callable(interacting)
+            sampled_press = any('gen_press' in getattr(p, 'raw', {}) and can_reach(p, True) for p in pressed_states)
+            pressed = (any(can_reach(p, True) for p in pressed_states) if callable(interacting)
                        else self.session.interact_edge())
             if self.auto_interact and overlaps and self.overlap_seconds > 0.4:
                 pressed = True
             if pressed:
-                if overlaps and self.panel_interactable:
+                if (overlaps or sampled_press) and self.panel_interactable:
                     self.pending_press = 0.0
                     self._request_panel_activation()
                     return

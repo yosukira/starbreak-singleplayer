@@ -100,6 +100,9 @@ def player_document(player):
                 raise ValueError('Invalid player action')
             result[key] = value
     animation = raw.get('animprops') or {}
+    if 'gen_press' in raw:
+        from .interactions import gen_press_document
+        result['gen_press'] = gen_press_document(raw['gen_press'])
     if animation:
         result['animprops'] = {k: integer(animation[k]) for k in ('animid', 'animid_') if k in animation}
     terrain = raw.get('terrainObjects', [])

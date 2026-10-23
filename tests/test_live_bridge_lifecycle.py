@@ -58,7 +58,9 @@ class LiveBridgeLifecycleTests(unittest.TestCase):
         b.enabled=True;b.input_context=dict(map='sc_run',room_token=2,room_seed=33,room_ready=False,room_handoff=True)
         b._network_frame={};b._network_frame_id=0;b._input_handoff=RoomInputHandoff()
         cw=NS(asWorld=NS(props=NS(seed=33)),player=object(),total=0,inputBuffer=0)
-        b._current_world=lambda:cw;b.ffi=NS(NULL=None);b.refs=NS(WorldClient=NS(overlay=None))
+        b._current_world=lambda:cw;b.ffi=NS(NULL=None,cast=lambda typ,value:id(value))
+        b.refs=NS(WorldClient=NS(overlay=None,clientWorld=cw))
+        b.refs.GameClient=NS(worldClient=b.refs.WorldClient)
         b.physical_input_mask=lambda:1;b.input_handoffs=0
         b._native_set_input=mock.Mock(side_effect=lambda mask:setattr(cw,'total',mask))
         with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic',return_value=100.) as clock:
@@ -74,6 +76,128 @@ class LiveBridgeLifecycleTests(unittest.TestCase):
             b._native_set_input.assert_called_once_with(1)
             b.input_context.update(room_token=3,room_seed=34);b.begin_native_frame()
             self.assertFalse(b.reapply_room_input())
+
+    def handoff_bridge(self):
+        from plugins._hardlab_livebridge import LiveBridge,RoomInputHandoff
+        b=object.__new__(LiveBridge)
+        b.enabled=True;b.input_context=dict(map='sc_run',room_token=2,room_seed=33,
+                                           room_ready=True,room_handoff=True)
+        b._network_frame={};b._network_frame_id=0;b._input_handoff=RoomInputHandoff()
+        cw=NS(asWorld=NS(props=NS(seed=33)),player=object(),total=0,inputBuffer=0)
+        b.ffi=NS(NULL=None,cast=lambda typ,value:id(value))
+        b.refs=NS(WorldClient=NS(overlay=None,clientWorld=cw))
+        b.refs.GameClient=NS(worldClient=b.refs.WorldClient)
+        b._current_world=lambda:b.refs.WorldClient.clientWorld
+        b.physical_input_mask=lambda:1;b.input_handoffs=0
+        b._native_set_input=mock.Mock(side_effect=lambda mask:setattr(b._current_world(),'total',mask))
+        return b,cw
+
+    def settle_handoff(self,b,clock,at=100.):
+        clock.return_value=at
+        for _ in range(b.REAPPLY_SETTLE_FRAMES+1):b.begin_native_frame()
+        clock.return_value=at+.06
+
+    def test_ack_changed_after_frame_start_cannot_spend_old_context_stability(self):
+        b,_cw=self.handoff_bridge()
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic') as clock:
+            self.settle_handoff(b,clock)
+            # ground_restore's ACK drain runs after begin_native_frame. A new
+            # ready room cannot inherit the old room's elapsed time/frames.
+            b.input_context['room_token']=3
+            self.assertFalse(b.reapply_room_input())
+            b._native_set_input.assert_not_called()
+            b.begin_native_frame()
+            self.assertEqual(b._context_frames,0)
+
+    def test_replaced_live_owner_is_checked_before_cached_world_is_dereferenced(self):
+        b,_cw=self.handoff_bridge()
+        class RetiredClient:
+            @property
+            def clientWorld(self):
+                raise AssertionError('Dereferenced freed WorldClient')
+        b.refs.WorldClient=RetiredClient()
+        # GameClient already owns the new world; SBPE's cached child is old.
+        b.refs.GameClient.worldClient=object()
+        self.assertIsNone(b._room_input_identity())
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'):
+            b.begin_native_frame()
+            self.assertFalse(b.reapply_room_input())
+        b._native_set_input.assert_not_called()
+
+    def test_ready_ack_does_not_count_frames_without_a_native_world(self):
+        b,cw=self.handoff_bridge();b.refs.WorldClient.clientWorld=None
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic') as clock:
+            self.settle_handoff(b,clock)
+            b.refs.WorldClient.clientWorld=cw
+            self.assertFalse(b.reapply_room_input())
+            b.begin_native_frame()
+            self.assertEqual(b._context_frames,0)
+            b._native_set_input.assert_not_called()
+            self.settle_handoff(b,clock,at=101.)
+            self.assertTrue(b.reapply_room_input())
+
+    def test_replacement_native_world_or_player_requires_new_settled_frames(self):
+        for replace_world in (True,False):
+            b,cw=self.handoff_bridge()
+            with self.subTest(replace_world=replace_world),mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic') as clock:
+                self.settle_handoff(b,clock)
+                if replace_world:
+                    b.refs.WorldClient.clientWorld=NS(asWorld=cw.asWorld,player=object(),total=0,inputBuffer=0)
+                else:cw.player=object()
+                self.assertFalse(b.reapply_room_input())
+                b._native_set_input.assert_not_called()
+                b.begin_native_frame()
+                self.assertEqual(b._context_frames,0)
+
+    def test_native_mapping_callback_cannot_apply_mask_to_a_replacement_world(self):
+        b,cw=self.handoff_bridge()
+        def physical():
+            b.refs.WorldClient.clientWorld=NS(asWorld=cw.asWorld,player=object(),total=0,inputBuffer=0)
+            return 1
+        b.physical_input_mask=physical
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic') as clock:
+            self.settle_handoff(b,clock)
+            self.assertFalse(b.reapply_room_input())
+            b._native_set_input.assert_not_called()
+
+    def test_native_setter_does_not_dereference_freed_previous_world(self):
+        class World:
+            retired=False
+            asWorld=NS(props=NS(seed=33))
+            player=object()
+            inputBuffer=0
+            @property
+            def total(self):
+                if self.retired:raise AssertionError('Read freed cached ClientWorld')
+                return 0
+        b,_cw=self.handoff_bridge();cw=World();b.refs.WorldClient.clientWorld=cw
+        def replace(mask):
+            cw.retired=True
+            b.refs.WorldClient.clientWorld=NS(asWorld=cw.asWorld,player=object(),total=mask,inputBuffer=0)
+        b._native_set_input.side_effect=replace
+        with mock.patch.dict('os.environ',HARDLAB_LIVE_SESSION='1'),mock.patch('plugins._hardlab_livebridge.time.monotonic') as clock:
+            self.settle_handoff(b,clock)
+            self.assertFalse(b.reapply_room_input())
+            self.assertEqual(b.input_handoffs,0)
+            self.assertTrue(b._input_handoff.pending)
+
+    def test_input_restore_exception_keeps_feedback_and_reports_once(self):
+        plugin=self.plugin()
+        plugin.bridge.reapply_room_input.side_effect=RuntimeError('unsupported input adapter')
+        with mock.patch.object(hardlab_live.LOG,'warning') as warning:
+            for _ in range(2):
+                plugin.next_send=0
+                plugin._after_update_live()
+            self.assertEqual(plugin.bridge.send.call_count,2)
+            self.assertEqual(plugin.last_stage,'sent')
+            self.assertEqual(plugin.input_reapply_error,'RuntimeError: unsupported input adapter')
+            warning.assert_called_once()
+        plugin.bridge.reapply_room_input.side_effect=None
+        plugin.bridge.reapply_room_input.return_value=True
+        plugin.next_send=0
+        plugin._after_update_live()
+        self.assertIsNone(plugin.input_reapply_error)
+        self.assertEqual(plugin.bridge.send.call_count,3)
 
     def test_replay_progress_covers_reconstruction_and_restores_canvas_coordinates(self):
         plugin=object.__new__(hardlab_live.Plugin);plugin.session=True

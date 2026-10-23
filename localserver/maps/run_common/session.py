@@ -311,6 +311,9 @@ class RunLiveSession:
             room_seed=self.instance.recipe['world']['worldprops_'].get('seed_',0),
             room_ready=self._ready, room_handoff=self.run.transitions>0)
 
+    def boundary_properties(self, oid, link):
+        return self.instance.snapshot.properties_at((1, int(oid)))
+
     @tracked_tick
     def step(self, dt):
         if not math.isfinite(dt) or not 0<=dt<=1:
@@ -365,7 +368,7 @@ class RunLiveSession:
         if door_ready:
             for oid,link in self.instance.recipe.get('links',{}).items():
                 if link.get('trigger',link.get('interaction')) not in ('native-door-boundary','boundary'):continue
-                props=self.instance.snapshot.properties_at((1,int(oid)))
+                props=self.boundary_properties(oid,link)
                 if props is None:continue
                 inside=(player.xmp<props.get('xmp_',0)+props.get('wmp_',0) and
                     player.xmp+player.wmp>props.get('xmp_',0) and

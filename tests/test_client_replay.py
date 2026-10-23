@@ -5,11 +5,59 @@ from pathlib import Path
 import tempfile
 import unittest
 import uuid
+from unittest import mock
 
 from tools.client_replay import ClientJournals, operation
 
 
 class ClientJournalTests(unittest.TestCase):
+    def test_failed_fork_does_not_leave_an_orphan_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store,identifier=self.begin(directory)
+            store.append(identifier,dict(sequence=0,ops=[['loop',0],['loop',1]],end=True))
+            with mock.patch.object(store,'pack_chunk',side_effect=OSError('disk failure')):
+                with self.assertRaises(OSError):store.fork(identifier,2)
+            with store.connect() as db:
+                self.assertEqual(db.execute('SELECT id FROM attempts').fetchall(),[(identifier,)])
+            self.assertEqual(store.read(identifier)['ops'],[['loop',0],['loop',1]])
+
+    def test_corrupt_compression_and_stale_terminal_chunks_report_damage(self):
+        import hashlib,zlib
+        from tools.client_replay import encode
+        with tempfile.TemporaryDirectory() as directory:
+            store,identifier=self.begin(directory)
+            store.append(identifier,dict(sequence=0,ops=[['loop',0]],end=False))
+            store.append(identifier,dict(sequence=1,ops=[['loop',1]],end=True))
+            with store.connect() as db:
+                db.execute('UPDATE chunks SET data=? WHERE id=? AND sequence=0',(b'broken zlib',identifier))
+            with self.assertRaisesRegex(ValueError,'damaged'):store.read(identifier)
+            stale=encode(dict(sequence=0,ops=[['loop',0]],end=True))
+            with store.connect() as db:
+                db.execute('UPDATE chunks SET data=?,digest=? WHERE id=? AND sequence=0',
+                           (zlib.compress(stale),hashlib.sha256(stale).hexdigest(),identifier))
+            with self.assertRaisesRegex(ValueError,'boundary'):store.read(identifier)
+
+    def test_prefix_extension_rolls_back_all_chunks_and_retries_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store,identifier=self.begin(directory)
+            branch=dict(id=identifier,sequence=0)
+            rows=[['loop',0],['frame',17],['state',[1,0]],['loop',1]]*600
+            pack=store.pack_chunk;count=0
+            def fail_second(data):
+                nonlocal count
+                count+=1
+                if count==2:raise OSError('temporary disk failure')
+                return pack(data)
+            with mock.patch.object(store,'pack_chunk',side_effect=fail_second):
+                with self.assertRaisesRegex(OSError,'disk failure'):store.extend_fork(branch,rows)
+            self.assertEqual(branch,dict(id=identifier,sequence=0))
+            self.assertEqual(store.read(identifier,require_complete=False)['ops'],[])
+            with mock.patch.object(store,'connect',wraps=store.connect) as connect:
+                store.extend_fork(branch,rows)
+            self.assertEqual(connect.call_count,1)
+            store.append(identifier,dict(sequence=branch['sequence'],ops=[],end=True))
+            self.assertEqual(store.read(identifier)['ops'],rows)
+
     def test_immutable_browser_chunks_migrate_reopen_retry_and_fork(self):
         with tempfile.TemporaryDirectory() as directory:
             legacy, identifier = self.begin(directory)

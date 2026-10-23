@@ -53,7 +53,7 @@ class PreparedReplay:
         if type(cursor)is int and self.branch and cursor<self.branch_cursor:
             self.close_staging();self.rebuilt=None
         if type(cursor)is not int or not 0<cursor<=len(ops) or ops[cursor-1]!=['loop',1]:raise ValueError('Take over between complete game iterations')
-        checkpoint=next((row[1] for row in reversed(ops[:cursor]) if row[0]=='state'),None)
+        checkpoint=next((ops[i][1] for i in range(cursor-1,-1,-1) if ops[i][0]=='state'),None)
         if checkpoint!=request.get('player'):raise ValueError('Client player state has not been verified')
         player=state_player(checkpoint)
         received,sent=self.stream.progress(cursor)

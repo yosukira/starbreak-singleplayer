@@ -2,7 +2,7 @@
 import copy
 import math
 
-from .physics import flight, ground, rect, sinusoid
+from .physics import clear, flight, ground, ground_wave, rect, sinusoid
 
 
 def overlaps(a, b):
@@ -74,18 +74,62 @@ class ScProjectiles:
         self.host = controller.host
         self.shots = {}
 
+    @staticmethod
+    def wire_velocity(velocity):
+        """Native fixed point MOVE.vel components, converted to mp/second."""
+        return tuple((int(value) >> 8)*1000 for value in velocity)
+
     def adopt(self, oid, *, owner=None, velocity=None, gravity=0., bounce=False, orbit=None):
         row = self.host.actors[oid]
         m = copy.deepcopy(row['props'].get('move') or {})
         v = m.get('vel', {})
-        vx, vy = velocity if velocity is not None else (v.get('xvel', 0)*1000/256, v.get('yvel', 0)*1000/256)
+        # Native MOVE.vel truncates with an arithmetic shift before multiplying
+        # by elapsed milliseconds. Keep that order, including negative values;
+        # converting the fixed point value to a float first drifts monk shots.
+        vx, vy = velocity if velocity is not None else self.wire_velocity(
+            (v.get('xvel', 0), v.get('yvel', 0)))
+        born = self.host.room_time
+        if orbit is not None and '_wire_born_ms' in row:
+            # Native elliptical motion starts at the Create timestamp. Its
+            # phase must not lag behind the birth animation by one host slice.
+            born = row['_wire_born_ms']/1000.
         self.shots[oid] = dict(vid=row['vid'], owner=owner or row.get('creator', 0),
             vx=vx, vy=vy, gravity=gravity, bounce=bounce, orbit=orbit,
-            born=self.host.room_time, origin=tuple(row['pos']), native=m if m.get('sin') else None,
+            orbit_model=copy.deepcopy(m.get('elliptical')) if orbit is not None else None,
+            born=born, origin=tuple(row['pos']), native=m if m.get('sin') else None,
             expiry=math.inf if orbit is not None else self.host.room_time+(row['props'].get('lifetime') or 8000)/1000)
         row['_sc_projectile'] = True
         stop_motion(self.host, oid)
         return oid
+
+    def orbit_point(self, oid):
+        shot = self.shots.get(oid)
+        if shot is None or shot['orbit'] is None:
+            return None
+        parent = self.host.actors.get(shot['owner'])
+        if parent is None:
+            return None
+        model = shot.get('orbit_model')
+        if model:
+            elapsed = (self.host.room_time-shot['born'])*1000+model.get('pos', 0)
+            phase = elapsed*2*math.pi/max(1, model.get('period', 2000))
+            angle = math.radians(model.get('angle', 0))
+            a = model.get('radiusamp', 20480)*math.cos(phase)
+            b = model.get('radiusbmp', model.get('radiusamp', 20480))*math.sin(phase)
+            return (parent['pos'][0]+model.get('xmp', 5120)+a*math.cos(angle)-b*math.sin(angle),
+                    parent['pos'][1]+model.get('ymp', 9216)+a*math.sin(angle)+b*math.cos(angle))
+        phase = shot['orbit']+self.host.room_time*math.pi
+        return (parent['pos'][0]+5120+20480*math.cos(phase),
+                parent['pos'][1]+9216+20480*math.sin(phase))
+
+    def resume_orbits(self):
+        # The unoccupied room clock advanced. Put each surviving orb at that
+        # phase in CreateWorld, before the first live interpolation arrives.
+        from .mechanic_helpers import place
+        for oid in list(self.shots):
+            point = self.orbit_point(oid)
+            if point is not None:
+                place(self.host, oid, point)
 
     def spawn(self, vid, point, velocity, owner, *, gravity=0., bounce=False, changes=None, creator=None):
         changes = dict(changes or {})
@@ -108,7 +152,9 @@ class ScProjectiles:
             dict(move=motion, facing=parameters['angle']))
         self.adopt(oid, owner=owner)
         if lifetime_s is not None:
-            self.shots[oid]['expiry']=self.host.room_time+float(lifetime_s)
+            # This is a local FIT cleanup, independent of the authored wire
+            # lifetime and its LIFETIME destruction cue.
+            self.shots[oid]['local_cleanup_at'] = self.host.room_time+float(lifetime_s)
         self.host.presentation.projectile_created(oid, vid)
         return oid
 
@@ -149,6 +195,23 @@ class ScProjectiles:
         self.retire(oid, 'LIFETIME')
         return True
 
+    def expire_due(self, oid):
+        """Retire on the wire deadline or an explicit local cleanup policy."""
+        shot = self.shots.get(oid)
+        if shot is None:
+            return False
+        due = self.host.wire_lifetime_due(oid) if hasattr(self.host, 'wire_lifetime_due') else None
+        if due is True:
+            reason = 'LIFETIME'
+        elif self.host.room_time >= shot.get('local_cleanup_at', math.inf):
+            reason = 'INTERNAL'
+        elif due is None and self.host.room_time >= shot['expiry']:
+            reason = 'LIFETIME'
+        else:
+            return False
+        self.retire(oid, reason)
+        return True
+
     def step(self, dt, terrain):
         now = self.host.room_time
         for oid, s in list(self.shots.items()):
@@ -156,31 +219,57 @@ class ScProjectiles:
             if row is None:
                 self.shots.pop(oid, None)
                 continue
-            due = self.host.wire_lifetime_due(oid) if hasattr(self.host, 'wire_lifetime_due') else None
-            if due is True or (due is None and now >= s['expiry']):
-                self.retire(oid, 'LIFETIME')
+            if self.expire_due(oid):
                 continue
             if s['orbit'] is not None:
-                parent = self.host.actors.get(s['owner'])
-                if parent is None:
+                point = self.orbit_point(oid)
+                if point is None:
                     self.retire(oid)
                     continue
-                phase = s['orbit']+now*math.pi
-                # Circular orbit is a local FIT to the observed ring; native
-                # source elliptical parameters remain in the content evidence.
-                point = (parent['pos'][0]+5120+20480*math.cos(phase),
-                         parent['pos'][1]+9216+20480*math.sin(phase))
                 move(self.host, oid, point, dt)
                 continue
             if s['born'] >= now-1e-9:
                 continue
+            if s['vid'] == 'sc.golemw':
+                end, supported = ground_wave(terrain, row, s['vx'], dt)
+                if not supported:
+                    self.retire(oid, 'INTERNAL')
+                else:
+                    move(self.host, oid, end, dt)
+                continue
             if s['native']:
                 point = sinusoid(s['native'], s['origin'], now-s['born'])
-                if not row['props'].get('blocktype'):
+                if s['vid'] == 'sc.wraith':
+                    # USER: born inside a wall, then disappear on reaching a
+                    # later wall. Do not mistake its source wall for an impact.
+                    s['left_source_wall'] = s.get('left_source_wall', False) or clear(self.host, rect(row), (oid,))
+                    if s['left_source_wall']:
+                        end, hit = flight(terrain, row, ((point[0]-row['pos'][0])/dt,
+                                                       (point[1]-row['pos'][1])/dt), dt)
+                        if hit:
+                            self.retire(oid, 'INTERNAL')
+                            continue
+                    else:
+                        end, hit = point, None
+                elif not row['props'].get('blocktype'):
                     end, hit = point, None
                 else:
                     end, hit = flight(terrain, row, ((point[0]-row['pos'][0])/dt,
                                                     (point[1]-row['pos'][1])/dt), dt, (s['owner'],))
+            elif s['vid'] == 'sc.shard':
+                # A shard survives landing and keeps its launch vx. Captured
+                # ground motion adds the supporting platform's displacement;
+                # stepping off its edge resumes falling with the same vx.
+                body = row
+                if s.get('grounded'):
+                    deltas = getattr(getattr(self.host, 'mechanics', None), 'platform_deltas', {})
+                    delta = deltas.get(s.get('support'))
+                    if delta is not None:
+                        old, new, _size = delta
+                        body = dict(row, pos=[row['pos'][i]+new[i]-old[i] for i in (0, 1)])
+                end = ground(terrain, body, s, dt, s['vx'], s['gravity'], terminal_velocity=math.inf)
+                hit = None
+                prop(self.host, oid, 'pose', 5 if s.get('grounded') else 1)
             elif s['bounce']:
                 oldvy = s['vy']
                 # USER: the thrown Cathedral ball is native terrain

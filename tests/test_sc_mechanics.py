@@ -114,14 +114,19 @@ class ScMechanicsTests(unittest.TestCase):
         snapshot.apply(host.batch.message())
         host.batch.clear()
 
-    def test_wall_accumulates_lethal_damage_before_minimum_existence_gate(self):
+    def test_wall_keeps_negative_local_hp_until_minimum_existence_gate(self):
         h = Host({1: body('sc.dropwall', y=-544, w=64, h=544, terraintype=1, removetype=0),
                   2: body('sc.wall', x=-100, y=512, w=400, h=32, terraintype=1)})
         h.player_at(0, 200)
         h.tick(.01)
-        h.damage(1, 5000, 1)
+        snapshot = self.snapshot(h)
+        h.damage(1, 5010, 1)
+        h.damage(1, 7, 2)
+        self.commit(h, snapshot)
         self.assertIn(1, h.actors)
-        self.assertEqual(h.actors[1]['hp'], 0)
+        self.assertEqual(h.actors[1]['hp'], -17)
+        self.assertEqual(snapshot.properties_at((1, 1))['hitpoints_'], -17)
+        self.assertFalse(h.actors[1].get('_sc_killed', False))
         for _ in range(150):
             h.tick(.01)
         s = h.mechanics.states[1]
@@ -131,6 +136,63 @@ class ScMechanicsTests(unittest.TestCase):
         self.assertIn(1, h.actors)
         h.tick(.002)
         self.assertNotIn(1, h.actors)
+
+    def test_wall_destroy_hint_does_not_supply_missing_damage_or_bypass_the_gate(self):
+        h = Host({1: body('sc.dropwall', hitpoints=5000, terraintype=1, removetype=0)})
+        h.mechanics.feedback(dict(kind='destroy', victim=1, reason=2, seq=1))
+        self.assertEqual(h.actors[1]['hp'], 5000)
+        self.assertFalse(h.actors[1].get('_sc_killed', False))
+        h.tick(8.)
+        self.assertEqual(h.actors[1]['props']['removetype'], 1)
+        h.mechanics.feedback(dict(kind='destroy', victim=1, reason=2, seq=2))
+        self.assertIn(1, h.actors)
+        h.damage(1, 5000, 3)
+        self.assertNotIn(1, h.actors)
+
+    def test_hive_spawns_in_a_clear_opening_and_replenishes_a_removed_child(self):
+        h = Host({1: body('sc.hive', w=160, h=192)})
+        h.player_at(200, 0)
+        h.tick(2.)
+        children = set(h.mechanics.states[1]['children'])
+        self.assertEqual(len(children), 1)
+        child = next(iter(children))
+        self.assertEqual(h.actors[child]['vid'], 'sc.vermin')
+        self.assertEqual(h.actors[child]['creator'], 1)
+        h.mechanics.retire(child, 'HITPOINTS')
+        h.tick(8.)
+        self.assertEqual(len(h.mechanics.states[1]['children']), 1)
+        self.assertNotIn(child, h.mechanics.states[1]['children'])
+
+    def test_hive_skips_blocked_candidates_and_waits_when_every_opening_is_blocked(self):
+        for completely_blocked in (False, True):
+            with self.subTest(completely_blocked=completely_blocked):
+                wall = (body('sc.wall', x=0, y=-100, w=400, h=400, terraintype=1)
+                        if completely_blocked else
+                        body('sc.wall', x=160, y=144, w=16, h=48, terraintype=1))
+                h = Host({1: body('sc.hive', w=160, h=192), 2: wall})
+                h.player_at(200, 0)
+                h.tick(2.)
+                children = h.mechanics.states[1]['children']
+                if completely_blocked:
+                    self.assertFalse(children)
+                    self.assertGreater(h.mechanics.states[1]['next'], h.room_time)
+                else:
+                    self.assertEqual(len(children), 1)
+                    row = h.actors[next(iter(children))]
+                    self.assertFalse(overlaps((*row['pos'], row['props']['wmp'], row['props']['hmp']),
+                                              (*h.actors[2]['pos'], wall['wmp'], wall['hmp'])))
+                self.assertNotIn('hitpoints', h.actors[1]['props'])
+
+    def test_authored_vermin_correction_updates_its_physics_body(self):
+        h = Host({1: body('sc.vermin', w=48, h=48, hitpoints=100),
+                  2: body('sc.wall', w=16, h=48, terraintype=1)})
+        row = h.actors[1]
+        self.assertEqual(row['pos'], [16*MP, 0])
+        state = h.mechanics.states[1]['body']
+        self.assertEqual((state['x'], state['y']), tuple(row['pos']))
+        h.tick(.01)
+        self.assertFalse(overlaps((*row['pos'], row['props']['wmp'], row['props']['hmp']),
+                                  (*h.actors[2]['pos'], 16*MP, 48*MP)))
 
     def test_wall_waiting_gate_alone_does_not_destroy_and_duplicate_damage_is_ignored(self):
         h = Host({1: body('sc.dropwall', hitpoints=5000, terraintype=1, removetype=0)})
@@ -467,7 +529,8 @@ class ScVerminTests(unittest.TestCase):
         h = Host({1: body('sc.vermin', x=100, y=96, w=48, h=48, hitpoints=100),
                   2: body('sc.twall', x=0, y=96, w=16, h=64, terraintype=1),
                   3: body('sc.twall', x=420, y=96, w=16, h=64, terraintype=1),
-                  4: body('sc.tledge', x=0, y=160, w=436, h=32, terraintype=2)})
+                  4: body('sc.tledge', x=0, y=160, w=436, h=32, terraintype=2),
+                  5: body('sc.tledge', x=0, y=-32, w=436, h=32, terraintype=2)})
         h.player_at(*player_xy)
         h.tick(.01)
         return h

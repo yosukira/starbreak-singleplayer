@@ -26,6 +26,7 @@ class NativeRecording:
         if manifest['client'] not in CLIENTS:raise ValueError('The native replay adapter does not match this executable')
         self.identifier=str(uuid.uuid4());self.token=secrets.token_hex(32)
         self.journals=NativeJournals(directory);self.lock=threading.RLock();self.closed=False
+        self.finalize_lock=threading.RLock()
         self.restart_request=None
         self.practice_path=Path(practice_path) if practice_path else None
         self.health_path=Path(health_path) if health_path else None
@@ -166,6 +167,12 @@ class NativeRecording:
 
     def finalize_battles(self,immediate=False):
         """Publish immutable per-battle tapes while the original game keeps running."""
+        # Shutdown can outwait the background worker's join timeout. Both
+        # callers must not rewrite the same snapshot or temporary gzip file.
+        with self.finalize_lock:
+            self._finalize_battles(immediate)
+
+    def _finalize_battles(self,immediate=False):
         records=self.playback.records
         with records.connect() as db:
             rows=db.execute('SELECT id,document FROM records WHERE updated>=?',(self.started_wall,)).fetchall()
@@ -208,12 +215,13 @@ class NativeRecording:
         trace=document(dict(trace,id=target,ops=trace['ops'][:end]));chunks=list(client_chunks(trace))
         header={key:value for key,value in trace.items() if key!='ops'}
         with self.journals.connect() as db:
-            db.execute('INSERT OR IGNORE INTO attempts VALUES(?,?,?,?,0)',(target,json.dumps(header,separators=(',',':')),0,0))
-        for start in range(0,len(chunks),4):
-            with self.journals.connect() as db:
-                db.executemany('INSERT OR IGNORE INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks[start:start+4]])
-        with self.journals.connect() as db:
-            db.execute('UPDATE attempts SET sequence=?,size=?,complete=1 WHERE id=?',(len(chunks),sum(row[3] for row in chunks),target))
+            # Publication can fail while the source is still recording. A
+            # retry must replace the whole snapshot: INSERT OR IGNORE retained
+            # an old terminal chunk and silently lost newer operations.
+            db.execute('INSERT OR REPLACE INTO attempts VALUES(?,?,?,?,1)',
+                       (target,json.dumps(header,separators=(',',':')),len(chunks),sum(row[3] for row in chunks)))
+            db.execute('DELETE FROM chunks WHERE id=?',(target,))
+            db.executemany('INSERT INTO chunks VALUES(?,?,?,?)',[(target,s,d,c) for s,d,c,_ in chunks])
         # Rebind only the identity; every recorded server frame is preserved.
         journal['attempt']=target;frames=journal.pop('frames')
         temporary=path.with_suffix('.snapshot.gz');temporary.unlink(missing_ok=True)
@@ -291,7 +299,12 @@ class NativeRecording:
         # only a fully delivered and validated frame boundary, never a half
         # native call. Pending/in-flight chunks are not guessed or synthesized.
         for identifier in list(self.identifiers)+list(self.playback.branches):
-            self.seal(identifier)
+            try:self.seal(identifier)
+            except (OSError,ValueError,EOFError) as error:
+                # One failed/empty historical attempt must not discard later
+                # successfully delivered recordings during launcher shutdown.
+                import logging
+                logging.getLogger(__name__).warning('Native recording could not be sealed: %s',error)
         self.finalize_battles(immediate=True)
 
     def seal(self,identifier):

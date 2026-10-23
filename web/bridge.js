@@ -14,9 +14,24 @@
   let frame = 0, seq = 0, last = 0, wasInteract = false, pendingInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false, playerEpoch=0;
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
+  let genPress=null;
+  function sampleGenPress(world,player,subworld){
+    const server=read(world,628);if(!valid(server))return null;
+    const first=read(server,60),end=read(server,64),panels=[];
+    if(first<=0||end<first||(end-first)%8||end-first>8192*8||end>Module.HEAP32.byteLength)return null;
+    for(let ptr=first;ptr<end;ptr+=8){
+      const object=read(ptr,4);if(!valid(object)||![34,36,38,40,42].includes(read(object,8)))continue;
+      const vid=read(object,132);if(vid<=0||vid+12>Module.HEAPU8.length)continue;
+      const long=Module.HEAPU8[vid+11]&128,length=long?read(vid,4):Module.HEAPU8[vid+11],text=long?read(vid):vid;
+      if(length<16||text<=0||text+16>Module.HEAPU8.length||String.fromCharCode(...Module.HEAPU8.subarray(text,text+16))!=='hulk.accesspanel')continue;
+      const rect=[16,20,24,28].map(offset=>read(object,offset));
+      if(rect[2]>0&&rect[3]>0)panels.push({objid:read(object,8),rect});
+    }
+    return panels.length?{seed:read(world,200)>>>0,objid:read(player,8),worldid:read(subworld,4),rect:[16,20,24,28].map(offset=>read(player,offset)),panels}:null;
+  }
   addEventListener('keydown', e => { keys.add(e.code); if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) e.preventDefault(); });
   addEventListener('keyup', e => keys.delete(e.code));
-  addEventListener('blur', () => {keys.clear();wasInteract=false;pendingInteract=false;});
+  addEventListener('blur', () => {keys.clear();wasInteract=false;pendingInteract=false;genPress=null;});
   const acknowledge = e => {
     try { const ack = JSON.parse(e.data); if(ack.map)context=ack;if(ack.player_protection?.epoch===playerEpoch)Module.pendingPlayerProtection=ack.player_protection; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
@@ -36,7 +51,7 @@
     reconnectTelemetry=false;
     socket.onmessage=null;
     socket=transport;socket.onmessage=acknowledge;
-    seq=0;last=0;wasInteract=false;pendingInteract=false;events=[];lastPlayer=null;keys.clear();gameplay=false;
+    seq=0;last=0;wasInteract=false;pendingInteract=false;genPress=null;events=[];lastPlayer=null;keys.clear();gameplay=false;
     pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};pickups.clear();healthBefore.clear();
   };
   Module.webFrame = world => {
@@ -44,7 +59,7 @@
       frame++;
       const pointer = read(world, 672), subworld = read(world, 664);
       const key=world+'/'+(read(world,200)>>>0);
-      if(key!==worldKey){worldKey=key;playerEpoch++;Module.pendingPlayerProtection=null;lastPlayer=null;wasInteract=false;pendingInteract=false;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
+      if(key!==worldKey){worldKey=key;playerEpoch++;Module.pendingPlayerProtection=null;lastPlayer=null;wasInteract=false;pendingInteract=false;genPress=null;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
       activePlayer=valid(pointer)?pointer:0;
       // Engine input uses the game's own remapped keyboard/controller binds.
       // Sample every frame, before rate limiting; menu clicks do not set it.
@@ -57,7 +72,7 @@
       // engine mask includes its configured keyboard and controller bindings.
       const interact = !!(read(world,668)&128) ||
         (practiceKeys.interact!=='Auto' && keys.has(shortcuts.code(practiceKeys.interact)));
-      if(valid(pointer)&&read(pointer,64)>0&&interact&&!wasInteract)pendingInteract=true;
+      if(valid(pointer)&&valid(subworld)&&read(pointer,64)>0&&interact&&!wasInteract){pendingInteract=true;genPress=sampleGenPress(world,pointer,subworld);}
       wasInteract=interact;
       if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 60000) return;
       last = now;
@@ -68,6 +83,7 @@
         alive:read(pointer,64)>0,vid:'browser-player',ammo:read(pointer,540),input:read(pointer,520)} : {...lastPlayer,hp:0,alive:false};
       lastPlayer = player;activePlayer=valid(pointer)?pointer:0;
       player.room_seed=read(world,200)>>>0;player.player_epoch=playerEpoch;
+      if(pendingInteract&&genPress&&genPress.seed===player.room_seed&&genPress.objid===player.objid&&genPress.worldid===player.worldid)player.gen_press=genPress;
       player.battle_metrics={protocol:'player-metrics-v1',...pickupTotals};
       const documentState={};
       if(context.map){
@@ -84,7 +100,7 @@
       }
       socket.send(JSON.stringify({seq:++seq,t:Date.now()/1000,player,
         keys:{interact,interact_edge:pendingInteract,interaction_blocked:false,attack:keys.has('KeyD'),gameplay},events,...documentState}));
-      pendingInteract = false; events = [];
+      pendingInteract = false; genPress=null; events = [];
       document.getElementById('loading').hidden = true;
       if (seq % 30 === 0) parent.postMessage({type:'player-state',player,frame,world,pointer},location.origin);
     } catch (e) { console.error('Browser bridge:',e); }

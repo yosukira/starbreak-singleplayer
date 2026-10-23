@@ -146,7 +146,8 @@ class Plugin(PluginBase):
                 send_error=getattr(self.bridge,'_send_error',None),stage=getattr(self,'last_stage',None),
                 session_flag=getattr(self,'session',None),active_flag=getattr(self,'active',None),
                 context_frames=getattr(self.bridge,'_context_frames',0),
-                handoff_pending=bool(getattr(getattr(self.bridge,'_input_handoff',None),'pending',False)))
+                handoff_pending=bool(getattr(getattr(self.bridge,'_input_handoff',None),'pending',False)),
+                input_reapply_error=getattr(self,'input_reapply_error',None))
             delivery=getattr(self.native_capture,'delivery',None)
             if delivery is not None:
                 delivery.health(path,value)
@@ -159,6 +160,7 @@ class Plugin(PluginBase):
     def _enable(self):
         try:
             self._pending_interact_edge = False
+            self.bridge._gen_press = None
             self.bridge._old_interact = True
             self.bridge._interaction_held_blocked = True
             self.bridge._hold_since.clear()
@@ -177,6 +179,7 @@ class Plugin(PluginBase):
 
     def _disable(self):
         self._pending_interact_edge = False
+        self.bridge._gen_press = None
         self.bridge.disable()
         self.active = False
         self.status = 'bridge: inactive'
@@ -258,6 +261,7 @@ class Plugin(PluginBase):
                 self.bridge._hold_since.clear()
                 self.bridge._hold_fired.clear()
                 self._pending_interact_edge = False
+                self.bridge._gen_press = None
                 self.bridge._old_interact = True
                 self.bridge._interaction_held_blocked = True
             self.last_stage = 'keys'
@@ -272,12 +276,27 @@ class Plugin(PluginBase):
             self.last_stage = 'interact'
             if self.bridge.interaction_blocked():
                 self._pending_interact_edge = False
+                self.bridge._gen_press = None
             else:
+                if edge:self.bridge.capture_gen_press()
                 self._pending_interact_edge = self._pending_interact_edge or edge
 
             self.last_stage = 'before-reapply'
-            if self.bridge.reapply_room_input():
+            restored = False
+            try:
+                restored = self.bridge.reapply_room_input()
+            except Exception as error:
+                # An unsupported input adapter must leave the handoff pending,
+                # but cannot starve position/damage feedback on every frame.
+                detail = type(error).__name__+': '+str(error)
+                if detail != getattr(self, 'input_reapply_error', None):
+                    LOG.warning('Room input restore pending: %s', detail)
+                self.input_reapply_error = detail
+            else:
+                self.input_reapply_error = None
+            if restored:
                 self._pending_interact_edge = False
+                self.bridge._gen_press = None
             self.last_stage = 'reapply'
             now = time.time()
             if now < self.next_send:
@@ -318,6 +337,7 @@ class Plugin(PluginBase):
             self.last_stage = 'sent' if self.bridge.sent > sent_before else 'send-failed'
             if self.bridge.sent > sent_before:
                 self._pending_interact_edge = False
+                self.bridge._gen_press = None
             self.bridge.send_ground_egress(now)
             diagnostics = (str(self.config.diagnostics_file)
                            or os.environ.get('HARDLAB_LIVE_DIAGNOSTICS', ''))

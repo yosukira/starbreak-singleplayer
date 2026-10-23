@@ -46,7 +46,7 @@ class NativePlayer:
         self.capture,self.document=capture,document
         self.legacy_sound_clocks=document.get('clock_scope')!='game-v1' or bool(document.get('runners'))
         self.keyboard,self.post_frame,self.clock=keyboard,post_frame,clock
-        self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[]
+        self.previous_keys=set(keyboard());self.requested=False;self.pending_keys=[];self.takeover_attempt=0
         self.pending_keyups=[];self.keyup_after=0
         self.world_created=False;self.phase='playing';self.speed=1.;self.paused=False
         self.preload=prepared.preload
@@ -126,7 +126,7 @@ class NativePlayer:
                 # leave it years ahead after the clock returns to normal.
                 self.anchor=now;self.anchor_seconds=self.seconds+(.05*self.speed if gap>0 else 0.)
         self.last_update=now
-        if self.paused and not self.seeking and not self.priming:
+        if self.paused and not self.seeking and not self.priming and not self.requested:
             self.anchor=now;self.anchor_seconds=self.seconds;return
         target=self.target if self.seeking else self.anchor_seconds+(now-self.anchor)*self.speed
         deadline=now+(.035 if self.seeking or self.priming else .025);count=0
@@ -135,7 +135,7 @@ class NativePlayer:
             while self.capture.tape.cursor<self.view_end:
                 index=bisect.bisect_right(self.ends,self.capture.tape.cursor)
                 if index>=len(self.ends):break
-                if not self.priming and self.times[index]>target+1e-7:break
+                if not self.priming and not self.requested and self.times[index]>target+1e-7:break
                 self.frame();count+=1
                 if self.priming and self.cursor>self.view_start and self.world_created and len(self.capture.state())==14:
                     self.priming=False;self.anchor=self.clock();self.anchor_seconds=self.seconds;break
@@ -143,9 +143,9 @@ class NativePlayer:
                 if count>=2048 or self.clock()>=deadline:break
             if self.seeking and (bisect.bisect_right(self.times,target)<=bisect.bisect_right(self.ends,self.cursor)):
                 self.seeking=False;self.anchor=self.clock();self.anchor_seconds=self.seconds
-            if self.cursor>=self.view_end:self.phase='ended'
+            if self.cursor>=self.view_end:self.phase='ended';self.cancel_takeover()
         except Exception as error:
-            self.capture.tape.fail(error);self.phase='failed'
+            self.capture.tape.fail(error);self.phase='failed';self.cancel_takeover()
         finally:self.capture.driving=False
 
     def can_takeover(self):
@@ -156,6 +156,7 @@ class NativePlayer:
         # A mouse-generated WorldInput never reaches this path.
         if pressed and mask&0x2ff and self.accepts_keyboard():
             if self.seeking:self.seeking=False;self.target=None;self.anchor=self.clock();self.anchor_seconds=self.seconds
+            if not self.requested:self.takeover_attempt+=1
             self.requested=True;self.pending_keys.append([mask,1])
         elif not pressed and self.requested and mask&0x2ff:self.pending_keys.append([mask,0])
 
@@ -166,11 +167,16 @@ class NativePlayer:
     def ack(self,kind):
         if self.phase=='live':self.acks.append(kind)
 
+    def cancel_takeover(self):
+        self.requested=False;self.pending_keys=[];self.pending_keyups=[]
+        self.anchor=self.clock();self.anchor_seconds=self.seconds;self.last_update=self.anchor
+
     def control(self,value):
         action=value.get('action')
         if self.phase=='live':raise ValueError('The native battle is already under live control')
         if action=='pause':
             if type(value.get('paused')) is not bool:raise ValueError('Invalid native pause state')
+            self.cancel_takeover()
             self.paused=value['paused']
         elif action=='speed':
             if value.get('speed') not in(.25,.5,1,2,4):raise ValueError('Unsupported native replay speed')
@@ -178,14 +184,16 @@ class NativePlayer:
         elif action=='seek':
             target=value.get('seconds')
             if type(target)not in(int,float) or not 0<=target<=self.view_duration:raise ValueError('Invalid native seek target')
+            self.cancel_takeover()
             target+=self.view_offset
             if target<self.seconds or self.phase=='ended':self.reset()
             self.target=float(target);self.seeking=True
             if type(value.get('paused')) is bool:self.paused=value['paused']
         elif action=='takeover':
             if not self.can_takeover():raise ValueError('Native takeover is not at a verified living-player frame')
+            if not self.requested:self.takeover_attempt+=1
             self.requested=True
-        elif action=='stop':self.phase='stopped'
+        elif action=='stop':self.cancel_takeover();self.phase='stopped'
         else:raise ValueError('Unsupported native replay control')
         self.anchor=self.clock();self.anchor_seconds=self.seconds
         self.last_update=self.anchor

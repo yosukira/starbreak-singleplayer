@@ -248,7 +248,14 @@
           this.priming=false;this.playTime=this.elapsed;this.wall=null;this.paused=this.seekTarget===null&&this.seekPaused===true;
         }
         if(this.pauseWhenReady&&this.worldReady){this.pauseWhenReady=false;this.paused=true;this.wall=null;}
-        this.notice({state:this.paused?'paused':'playing',frame:this.worldReady?this.frameCount:0,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});
+        // Empty native loops can occur hundreds of times per second. The
+        // editor needs progress at human cadence, while verification still
+        // runs at every original checkpoint.
+        const now=this.now?.()??0;
+        if(this.lastPlaybackNotice===undefined||!Number.isFinite(this.lastPlaybackNotice)||this.paused||now-this.lastPlaybackNotice>=100){
+          this.lastPlaybackNotice=now;
+          this.notice({state:this.seekTarget!=null?'seeking':this.paused?'paused':'playing',frame:this.worldReady?this.frameCount:0,seconds:this.elapsed/1000,duration:this.totalDuration/1000,target:this.seekTarget==null?undefined:this.seekTarget/1000,takeover:this.canTakeOver()});
+        }
         yield 'frame';
       }
       this.finished=true;this.notice({state:'ended',seconds:this.elapsed/1000,duration:this.totalDuration/1000});
@@ -268,7 +275,12 @@
         for(let count=0;count<240&&!this.finished&&!this.paused;count++){
           if(!this.priming&&this.seekTarget===null&&this.ends[this.completed]>this.playTime)break;
           const value=this.runner.next();
-          if(value.done||value.value==='assets'||value.value==='context'||this.now()-started>budget)break;
+          if(value.value==='assets'||value.value==='context'){
+            // Resource loading is not battle time. On a cold cache the next
+            // ready frame must not race through the time spent waiting.
+            this.wall=null;this.playTime=this.elapsed;break;
+          }
+          if(value.done||this.now()-started>budget)break;
           if(this.seekTarget!==null&&this.elapsed>=this.seekTarget&&(!this.seekPaused||this.worldReady)){
             this.seekTarget=null;this.paused=this.seekPaused;this.wall=null;this.playTime=this.elapsed;
             this.notice({state:this.paused?'paused':'playing',frame:this.frameCount,seconds:this.elapsed/1000,duration:this.totalDuration/1000,takeover:this.canTakeOver()});break;

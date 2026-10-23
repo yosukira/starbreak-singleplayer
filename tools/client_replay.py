@@ -139,7 +139,8 @@ class ClientJournals:
                 raise ValueError('Invalid client replay chunk reference')
             try: compressed = (self.chunk_directory / (digest + '.z')).read_bytes()
             except OSError as error: raise ValueError('Client replay chunk file is missing') from error
-        return zlib.decompress(compressed)
+        try:return zlib.decompress(compressed)
+        except zlib.error as error:raise ValueError('Client replay chunk is damaged') from error
 
     def migrate_chunks(self):
         """Move legacy browser payloads once; native stores remain unchanged.
@@ -187,6 +188,11 @@ class ClientJournals:
         return header
 
     def append(self, identifier, document):
+        with self.connect() as db:
+            return self._append(db, identifier, document)
+
+    def _append(self, db, identifier, document):
+        """Append under the caller's transaction, including prefix copies."""
         identifier = str(uuid.UUID(identifier))
         sequence = integer(document.get('sequence'), 0, 10**7)
         rows = document.get('ops')
@@ -198,27 +204,26 @@ class ClientJournals:
         if len(data) > MAX_CHUNK:
             raise ValueError('Client replay chunk too large')
         digest = hashlib.sha256(data).hexdigest()
-        with self.connect() as db:
-            # Acquire the writer lock before the sequence check. Two windows or
-            # an HTTP retry cannot append the same sequence twice.
-            db.execute('UPDATE attempts SET sequence=sequence WHERE id=?', (identifier,))
-            row = db.execute('SELECT sequence,size,complete,header FROM attempts WHERE id=?', (identifier,)).fetchone()
-            if row is None:
-                raise ValueError('Unknown client replay attempt')
-            if json.loads(row[3]).get('schema')!=self.schema:
-                raise ValueError('Client recording belongs to another edition')
-            previous = db.execute('SELECT digest FROM chunks WHERE id=? AND sequence=?', (identifier, sequence)).fetchone()
-            if previous is not None:
-                if previous[0] != digest:
-                    raise ValueError('Client replay retry changed its data')
-                return dict(sequence=sequence+1, complete=bool(row[2]))
-            if row[2] or row[0] != sequence:
-                raise ValueError('Client replay sequence changed')
-            if row[1]+len(data) > MAX_BYTES:
-                raise ValueError('Client replay exceeds 128 MB')
-            db.execute('INSERT INTO chunks VALUES(?,?,?,?)', (identifier, sequence, digest, self.pack_chunk(data)))
-            db.execute('UPDATE attempts SET sequence=?,size=?,complete=? WHERE id=?',
-                       (sequence+1, row[1]+len(data), int(end), identifier))
+        # Acquire the writer lock before the sequence check. Two windows or
+        # an HTTP retry cannot append the same sequence twice.
+        db.execute('UPDATE attempts SET sequence=sequence WHERE id=?', (identifier,))
+        row = db.execute('SELECT sequence,size,complete,header FROM attempts WHERE id=?', (identifier,)).fetchone()
+        if row is None:
+            raise ValueError('Unknown client replay attempt')
+        if json.loads(row[3]).get('schema')!=self.schema:
+            raise ValueError('Client recording belongs to another edition')
+        previous = db.execute('SELECT digest FROM chunks WHERE id=? AND sequence=?', (identifier, sequence)).fetchone()
+        if previous is not None:
+            if previous[0] != digest:
+                raise ValueError('Client replay retry changed its data')
+            return dict(sequence=sequence+1, complete=bool(row[2]))
+        if row[2] or row[0] != sequence:
+            raise ValueError('Client replay sequence changed')
+        if row[1]+len(data) > MAX_BYTES:
+            raise ValueError('Client replay exceeds 128 MB')
+        db.execute('INSERT INTO chunks VALUES(?,?,?,?)', (identifier, sequence, digest, self.pack_chunk(data)))
+        db.execute('UPDATE attempts SET sequence=?,size=?,complete=? WHERE id=?',
+                   (sequence+1, row[1]+len(data), int(end), identifier))
         return dict(sequence=sequence+1, complete=end)
 
     def read(self, identifier, require_complete=True):
@@ -240,6 +245,8 @@ class ClientJournals:
             if sequence != expected or hashlib.sha256(data).hexdigest() != digest:
                 raise ValueError('Client replay is damaged')
             document = json.loads(data)
+            if document.get('sequence') != expected or document.get('end') is not bool(row[2] and expected == len(chunks)-1):
+                raise ValueError('Client replay chunk boundary changed')
             operations.extend(document['ops'])
         return dict(header, ops=operations)
 
@@ -270,21 +277,30 @@ class ClientJournals:
         self.begin(target, source['client'], source['adapter'],
             dict(key='LocalStorage.pb', revision=0, content=source['preferences']), source['viewport'])
         branch=dict(id=target,sequence=0)
-        self.extend_fork(branch,source['ops'][:cursor])
+        try:self.extend_fork(branch,source['ops'][:cursor])
+        except Exception:
+            with self.connect() as db:
+                db.execute('DELETE FROM chunks WHERE id=?',(target,))
+                db.execute('DELETE FROM attempts WHERE id=?',(target,))
+            raise
         return branch
 
     def extend_fork(self, branch, operations):
         target=branch['id'];sequence=branch['sequence'];rows=[];size=0;total=0
-        for row in operations:
-            length = len(encode(row))+1
-            total+=length
-            if rows and (size+length > 450000 or len(rows) >= 1000):
-                self.append(target, dict(sequence=sequence, ops=rows, end=False))
-                sequence += 1; rows, size = [], 0
-            rows.append(row); size += length
-        if rows:
-            self.append(target, dict(sequence=sequence, ops=rows, end=False))
-            sequence += 1
+        # A long takeover prefix used to open, checkpoint and close SQLite for
+        # every 1000 operations. One transaction avoids those disk stalls and
+        # prevents a failed copy from exposing only part of this extension.
+        with self.connect() as db:
+            for row in operations:
+                length = len(encode(row))+1
+                total+=length
+                if rows and (size+length > 450000 or len(rows) >= 1000):
+                    self._append(db, target, dict(sequence=sequence, ops=rows, end=False))
+                    sequence += 1; rows, size = [], 0
+                rows.append(row); size += length
+            if rows:
+                self._append(db, target, dict(sequence=sequence, ops=rows, end=False))
+                sequence += 1
         branch['sequence']=sequence
         branch['bytes']=branch.get('bytes',0)+total
         return branch

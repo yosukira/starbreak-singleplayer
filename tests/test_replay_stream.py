@@ -12,6 +12,20 @@ from test_replay import encounter, input_at
 
 
 class ReplayStreamTests(unittest.TestCase):
+    def test_reconciliation_does_not_scan_all_prior_frames(self):
+        import struct
+        from types import SimpleNamespace
+        client,server,_=self.documents()
+        wire=ReplayStream(client,server)
+        boundary=wire.boundaries[-1]
+        offset=boundary.start
+        size=struct.unpack('>i',wire.plain[offset+1:offset+5])[0]
+        payload=wire.plain[offset+5:offset+5+size]
+        class NoScan(list):
+            def __iter__(self):raise AssertionError('Repeated full history scan')
+        wire.boundaries=NoScan(wire.boundaries)
+        self.assertEqual(wire.reconcile(boundary.frame,0,12,payload,SimpleNamespace()),payload)
+
     def test_native_plaintext_index_matches_legacy_cipher_and_keeps_verification(self):
         from tools.native_replay_stream import NativeReplayStream
         browser,server,_=self.documents()

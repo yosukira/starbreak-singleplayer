@@ -29,9 +29,22 @@ class ScContent:
     def _recipe(value):
         for field in ('objects', 'creators', 'links', 'switches'):
             value[field] = {int(key): item for key, item in value.get(field, {}).items()}
+        for props in value['objects'].values():
+            # The source core room was reached after another Gen had died.
+            # New-run progress starts empty; apply_progress owns later changes.
+            if props.get('vid') == 'sc.taskfull':
+                props['vid'] = 'sc.taskempty'
+        # The recipe's wire document is also consumed by previews/tools.
+        # Apply the same fresh-run boundary to that duplicate object table.
+        for row in value['world']['worldstate_']['serverworld_'].get('obj_', []):
+            props = row.get('props_', {})
+            if props.get('vid_') == 'sc.taskfull':
+                props['vid_'] = 'sc.taskempty'
         for field in ('sc_surn_counts', 'sc_mledge_velocity'):
             if field in value.get('metadata', {}):
                 value['metadata'][field] = {int(key): item for key, item in value['metadata'][field].items()}
+        from .doors import bind_triggers
+        bind_triggers(value)
         return value
 
     def recipe(self, descriptor, seed=0):

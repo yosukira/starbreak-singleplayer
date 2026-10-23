@@ -21,6 +21,43 @@ from test_native_recording import manifest
 
 
 class LifecycleTests(unittest.TestCase):
+    def test_failed_snapshot_publish_can_retry_with_more_delivered_operations(self):
+        with tempfile.TemporaryDirectory() as directory,mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
+            owner=NativeRecording(directory,'owned.exe')
+            owner.finalizer_stop.set();owner.finalizer.join(timeout=5)
+            try:
+                operations=Engine().record(180)['ops']
+                boundaries=[i+1 for i,row in enumerate(operations) if row==['loop',1]]
+                cut=boundaries[50]
+                owner.journals.append(owner.identifier,dict(sequence=0,ops=operations[:cut],end=False))
+                store=RecordStore(directory);row=sample();row.update(map='hulk_mid',replay=dict(id=owner.identifier),platform='native');store.save(row)
+                path=Path(directory)/(row['id']+'.server.jsonl.gz')
+                writer=JournalWriter(path,dict(attempt=owner.identifier,world_sequence=1));writer.frame(dict(event='same frame'));writer.close()
+                with mock.patch('tools.native_recording.os.replace',side_effect=OSError('sharing violation')):
+                    owner.finalize_battles(immediate=True)
+                self.assertEqual(store.get(row['id'])['replay']['id'],owner.identifier)
+                owner.journals.append(owner.identifier,dict(sequence=1,ops=operations[cut:],end=False))
+                owner.finalize_battles(immediate=True)
+                target=store.get(row['id'])['replay']['id'];self.assertNotEqual(target,owner.identifier)
+                self.assertEqual(owner.journals.read(target)['ops'],operations)
+                pages=list(owner.journals.read_pages(target))
+                self.assertEqual([op for page in pages for op in page['ops']],operations)
+                self.assertEqual(read_journal(path)['attempt'],target)
+            finally:owner.close()
+
+    def test_shutdown_seals_later_attempt_even_when_an_earlier_one_is_damaged(self):
+        with tempfile.TemporaryDirectory() as directory,mock.patch('tools.native_recording.native_symbols.resolve',return_value=manifest()):
+            owner=NativeRecording(directory,'owned.exe')
+            owner.finalizer_stop.set();owner.finalizer.join(timeout=5)
+            first=owner.identifier;second=str(uuid.uuid4())
+            owner.journals.begin(second,owner.manifest['client'],'b'*64,dict(content=None),owner.viewport)
+            owner.identifiers=[first,second]
+            operations=Engine().record(10)['ops']
+            for identifier in (first,second):owner.journals.append(identifier,dict(sequence=0,ops=operations,end=False))
+            with owner.journals.connect() as db:db.execute('UPDATE chunks SET digest=? WHERE id=?',('broken',first))
+            owner.close()
+            self.assertEqual(owner.journals.read(second)['ops'],operations)
+
     def test_verified_native_death_survives_player_removal_but_loading_does_not_fail(self):
         ffi=mock.Mock(NULL=None);ffi.sizeof.return_value=4;ffi.cast.side_effect=lambda kind,value:100 if kind=='uintptr_t' else value
         code=b'test checked death function';ffi.buffer.return_value=code

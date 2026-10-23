@@ -166,3 +166,20 @@ assert.equal(sent.at(-1).player.battle_metrics.healing,27);
 set(world,200,11112);set(player,64,150);context.performance.now=()=>100120;context.Module.webFrame(world);
 assert.equal(sent.at(-1).player.battle_metrics.damage_taken,0,'Next battle starts at zero');
 console.log('Damage taken: actual HP, mitigation, same-frame healing, nested changes, fatal overkill and room reset passed.');
+// Press and panel coordinates are sampled together, before send throttling.
+const genServer=30000,genVector=31000,genPanel=28000,genVid=29000,genText=29100;
+set(world,628,genServer);set(genServer,60,genVector);set(genServer,64,genVector+8);set(genVector,4,genPanel);
+set(genPanel,8,34);set(genPanel,132,genVid);set(genVid,0,genText);set(genVid,4,18);u8[genVid+11]=128;
+u8.set(Buffer.from('hulk.accesspanelon'),genText);
+for(const [offset,value] of [[16,1000],[20,2000],[24,5120],[28,5120]]){set(player,offset,value);set(genPanel,offset,value);}
+set(world,668,0);context.performance.now=()=>100140;context.Module.webFrame(world);
+branchSocket.bufferedAmount=60001;set(world,668,128);context.performance.now=()=>100141;context.Module.webFrame(world);
+set(player,16,51000);set(genPanel,16,51000);set(world,668,0);context.performance.now=()=>100142;context.Module.webFrame(world);
+branchSocket.bufferedAmount=0;context.performance.now=()=>100160;context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.xmp,51000);
+assert.deepEqual(sent.at(-1).player.gen_press.rect,[1000,2000,5120,5120]);
+assert.deepEqual(sent.at(-1).player.gen_press.panels,[{objid:34,rect:[1000,2000,5120,5120]}]);
+assert.equal(sent.at(-1).keys.interact_edge,true);
+context.performance.now=()=>100180;context.Module.webFrame(world);
+assert.equal(sent.at(-1).player.gen_press,undefined,'Consumed presses cannot leak into later telemetry');
+console.log('Moving Gen panel geometry survives a short tap and telemetry backpressure.');

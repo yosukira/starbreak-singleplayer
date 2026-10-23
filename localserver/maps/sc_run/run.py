@@ -1,4 +1,5 @@
 """SC display timer, four unique Gen flags and automatic collapse."""
+import math
 import time
 from ..run_common.run import LevelRun
 
@@ -13,11 +14,17 @@ class ScLevelRun(LevelRun):
     def __init__(self,pack,seed=None,clock=None):
         super().__init__(pack,seed)
         self.pack.configure(self.seed)
+        # Prepare the entire chosen level before entry. Later door visits use
+        # these instances and cached encounter data rather than re-reading files.
+        self.pack.preload_encounters()
+        for role in self.pack.room_names:
+            self.room(role)
         self._clock=clock or time.monotonic
         self.started_at=self._clock()
         self.gens=set();self.chests_rewarded=set()
         self.collapse_started=None
         self._room_seen={}
+        self._timer_notice_boundary=0
 
     @property
     def boss_entered(self):
@@ -31,6 +38,20 @@ class ScLevelRun(LevelRun):
         # deadline that closes rooms or forces the character out of the run.
         now=self._clock() if now is None else float(now)
         return max(0.,self.INITIAL_SECONDS+self.GEN_BONUS_SECONDS*len(self.gens)-(now-self.started_at))
+
+    def timer_notice(self,now=None):
+        """Consume the latest global minute boundary, including across rooms."""
+        now=self._clock() if now is None else float(now)
+        boundary=int(max(0.,now-self.started_at)//60)
+        if boundary<=self._timer_notice_boundary:return None
+        # A delayed room load/tick reports the current minute once. It must
+        # not replay old notices, and a Gen bonus never resets this phase.
+        self._timer_notice_boundary=boundary
+        if self.collapse_started is not None or self.boss_entered:return None
+        minutes=math.ceil(self.remaining(now)/60)
+        # The recorded template covers positive remaining minutes. Reaching
+        # zero is only a display state in local singleplayer, with no exit.
+        return minutes if minutes>0 else None
 
     def mark_gen(self,index,now=None):
         index=int(index)

@@ -181,6 +181,10 @@ function engine(){
   branch.becomeLive({send(){},close(){}},{sequence:3},[97]);
   assert.deepEqual(injected,[['key',[0,100]],['reset',[]],['key',[1,97]]]);
   assert.equal(branch.sequence,3);assert.equal(branch.value('tick',9999),1251);
+  branch.lastValues.random=250;
+  assert.equal(branch.value('random',0),0,'Takeover must preserve fresh entropy rather than offsetting it like a clock');
+  assert.equal(branch.value('random',255),255,'Every subsequent random byte stays inside the journal format');
+  assert.equal(branch.liveOffsets.random,undefined);
   branch.fail('storage unavailable');assert.equal(branch.value('tick',10009),1261);
   assert.equal(branch.loop(0),true);assert.equal(branch.frame(branch.world,17),17);
   const prefEngine=engine(),prefBranch=new ClientReplay({module:prefEngine.module,mode:'play',document:{ops:[]},keepOps:true});

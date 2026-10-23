@@ -73,3 +73,28 @@ Object.assign(seek,{driving:false,stack:[],joined:true,nativeServer:1,nativeClie
 seek.iterate(()=>{});assert.equal(seek.paused,true);assert.equal(seek.seekTarget,null);
 assert.equal(notices.at(-1).state,'paused');assert.equal(notices.at(-1).takeover,true);
 console.log('Paused portable seeking publishes the usable takeover boundary.');
+
+// A cold-cache wait must stop the wall clock, even when the asynchronous
+// decoder completes before the next iteration checks pendingAssets.
+const loadingWait=driver([]);let wall=0,phase=0;
+Object.assign(loadingWait,{driving:false,stack:[],joined:true,nativeServer:1,nativeClient:1,pendingAssets:0,priming:false,
+  paused:false,seekTarget:null,elapsed:1000,playTime:1000,ends:[1000],completed:0,wall:0,now:()=>wall,speed:1,
+  runner:{next(){phase++;return phase===1?{value:'assets',done:false}:{done:true};}}});
+wall=25;loadingWait.iterate(()=>{});
+assert.equal(loadingWait.wall,null);assert.equal(loadingWait.playTime,1000);
+wall=9025;loadingWait.iterate(()=>{});
+assert.equal(loadingWait.playTime,1000,'Decoder delay cannot become fast-forward debt');
+
+// All checkpoints execute at source cadence; only parent UI notifications
+// are throttled. Seeking must still publish the correct state and target.
+const progress=driver([]),updates=[];
+for(let i=0;i<100;i++)progress.ops.push(['loop',0],['state',[0,0]],['loop',1]);
+Object.assign(progress,{stack:[],bootstrap:{},completed:0,world:0,priming:false,elapsed:0,totalDuration:0,
+  seekTarget:1000,now:()=>wall,notice:state=>updates.push(state),restoreTimeCredit(){},canTakeOver:()=>false});
+const run=progress.execute();wall=0;
+for(let i=0;i<100;i++){wall=i;assert.equal(run.next().value,'frame');}
+assert.equal(progress.cursor,300,'Throttling never skips a recorded checkpoint');
+assert.equal(updates.length,1,'A 1000 Hz recording cannot flood the editor with status messages');
+assert.equal(updates[0].state,'seeking');assert.equal(updates[0].target,1);
+assert.equal(run.next().done,true);assert.equal(updates.at(-1).state,'ended');
+console.log('Portable cold-cache pacing and bounded progress updates passed.');

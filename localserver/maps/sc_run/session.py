@@ -15,6 +15,16 @@ class ScRunLiveSession(RunLiveSession):
     ARM_ON_CREATE=True
     DOOR_TELEMETRY_S=.5
 
+    @classmethod
+    def entry_position(cls, run, role, entry, wmp, hmp):
+        from .doors import arrival
+        point = arrival(run.room(role).recipe, entry, wmp, hmp)
+        return point if point is not None else super().entry_position(run, role, entry, wmp, hmp)
+
+    def boundary_properties(self, oid, link):
+        # Purple invisible trigger, not the yellow sprite bounding box.
+        return self.instance.snapshot.properties_at((1, int(link['trigger_id'])))
+
     # Projectiles and beam effects are transient: leaving a room must not leave
     # its shots hanging in mid air for the next visit.
     TRANSIENT = ('sc.aim', 'sc.aimend', 'sc.sliver', 'sc.sliverx', 'sc.burst',
@@ -22,18 +32,45 @@ class ScRunLiveSession(RunLiveSession):
                  'sc.enginefireseed')
 
     @classmethod
+    def _clear_transients(cls, instance):
+        runtime = getattr(instance, 'runtime', None)
+        snapshot = instance.snapshot
+        stale = {oid for oid, row in instance.recipe['objects'].items()
+                 if row.get('vid') in cls.TRANSIENT}
+        if snapshot is not None:
+            stale.update(oid for (owner, oid), row in snapshot.objects.items()
+                         if owner == 1 and row['props'].get('vid_') in cls.TRANSIENT)
+        actors = getattr(runtime, 'actors', {})
+        stale.update(oid for oid, row in actors.items() if row['vid'] in cls.TRANSIENT)
+        enemies = getattr(runtime, 'enemies', None)
+        # Laser damage volumes intentionally have no VID. Their controller
+        # membership, rather than a sprite-name filter, owns their lifetime.
+        stale.update(getattr(enemies, 'effects', ()))
+        mechanics = getattr(runtime, 'mechanics', None)
+        projectiles = getattr(enemies, 'projectiles', None)
+        shots = getattr(projectiles, 'shots', {})
+        # A monk's orbiting inventory persists with the creature. Once a ball
+        # has been released it is a transient shot like the other projectiles.
+        stale.update(oid for oid, shot in shots.items()
+                     if shot['vid'] == 'sc.monkb' and shot.get('orbit') is None)
+        for oid in sorted(stale):
+            instance.recipe['objects'].pop(oid, None)
+            if oid in actors:
+                if oid in shots:
+                    projectiles.retire(oid, 'INTERNAL', native=True)
+                elif oid in getattr(mechanics, 'owned', ()):
+                    mechanics.retire(oid, 'INTERNAL', native=True)
+                elif oid in getattr(enemies, 'owned', ()):
+                    enemies.retire(oid, 'INTERNAL', native=True)
+                else:
+                    runtime._retire(oid, 'INTERNAL', native=True)
+            if snapshot is not None:
+                snapshot.retire((1, oid))
+
+    @classmethod
     def initial_snapshot(cls,server,run,instance):
-        recipe=instance.recipe
-        stale=[oid for oid,row in recipe['objects'].items()
-               if row.get('vid') in cls.TRANSIENT]
-        for oid in stale:
-            recipe['objects'].pop(oid,None)
+        cls._clear_transients(instance)
         super().initial_snapshot(server,run,instance)
-        runtime=getattr(instance,'runtime',None)
-        if runtime is not None:
-            for oid in stale:
-                try:runtime._retire(oid,'INTERNAL',native=True)
-                except Exception:pass
         # Respawn/expiry clocks continue while a room is unoccupied. Resume
         # reconciles deadlines without replaying old attacks or simulating an
         # unobserved fight against stale players.
@@ -54,6 +91,9 @@ class ScRunLiveSession(RunLiveSession):
                     resume=getattr(controller,'resume',None)
                     if resume:resume(elapsed)
                 runtime._expire_lifetimes()
+            # Cleanup must reach CreateWorld even on an immediate revisit;
+            # natural lifetime expiry is not the room-exit projectile policy.
+            if runtime.batch.general or runtime.batch.objects or runtime.batch.extra:
                 runtime.batch.dt=0
                 instance.snapshot.apply(runtime.batch.message())
                 runtime._sent_ms=runtime.wire_end_ms
@@ -103,9 +143,9 @@ class ScRunLiveSession(RunLiveSession):
             return done
         return bool(self.instance.flags.get('mid_cleared'))
 
-    def _notice(self,text,red=False):
+    def _notice(self,text,red=False,chattype=None):
         payload=self.layouts.encode('Chat',dict(message_=text,filteredmessage_=text,
-                                                chattype_=6 if red else 3))
+                                                chattype_=(6 if red else 3) if chattype is None else chattype))
         self.server._send_raw(self.channel,20,payload,'sc-announcement',record=False)
 
     def _flush_progress(self):
@@ -146,6 +186,9 @@ class ScRunLiveSession(RunLiveSession):
         if not self._ready:return
         run=self.run
         run.observe(self.instance)
+        minutes=run.timer_notice()
+        if minutes is not None:
+            self._notice('Firing Sequence Completes in %d Minutes' % minutes,chattype=5)
         # Every task/Gen interaction is preserved by the existing shared
         # input handoff, including held movement and one consumed door press.
         if self.instance.flags.get('chest_cleared'):

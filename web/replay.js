@@ -250,7 +250,7 @@
       if((this.error||this.finished)&&this.mode==='play')return actual;
       try{
         if(this.mode==='record'){
-          if(this.live){
+          if(this.live&&['clock','time','tick'].includes(kind)){
             if(!(kind in this.liveOffsets)&&kind in this.lastValues)this.liveOffsets[kind]=this.lastValues[kind]+(kind==='tick'?17:0)-actual;
             actual+=this.liveOffsets[kind]||0;
           }
@@ -521,6 +521,7 @@
     }
   };
   const physical=new Set();
+  addEventListener('blur',()=>physical.clear());
   let takeoverKeys=gameplayKeys(null),keyboardPublished=false;
   function publishKeyboard(){
     if(!Module.replayTranslateKey)return;

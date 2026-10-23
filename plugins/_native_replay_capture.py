@@ -586,20 +586,27 @@ class NativeCapture:
                     raise
                 self.packet_buffer=bytearray();self.control_error=None
             if self.player is None:continue
+            self.takeover_generation=value.get('takeover_generation',0)
             if value.get('ack') is not None:self.last_ack=value['ack']
             self.bridge_documents.extend(value.get('documents',[]))
             if len(self.bridge_documents)>64:raise ValueError('Native room control queue is full')
-            if value.get('error'):
-                self.control_error=value['error'];self.player.requested=False;self.player.paused=True
+            error_key=(value.get('serial'),value.get('error_revision',0),value.get('error'))
+            if value.get('error') and error_key!=getattr(self,'last_control_error',None):
+                self.last_control_error=error_key
+                self.control_error=value['error'];self.player.cancel_takeover()
             for control in value.get('controls',[]):
-                try:self.player.control(control)
+                try:self.player.control(control);self.control_error=None
                 except (ValueError,TypeError) as error:self.control_error=str(error)
             if value.get('packets'):self.packet_buffer.extend(base64.b64decode(value['packets'],validate=True))
             if len(self.packet_buffer)>16*1024*1024:raise ValueError('Native playback output is too large')
             branch=value.get('branch')
             if branch and self.branch is None:
+                # An offer may cross a seek/cancel in the control channel.
+                # Never attach its server to a different client checkpoint.
+                if not self.player.requested or not self.player.can_takeover():continue
+                if branch.get('cursor',self.tape.cursor)!=self.tape.cursor:continue
                 self.player.commit(lambda chunk:delivery.put(dict(chunk,attempt=branch['id'])),branch['sequence'],branch.get('size'))
-                self.branch=branch;self.reset_inputs=True
+                self.branch=branch;self.reset_inputs=True;self.control_error=None
 
     def sync_audio_clock(self,logical):
         """Rebase presentation-only channel ages after a replay time jump.
@@ -649,7 +656,9 @@ class NativeCapture:
             self.retry_platform_drop()
             return
         if self.player.phase!='live':
-            if not self.player.requested:self.player.update()
+            # Keyboard hooks may request control before the next completed
+            # checkpoint. Keep driving until there is a boundary to hand off.
+            if not self.player.requested or not self.player.can_takeover():self.player.update()
             return
         self.sync_audio_clock(int(self.functions['clock'].original())+self.clock_offset)
         self.tape.loop(0)
@@ -733,9 +742,11 @@ class NativeCapture:
         if player.requested and player.phase!='live':status['state']='taking-over'
         if self.control_error:status['message']=self.control_error
         value=dict(serial=self.serial,status=status,telemetry=telemetry,documents=documents or [],acks=player.acks)
+        value['takeover_generation']=getattr(self,'takeover_generation',0)
         player.acks=[]
         if player.can_takeover():value['checkpoint']=player.checkpoint()
-        if player.requested and player.phase!='live':value['takeover']=True
+        if player.requested and player.phase!='live':
+            value['takeover']=True;value['takeover_attempt']=player.takeover_attempt
         if self.branch:value['committed']=self.branch['id']
         self.delivery.feedback(value)
 

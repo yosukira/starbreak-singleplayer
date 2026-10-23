@@ -363,6 +363,158 @@ class ScEnemyTests(unittest.TestCase):
         self.assertGreater(point[1], 0.)
         self.assertTrue(clear(h, (0, 0, 64*256, 128*256), (1,)))
 
+    def test_reaudit_golem_release_uses_variant_socket_and_locked_horizontal_side(self):
+        for variant, direction, socket in ((9, 1, (180, -192)), (9, -1, (-180, -192)),
+                                           (11, 1, (96, 74)), (11, -1, (-96, 74))):
+            with self.subTest(variant=variant, direction=direction):
+                h = Host()
+                h.add(1, 'sc.golem', (100*256, 200*256))
+                h.enemies.prepare()
+                h.enemies.units[1]['direction'] = -direction
+                # A moving target above/below must not pitch the locked shot.
+                h.enemies._emit(dict(owner=1, kind='golemb', variant=variant,
+                                     direction=direction, angle=math.pi/3))
+                ball, shot = next(iter(h.enemies.projectiles.shots.items()))
+                p = h.actors[ball]['props']
+                centre = (h.actors[ball]['pos'][0]+p['wmp']/2,
+                          h.actors[ball]['pos'][1]+p['hmp']/2)
+                self.assertEqual(centre, ((180+socket[0])*256, (328+socket[1])*256))
+                self.assertEqual((shot['vx'], shot['vy']),
+                                 (136000. if direction > 0 else -137000., 0.))
+
+    def test_reaudit_tank_moves_beyond_birth_patrol_fit(self):
+        h = Host()
+        h.floor(256)
+        h.add(1, 'sc.tank', (0, 128*256))
+        h.enemies.prepare()
+        h.player_at(800, 160, key=7)
+        u = h.enemies.units[1]
+        u.update(active=True, phase='chase', grounded=True, support=90,
+                 target=7, target_point=(816*256, 192*256), next=100., scan=100.)
+        h.advance(2.)
+        self.assertGreater(h.actors[1]['pos'][0], 150*256)
+        self.assertEqual(u['direction'], 1)
+
+    def test_reaudit_tank_attack_stays_still_far_from_birth(self):
+        h = Host()
+        h.floor(256)
+        h.add(1, 'sc.tank', (0, 128*256))
+        h.enemies.prepare()
+        h.actors[1]['pos'][0] = 600*256
+        u = h.enemies.units[1]
+        u.update(active=True, phase='patrol', grounded=True, support=90,
+                 busy=2., lock=2., direction=1)
+        h.advance(.4)
+        self.assertEqual(h.actors[1]['pos'][0], 600*256,
+                         'An attack lock must not be overridden by a homeward turn')
+        self.assertEqual(u['direction'], 1)
+
+    @staticmethod
+    def reaudit_platform_host(rise, *, ceiling=False, wake=1600):
+        h = Host(dict(sc_enemy_fit=dict(species={'sc.skeleton': dict(wake_px=wake)})))
+        h.floor(800)
+        h.add(80, 'sc.ledge', (180*256, (800-rise)*256),
+              changes=dict(wmp=320*256, hmp=16*256, terraintype=2))
+        if ceiling:
+            h.add(81, 'sc.wall', (-1000*256, 500*256),
+                  changes=dict(wmp=2000*256, hmp=64*256, terraintype=1))
+        h.add(1, 'sc.skeleton', (0, 672*256))
+        h.enemies.prepare()
+        h.player_at(300, 800-rise-64, key=7)
+        u = h.enemies.units[1]
+        u.update(grounded=True, support=90, next=100.)
+        return h, u
+
+    def test_reaudit_skeleton_selects_low_or_high_reachable_platform_jump(self):
+        launches = {}
+        for rise in (128, 640):
+            with self.subTest(rise=rise):
+                h, u = self.reaudit_platform_host(rise)
+                h.advance(.05)
+                self.assertFalse(u['grounded'])
+                launches[rise] = u['vy']
+                landed = False
+                for _ in range(65):
+                    h.advance(.05)
+                    if u.get('grounded') and u.get('support') == 80:
+                        landed = True
+                        break
+                self.assertTrue(landed, 'The jump must reach its planned platform')
+                self.assertAlmostEqual(h.actors[1]['pos'][1], (800-rise-128)*256)
+        self.assertGreater(launches[128], -200000.)
+        self.assertLess(launches[640], -240000.)
+
+    def test_reaudit_skeleton_rejects_high_landing_blocked_by_ceiling(self):
+        h, u = self.reaudit_platform_host(640, ceiling=True)
+        h.advance(.1)
+        self.assertTrue(u['grounded'])
+        self.assertEqual(h.actors[1]['pos'][1], 672*256)
+        self.assertFalse(any(q.get('name') == 'sc.skeletonjump' for q in h.events))
+
+    def test_reaudit_dormant_hit_does_not_start_platform_navigation(self):
+        h, u = self.reaudit_platform_host(640, wake=0)
+        h.enemies.feedback(dict(kind='damage', victim=1, value=10, event_id='dormant-platform'))
+        h.advance(.3)
+        self.assertFalse(u['active'])
+        self.assertEqual(h.actors[1]['pos'], [0, 672*256])
+        self.assertNotIn('jump_vx', u)
+        self.assertEqual(h.actors[1]['hp'], 990)
+
+    def test_reaudit_skeleton_still_drops_toward_lower_platform(self):
+        h = Host()
+        h.floor(800)
+        h.add(80, 'sc.ledge', (-100*256, 256*256),
+              changes=dict(wmp=500*256, hmp=16*256, terraintype=2))
+        h.add(1, 'sc.skeleton', (0, 128*256))
+        h.enemies.prepare()
+        h.player_at(100, 736, key=7)
+        u = h.enemies.units[1]
+        u.update(grounded=True, support=80, next=100.)
+        h.advance(.4)
+        self.assertGreater(h.actors[1]['pos'][1], 128*256)
+        self.assertNotIn('jump_vx', u)
+
+    def test_reaudit_flytank_search_does_not_override_heading_between_decisions(self):
+        h = Host(dict(sc_enemy_fit=dict(steer_leg_s=(1., 1.),
+                                        species={'sc.flytank': dict(scan_s=.05)})))
+        h.add(1, 'sc.flytank', (0, 0), changes=dict(facing=0))
+        h.enemies.prepare()
+        h.player_at(-400, 0, key=7)
+        u = h.enemies.units[1]
+        u.update(active=True, phase='chase', target=7, next=100.,
+                 direction=1, steer_at=1., hover_x=0, hover_y=0)
+        h.advance(.2)
+        self.assertGreater(h.actors[1]['pos'][0], 0.)
+        self.assertEqual(u['direction'], 1)
+        self.assertEqual(h.actors[1]['props']['facing'], 0)
+        h.advance(.85)
+        self.assertEqual(u['direction'], -1)
+        self.assertEqual(h.actors[1]['props']['facing'], 180)
+
+    def test_reaudit_flytank_boundary_wins_over_same_slice_player_steering(self):
+        h = Host()
+        h.add(1, 'sc.flytank', (0, 0))
+        h.enemies.prepare()
+        h.player_at(600, 0, key=7)
+        u = h.enemies.units[1]
+        u.update(active=True, phase='chase', target=7, next=100., direction=1,
+                 steer_at=0., hover_x=0, hover_y=0)
+        h.actors[1]['pos'][0] = 180*256
+        h.advance(.05)
+        self.assertEqual(u['direction'], -1)
+        self.assertLess(h.actors[1]['pos'][0], 180*256)
+        self.assertEqual(h.actors[1]['pos'][1], 0)
+
+    def test_reaudit_flytank_provisional_range_covers_later_attack_context(self):
+        h = Host()
+        h.add(1, 'sc.flytank', (0, 0))
+        h.enemies.prepare()
+        # Local FIT acceptance case, not a claim about a native range cutoff.
+        h.player_at(832, 43, key=7)
+        h.advance(.15)
+        self.assertEqual(h.enemies.counts['attacks'], 1)
+        self.assertEqual(h.enemies.units[1]['target'], 7)
+
     def test_resume_expires_shots_and_cancels_backlog_without_emitting(self):
         h = Host()
         h.add(1, 'sc.sniper', (0, 0))
@@ -538,13 +690,14 @@ class ScEnemyTests(unittest.TestCase):
         self.assertEqual(h.enemies.units[corporeal]['target'], 7)
         self.assertTrue(clear(h, (*h.actors[corporeal]['pos'], 64*256, 64*256), (corporeal,)))
 
-    def test_activated_urn_replenishes_dead_lineage_at_120_seconds_with_player_far_away(self):
+    def test_urn_produces_and_replenishes_dead_lineage_with_player_far_away(self):
         h = Host(dict(sc_surn_counts={'1': 3}, sc_ghost_forms=['sc.sniper']))
         h.add(1, 'sc.surn', (0, 0))
         h.enemies.prepare()
         h.player_at(4000, 0)
         h.advance(.5)
-        self.assertFalse(h.enemies.units, 'An urn still requires its first activation')
+        self.assertTrue(h.enemies.units, 'Room production is independent from creature targeting range')
+        self.assertTrue(all(row['vid'] == 'sc.hunter' for oid, row in h.actors.items() if oid in h.enemies.units))
         h.player_at(100, 0)
         h.advance(3.5)
         bodies = [oid for oid, row in h.actors.items() if row['vid'] == 'sc.sniper' and row['hp'] == 750]
@@ -557,7 +710,7 @@ class ScEnemyTests(unittest.TestCase):
         h.enemies.resume(120.)
         h.advance(.4)
         child = h.enemies.urns[urn]['slots'].get(slot)
-        self.assertIsNotNone(child, 'The first activation radius must not gate each later replenishment')
+        self.assertIsNotNone(child, 'Creature targeting range must not gate later replenishment')
         self.assertEqual(h.actors[child]['vid'], 'sc.hunter')
         self.assertEqual(len(h.enemies.urns[urn]['slots']), 3)
 

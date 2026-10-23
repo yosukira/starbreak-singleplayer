@@ -12,6 +12,13 @@ class ScRunPack:
         self.plan=None
         self.exploration_rooms=exploration_rooms
         self.layout_fit=copy.deepcopy(layout_fit or {})
+        self.encounter_packs={}
+
+    def preload_encounters(self):
+        from .encounters import _pack
+        for kind in ('patriarch', 'bonesaw', 'hive', 'boss'):
+            if kind not in self.encounter_packs:
+                self.encounter_packs[kind]=_pack(kind)
 
     def configure(self,seed):
         self.plan=generate(self.content,seed,self.exploration_rooms,fit=self.layout_fit)
@@ -40,5 +47,7 @@ class ScRunPack:
                                              trigger='interact',requires='encounter:boss')
         return recipe
 
-    def props(self,vid):return self.content.props(vid)
+    def props(self,vid):
+        # Native laser damage volumes are invisible, with no resource VID.
+        return {} if vid == '' else self.content.props(vid)
 

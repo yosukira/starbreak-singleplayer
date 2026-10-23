@@ -17,6 +17,7 @@ trampoline; the hook copies finalized fields into a bounded queue.
 Target runtime: Python 3.5 / PyPy3 embedded in SBPE.  No f-strings.
 """
 
+import hashlib
 import json
 import math
 import os
@@ -27,6 +28,8 @@ import time
 SEND_GENERAL_UPDATE = 0x45A730
 INPUT_MAPPING_GET = 0x471620
 WORLD_CLIENT_SET_INPUT = 0x4E03E0
+WORLD_CLIENT_SET_INPUT_SIZE = 226
+WORLD_CLIENT_SET_INPUT_SHA256 = '1359db9e04c8f5668c9e8541fbcd99b3b2a99651d7357e3cc98ad0bc75600dd1'
 INTERACT_INPUT = 7
 
 ACK_RECV_BYTES = 65536
@@ -642,14 +645,74 @@ class LiveBridge(object):
             if any(int(getattr(binding,name))==int(keycode) for name in ('primary','secondary','tertiary')):mask|=1<<index
         return mask
 
+    def _input_entry_supported(self):
+        """Accept the retail entry or the active assistant's verified detour.
+
+        Do not bypass its input filters, or treat an arbitrary JMP as a known
+        client build. Every pointer read below belongs to the active adapter.
+        """
+        ffi = self.ffi
+        def read(address, size):
+            return bytes(ffi.buffer(ffi.cast('char *', address), size))
+        expected = b'\x55\x89\xe5\x83\xec\x78'
+        entry = read(WORLD_CLIENT_SET_INPUT, 6)
+        if entry == expected:
+            return hashlib.sha256(read(WORLD_CLIENT_SET_INPUT, WORLD_CLIENT_SET_INPUT_SIZE)).hexdigest() == WORLD_CLIENT_SET_INPUT_SHA256
+        if entry[:1] != b'\xe9':
+            return False
+        active = getattr(getattr(self.refs, 'manager', None), '_active', {})
+        plugin = active.get('plugin_combat_assist') if isinstance(active, dict) else None
+        assistant = getattr(plugin, 'assistant', None)
+        native = getattr(assistant, 'native', None)
+        hook = getattr(native, 'input_hook', None)
+        if (native is None or getattr(native, 'owner', None) is not assistant or
+                getattr(plugin, 'native', None) is not native or
+                getattr(native, 'refs', None) is not self.refs or
+                getattr(native, 'ffi', None) is not ffi or
+                getattr(native, 'lib', None) is not self.lib or
+                hook is None or hook == ffi.NULL or
+                getattr(native, 'input_filter_version', None) != 1):
+            return False
+        spec = (getattr(native, 'abi', {}) or {}).get('set_input', {})
+        if (spec.get('address') != WORLD_CLIENT_SET_INPUT or
+                spec.get('size') != WORLD_CLIENT_SET_INPUT_SIZE or
+                spec.get('sha256') != WORLD_CLIENT_SET_INPUT_SHA256 or
+                not self.lib.subhook_is_installed(hook)):
+            return False
+        destination = (WORLD_CLIENT_SET_INPUT+5+struct.unpack('<i', entry[1:5])[0]) & 0xffffffff
+        if destination not in getattr(native, 'allocations', ()):
+            return False
+        trampoline = self.lib.subhook_get_trampoline(hook)
+        callback = getattr(native, 'input_callback', None)
+        if trampoline == ffi.NULL or callback is None or callback == ffi.NULL:
+            return False
+        trampoline = int(ffi.cast('uintptr_t', trampoline))
+        callback = int(ffi.cast('uintptr_t', callback))
+        stub = (b'\x9c\x60\xff\x74\x24\x28\xff\x74\x24\x1c\xb8' +
+                struct.pack('<I', callback) +
+                b'\xff\xd0\x83\xc4\x08\x89\x44\x24\x28\x61\x9d\xb8' +
+                struct.pack('<I', trampoline) + b'\xff\xe0')
+        if read(destination, len(stub)) != stub:
+            return False
+        # subhook copies six complete instruction bytes, overwrites only five,
+        # then jumps from its trampoline back to the original entry + 6.
+        prefix = read(trampoline, 6)
+        if prefix != expected:
+            return False
+        back = read(trampoline+6, 5)
+        if back[:1] != b'\xe9' or (trampoline+11+struct.unpack('<i', back[1:])[0]) & 0xffffffff != WORLD_CLIENT_SET_INPUT+6:
+            return False
+        original = prefix[:5]+read(WORLD_CLIENT_SET_INPUT+5, WORLD_CLIENT_SET_INPUT_SIZE-5)
+        return hashlib.sha256(original).hexdigest() == WORLD_CLIENT_SET_INPUT_SHA256
+
     def _native_set_input(self, mask):
         "Use WorldClient::setInput's total-only native/protobuf path."
+        # A cached ABI stub must not authorize a later unknown patch or a
+        # retired/replaced plugin. Validate the live entry on each handoff.
+        if not self._input_entry_supported():
+            raise RuntimeError('unsupported WorldClient::setInput signature')
         if self._input_setter is None:
             ffi = self.ffi
-
-            expected = b'\x55\x89\xe5\x83\xec\x78'
-            if bytes(ffi.buffer(ffi.cast('char *', WORLD_CLIENT_SET_INPUT), 6)) != expected:
-                raise RuntimeError('unsupported WorldClient::setInput signature')
             code = (b'\x55\x89\xe5\xff\x75\x0c\x8b\x4d\x08\xb8' +
                     struct.pack('<I', WORLD_CLIENT_SET_INPUT) +
                     b'\xff\xd0\xc9\xc3')
@@ -668,30 +731,32 @@ class LiveBridge(object):
     def reapply_room_input(self):
         """Restore held native input once after a room becomes ready.
 
-        The native reapply must only run against a fully live world: calling it
-        on the first ready frame of a handoff stalled the game thread in the
-        Cathedral run. Wait for a few settled frames instead of special-casing
-        any map, and give up on a handoff that never reaches that state.
+        Both the acknowledged context and its current native world/player must
+        settle. An ACK can change context after begin_native_frame, and a ready
+        ACK alone does not establish that the native world has stayed loaded.
+        This guard is not proof that all native handoff freezes are resolved.
         """
         marker = str(os.environ.get('HARDLAB_LIVE_SESSION', '')).strip().lower()
         if not self.enabled or marker not in ('1', 'yes', 'true', 'on'):
             self._input_handoff.reset()
             return False
-        context = self.input_context or {}
-        if context.get('room_ready') is not True:
+        identity = self._room_input_identity()
+        if identity is None or identity != getattr(self, '_context_identity', None):
             return False
         if getattr(self, '_context_frames', 0) < self.REAPPLY_SETTLE_FRAMES:
             return False
         if time.monotonic()-getattr(self, '_context_ready_at', time.monotonic()) < .05:
             return False
-        cw = self._current_world()
-        seed = int(cw.asWorld.props.seed) if cw is not None else None
+        seed = identity[-1]
         if not self._input_handoff.due(self.input_context, seed):
             return False
-        if (cw is None or cw.player == self.ffi.NULL or
-                self.refs.WorldClient.overlay != self.ffi.NULL):
-            return False
         total = self.physical_input_mask()
+
+        # InputMapping::get is native code. Do not retain a ClientWorld pointer
+        # across that call, or apply a mask to a replacement room/client.
+        if self._room_input_identity() != identity:
+            return False
+        cw = self._current_world()
 
         if total & (1 << INTERACT_INPUT):
             self._old_interact = True
@@ -700,6 +765,11 @@ class LiveBridge(object):
         before = int(cw.total)
         if before != mask:
             self._native_set_input(mask)
+        # A native setter may cause callbacks. Reacquire the current object
+        # before reading total/inputBuffer; never dereference the old cache.
+        if self._room_input_identity() != identity:
+            return False
+        cw = self._current_world()
         if int(cw.total) != mask:
             return False
         self._input_handoff.committed()
@@ -829,6 +899,27 @@ class LiveBridge(object):
     def begin_player_epoch(self):
         self.player_epoch=getattr(self,'player_epoch',0)+1
         self.player_protection=None
+
+    def capture_gen_press(self):
+        """Player and attached panels in the same native world-coordinate frame."""
+        self._gen_press = None
+        try:
+            cw = self._current_world()
+            if cw is None or cw.player == self.ffi.NULL or cw.serverSubWorld == self.ffi.NULL:return
+            player = cw.player.asClientObject.asNativeObject.asWorldObject
+            panels = []
+            for pointer in self.util.worldobjects(cw.serverSubWorld):
+                world = self.ffi.cast('struct WorldObject *', pointer)
+                if int(world.objId) not in (34,36,38,40,42):continue
+                props = world.props
+                if not self.util.getstr(props.vid).startswith('hulk.accesspanel'):continue
+                panels.append(dict(objid=int(world.objId),rect=[int(getattr(props,k)) for k in ('xmp','ymp','wmp','hmp')]))
+            if panels:
+                self._gen_press = dict(seed=int(cw.asWorld.props.seed),objid=int(player.objId),
+                    worldid=int(cw.mySubWorld.asNativeSubWorld.asSubWorldImpl.asSubWorld.worldId),
+                    rect=[int(getattr(player.props,k)) for k in ('xmp','ymp','wmp','hmp')],panels=panels)
+        except Exception:
+            self._gen_press = None
 
     def player_document(self):
         cw = self._current_world()
@@ -1119,11 +1210,35 @@ class LiveBridge(object):
 
     REAPPLY_SETTLE_FRAMES = 3
 
+    def _room_input_identity(self):
+        """Numeric identity of the currently ready context and native room."""
+        context = self.input_context or {}
+        if (context.get('room_ready') is not True or
+                context.get('room_token') is None or context.get('room_seed') is None):
+            return None
+        client = self.refs.WorldClient
+        if client is None or client == self.ffi.NULL:
+            return None
+        game = getattr(self.refs, 'GameClient', None)
+        # CreateWorld replaces the live owner before SBPE refreshes its cached
+        # WorldClient reference. Compare pointers before touching that child.
+        if game is None or game == self.ffi.NULL or game.worldClient != client:
+            return None
+        cw = client.clientWorld
+        if cw is None or cw == self.ffi.NULL or cw.player == self.ffi.NULL or client.overlay != self.ffi.NULL:
+            return None
+        seed = int(cw.asWorld.props.seed)
+        if seed != context['room_seed']:
+            return None
+        # Save addresses, never native objects that a later frame may free.
+        return (context.get('map'), context['room_token'], context['room_seed'],
+                int(self.ffi.cast('uintptr_t', client)), int(self.ffi.cast('uintptr_t', cw)),
+                int(self.ffi.cast('uintptr_t', cw.player)), seed)
+
     def begin_native_frame(self):
         """Once per native frame; send/drain NEVER reset these budgets."""
-        identity = (self.input_context.get('map'), self.input_context.get('room_token'),
-                    self.input_context.get('room_seed'), self.input_context.get('room_ready') is True)
-        if not identity[-1] or identity != getattr(self, '_context_identity', None):
+        identity = self._room_input_identity()
+        if identity is None or identity != getattr(self, '_context_identity', None):
             self._context_identity = identity
             self._context_frames = 0
             self._context_ready_at = time.monotonic()
@@ -1304,6 +1419,11 @@ class LiveBridge(object):
             },
             'events': events,
         }
+        sample = getattr(self, '_gen_press', None)
+        player = document['player']
+        if (interact_edge and sample and sample['seed'] == player.get('room_seed')
+                and sample['objid'] == player.get('objid') and sample['worldid'] == player.get('worldid')):
+            player['gen_press'] = sample
         if self.input_context.get('map') in ('egy_run','eub_run','etl_run','est_run','efb_run','eff_run','sc_run'):
             cw = self._current_world()
             document['player']['inventory_protocol']='full-run-inventory-v1'

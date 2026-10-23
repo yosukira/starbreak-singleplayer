@@ -10,7 +10,7 @@ from collections import Counter
 
 from .abilities import ScProjectiles, center, move, players, prop, stop_motion
 from .mechanic_helpers import place
-from .physics import clear, edge_ahead, flight, geometry, ground, rect, sinusoid, sweep
+from .physics import clear, edge_ahead, flight, geometry, ground, rect, sinusoid, surface, sweep
 
 
 GHOSTS = ('sc.scout', 'sc.bomber', 'sc.sniper', 'sc.assassin', 'sc.titan')
@@ -24,42 +24,60 @@ VITALS = {'sc.skeleton': 1000, 'sc.golem': 5000, 'sc.egolem': 10000, 'sc.tank': 
 # FIT: waking is deliberately independent from acquisition and scan cadence.
 # Species overrides may be supplied in recipe.metadata.sc_enemy_fit.species.
 DEFAULT_SPECIES = {
-    # OBS (ranges-notes.md, second recording): six clean single-player first
-    # motions happen at 1151-1546px centre distance, so 1600 is a FIT upper
-    # bound. Weapon ranges are bounded by the measured first-shot geometry:
-    # tank ~843px, flytank ~302-367px (both with no prior damage).
+    # FIT: activation, acquisition and weapon radii are separate local policy.
+    # Attack reception geometry does not identify native activation/search
+    # thresholds, target IDs or decision-time ranges.
     'sc.skeleton': dict(wake_px=1600., acquire_px=960., release_px=1500., scan_s=.45, speed=55000., attack_px=170.),
     'sc.golem': dict(wake_px=1600., acquire_px=1200., release_px=1700., scan_s=.55, speed=22000., attack_px=700.),
     'sc.tank': dict(wake_px=1600., acquire_px=1100., release_px=1700., scan_s=.5, speed=24000., attack_px=860.),
-    'sc.flytank': dict(wake_px=1600., acquire_px=700., release_px=1300., scan_s=.6, speed=32000., attack_px=380.),
+    # FIT: a later single-player attack has ~738px reception geometry. Allow
+    # that context without presenting 800/900 as recovered native thresholds.
+    'sc.flytank': dict(wake_px=1600., acquire_px=900., release_px=1300., scan_s=.6, speed=32000., attack_px=800.),
     'sc.hunter': dict(wake_px=1600., acquire_px=1600., release_px=2400., scan_s=.4, speed=46000., attack_px=150.),
     'sc.monk': dict(wake_px=1600., acquire_px=1000., release_px=1500., scan_s=.65, speed=22000., attack_px=900.),
 }
 DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
+    # OBS: one skeleton rises 640px. FIT: choose height from reachable landing
+    # surfaces, with a small landing margin; ordinary jumps keep the low speed.
+    skeleton_jump_max_v=265000., skeleton_jump_clearance_px=32.,
     titan_jump_v=125000., golem_jump_v=90000., golem_gravity=200000.,
-    # FIT: one same-body capture jumps at about 528px centre distance and
-    # throws at 300px and 587px, so a 420px jump range cannot reproduce it.
-    golem_close_px=560., golem_jump_weight=.5, golem_restitution=.8,  # weight is FIT
-    hunter_manifest_px=160., urn_wake_px=1700., urn_step_s=.25,
+    # FIT: a later same-body jump has ~599px reception geometry. This loose
+    # allowance does not establish the native jump/throw cutoff or probability.
+    golem_close_px=640., golem_jump_weight=.5, golem_restitution=.8,
+    # OBS: a fresh room starts surn production before any player subworld is
+    # present. Local production therefore starts independently of creature
+    # wake/acquisition. Native births use the moving urn's top-left plus
+    # (1, -18)px, not body centres.
+    # FIT: a .2s minimum plus frame scheduling covers the observed 200-255ms
+    # between births; the native scheduler itself is not reconstructed.
+    hunter_manifest_px=160., urn_step_s=.2, urn_birth_offset_px=(1., -18.),
     urn_emit_s=.105, manifest_s=.83, titan_manifest_s=1.62,
     skeleton_thrust_cooldown=.605, skeleton_cleave_cooldown=.8,
     skeleton_variant_policy='object_id_fit', patrol_px=240., patrol_leg_s=1.1, steer_leg_s=(.45, 1.0),
-    assassin_visible_s=2.4, assassin_initial_wait_s=.1,
-    assassin_ghost_wait_s=.325, assassin_pause_s=.78, assassin_move_s=.35,
-    assassin_segments=(1, 2, 3, 4),
-    # OBS: of 72 ghost->burst segments, 62 moved once, 8 twice, 1 three times
-    # and 1 four times; the four lengths were never equally likely.
-    assassin_segment_weights=(62., 8., 1., 1.),
-    # OBS: titan 15/149 manifests; the remaining four forms share the rest.
+    # FIT minimum; observed visible intervals include 1.560 and 1.830 seconds.
+    # Reappearance is governed by the live target and clear space, not a draw
+    # from the number of movement legs seen in a recording.
+    assassin_visible_s=1.5, assassin_initial_wait_s=.1,
+    assassin_ghost_wait_s=.325, assassin_pause_s=.78,
+    assassin_ghost_speed=180000., assassin_ghost_step_px=480.,
+    assassin_ghost_min_step_s=.1, assassin_manifest_px=160.,
+    # FIT selection policy. Capture frequencies do not establish spawn odds.
     ghost_form_weights={'sc.titan': 15., 'sc.scout': 33.5, 'sc.bomber': 33.5,
-                        'sc.sniper': 33.5, 'sc.assassin': 33.5}, burst_speed=36000., burst_jitter_rad=.20,
+                        'sc.sniper': 33.5, 'sc.assassin': 33.5},
+    # OBS: burst endpoint components are integer multiples of 1000 within
+    # [-16000, 15000]mp/s. Independent uniform selection is a local FIT;
+    # neither an eight-direction ring nor the native RNG was established.
+    burst_axis_mp_s=(-16000, 15000), shard_gravity=156000.,
     monk_interval_s=16., monk_refill_s=1.92, monk_orb_interval_s=.25,
     monk_mode_choices=('sequential', 'radial', 'focused'),
     # OBS: a captured warning line is 13 segments of 64px (~832px).
     laser_segment_px=32., laser_range_px=1600., laser_max_segments=50,
     fly_acceleration=50000., scout_dive_acceleration=160000.,
-    scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4), skeleton_melee_vertical_px=110.,
-    flytank_hover_span_px=180., golem_stand_px=520., golem_stand_scale=.25, golem_wave_gravity=180000., tank_patrol_px=112.,
+    scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4),
+    # OBS: floor-blocked scout cues repeat after 559-605ms. FIT: permit a
+    # retry .55s from that dive's start; airborne cooldown remains separate.
+    scout_blocked_retry_s=.55, skeleton_melee_vertical_px=110.,
+    flytank_hover_span_px=180., golem_stand_px=520., golem_stand_scale=.25, golem_wave_gravity=180000.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
     # OBS: 3796 same-owner dynamic wraiths leave at 4994-7474ms even though the
     # authored lifetime field is 30000ms; the native cleanup trigger is unknown,
@@ -136,7 +154,7 @@ class ScEnemies:
             return True
         vid, p = row['vid'], row['props']
         if vid in SHOTS:
-            self.projectiles.adopt(oid, gravity=150000. if vid == 'sc.shard' else 200000. if vid == 'sc.golemb' else 0., bounce=vid == 'sc.golemb')
+            self.projectiles.adopt(oid, gravity=self.fit['shard_gravity'] if vid == 'sc.shard' else 200000. if vid == 'sc.golemb' else 0., bounce=vid == 'sc.golemb')
             return True
         if vid in ('sc.aim', 'sc.aimend'):
             self.own(oid)
@@ -183,7 +201,7 @@ class ScEnemies:
         if family in GHOSTS and row.get('hp') is None and vid != 'sc.eassassin':
             self._manifest_begin(oid, u)
         elif vid == 'sc.eassassin':
-            u.update(active=True, phase='ghost', saved_hp=VITALS['sc.assassin'], ghost_steps=1,
+            u.update(active=True, phase='ghost', saved_hp=VITALS['sc.assassin'], ghost_moves=0,
                      ghost_at=self.now+self.fit['assassin_ghost_wait_s'])
         self._attach_explicit_lineage(oid, row.get('creator', 0))
         # USER: no creature is born inside a wall; nudge it to the nearest
@@ -235,7 +253,7 @@ class ScEnemies:
         prop(self.host, oid, 'hitpoints', hp)
         prop(self.host, oid, 'hitboxdamage' if u['vid'] == 'sc.titan' else 'damage', 35)
         prop(self.host, oid, 'ownertype', 2)
-        if u['vid'] in ('sc.assassin', 'sc.titan'):
+        if u['vid'] == 'sc.titan':
             prop(self.host, oid, 'blocktype', 1)
         u.update(phase='patrol', next=self.now+self.fit['assassin_initial_wait_s'], busy=0.)
 
@@ -260,7 +278,8 @@ class ScEnemies:
             return live.get(u['target'])
         u['scan'] = self.now+max(.01, policy['scan_s'])
         old = live.get(u['target'])
-        if old is not None and (u['vid'] == 'sc.hunter' or math.dist(center(old), c) <= policy['release_px']*256):
+        locked_ghost = u['vid'] == 'sc.hunter' or (u['vid'] == 'sc.assassin' and u['phase'] == 'ghost')
+        if old is not None and (locked_ghost or math.dist(center(old), c) <= policy['release_px']*256):
             target = old
         else:
             eligible = [(key, p) for key, p in live.items() if math.dist(center(p), c) <= policy['acquire_px']*256]
@@ -269,7 +288,7 @@ class ScEnemies:
         if target is not None:
             u['target_point'] = center(target)
             dx = u['target_point'][0]-c[0]
-            if abs(dx) > 8*256:
+            if abs(dx) > 8*256 and u['vid'] != 'sc.flytank':
                 u['direction'] = 1 if dx >= 0 else -1
             if u['phase'] in ('patrol', 'chase'):
                 u['phase'] = 'chase'
@@ -308,7 +327,7 @@ class ScEnemies:
         delta = (point[0]-c[0], point[1]-c[1])
         distance = math.hypot(*delta)
         if distance <= self.fit['hunter_manifest_px']*256:
-            # OBS: titan formed 15 of 149 manifests (~10%), not one in five.
+            # Local selection policy, not a recovered retail probability.
             vid = self.host.rng.choices(self.manifest_choices,
                                         [self.fit['ghost_form_weights'].get(v, 1.) for v in self.manifest_choices])[0]
             p = self.host.pack.props(vid)
@@ -343,8 +362,6 @@ class ScEnemies:
             if urn['native'].get('sin'):
                 move(self.host, oid, sinusoid(urn['native'], urn['origin'], self.now), dt)
             if not urn['active']:
-                if not any(math.dist(center(p), center(row)) <= self.fit['urn_wake_px']*256 for p in live.values()):
-                    continue
                 urn['active'] = True
             if self.now+1e-9 < urn['next']:
                 continue
@@ -358,6 +375,73 @@ class ScEnemies:
                 self._queue(oid, self.fit['urn_emit_s'], 'hunter_birth', slot=slot)
                 break
 
+    def _skeleton_jump_plan(self, oid, u, point, *, allow_level=False):
+        """FIT landing search using current terrain, not recorded positions."""
+        if not u['active'] or not u.get('grounded') or point is None:
+            return None
+        row = self.host.actors[oid]
+        x, y, w, h = rect(row)
+        gravity = self.fit['gravity']
+        if gravity <= 0:
+            return None
+        normal = self.fit['skeleton_jump_v']
+        maximum = max(normal, self.fit['skeleton_jump_max_v'])
+        speed = self.policy('sc.skeleton')['speed']
+        margin = self.fit['skeleton_jump_clearance_px']*256
+        candidates = []
+        for platform, bounds, kind, shape in self.terrain:
+            if platform in (oid, u.get('support')):
+                continue
+            left, right = bounds[0], bounds[0]+bounds[2]-w
+            landing_x = min(max(point[0]-w/2, left), right) if left <= right else (left+right)/2
+            top = surface(bounds, shape, landing_x, w)
+            if top is None or top < point[1]:
+                continue
+            rise = y+h-top
+            if rise < (-1. if allow_level else 24*256):
+                continue
+            velocity = max(normal, math.sqrt(2*gravity*(max(0., rise)+margin)))
+            if velocity > maximum:
+                continue
+            fall_at = (velocity+math.sqrt(max(0., velocity*velocity-2*gravity*rise)))/gravity
+            vx = (landing_x-x)/max(.01, fall_at)
+            if abs(vx) > speed or not clear(self.host, (landing_x, top-h, w, h), (oid,)):
+                continue
+            score = abs(top-point[1])+abs(landing_x+w/2-point[0])*.5
+            candidates.append((score, platform, landing_x, top, velocity, vx, fall_at))
+        for _, platform, landing_x, top, velocity, vx, fall_at in sorted(candidates)[:8]:
+            # A ballistic height alone is insufficient: a ceiling or the side
+            # of a solid platform can make the intended landing unreachable.
+            high = y-velocity*velocity/(2*gravity)
+            nearby = [t for t in self.terrain if t[1][0] < max(x, landing_x)+2*w
+                      and t[1][0]+t[1][2] > min(x, landing_x)-w
+                      and t[1][1] <= y+h+1 and t[1][1]+t[1][3] >= high-1]
+            probe = dict(row, pos=list(row['pos']))
+            state = dict(vy=-velocity, grounded=False, support=u.get('support'))
+            elapsed = 0.
+            while elapsed < fall_at+.15:
+                delta = min(.05, fall_at+.15-elapsed)
+                probe['pos'] = list(ground(nearby, probe, state, delta, vx, gravity))
+                elapsed += delta
+                if state.get('grounded'):
+                    if abs(probe['pos'][1]+h-top) <= 8*256:
+                        return dict(vy=-velocity, vx=vx, support=state['support'])
+                    break
+        return None
+
+    def _begin_skeleton_jump(self, oid, u, point, *, allow_level=False):
+        if self.now < u.get('next_jump', 0.):
+            return False
+        plan = self._skeleton_jump_plan(oid, u, point, allow_level=allow_level)
+        u['next_jump'] = self.now+(.8 if plan else .35)
+        if plan is None:
+            return False
+        u.update(vy=plan['vy'], jump_vx=plan['vx'], jump_surface=plan['support'], grounded=False)
+        if abs(plan['vx']) > 1.:
+            u['direction'] = 1 if plan['vx'] > 0 else -1
+        self.host.presentation.sound(oid, 'sc.skeletonjump', self.now)
+        return True
+
     def _ground(self, oid, u, dt, target):
         row = self.host.actors[oid]
         vid = 'sc.golem' if u['vid'] == 'sc.egolem' else u['vid']
@@ -365,30 +449,29 @@ class ScEnemies:
         c = center(row)
         busy = self.now < u['busy']
         vx = 0. if busy else u['direction']*self.policy(vid)['speed']
-        if vid == 'sc.tank' and abs(row['pos'][0]-u['home'][0]) > self.fit['tank_patrol_px']*256:
-            # OBS: captured tanks never leave their platform and patrol ~112px.
-            u['direction'] = 1 if row['pos'][0] < u['home'][0] else -1
-            vx = u['direction']*self.policy(vid)['speed']
         if vid == 'sc.golem' and point is not None:
-            # USER: a golem mostly stands its ground; OBS tracks only shuffle
-            # about 100px, so inside the stand range it creeps instead of
-            # striding at full speed.
+            # USER: the golem mostly holds its ground between attacks. A slow
+            # perpetual chase is still a chase; close targets need no walking.
+            # The boundary of this holding region remains a configurable FIT.
             if math.dist(point, c) <= self.fit['golem_stand_px']*256:
-                vx *= self.fit['golem_stand_scale']
+                vx = 0.
         drop = False
         if not busy and u.get('grounded') and point is not None and vid in ('sc.skeleton', 'sc.titan'):
-            # OBS: a captured skeleton climbs +320px onto the player's platform.
-            # One jump height serves every upward case; the old 96px request,
-            # 112px drop and 80px edge reversal left an 80-112px dead band where
-            # the body neither jumped nor turned.
-            if point[1] < c[1]-96*256 and self.now >= u.get('next_jump', 0):
-                u['vy'] = -self.fit['skeleton_jump_v' if vid == 'sc.skeleton' else 'titan_jump_v']
-                u['next_jump'] = self.now+.8
+            target_height = target.get('hmp', 0) if isinstance(target, dict) else getattr(target, 'hmp', 0)
+            feet_delta = point[1]+target_height/2-row['pos'][1]-row['props'].get('hmp', 0)
+            upward = feet_delta < -24*256 if vid == 'sc.skeleton' else point[1] < c[1]-96*256
+            downward = feet_delta > 96*256 if vid == 'sc.skeleton' else point[1] > c[1]+96*256
+            if upward and self.now >= u.get('next_jump', 0):
                 if vid == 'sc.skeleton':
-                    self.host.presentation.sound(oid, 'sc.skeletonjump', self.now)
-                u['grounded'] = False
-            elif point[1] > c[1]+96*256:
+                    self._begin_skeleton_jump(oid, u, point)
+                else:
+                    u['vy'] = -self.fit['titan_jump_v']
+                    u['next_jump'] = self.now+.8
+                    u['grounded'] = False
+            elif downward:
                 drop = True
+        if not busy and not u.get('grounded') and 'jump_vx' in u:
+            vx = u['jump_vx']
         if not busy and u.get('grounded') and edge_ahead(self.terrain, row, u, u['direction'], 8*256):
             # Patrol respects edges; pursuit can leave a platform for a lower
             # target, while upward pursuit uses its independent jump.
@@ -400,14 +483,19 @@ class ScEnemies:
         if u.get('blocked') and not busy:
             if target is None:
                 u['direction'] *= -1
-            elif vid in ('sc.skeleton', 'sc.titan') and u.get('grounded'):
-                u['vy'] = -self.fit['skeleton_jump_v' if vid == 'sc.skeleton' else 'titan_jump_v']
+            elif vid == 'sc.skeleton' and u.get('grounded'):
+                if not self._begin_skeleton_jump(oid, u, point, allow_level=True):
+                    u['direction'] *= -1
+            elif vid == 'sc.titan' and u.get('grounded'):
+                u['vy'] = -self.fit['titan_jump_v']
         if vid == 'sc.golem' and u.get('slam') and u.get('grounded') and not previous:
             u.pop('slam', None)
-            self._waves(oid)
+            self._waves(oid, pos)
             u['busy'] = self.now+.2
             u['lock'] = u['busy']
         if u.get('grounded'):
+            u.pop('jump_vx', None)
+            u.pop('jump_surface', None)
             pose = 4 if busy else 5
         else:
             pose = 3 if u['vy'] < 0 else 1
@@ -433,17 +521,26 @@ class ScEnemies:
             hover_y = u.setdefault('hover_y', row['pos'][1])
             home_x = u.setdefault('hover_x', row['pos'][0])
             span = self.fit['flytank_hover_span_px']*256
-            if row['pos'][0] < home_x-span:
-                u['direction'] = 1
-            elif row['pos'][0] > home_x+span:
-                u['direction'] = -1
+            turn = False
             if point is not None and self.now >= u.get('steer_at', 0.):
-                u['direction'] = -1 if point[0] < row['pos'][0] else 1
+                u['direction'] = -1 if point[0] < center(row)[0] else 1
+                turn = True
+            if row['pos'][0] <= home_x-span and u['direction'] < 0:
+                u['direction'] = 1
+                turn = True
+            elif row['pos'][0] >= home_x+span and u['direction'] > 0:
+                u['direction'] = -1
+                turn = True
+            if turn:
                 u['steer_at'] = self.now+self.host.rng.uniform(*self.fit['steer_leg_s'])
             speed = self.policy(vid)['speed']
             end, hit = flight(self.terrain, row, (u['direction']*speed, 0.), dt)
+            if hit:
+                u['direction'] *= -1
+                u['steer_at'] = self.now+self.host.rng.uniform(*self.fit['steer_leg_s'])
+                turn = True
             end = (end[0], hover_y)
-            facing = None if self.now < u['lock'] else 0 if u['direction'] > 0 else 180
+            facing = (0 if u['direction'] > 0 else 180) if turn and self.now >= u['lock'] else None
             u['vx'], u['vy'] = u['direction']*speed, 0.
             move(self.host, oid, end, dt, 2, facing)
             return
@@ -469,7 +566,8 @@ class ScEnemies:
         acceleration = self.fit['fly_acceleration']*dt
         for axis, wanted in zip(('vx', 'vy'), desired):
             u[axis] += max(-acceleration, min(acceleration, wanted-u[axis]))
-        if vid == 'sc.scout' and self.now < u.get('dive_until', 0.):
+        scout_dive = vid == 'sc.scout' and self.now < u.get('dive_until', 0.)
+        if scout_dive:
             u['vy'] += self.fit['scout_dive_acceleration']*dt
         end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
         size = (row['props'].get('wmp', 0), row['props'].get('hmp', 0))
@@ -480,6 +578,13 @@ class ScEnemies:
             u['vx'] = -u['vx']*.3
             u['vy'] = -abs(u['vy'])*.3
         if hit:
+            if scout_dive and u['vy'] > 0 and 'dive_started' in u:
+                terrain = next((t for t in self.terrain if t[0] == hit[1]), None)
+                top = surface(terrain[1], terrain[3], end[0], size[0]) if terrain else None
+                if top is not None and row['pos'][1]+size[1] <= top+1 and abs(end[1]+size[1]-top) <= 1:
+                    # Only the floor-blocked retry is observed. Neither side
+                    # walls nor a successful airborne dive inherit this wait.
+                    u['next'] = min(u['next'], u['dive_started']+self.fit['scout_blocked_retry_s'])
             u['vx'] = -u['vx']*.3
             u['vy'] = -abs(u['vy'])*.3
             if target is None:
@@ -517,7 +622,7 @@ class ScEnemies:
                 anim = self.host.rng.choice((9, 11))
                 self._attack(oid, u, anim, 2310, cooldown=2.39)
                 self._queue(oid, 1.518, 'golemb', target=point, direction=u['direction'],
-                            angle=math.atan2(dy, dx), variant=anim)
+                            variant=anim)
         elif vid in ('sc.tank', 'sc.flytank'):
             flying = vid == 'sc.flytank'
             self._attack(oid, u, 1, 396 if flying else 1254,
@@ -544,7 +649,8 @@ class ScEnemies:
             cooldown = self.fit['scout_cooldown_s']
             if isinstance(cooldown, (tuple, list)):
                 cooldown = self.host.rng.uniform(*cooldown)
-            u.update(dive_until=self.now+self.fit['scout_dive_s'], next=self.now+cooldown)
+            u.update(dive_started=self.now, dive_until=self.now+self.fit['scout_dive_s'],
+                     next=self.now+cooldown)
             self.counts['attacks'] += 1
         elif vid == 'sc.assassin':
             self._assassin_ghost(oid, u)
@@ -556,11 +662,13 @@ class ScEnemies:
         row = self.host.actors[oid]
         c = center(row)
         angle = math.atan2(point[1]-c[1], point[0]-c[0])
-        # USER: the beam left the middle of the body. Start it on the body edge
-        # along the aim instead of at the centre.
-        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
-        reach = (w*abs(math.cos(angle))+h*abs(math.sin(angle)))/2
-        c = (c[0]+math.cos(angle)*reach, c[1]+math.sin(angle)*reach)
+        # Capture-fitted sockets: fixed head pivot plus a rotating 32px muzzle.
+        # An AABB projection moves the beam far beyond the actual head when
+        # aiming diagonally. The two species have different head pivots.
+        side, vertical = (36., 3.) if row['vid'] == 'sc.flytank' else (44., -26.)
+        direction = 1 if math.cos(angle) >= 0 else -1
+        c = (c[0]+(direction*side+32*math.cos(angle))*256,
+             c[1]+(vertical+32*math.sin(angle))*256)
         # USER: the beam is one fixed length and only a solid wall stops it;
         # platforms never shorten it and it does not stop at the player.
         length = self.fit['laser_range_px']*256
@@ -571,6 +679,7 @@ class ScEnemies:
         step = max(1., self.fit['laser_segment_px']*256)
         # OBS: captured beams place a segment every 32px and stop at 50 of them.
         count = max(1, min(self.fit['laser_max_segments']-1, math.ceil(length/step)))
+        damage_points = []
         for index in range(count+1):
             vid = 'sc.aimend' if index == count else 'sc.aim'
             p = self.host.pack.props(vid)
@@ -579,18 +688,23 @@ class ScEnemies:
             # OBS: the captured terminal segment carries z=61 while the plain
             # segments omit z, which made the beam render behind platforms.
             child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)),
-                                                       lifetime=2050, z=61))
-            # OBS: every captured segment carries animprops anim1/264ms and is
-            # removed about 2051ms later; without the animation the beam is an
-            # inert sprite and never damages.
-            self.host.batch.animprops(child, 1, 264, offset=self.host._offset())
-            self.host.actors[child]['props']['animprops'] = dict(animid=1, time=264)
+                                                       lifetime=2000, z=61))
+            # The birth entry point is idempotent with ActorSession._create;
+            # the terminal sc.aimend has no extra animation.
+            self.host.presentation.laser_segment_created(child)
             self.own(child)
             self.effects.add(child)
+            damage_points.append((c[0]+math.cos(angle)*d, c[1]+math.sin(angle)*d))
+        # OBS: the visible aim segments warn for about one second. Separate
+        # unnamed 16px damage35 volumes then occupy those same centres until
+        # the 2-second beam ends. Animation alone contains no beam hitbox.
+        self._queue(oid, 1., 'laser_damage', points=damage_points, ends=self.now+2.)
 
-    def _waves(self, oid):
+    def _waves(self, oid, landed=None):
         row = self.host.actors[oid]
         x, y, w, h = rect(row)
+        if landed is not None:
+            x, y = landed
         for direction in (-1, 1):
             p = self.host.pack.props('sc.golemw')
             pos = (x+w if direction > 0 else x-p['wmp'], y+h-p['hmp'])
@@ -601,8 +715,7 @@ class ScEnemies:
     def _assassin_ghost(self, oid, u):
         row = self.host.actors[oid]
         u['saved_hp'] = row['hp']
-        u.update(phase='ghost', ghost_steps=self.host.rng.choices(tuple(self.fit['assassin_segments']),
-                                                                self.fit['assassin_segment_weights'])[0],
+        u.update(active=True, phase='ghost', ghost_moves=0,
                  ghost_at=self.now+self.fit['assassin_ghost_wait_s'], ghost_motion=None,
                  next=math.inf, busy=0., lock=0., vx=0., vy=0.)
         prop(self.host, oid, 'vid', 'sc.eassassin')
@@ -634,18 +747,35 @@ class ScEnemies:
             return
         if self.now < u['ghost_at']:
             return
-        if u['ghost_steps'] <= 0 and clear(self.host, rect(row), (oid,)):
+        point = u.get('target_point')
+        if point is None:
+            if clear(self.host, rect(row), (oid,)):
+                self._assassin_burst(oid, u, attack=False)
+            return
+        c = center(row)
+        near = math.dist(point, c) <= self.fit['assassin_manifest_px']*256
+        if u.get('ghost_moves', 0) and near and clear(self.host, rect(row), (oid,)):
             self._assassin_burst(oid, u)
             return
-        point = u.get('target_point') or center(row)
-        radius = self.host.rng.uniform(64., 200.)*256  # FIT flank placement
-        angle = self.host.rng.uniform(-math.pi, math.pi)
-        c = center(row)
-        desired = (point[0]+math.cos(angle)*radius, point[1]+math.sin(angle)*radius)
+        # USER: keep chasing the locked player through walls until near them
+        # and outside terrain. Pick a clear nearby endpoint when the larger
+        # ghost body cannot fit exactly on the player's centre.
+        w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
+        desired = point
+        if not clear(self.host, (point[0]-w/2, point[1]-h/2, w, h), (oid,)):
+            candidates = [(point[0]+math.cos(a)*r*256, point[1]+math.sin(a)*r*256)
+                          for r in (32, 64, 96, 128) for a in (i*math.pi/4 for i in range(8))]
+            candidates = [p for p in candidates if clear(self.host, (p[0]-w/2, p[1]-h/2, w, h), (oid,))]
+            if candidates:
+                desired = min(candidates, key=lambda p: math.dist(c, p))
+        distance = math.dist(c, desired)
+        length = min(distance, self.fit['assassin_ghost_step_px']*256)
+        desired = tuple(c[i]+(desired[i]-c[i])*length/max(1., distance) for i in (0, 1))
         pos = (desired[0]-(c[0]-row['pos'][0]), desired[1]-(c[1]-row['pos'][1]))
-        u['ghost_motion'] = dict(start=self.now, duration=self.fit['assassin_move_s'],
+        duration = max(self.fit['assassin_ghost_min_step_s'], length/self.fit['assassin_ghost_speed'])
+        u['ghost_motion'] = dict(start=self.now, duration=duration,
                                   origin=tuple(row['pos']), end=pos)
-        u['ghost_steps'] -= 1
+        u['ghost_moves'] = u.get('ghost_moves', 0)+1
 
     def _assassin_burst(self, oid, u, *, attack=True):
         row = self.host.actors[oid]
@@ -660,12 +790,14 @@ class ScEnemies:
             prop(self.host, oid, 'animprops', None)
             return
         self.host.presentation.attack(oid, 'sc.assassin', 2, 396, token=self.now)
-        base = self.host.rng.uniform(-math.pi, math.pi)
-        for index in range(8):
-            angle = base+index*math.pi/4+self.host.rng.uniform(-self.fit['burst_jitter_rad'], self.fit['burst_jitter_rad'])
-            speed = self.fit['burst_speed']*self.host.rng.uniform(.7, 1.3)
+        low, high = (round(v/1000) for v in self.fit['burst_axis_mp_s'])
+        for _ in range(8):
+            # OBS: 119 simultaneous eight-shot groups; 949 computable paths
+            # have independent-looking constant x/y components, not a ring.
+            # FIT: sample each quantized component within the captured bounds.
+            velocity = tuple(self.host.rng.randint(low, high)*1000. for _ in (0, 1))
             self.projectiles.spawn('sc.burst', self._origin(oid, 'sc.burst'),
-                                   (math.cos(angle)*speed, math.sin(angle)*speed), 0)
+                                   velocity, 0)
         self.counts['bursts'] += 1
 
     def _find_orbs(self, oid):
@@ -685,11 +817,15 @@ class ScEnemies:
         u['orbs'] = [x for x in u['orbs'] if x in self.projectiles.shots and self.projectiles.shots[x]['orbit'] is not None]
         if len(u['orbs']) >= 8 or self.now+1e-9 < u.get('refill_at', self.now) or u.get('monk_firing'):
             return
-        index = len(u['orbs'])
-        phase = index*math.pi/4
-        child = self.host._create('sc.monkb', self._origin(oid, 'sc.monkb'), oid,
-                                  dict(lifetime=0, invulnerable=True, blocktype=0, removetype=0))
-        self.projectiles.adopt(child, owner=oid, orbit=phase-self.now*math.pi)
+        # OBS: every refill starts at pos=1000 on the same 2000ms orbit.
+        # Births 250ms apart produce the eight different phases naturally.
+        # An additional index*45deg would cancel the staggering and stack them.
+        model = dict(xmp=5120, ymp=9216, radiusamp=20480, period=2000, pos=1000)
+        parent = self.host.actors[oid]
+        child = self.host._create('sc.monkb', (parent['pos'][0]+5120-20480, parent['pos'][1]+9216), oid,
+                                  dict(lifetime=0, invulnerable=True, blocktype=0, removetype=0,
+                                       move=dict(relativeto=dict(objid=oid), elliptical=model)))
+        self.projectiles.adopt(child, owner=oid, orbit=math.pi-self.now*math.pi)
         self.host.presentation.attack(child, 'sc.monkb', 1, 264, token='birth')
         u['orbs'].append(child)
         u['refill_at'] = self.now+self.fit['monk_orb_interval_s']
@@ -721,11 +857,28 @@ class ScEnemies:
         row = self.host.actors.get(oid)
         if row is None:
             return
-        if kind == 'hunter_birth':
+        if kind == 'laser_damage':
+            remaining = round((event['ends']-self.now)*1000)
+            if remaining <= 0:
+                return
+            for x, y in event['points']:
+                child = self.host._create('', (x-8*256, y-8*256), 0,
+                    dict(wmp=4096, hmp=4096, damage=35, draw=False, lifetime=remaining))
+                self.own(child)
+                self.effects.add(child)
+                end_birth = getattr(self.host, 'created_at_end', None)
+                if end_birth:
+                    end_birth(child)
+        elif kind == 'hunter_birth':
             urn = self.urns.get(oid)
             if urn is None:
                 return
-            child = self.host._create('sc.hunter', self._origin(oid, 'sc.hunter'), oid)
+            # The urn continues its authored bob while the birth is pending.
+            # Use its current position rather than freezing the animation's
+            # starting point or aligning two differently sized body centres.
+            dx, dy = self.fit['urn_birth_offset_px']
+            origin = (row['pos'][0]+dx*256, row['pos'][1]+dy*256)
+            child = self.host._create('sc.hunter', origin, oid)
             self.host.actors[child]['_sc_new_hunter'] = True
             self.host.actors[child]['_sc_reserved_slot'] = event['slot']
             self.add_actor(child)
@@ -735,35 +888,60 @@ class ScEnemies:
         elif kind == 'golemb':
             x, y, w, h = rect(row)
             ball = self.host.pack.props('sc.golemb')
-            angle = event.get('angle')
-            if angle is None:
-                origin = (x+w if event['direction'] > 0 else x-ball['wmp'], y+h*.7-ball['hmp']/2)
-                velocity = (event['direction']*136000., 0.)
-            else:
-                # OBS: every captured ball is born at body centre + (side 96px,
-                # down 74px); the sideways sign follows the throw direction.
-                origin = (x+w/2+event['direction']*96*256-ball['wmp']/2,
-                          y+h/2+74*256-ball['hmp']/2)
-                velocity = (math.cos(angle)*136000., math.sin(angle)*136000.)
-            # FIT: the captures contain no sc.golemb movement packet at all, so
-            # the 136k speed and the aimed launch are a local policy; only the
-            # 1519-1570ms release delay and the solid body are observed.
+            # OBS: high throw9 and low throw11 have separate birth sockets.
+            # Retain the locked throw side while the release is pending.
+            side, down = (180., -192.) if event.get('variant') == 9 else (96., 74.)
+            origin = (x+w/2+event['direction']*side*256-ball['wmp']/2,
+                      y+h/2+down*256-ball['hmp']/2)
+            # OBS: dynamic birth endpoints keep a horizontal launch: 18 right
+            # samples at +136000mp/s, 20 left samples at -137000mp/s, initial vy0.
+            velocity = (136000. if event['direction'] > 0 else -137000., 0.)
+            # Gravity is endpoint fitted; restitution remains local FIT.
             self.projectiles.spawn('sc.golemb', origin, velocity, oid,
                                    gravity=200000., bounce=True)
         elif kind == 'sliver':
-            angle = event['angle']
-            self.projectiles.spawn('sc.sliver', self._origin(oid, 'sc.sliver'),
-                                   (math.cos(angle)*25000., math.sin(angle)*25000.), oid)
+            # OBS: all 541 native MOVE.vel vectors are integer truncations of
+            # 25000*cos/sin(integer facing). 25000 is a wire amplitude, not
+            # mp/second; native signed >>8 precedes millisecond integration.
+            angle = math.radians(round(math.degrees(event['angle'])))
+            velocity = self.projectiles.wire_velocity((int(math.cos(angle)*25000),
+                                                       int(math.sin(angle)*25000)))
+            origin = list(self._origin(oid, 'sc.sliver'))
+            side = -1 if row['props'].get('facing', 0) == 180 else 1
+            target = (origin[0]+side*86*256, origin[1]-29*256)
+            p = self.host.pack.props('sc.sliver')
+            # OBS open-space socket; wall shortening is observed too. Axis
+            # sweeps are local collision policy, not a recovered spawn solver.
+            for axis in (0, 1):
+                end = list(origin)
+                end[axis] = target[axis]
+                hit = sweep(self.terrain, origin, end, (p['wmp'], p['hmp']), (oid,))
+                origin[axis] += (end[axis]-origin[axis])*(max(0., hit[0]-1e-7) if hit else 1.)
+            self.projectiles.spawn('sc.sliver', origin, velocity, oid)
         elif kind == 'shard':
             velocity = self.host.actors[oid].get('vel', (0., 0.))
-            self.projectiles.spawn('sc.shard', self._origin(oid, 'sc.shard'),
-                                   (max(-15000., min(15000., velocity[0])), 0.), oid, gravity=150000.)
+            # OBS: horizontal launch follows the bomber's current movement;
+            # captured values reach -59000/+58000mp/s. No 15000 clamp exists
+            # in those paths. Preserve native per-millisecond quantization.
+            vx = math.floor(velocity[0]/1000)*1000.
+            origin = list(self._origin(oid, 'sc.shard'))
+            side = -1 if row['props'].get('facing', 0) == 180 else 1
+            origin[0] += side*256
+            end = (origin[0], origin[1]+51*256)
+            p = self.host.pack.props('sc.shard')
+            # OBS: below-body socket, raised near terrain. The generic sweep
+            # is a local fit for that birth collision correction.
+            hit = sweep(self.terrain, origin, end, (p['wmp'], p['hmp']), (oid,))
+            origin[1] += (end[1]-origin[1])*(max(0., hit[0]-1e-7) if hit else 1.)
+            self.projectiles.spawn('sc.shard', origin, (vx, 0.), oid,
+                                   gravity=self.fit['shard_gravity'])
         elif kind == 'monk_release':
             child, u = event['child'], self.units.get(oid)
             shot = self.projectiles.shots.get(child)
             if shot:
-                shot.update(orbit=None, vx=math.cos(event['angle'])*20000.,
-                            vy=math.sin(event['angle'])*20000., expiry=self.now+8., born=self.now)
+                vx, vy = self.projectiles.wire_velocity((round(math.cos(event['angle'])*20000),
+                                                        round(math.sin(event['angle'])*20000)))
+                shot.update(orbit=None, vx=vx, vy=vy, expiry=self.now+8., born=self.now)
                 prop(self.host, child, 'blocktype', 4)
                 prop(self.host, child, 'removetype', 3)
                 # MOVE was stopped on adoption; these endpoints are now
@@ -987,6 +1165,8 @@ class ScEnemies:
                     self._assassin_burst(oid, u, attack=False)
             u.pop('slam', None)
             u.pop('dive_until', None)
+            u.pop('jump_vx', None)
+            u.pop('jump_surface', None)
             # Clear native animation hitboxes and the old attack stance in the
             # reconnect snapshot. No attack animation or sound is replayed.
             prop(self.host, oid, 'animprops', None)
@@ -994,9 +1174,8 @@ class ScEnemies:
             prop(self.host, oid, 'pose', pose)
             stop_motion(self.host, oid)
         for oid, shot in list(self.projectiles.shots.items()):
-            due = self.host.wire_lifetime_due(oid) if hasattr(self.host, 'wire_lifetime_due') else None
-            if due is True or shot['orbit'] is None and self.now >= shot['expiry']:
-                self.projectiles.retire(oid, 'LIFETIME')
+            self.projectiles.expire_due(oid)
+        self.projectiles.resume_orbits()
         for oid in list(self.effects):
             due = hasattr(self.host, 'wire_lifetime_due') and self.host.wire_lifetime_due(oid) is True
             self.retire(oid, 'LIFETIME' if due else 'INTERNAL')

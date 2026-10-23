@@ -37,6 +37,12 @@ class ScPresentation:
             # Laser segments are created directly by the weapon controller,
             # outside projectile_created. Their observed create flash is
             # anim1/264; aimend has no such animation in its native asset.
+            self.laser_segment_created(oid)
+
+    def laser_segment_created(self, oid):
+        """One create flash across host and weapon-controller callbacks."""
+        row = self.host.actors.get(oid)
+        if row is not None and row.get('vid') == 'sc.aim':
             self.attack(oid, 'sc.aim', 1, 264, token='birth')
 
     def attack(self, oid, vid, anim, time_ms, token=None):

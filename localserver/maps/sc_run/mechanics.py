@@ -10,7 +10,7 @@ from collections import Counter
 
 from ..efb_run.abilities import Ownership, center, nearest, players, rect, prop, move, changed
 from ..efb_run.physics import TriangleTerrain
-from .physics import geometry, sweep as solid_sweep
+from .physics import clear as geometry_clear, geometry, surface, sweep as solid_sweep
 from .mechanic_helpers import (MechanismTrack, animate, clear, distance_to_rect,
                                legal_book_sites, place, set_motion, stop)
 
@@ -24,8 +24,9 @@ DEFAULTS = {
     'engine_ring_count': 10, 'engine_ring_wire_speed': 20000,
     'engine_ring_period_ms': 400, 'engine_ring_amplitude': 20480,
     'tshooter_windup_s': .416,
-    # FIT: observed stop-to-removetype range 7.005..7.049s. Damage accumulates
-    # before this minimum existence gate; it is never a delayed damage gate.
+    # FIT: observed stop-to-removetype range 7.000..7.050s. USER requires
+    # both damage and this existence gate. The local damage ledger is a
+    # policy, not a reconstruction of the retail server's private HP state.
     'wall_min_settled_s': 7.05,
     'wall_trigger_x_px': 160, 'wall_trigger_y_px': 640,
     'wall_fallback_drop_px': 512,
@@ -37,10 +38,16 @@ DEFAULTS = {
     'engine_seed_flight_s': (2.35, 3.95),
     'engine_seed_radius_px': (900, 1400),
     'engine_spawner_fire_s': (1.0, 1.05),
-    'tshooter_range_px': 1800, 'tshooter_initial_s': (.356, 1.5),
+    # OBS: fresh scmid03 starts all 20 nests at owner t=0; births follow at
+    # t=410ms, including nests over 4400px from the recorded player. Runtime
+    # activation belongs to room entry, not an individual player's distance.
+    'tshooter_initial_s': 0.,
     'tshooter_respawn_s': (3., 6.),
-    'tshot_speed_px_s': 200, 'tshot_accel_px_s2': 600,
-    'tshot_turn_pause_s': (.25, .65), 'tshot_decide_s': (1., 2.5),
+    # OBS native client position samples: sustained 79000mp/s, acceleration
+    # close to 300px/s^2, and non-transient pose1 waits of 946..1000ms. The
+    # pause range remains a local fit; rapid blocked pose changes also exist.
+    'tshot_speed_px_s': 79000/256, 'tshot_accel_px_s2': 300,
+    'tshot_turn_pause_s': (.95, 1.), 'tshot_decide_s': (1., 2.5),
     'worker_speed_px_s': 124, 'worker_wait_s': (.25, 1.),
     'worker_carry_radius_px': 900, 'worker_place_random_nearest': 6,
     'worker_place_search_cells': 24,
@@ -49,22 +56,24 @@ DEFAULTS = {
     'switch_interact_radius_px': 160,
     'hive_active_radius_px': 1200, 'hive_max_children': 4,
     'hive_spawn_s': (4., 7.), 'hive_first_s': (.5, 2.),
-    'vermin_speed_px_s': 260,
-    # D: captured scmid11 snapshots place Cathedral maze ledges on a fixed
-    # 192px row grid, and one vermin's own vertical steps between snapshots
-    # are whole rows. A hop therefore has to clear one row: with the FIT
-    # gravity below, 560px/s rises ~209px.
-    'vermin_jump_px_s': 560,
-    'vermin_gravity_px_s2': 750, 'vermin_jump_cooldown_s': (1.3, 2.5),
+    # OBS Oct7 endpoints: common walking is +78/-79MP per ms, matching
+    # native signed fixed-point +/-20000 >> 8. Captures do not name the AI
+    # states: sharing that common speed for patrol/chase remains a FIT.
+    'vermin_speed_px_s': 20000*1000/256/256,
+    'vermin_patrol_speed_px_s': 20000*1000/256/256,
+    # OBS separate short (~53px) and row (~206px) rises. FIT ballistic
+    # parameters cover these two shapes; route geometry selects the mode.
+    'vermin_jump_px_s': 375,
+    'vermin_gravity_px_s2': 340000/256, 'vermin_jump_cooldown_s': (1.3, 2.5),
+    'vermin_jump_clearance_px': 8,
     # FIT: USER-described Cathedral vermin behaviour. Aggro envelope, idle
     # patrol speed, ledge-change cadence and the chase jump height are local
     # policies; captures do not establish a retail decision rule.
     'vermin_aggro_px': 900, 'vermin_release_px': 1400,
-    'vermin_patrol_speed_px_s': 150,
     # USER: a vermin chases for a while, gives up, and only re-acquires later;
-    # the static snapshot has no motion evidence, so these are FIT windows.
+    # these windows/scan rules are not broadcast in the observed motion.
     'vermin_chase_s': (2.5, 5.), 'vermin_reaggro_s': (3., 7.), 'vermin_aim_s': (.3, .7), 'vermin_hop_s': (2.5, 6.),
-    'vermin_climb_px': 48, 'vermin_climb_jump_px_s': 700,
+    'vermin_climb_px': 48, 'vermin_climb_jump_px_s': 750,
 }
 
 WORKERS = {'sc.libworker', 'sc.libworkerb', 'sc.libworkerr'}
@@ -143,12 +152,13 @@ class ScMechanics(Ownership):
             if row is None:
                 continue
             w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
-            if clear(self.host, (row['pos'][0], row['pos'][1], w, h), (oid,)):
+            if geometry_clear(self.host, (row['pos'][0], row['pos'][1], w, h), (oid,)):
                 continue
             for dx in (0, -16*256, 16*256, -32*256, 32*256, 0, 0):
                 for dy in (0, 0, 0, 0, 0, -16*256, 16*256):
-                    if clear(self.host, (row['pos'][0]+dx, row['pos'][1]+dy, w, h), (oid,)):
+                    if geometry_clear(self.host, (row['pos'][0]+dx, row['pos'][1]+dy, w, h), (oid,)):
                         place(self.host, oid, (row['pos'][0]+dx, row['pos'][1]+dy))
+                        state['body'].update(x=row['pos'][0], y=row['pos'][1])
                         break
                 else:
                     continue
@@ -163,6 +173,8 @@ class ScMechanics(Ownership):
                 state['carrier'] = carrier
                 self.states[carrier]['book'] = oid
         self._sync_carried_books()
+        self._bind_jump_turns()
+        self._sync_relative_hazards(round(self.now*1000))
         if self.host.instance.flags.get('mid_cleared'):
             self._stop_jump()
         self.host.record('sc_mechanism_policy', evidence='D native fields/actions; USER damage/existence gates, workers and Jump; configurable FIT decision policies')
@@ -258,6 +270,30 @@ class ScMechanics(Ownership):
         set_motion(self.host, oid, movement)
         self.tracks[oid] = MechanismTrack(self.host.actors[oid]['pos'], movement, round(self.now*1000))
 
+    def _bind_jump_turns(self):
+        # Wheel facing follows the signed angular speed of its attached
+        # orbiters. Authored periods differ per wheel, including reverse turns.
+        rates = {}
+        for row in self.host.actors.values():
+            movement = row['props'].get('move') or {}
+            parent = (movement.get('relativeto') or {}).get('objid')
+            ellipse = movement.get('elliptical') or {}
+            a = ellipse.get('radiusamp', 0)
+            b = ellipse.get('radiusbmp', a)
+            if parent in self.states and ellipse.get('period', 0) > 0 and a*b:
+                rates.setdefault(parent, set()).add(math.copysign(360000./ellipse['period'], a*b))
+        for oid, state in self.states.items():
+            if state['vid'] not in ('sc.wheel128', 'sc.wheel256'):
+                continue
+            choices = rates.get(oid, set())
+            if len(choices) == 1:
+                state.update(turn_rate=next(iter(choices)), turn_at=0., turn_facing=0.)
+            else:
+                # Custom wheels without a consistent authored orbit retain
+                # the configurable local fallback, without frame-rounding drift.
+                state.update(turn_rate=self.config['jump_turn_deg_s'], turn_at=self.now,
+                             turn_facing=self.host.actors[oid]['props'].get('facing', 0))
+
     def pre_physics(self, dt):
         if self.mledge_hold and players(self.host):
             # USER: the room's lanes start only after a player is inside.
@@ -277,6 +313,31 @@ class ScMechanics(Ownership):
                 evaluated_clock = min(clock, round(self.states[oid]['plant_at']*1000))
             old, new = row['pos'], list(track.position(evaluated_clock))
             row['pos'] = new
+            if old != new and row['props'].get('terraintype') in (1, 2):
+                changed(self.host)
+                self.platform_deltas[oid] = (old, new, (row['props'].get('wmp', 0), row['props'].get('hmp', 0)))
+        self._sync_relative_hazards(clock)
+        if not self.host.instance.flags.get('mid_cleared'):
+            for oid, state in self.states.items():
+                if 'turn_rate' in state and oid in self.host.actors:
+                    angle = state['turn_facing']+state['turn_rate']*(clock/1000.-state['turn_at'])
+                    prop(self.host, oid, 'facing', math.trunc(math.fmod(angle, 360.)))
+
+    def _sync_relative_hazards(self, clock_ms):
+        # Jump has nested native orbits: wheel -> wheel -> solid peg. Keep
+        # that MOVE on the client and evaluate the same committed hierarchy
+        # for server geometry, including before a switch freezes the room.
+        snapshot = getattr(self.host.instance, 'snapshot', None)
+        if snapshot is None:
+            return
+        for oid, row in self.host.actors.items():
+            movement = row['props'].get('move') or {}
+            key = (1, oid)
+            if row['vid'] not in JUMP_HAZARDS or not movement.get('relativeto') or key not in snapshot.objects:
+                continue
+            old = tuple(row['pos'])
+            new = snapshot.position(key, at=clock_ms/1000.)
+            row['pos'] = list(new)
             if old != new and row['props'].get('terraintype') in (1, 2):
                 changed(self.host)
                 self.platform_deltas[oid] = (old, new, (row['props'].get('wmp', 0), row['props'].get('hmp', 0)))
@@ -390,7 +451,7 @@ class ScMechanics(Ownership):
         elif s['phase'] == 'settled' and self.now+1e-9 >= s['open_at']:
             prop(self.host, oid, 'removetype', 1)
             if row.get('hp') is not None and row['hp'] <= 0:
-                self.retire(oid, 'HITPOINTS')
+                self._killed(oid)
 
     def _tshot_spawn(self, oid, s):
         row = self.host.actors[oid]
@@ -477,10 +538,16 @@ class ScMechanics(Ownership):
                 self._tshot_unstick(oid, s)
                 return
             s['heading'] = heading
-        s['speed'] = min(self.config['tshot_speed_px_s']*256, s['speed']+self.config['tshot_accel_px_s2']*256*dt)
+        before = s['speed']
+        maximum = self.config['tshot_speed_px_s']*256
+        acceleration = self.config['tshot_accel_px_s2']*256
+        ramp = min(dt, max(0., maximum-before)/acceleration) if acceleration > 0 else 0.
+        travel = before*ramp+.5*acceleration*ramp*ramp+maximum*(dt-ramp)
+        s['speed'] = min(maximum, before+acceleration*dt)
         x, y, w, h = rect(row)
-        angle = math.radians(s['heading'])
-        end = (x+math.cos(angle)*s['speed']*dt, y+math.sin(angle)*s['speed']*dt)
+        heading = s['heading']
+        angle = math.radians(heading)
+        end = (x+math.cos(angle)*travel, y+math.sin(angle)*travel)
         hit = solid_sweep(terrain, (x, y), end, (w, h), ignore=(oid, s.get('owner', 0)))
         if hit:
             f = max(0., hit[0]-1e-6)
@@ -491,7 +558,9 @@ class ScMechanics(Ownership):
             if f <= 0.:
                 self._tshot_unstick(oid, s)
                 return
-        move(self.host, oid, end, dt, pose=1 if hit else 3, facing=s['heading'] or 0)
+        # Native pose2 is horizontal travel and pose3 is vertical travel.
+        move(self.host, oid, end, dt, pose=1 if hit else 2 if heading%180 == 0 else 3,
+             facing=heading)
 
     def _book_attach(self, worker, book):
         row = self.host.actors[book]
@@ -604,7 +673,7 @@ class ScMechanics(Ownership):
         for dx in (0, -32*256, 32*256, -64*256, 64*256):
             for dy in (0, -32*256, 32*256):
                 candidate = (base[0]+dx, base[1]+dy)
-                if clear(self.host, (candidate[0], candidate[1], size[0], size[1]), (oid,)):
+                if geometry_clear(self.host, (candidate[0], candidate[1], size[0], size[1]), (oid,)):
                     point = candidate
                     break
             if point:
@@ -615,6 +684,50 @@ class ScMechanics(Ownership):
         child = self._spawn('sc.vermin', point, oid)
         s['children'].add(child)
         s['next'] = self.now+self._range('hive_spawn_s')
+
+    def _vermin_routes(self, oid, b):
+        """Reachable vertical landings, never a path through solid terrain.
+
+        USER supplies idle up/down choice; selection among legal candidates
+        is local policy, not a recovered native probability or target ID.
+        """
+        terrain = geometry(self.host)
+        x, y, w, h = b['x'], b['y'], b['w'], b['h']
+        feet = y+h
+        gravity = self.config['vermin_gravity_px_s2']*256
+        clearance = self.config['vermin_jump_clearance_px']*256
+        support = next((entry for entry in terrain if entry[0] == b.get('support')), None)
+        up, below = [], []
+        for sid, bounds, kind, shape in terrain:
+            top = surface(bounds, shape, x, w)
+            if top is None or sid in (oid, b.get('support')):
+                continue
+            if top > feet+1:
+                below.append((top, sid))
+            elif top < feet-1:
+                for key in ('vermin_jump_px_s', 'vermin_climb_jump_px_s'):
+                    speed = self.config[key]*256
+                    rise = speed*speed/(2*gravity)
+                    if feet-top+clearance > rise:
+                        continue
+                    apex = (x, y-rise)
+                    if (solid_sweep(terrain, (x, y), apex, (w, h), ignore=(oid,)) is None
+                            and geometry_clear(self.host, (x, top-h, w, h), (oid,))):
+                        up.append(dict(action='up', support=sid, top=top, speed=speed))
+                        break
+        routes = sorted(up, key=lambda route: feet-route['top'])
+        if support and support[2] == 2 and below:
+            # Native Oct7 drop: YMP += 1 from the current kind2 support;
+            # x stays fixed. Only the first reachable lower surface counts.
+            top, sid = min(below)
+            other_support = any(entry[0] != support[0]
+                                and (value := surface(entry[1], entry[3], x, w)) is not None
+                                and abs(value-feet) <= 1 for entry in terrain)
+            if (not other_support
+                    and solid_sweep(terrain, (x, y), (x, top-h), (w, h), ignore=(oid,)) is None
+                    and geometry_clear(self.host, (x, top-h, w, h), (oid,))):
+                routes.append(dict(action='down', support=support[0], landing=sid, top=top))
+        return routes
 
     def _vermin(self, oid, s, dt, target, terrain):
         b = s['body']
@@ -638,6 +751,8 @@ class ScMechanics(Ownership):
             s['direction'] = -1 if px < cx else 1
         if not s['aggro'] and b.get('blocked'):
             s['direction'] *= -1
+        speed_key = 'vermin_speed_px_s' if s['aggro'] else 'vermin_patrol_speed_px_s'
+        wire_speed = round(self.config[speed_key]*256*256/1000)
         vx = 0.
         if s['aggro'] and px is not None:
             # USER: pick a direction, commit to it for a while, then re-aim.
@@ -645,30 +760,53 @@ class ScMechanics(Ownership):
                 s['direction'] = -1 if px < cx else 1
                 s['aim_at'] = self.now+self._range('vermin_aim_s')
             if abs(px-cx) > 8*256:
-                vx = s['direction']*self.config['vermin_speed_px_s']*256
+                vx = (s['direction']*wire_speed >> 8)*1000
         elif not s['aggro']:
-            vx = s['direction']*self.config['vermin_patrol_speed_px_s']*256
+            vx = (s['direction']*wire_speed >> 8)*1000
         climbing = bool(s['aggro'] and py is not None and py < b['y']-self.config['vermin_climb_px']*256)
+        descending = bool(s['aggro'] and py is not None and py > cy+self.config['vermin_climb_px']*256)
         if b.get('grounded'):
-            # The shared terrain integrator keeps a supported grounded body on
-            # its ledge, so a hop must leave support before it is integrated.
-            if s['aggro'] and self.now >= s['next_jump'] and (climbing or b.get('blocked')):
-                b.update(vy=-self.config['vermin_climb_jump_px_s' if climbing else 'vermin_jump_px_s']*256,
-                         grounded=False)
-                s['next_jump'] = self.now+self._range('vermin_jump_cooldown_s')
+            s.pop('air_vx', None)
+            route = None
+            if s['aggro'] and self.now >= s['next_jump'] and (climbing or descending):
+                desired = 'up' if climbing else 'down'
+                choices = [r for r in self._vermin_routes(oid, b) if r['action'] == desired]
+                route = choices[0] if choices else None
             elif not s['aggro'] and self.now >= s['next_hop']:
-                # USER: idle vermin change ledges at random, not on the player.
-                b.update(vy=-self.config['vermin_jump_px_s']*256, grounded=False)
+                choices = self._vermin_routes(oid, b)
+                route = self.host.rng.choice(choices) if choices else None
                 s['next_hop'] = self.now+self._range('vermin_hop_s')
+            if route:
+                s['air_vx'] = vx = 0.
+                b.update(vy=-route['speed'] if route['action'] == 'up' else 0., grounded=False)
+                if route['action'] == 'down':
+                    b['drop_support'] = route['support']
+                    b['y'] += 1
+                    place(self.host, oid, (b['x'], b['y']))
                 s['next_jump'] = self.now+self._range('vermin_jump_cooldown_s')
+        elif 'air_vx' in s:
+            vx = s['air_vx']
+        drop_support = b.get('drop_support')
+        if drop_support is not None:
+            support = self.host.actors.get(drop_support)
+            if support is None or b['y'] > support['pos'][1]+support['props'].get('hmp', 0)+1:
+                b.pop('drop_support', None)
+            elif support['props'].get('terraintype') == 2:
+                # Filter exactly this one-way support from a local view; all
+                # solid walls, other floors and other vermin keep full contact.
+                terrain = copy.copy(terrain)
+                terrain.surfaces = [r for r in terrain.surfaces if r[0] != drop_support]
+                terrain.triangles = [r for r in terrain.triangles if r[0] != drop_support]
         terrain.step(b, dt, vx, self.config['vermin_gravity_px_s2']*256)
         move(self.host, oid, (b['x'], b['y']), dt,
-             pose=5 if b.get('grounded') else 1 if b['vy'] < 0 else 3, facing=180 if vx < 0 else 0)
+             pose=(5 if vx else 4) if b.get('grounded') else 3 if b['vy'] < 0 else 1,
+             facing=180 if s['direction'] < 0 else 0)
 
     def _stop_jump(self):
+        self._sync_relative_hazards(round(self.host.room_time*1000))
         for oid, row in list(self.host.actors.items()):
             if row['vid'] in JUMP_HAZARDS:
-                stop(self.host, oid)
+                place(self.host, oid, row['pos'])
                 self.tracks.pop(oid, None)
             elif row['vid'] in ('sc.ccoredoor', 'sc.coredoor'):
                 prop(self.host, oid, 'vid', 'sc.coredoor')
@@ -831,7 +969,7 @@ class ScMechanics(Ownership):
             elif vid == 'sc.tshooter':
                 if s['phase'] == 'windup' and self.now >= s['release_at']:
                     self._tshot_spawn(oid, s)
-                elif s['phase'] == 'idle' and self.now >= s['next'] and s.get('child') not in self.host.actors and target and distance_to_rect(center(target), rect(row)) <= self.config['tshooter_range_px']*256:
+                elif s['phase'] == 'idle' and self.now >= s['next'] and s.get('child') not in self.host.actors:
                     animate(self.host, oid, 1, 990)
                     s.update(phase='windup', release_at=self.now+self.config['tshooter_windup_s'])
             elif vid == 'sc.tshot':
@@ -847,8 +985,6 @@ class ScMechanics(Ownership):
                 self._vermin(oid, s, dt, target, terrain)
             elif vid.startswith('sc.mledge'):
                 self._mledge(oid, s, dt)
-            elif vid in JUMP_HAZARDS and not self.host.instance.flags.get('mid_cleared') and 'wheel' in vid:
-                prop(self.host, oid, 'facing', round((row['props'].get('facing', 0)+self.config['jump_turn_deg_s']*dt)%360))
             elif vid in ('sc.switch', 'sc.switchdone') and oid not in self.tracks:
                 ox, oy = s['origin']
                 y = oy+math.sin(self.now*2*math.pi/self.config['switch_float_period_s'])*self.config['switch_float_px']*256
@@ -877,15 +1013,19 @@ class ScMechanics(Ownership):
     def _killed(self, oid, native=False):
         row, s = self.host.actors[oid], self.states[oid]
         vid = row['vid']
+        if vid == 'sc.dropwall':
+            # OBS: the visible native wall can keep negative HP while its
+            # removetype gate is closed. A client destroy hint must not
+            # manufacture the USER damage condition in the local ledger.
+            if (row.get('hp') is not None and row['hp'] <= 0 and
+                    s.get('open_at') is not None and self.now+1e-9 >= s['open_at']):
+                prop(self.host, oid, 'removetype', 1)
+                row['_sc_killed'] = True
+                self.retire(oid, 'HITPOINTS', native)
+            return
         row['_sc_killed'] = True
         if vid in ('sc.enginecore', 'sc.core'):
             self._dead_core(oid, vid == 'sc.enginecore')
-        elif vid == 'sc.dropwall':
-            # Lethal input before the gate remains accumulated on the live wall.
-            row['hp'] = 0
-            prop(self.host, oid, 'hitpoints', 0)
-            if s.get('open_at') is not None and self.now+1e-9 >= s['open_at']:
-                self.retire(oid, 'HITPOINTS', native)
         elif vid in WORKERS:
             if s.get('pickup') in self.states:
                 self.states[s['pickup']].pop('reserved', None)
@@ -927,10 +1067,12 @@ class ScMechanics(Ownership):
             if row.get('hp') is None or row['props'].get('invulnerable'):
                 return True
             value = max(0, int(event.get('value', 0)))
-            row['hp'] = max(0, row['hp']-value)
-            prop(self.host, oid, 'hitpoints', row['hp'])
             if row['vid'] == 'sc.dropwall':
+                row['hp'] -= value
                 self.states[oid]['damage'] += value
+            else:
+                row['hp'] = max(0, row['hp']-value)
+            prop(self.host, oid, 'hitpoints', row['hp'])
             if row['hp'] <= 0:
                 self._killed(oid)
         elif kind == 'destroy':

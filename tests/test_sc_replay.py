@@ -50,7 +50,9 @@ class ScReplayTests(unittest.TestCase):
                     pass
                 self.assertEqual(source.session.run.status(), replay.session.run.status())
                 for role, room in source.session.run.rooms.items():
-                    self.assertEqual(room.snapshot.document(2), replay.session.run.rooms[role].snapshot.document(2))
+                    restored = replay.session.run.rooms[role]
+                    self.assertEqual(room.snapshot is None, restored.snapshot is None)
+                    self.assertEqual(room.document(2), restored.document(2))
                 remaining = replay.session.run.remaining()
                 with mock.patch('localserver.run_replay.time.monotonic', return_value=5000.) as clock:
                     live = replay.continue_live(source.bridge, SimpleNamespace(send_frame=lambda *_: None))

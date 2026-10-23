@@ -247,7 +247,7 @@ def _base_label(role, room):
     if role.startswith('chest'):
         return 'Chest '+str(int(role.rsplit('_', 1)[1])+1), '#e9c980'
     name = room['metadata']['template']
-    return ({'scmid01': '搬运平台', 'scmid02': '图书馆', 'scmid03': '迷宫', 'scmid04': '僧侣庭',
+    return ({'scmid01': '搬运平台', 'scmid02': '图书馆', 'scmid03': '迷宫', 'scmid04': '僧侣庭', 'scmid05': 'Loop',
              'scmid06': '固定平台', 'scmid11': '蜂巢', 'scmid17': '引擎 · 60000',
              'scmid18': '雕像'}.get(name, 'SC '+name.replace('scmid', '')), '#9ab9d9')
 
@@ -387,86 +387,95 @@ def _atlas_svg(plan):
 
 
 def _thumbnail_drawing(plan):
-    """Straight-line planar embedding with a protected disk for each card."""
-    import networkx as nx
-    rotation = {role: [] for role in plan['rooms'] if role != 'boss'}
-    for edge in plan['edges']:
-        for role, other, oid in ((edge['a'],edge['b'],edge['a_port']), (edge['b'],edge['a'],edge['b_port'])):
-            port = _port(plan['rooms'][role], oid)
-            x,y = port['at']; side = port['side']
-            key = (dict(top=0,right=1,bottom=2,left=3)[side],
-                   x if side == 'top' else y if side == 'right' else -x if side == 'bottom' else -y)
-            rotation[role].append((key,other))
-    embedding = nx.PlanarEmbedding()
-    embedding.set_data({role:[other for _,other in sorted(rows)] for role,rows in rotation.items()})
-    embedding.check_structure()
-    raw = nx.combinatorial_embedding_to_pos(embedding,fully_triangulate=False)
-    xmin,xmax = min(p[0] for p in raw.values()),max(p[0] for p in raw.values())
-    ymin,ymax = min(p[1] for p in raw.values()),max(p[1] for p in raw.values())
-    factor = min(2020/max(1,xmax-xmin),650/max(1,ymax-ymin))
-    centers = {role:(95+(x-xmin)*factor,175+(ymax-y)*factor) for role,(x,y) in raw.items()}
-    def distance(point,a,b):
-        dx,dy = b[0]-a[0],b[1]-a[1]
-        t = max(0,min(1,((point[0]-a[0])*dx+(point[1]-a[1])*dy)/(dx*dx+dy*dy)))
-        return math.dist(point,(a[0]+t*dx,a[1]+t*dy))
-    cards = {}
-    for role,center in centers.items():
-        limits = [math.dist(center,p)*.27 for other,p in centers.items() if other != role]
-        limits += [distance(center,centers[e['a']],centers[e['b']])*.36
-                   for e in plan['edges'] if role not in (e['a'],e['b'])]
-        radius = min(48,*limits)
-        room = plan['rooms'][role]
-        source = room['metadata'].get('bounds')
-        if not source:
-            source = room['metadata']['world_map_bounds_mp']
+    """Dependency-free cards on the generator's columns and row order.
+
+    Route every authored door separately. In particular, an adjacent pair of
+    four-way rooms has two distinct edges, never a simple-graph neighbor entry.
+    """
+    from .layout import bounds, four_way_sides
+    columns = {value: index for index, value in enumerate(sorted({c[0] for c in plan['cells'].values()}))}
+    rows = {value: index for index, value in enumerate(sorted({c[1] for c in plan['cells'].values()}))}
+    cards, terminals = {}, {}
+    width, height, xstep, ystep = 292, 200, 448, 288
+    for role, room in plan['rooms'].items():
+        column, row = plan['cells'][role]
+        x, y = 64+columns[column]*xstep, 168+rows[row]*ystep
+        source = bounds(room)
         a,b,c,d = source
-        scale = radius*2/max(1,math.hypot(c-a,d-b))
-        width,height = (c-a)*scale,(d-b)*scale
-        box = (center[0]-width/2,center[1]-height/2,center[0]+width/2,center[1]+height/2)
-        cards[role] = dict(center=center,radius=radius,box=box,source=source,scale=scale)
-    boss = plan['rooms']['boss']; source = boss['metadata']['bounds']
-    a,b,c,d = source; scale = 92/max(c-a,d-b)
-    cards['boss'] = dict(center=(1800,900),radius=68,box=(1754,854,1846,946),source=source,scale=scale)
-    return dict(cards=cards,centers=centers,embedding=embedding,width=2630,height=1040)
+        scale = min((width-80)/max(1,c-a), 116/max(1,d-b))
+        origin = (x+(width-(c-a)*scale)/2-a*scale, y+57-b*scale)
+        card = dict(center=(x+width/2,y+height/2),box=(x,y,x+width,y+height),
+                    source=source,scale=scale,origin=origin)
+        cards[role] = card
+        for port in room['metadata']['ports']:
+            px,py = origin[0]+port['at'][0]*scale,origin[1]+port['at'][1]*scale
+            side = port['side']
+            anchor = dict(left=(x,py),right=(x+width,py),top=(px,y),bottom=(px,y+height))[side]
+            outside = dict(left=(x-8,py),right=(x+width+8,py),
+                           top=(px,y-8),bottom=(px,y+height+8))[side]
+            terminals[(role,int(port['id']))] = dict(at=(px,py),anchor=anchor,outside=outside,side=side)
+    obstacles = [(a-8,b-8,c+8,d+8) for a,b,c,d in (card['box'] for card in cards.values())]
+    paired, pairs = {}, {}
+    for index, edge in enumerate(plan['edges']):
+        if four_way_sides(plan['rooms'][edge['a']]) and four_way_sides(plan['rooms'][edge['b']]):
+            key = tuple(sorted((edge['a'],edge['b'])))
+            pair = pairs.setdefault(key,'P'+str(len(pairs)+1))
+            paired[index] = pair
+    routes = []
+    for index, edge in enumerate(plan['edges']):
+        a = terminals[(edge['a'],int(edge['a_port']))]
+        b = terminals[(edge['b'],int(edge['b_port']))]
+        # Visibility routing avoids every card. Lines may cross or share a
+        # schematic lane; their edge IDs retain the independent door relation.
+        middle = _route(a['outside'],b['outside'],obstacles,[])
+        points = _simplify([a['anchor']]+middle+[b['anchor']])
+        routes.append(dict(id='E%02d'%(index+1),edge=edge,points=points,pair=paired.get(index)))
+    return dict(cards=cards,terminals=terminals,routes=routes,
+                width=columns[max(columns)]*xstep+width+128,
+                height=rows[max(rows)]*ystep+height+244)
 
 
 def svg(plan):
-    """Zero-crossing relationship diagram; rooms are independently scaled."""
+    """Render every real door relation using only the Python standard library."""
     drawing = _thumbnail_drawing(plan)
     cards = drawing['cards']; esc = html.escape
-    body = ['<svg xmlns="http://www.w3.org/2000/svg" width="2630" height="1040" viewBox="0 0 2630 1040">',
+    body = ['<svg xmlns="http://www.w3.org/2000/svg" width="%s" height="%s" viewBox="0 0 %s %s">' %
+            (drawing['width'],drawing['height'],drawing['width'],drawing['height']),
             '<title>SC 关卡拓扑示意 / 本地生成方案</title>',
-            '<desc>Each authored room thumbnail has an independent scale. Coordinates are schematic, not original-server continuous map coordinates. Center lines terminate at cards and identify linked real doors; physical door-seam alignment is not asserted.</desc>',
+            '<desc>Each authored room thumbnail has an independent scale. Cards preserve the generated column and row order. Lines identify independent bidirectional door transitions, not physical roads; line crossings and shared lanes are not junctions. Retail exact room count remains unknown.</desc>',
             '<rect width="100%" height="100%" fill="#0b1421"/>',
-            '<style>text{font-family:"Segoe UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif}</style>',
+            '<style>text{font-family:"Segoe UI","Microsoft YaHei","Noto Sans CJK SC",sans-serif}.port{paint-order:stroke;stroke:#132539;stroke-width:3;stroke-linejoin:round}</style>',
             '<text x="35" y="39" fill="#f1f6ff" font-size="27" font-weight="650">SC 关卡拓扑示意 / 本地生成方案</text>',
-            '<text x="35" y="65" fill="#b7c9dc" font-size="14">各房独立缩放；保留框内几何与真实门对应。示意坐标不是原服连续地图坐标，不代表原图复现。</text>',
-            '<text x="35" y="90" fill="#87dab2" font-size="14">关系边零交线 · 主关 00–24 · 4 个 Gen 独立 · Boss 独立 · seed %s</text>' % int(plan['seed']),
-            '<text x="35" y="113" fill="#91a9c2" font-size="12">中心关系线只接缩略框边；不宣称房间门缝在物理坐标中对齐。悬停线段可看双方门 ID。</text>']
-    def on_box(center,other,box):
-        dx,dy = other[0]-center[0],other[1]-center[1]
-        tx = (box[2]-box[0])/2/abs(dx) if dx else math.inf
-        ty = (box[3]-box[1])/2/abs(dy) if dy else math.inf
-        t = min(tx,ty)
-        return (center[0]+dx*t,center[1]+dy*t)
-    for edge in plan['edges']:
-        a,b = cards[edge['a']],cards[edge['b']]
-        p = on_box(a['center'],b['center'],a['box']); q = on_box(b['center'],a['center'],b['box'])
+            '<text x="35" y="65" fill="#b7c9dc" font-size="14">各房独立缩放，未镜像；门侧与上下次序保留。示意坐标不是原服连续地图坐标。</text>',
+            '<text x="35" y="90" fill="#87dab2" font-size="14">传送关系边 · 本地主关 00–%02d · 4 个 Gen 独立 · Boss 独立 · seed %s</text>' %
+            (max(r['metadata'].get('main_index',-1) for r in plan['rooms'].values()),int(plan['seed'])),
+            '<text x="35" y="113" fill="#91a9c2" font-size="12">线段仅表示双向传送，交叉或共线不连通；L/R/T/B 为真实门侧。E 为门连接，粉色 P 为上下成对连接。</text>',
+            '<text x="35" y="136" fill="#91a9c2" font-size="12">编号与房数为本地拟合；原服已见编号 24，精确总数仍未知。金色虚线进入 Mid 对应 Gen；四 Gen 击破后自动转入独立 Boss。</text>']
+    edge_ids = {}
+    for route in drawing['routes']:
+        edge = route['edge']
+        for role,oid in ((edge['a'],edge['a_port']),(edge['b'],edge['b_port'])):
+            edge_ids[(role,int(oid))] = (route['id'],route['pair'])
         gate = edge.get('requires')
-        color = '#e8bd69' if gate else '#86b8ed'
+        color = '#efa5df' if route['pair'] else '#e8bd69' if gate else '#86b8ed'
         dash = ' stroke-dasharray="6 4"' if gate else ''
-        body.append('<path data-edge="%s--%s" d="M%.4f %.4f L%.4f %.4f" fill="none" stroke="%s" stroke-width="1.6"%s><title>%s door %s ↔ %s door %s%s</title></path>' %
-                    (esc(edge['a']),esc(edge['b']),*p,*q,color,dash,esc(edge['a']),edge['a_port'],esc(edge['b']),edge['b_port'],' · Mid cleared' if gate else ''))
-    labels = []
+        a_port,b_port = _port(plan['rooms'][edge['a']],edge['a_port']),_port(plan['rooms'][edge['b']],edge['b_port'])
+        path = _path(route['points'],[])
+        body.append('<g data-edge="%s:%s--%s:%s" data-edge-id="%s" data-pair="%s"><title>%s: %s door %s (%s) ↔ %s door %s (%s)%s</title>' %
+                    (esc(edge['a']),edge['a_port'],esc(edge['b']),edge['b_port'],route['id'],route['pair'] or '',route['id'],
+                     esc(edge['a']),edge['a_port'],a_port['side'],esc(edge['b']),edge['b_port'],b_port['side'],' · Mid cleared' if gate else ''))
+        body.append('<path d="%s" fill="none" stroke="#0b1421" stroke-width="6"/><path d="%s" fill="none" stroke="%s" stroke-width="1.8"%s/></g>' %
+                    (path,path,color,dash))
     for role,room in plan['rooms'].items():
-        card = cards[role]; x0,y0,x1,y1 = card['box']; a,b,c,d = card['source']; factor = card['scale']
-        _,color = _label(role,room)
+        card = cards[role]; x0,y0,x1,y1 = card['box']; factor = card['scale']
+        label,color = _label(role,room)
         index = room['metadata'].get('main_index')
-        short = '%02d'%index if index is not None else 'G'+str(room['metadata'].get('gen_index',0)+1) if role != 'boss' else 'B'
         def point(x,y):
-            return (x0+(x-a)*factor,y0+(y-b)*factor)
-        body.append('<g data-role="%s"><title>%s / %s · 独立缩放</title><clipPath id="thumb-%s"><rect x="%.4f" y="%.4f" width="%.4f" height="%.4f"/></clipPath><rect x="%.4f" y="%.4f" width="%.4f" height="%.4f" fill="#17283b" stroke="%s" stroke-width="1"/><g clip-path="url(#thumb-%s)">' %
-                    (esc(role),esc(role),esc(room['metadata']['template']),role,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0,color,role))
+            return (card['origin'][0]+x*factor,card['origin'][1]+y*factor)
+        body.append('<g data-role="%s" data-template="%s"><title>%s / %s · 独立缩放</title><rect x="%.4f" y="%.4f" width="%.4f" height="%.4f" rx="6" fill="#132539" stroke="%s" stroke-width="1.2"/>' %
+                    (esc(role),esc(room['metadata']['template']),esc(role),esc(room['metadata']['template']),x0,y0,x1-x0,y1-y0,color))
+        body.append('<text x="%.3f" y="%.3f" fill="%s" text-anchor="middle" font-size="17" font-weight="650">%s</text><text x="%.3f" y="%.3f" fill="#91a9c2" text-anchor="middle" font-size="11">%s</text>' %
+                    ((x0+x1)/2,y0+25,color,esc(label),(x0+x1)/2,y0+43,esc(room['metadata']['template'])))
         for p in room['objects'].values():
             if p.get('terraintype') not in (1,2) or not p.get('wmp') or not p.get('hmp'):
                 continue
@@ -478,20 +487,22 @@ def svg(plan):
                 body.append('<polygon points="%s" fill="#a2bfd0"/>' % ' '.join('%.4f,%.4f'%corners[i] for i in triangles[shape]))
             else:
                 body.append('<rect x="%.4f" y="%.4f" width="%.4f" height="%.4f" fill="#a2bfd0"/>' % (x,y,max(.3,w),max(.35,h)))
-        body.append('</g>')
         for port in room['metadata']['ports']:
-            x,y = point(*port['at'])
-            body.append('<circle cx="%.4f" cy="%.4f" r="1.3" fill="#fff3c5"><title>真实门 %s</title></circle>'%(x,y,port['id']))
-        cx,cy = card['center']
-        body.append('<rect x="%.3f" y="%.3f" width="25" height="17" rx="3" fill="#0d1928" stroke="%s" stroke-width=".7"/><text x="%.3f" y="%.3f" fill="%s" text-anchor="middle" font-size="11" font-weight="650">%s</text></g>' % (cx-12.5,cy-8.5,color,cx,cy+3.8,color,short))
-        text,_ = _base_label(role,room)
-        labels.append((999 if role=='boss' else 100+int(room['metadata'].get('gen_index',0)) if index is None else index,short,text,room['metadata']['template'],color))
-    body += ['<rect x="2170" y="133" width="425" height="856" rx="8" fill="#111e2d" stroke="#314559"/>',
-             '<text x="2190" y="162" fill="#eff5ff" font-size="17">房间编号 / 原始房型</text>']
-    for i,(_,short,text,template,color) in enumerate(sorted(labels)):
-        y = 190+i*25
-        body.append('<text x="2190" y="%s" fill="%s" font-size="13">%s</text>' % (y,color,esc(short+'  '+text+'  /  '+template)))
-    body += ['<path d="M1635 985 H1940" stroke="#bb87de" stroke-dasharray="4 4"/>',
-             '<text x="1790" y="1010" text-anchor="middle" fill="#e4bff8" font-size="14">4 个 Gen 全部击破后自动转入独立 Boss</text>',
-             '<text x="35" y="1006" fill="#91a9c2" font-size="12">蓝线：双向门关系；金色虚线：Mid 完成后进入对应 Gen。真实房间几何保留于各独立场景。</text>', '</svg>']
+            oid = int(port['id']); terminal = drawing['terminals'][(role,oid)]
+            edge_id,pair = edge_ids[(role,oid)]
+            side = port['side']; letter = dict(left='L',right='R',top='T',bottom='B')[side]
+            x,y = terminal['at']; ax,ay = terminal['anchor']
+            tint = '#efa5df' if pair else '#ffd573' if port['kind']=='core' else '#c3def8'
+            body.append('<circle data-door="%s:%s" cx="%.4f" cy="%.4f" r="2" fill="%s"><title>%s #%s · %s%s</title></circle>' %
+                        (esc(role),oid,x,y,tint,side,oid,edge_id,' / '+pair if pair else ''))
+            if side in ('left','right'):
+                tx,ty,align = (x0+5,ay-5,'start') if side=='left' else (x1-5,ay-5,'end')
+            else:
+                tx,ty,align = ax,y0+54 if side=='top' else y1-8,'middle'
+            text = '%s #%s · %s%s' % (letter,oid,edge_id,' '+pair if pair else '')
+            body.append('<text class="port" x="%.3f" y="%.3f" fill="%s" text-anchor="%s" font-size="10">%s</text>' % (tx,ty,tint,align,esc(text)))
+        if role=='boss':
+            body.append('<text x="%.3f" y="%.3f" fill="#d8b3ee" text-anchor="middle" font-size="11">四个 Gen 全部击破后自动转入</text>' % ((x0+x1)/2,y1-8))
+        body.append('</g>')
+    body.append('</svg>')
     return '\n'.join(body)

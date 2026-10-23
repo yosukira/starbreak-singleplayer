@@ -56,7 +56,9 @@ class NativeMotion:
             radians=(ms+e.get('pos',0))*2*math.pi/max(1,e.get('period',10000))
             angle=math.radians(e.get('angle',0))
             a=e.get('radiusamp',0)*math.cos(radians)
-            b=e.get('radiusbmp',0)*math.sin(radians)
+            # The native evaluator defaults the second radius to the first;
+            # an explicitly present zero still describes a straight segment.
+            b=e.get('radiusbmp',e.get('radiusamp',0))*math.sin(radians)
             return (e.get('xmp',x)+a*math.cos(angle)-b*math.sin(angle),
                     e.get('ymp',y)+a*math.sin(angle)+b*math.cos(angle))
         waypoint=m.get('waypoint') or {}

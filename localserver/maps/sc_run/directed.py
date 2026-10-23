@@ -94,6 +94,8 @@ def _attempt(content, seed, config, optional, rng):
             # USER: a core door inside a room stays an interact action; its own
             # gate enables that interact flag (a closed core door is inert).
             link = dict(destination=dst,entry=q['entry'],trigger='interact' if core else 'boundary')
+            if not core:
+                link['trigger_id'] = p['trigger_id']
             if required:link['requires']=required
             rooms[src]['links'][p['id']]=link
             rooms[src]['objects'][p['id']]['interact']=(0 if required else 1) if core else 0

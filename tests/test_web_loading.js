@@ -2,13 +2,14 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 (async()=>{
  const ids=[...fs.readFileSync('web/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>m[1]),elements=new Map();let frame=null,nativePlay=null,nativeWatch=false,shortcut=null;
+ const pendingNativeStatuses=[],commands=[];
  const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{add(){},toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},prepend(){},show(){this.open=true;},close(){this.open=false;},focus(){}});
  for(const id of ids)elements.set(id,element());elements.get('map').value='egy_hulk';
  const layout=element(),events={};
  class Editor{constructor(){this.map='egy_hulk';this.shell=1;this.profile={settings:{map:'egy_hulk'}};this.preferences={keys:{}};this.data={stats:[],items:[]};}async load(){}render(){}remember(){}async save(){}async post(){return {assets_ready:true};}}
  const document={addEventListener(){},getElementById:id=>elements.get(id),documentElement:{},querySelectorAll:()=>[],querySelector:q=>q==='iframe'?frame:q==='.game-layout'?layout:element(),createElement:tag=>({...element(),tagName:tag.toUpperCase(),contentWindow:{focus(){},postMessage(){}}})};
  const context={URLSearchParams,document,window:null,location:{origin:'https://test.local'},localStorage:{getItem:()=>null,setItem(){}},navigator:{language:'en'},WebEquipment:Editor,StarBreakVisuals:{Page:class{render(){}show(){}}},BattleRecords:class{constructor(root,language,catalogue,play){nativePlay=play;}show(){this.visible=true;}hide(){this.visible=false;}render(){}},PracticeShortcuts:class{constructor(_window,_keys,run){shortcut=run;}update(){}},Option:class{},setTimeout,clearTimeout,Promise,console,
-  fetch:async url=>{if(url==='/api/native/command'){nativeWatch=true;return Response.json({accepted:true});}if(url==='/api/native/status')return Response.json({state:'live'});return Response.json({maps:[{id:'egy_hulk',title:'Elite Graveyard Boss',ready:true}]});},addEventListener:(name,fn)=>events[name]=fn};context.window=context;
+  fetch:async (url,options)=>{if(url==='/api/native/command'){nativeWatch=true;commands.push(JSON.parse(options.body));return Response.json({accepted:true});}if(url==='/api/native/status')return new Promise(resolve=>pendingNativeStatuses.push(value=>resolve(Response.json(value))));return Response.json({maps:[{id:'egy_hulk',title:'Elite Graveyard Boss',ready:true}]});},addEventListener:(name,fn)=>events[name]=fn};context.window=context;
  context.StarBreakStorage=context.localStorage;
  vm.createContext(context);vm.runInContext(fs.readFileSync('web/guide.js','utf8'),context);vm.runInContext(fs.readFileSync('web/battle-view.js','utf8'),context);vm.runInContext(fs.readFileSync('web/app.js','utf8'),context);
  await new Promise(r=>setTimeout(r,10));
@@ -28,6 +29,21 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
  elements.get('tab-records').onclick();assert.equal(layout.hidden,true);
  await nativePlay({id:'owned-native-record',platform:'web',map_title:'Native fixture',replay:{id:'native-attempt',engine:'native'}});
  assert.equal(nativeWatch,true);assert.equal(frame,null,'Native replays never create a browser game iframe');
+ await new Promise(r=>setTimeout(r,240));
+ await nativePlay({id:'second-native-record',platform:'native',map_title:'Second fixture',replay:{id:'second-attempt',engine:'native'}});
+ assert.equal(pendingNativeStatuses.length,2);
+ pendingNativeStatuses[0]({state:'live'});
+ await new Promise(r=>setTimeout(r,0));
+ assert.equal(elements.get('replay-controls').hidden,false,'A delayed status from the old replay must not clear the new replay');
+ pendingNativeStatuses[1]({state:'paused',seconds:1,duration:10,takeover:true});
+ await new Promise(r=>setTimeout(r,0));
+ assert.equal(elements.get('replay-pause').textContent,'Resume','The pause label follows authoritative engine status');
+ elements.get('replay-pause').onclick();
+ assert.equal(commands.at(-1).action,'pause');assert.equal(commands.at(-1).paused,false,'One click resumes a replay paused outside the editor');
+ // Switching to browser playback also invalidates the native polling loop.
+ await new Promise(r=>setTimeout(r,240));
+ await nativePlay({id:'browser-record',map_title:'Browser fixture',replay:{id:'browser-attempt',engine:'browser'}});
+ assert.ok(frame);
  // The native editor must initialize even without the browser-only fullscreen
  // controller. A missing optional game helper cannot disable every editor tab.
  context.location.search='?desktop=1';document.body=element();
