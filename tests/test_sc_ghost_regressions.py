@@ -35,11 +35,16 @@ class GhostRegressions(unittest.TestCase):
 
     def test_ghost_keeps_far_target_and_does_not_burst_after_a_random_leg_budget(self):
         h = self.host()
-        h.player_at(6000, 0)
+        h.player_at(1000, 0)
         u = h.enemies.units[1]
         u.update(active=True, target=1, target_point=center(h.players[1]))
         h.enemies._assassin_ghost(1, u)
-        h.advance(8.)
+        for _ in range(240):
+            # The locked player remains out of reach as each native leg
+            # completes. A fixed 6000px target now correctly takes one long
+            # leg instead of the old artificial 480px segments.
+            h.player_at(h.actors[1]['pos'][0]/256+1000, 0)
+            h.advance(.05)
         self.assertEqual(u['target'], 1)
         self.assertEqual(h.actors[1]['vid'], 'sc.eassassin')
         self.assertGreater(u['ghost_moves'], 4)

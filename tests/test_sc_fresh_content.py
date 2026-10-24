@@ -44,9 +44,16 @@ class ScFreshContentTests(unittest.TestCase):
         for name in ('scmid01', 'scend03', 'scend04', 'sctask02'):
             source = self.content._read('rooms/'+name+'.json')
             expected = {int(oid): copy.deepcopy(p['move']) for oid, p in source['objects'].items()
-                        if p.get('terraintype') in (1, 2) and 'move' in p}
-            self.assertTrue(expected, name)
+                        if p.get('terraintype') in (1, 2) and 'move' in p
+                        and not p.get('vid', '').startswith('sc.mledge')}
             recipe = self.content.recipe(name)
+            if name == 'scmid01':
+                self.assertTrue(recipe['metadata']['sc_mledge_stream']['streams'])
+                self.assertFalse(any(p.get('vid', '').startswith('sc.mledge') for p in recipe['objects'].values()))
+                self.assertFalse(any(row['props_'].get('vid_', '').startswith('sc.mledge')
+                                     for row in recipe['world']['worldstate_']['serverworld_']['obj_']))
+            else:
+                self.assertTrue(expected, name)
             self.assertEqual(expected, {oid: recipe['objects'][oid]['move'] for oid in expected})
 
     def test_new_run_has_four_undamaged_generators_and_no_completed_tasks(self):

@@ -4,6 +4,7 @@ import math
 from collections import Counter, deque
 from types import SimpleNamespace
 
+from ... import game_settings
 from ...live import constants
 from ...live.enemies import Enemy, BEHAVIOUR, GROUND_HORIZONTAL_SPEEDS, HEAVY_HORIZONTAL_SPEEDS, loader_flame_move
 from ...live.projectiles import ProjectileSystem, Projectile, segment_hit, rects_overlap
@@ -339,6 +340,7 @@ class ExplorationEnemies:
         self.host=host;self.room=_Room(host)
         self.projectiles=ProjectileSystem(self.room,seed=host.rng.randrange(2**31),rules=_Rules())
         self.projectiles.random=host.rng
+        self.projectiles.missile_delay_seconds=game_settings.missile_delay_ms(host.map_id)/1000.
         self.units={};self.fx={};self.walls={};self.attachments={};self.drone_owners={};self.owned=set();self.retired=set()
         self._seen=set();self._seen_queue=deque();self._event_refs=deque()
         self.now=host.room_time;self.counts=Counter()
@@ -440,9 +442,11 @@ class ExplorationEnemies:
         return True
 
     def _players(self):
-        candidates=list(getattr(self.host,'players',{}).values())
-        current=getattr(self.host,'player',None)
-        if current is not None and not candidates:candidates=[current]
+        roster=getattr(self.host,'players',None)
+        candidates=list(roster.values()) if roster is not None else []
+        if roster is None:
+            current=getattr(self.host,'player',None)
+            if current is not None:candidates=[current]
         return [p for p in candidates if p is not None and _alive(p)]
 
     def _target(self,point):
@@ -1308,16 +1312,14 @@ class ExplorationEnemies:
                     relative=row['props']['move'].get('to',{})
                     row['pos']=[source['pos'][0]+relative.get('xmp',0),source['pos'][1]+relative.get('ymp',0)]
         events=[]
-        def steering(p,default):
-            player=self._target((p.x+p.w/2,p.y+p.h/2))
-            return _center(player) if player is not None else None
+        self.projectiles.missile_delay_seconds=game_settings.missile_delay_ms(self.host.map_id)/1000.
         clock=getattr(self.host,'wire_lifetime_due',None)
         for p in self.projectiles.projectiles:
 
             if (p.alive and not p.prepared and p.lifetime>0 and clock is not None and
                     clock(p.objid) is False and p.age+dt>=p.lifetime):
                 p.age=min(p.age,p.lifetime-dt-1e-9)
-        self.projectiles.step(dt,None,events,resolve_player=False,target_for=steering)
+        self.projectiles.step(dt,None,events,resolve_player=False,players=self._players())
         for p in self.projectiles.projectiles:
             due=clock(p.objid) if clock is not None else None
             if (p.alive and not p.prepared and p.lifetime>0 and

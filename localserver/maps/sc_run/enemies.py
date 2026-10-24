@@ -27,30 +27,43 @@ DEFAULT_SPECIES = {
     # FIT: activation, acquisition and weapon radii are separate local policy.
     # Attack reception geometry does not identify native activation/search
     # thresholds, target IDs or decision-time ranges.
-    'sc.skeleton': dict(wake_px=1600., acquire_px=960., release_px=1500., scan_s=.45, speed=55000., attack_px=170.),
-    'sc.golem': dict(wake_px=1600., acquire_px=1200., release_px=1700., scan_s=.55, speed=22000., attack_px=700.),
-    'sc.tank': dict(wake_px=1600., acquire_px=1100., release_px=1700., scan_s=.5, speed=24000., attack_px=860.),
+    'sc.skeleton': dict(wake_px=1600., acquire_px=960., release_px=1500., scan_s=.45, speed=14000*1000/256, attack_px=170.),
+    # USER range calibration against a 500px Soidal: distance to the large
+    # body's near edge, not its centre (which adds its 80px half-width).
+    'sc.golem': dict(wake_px=1600., acquire_px=1200., release_px=1700., scan_s=.55,
+                     speed=7000*1000/256, attack_px=475., attack_metric='body'),
+    # Oct23 solo starts have 1059..1118px reception context. 1150/1200 are
+    # local attack/search fits covering those cases, not native thresholds.
+    'sc.tank': dict(wake_px=1600., acquire_px=1200., release_px=1700., scan_s=.5, speed=10000*1000/256, attack_px=1150.),
     # FIT: a later single-player attack has ~738px reception geometry. Allow
     # that context without presenting 800/900 as recovered native thresholds.
     'sc.flytank': dict(wake_px=1600., acquire_px=900., release_px=1300., scan_s=.6, speed=32000., attack_px=800.),
-    'sc.hunter': dict(wake_px=1600., acquire_px=1600., release_px=2400., scan_s=.4, speed=46000., attack_px=150.),
-    'sc.monk': dict(wake_px=1600., acquire_px=1000., release_px=1500., scan_s=.65, speed=22000., attack_px=900.),
+    # New fresh hunters start while the sole player is diagonally 1881px
+    # away (dx1266/dy1391). A 1600px centre circle misses that context.
+    # Separate axis-aligned wake/search windows are local geometry fits.
+    'sc.hunter': dict(wake_px=1600., wake_shape='box', acquire_px=1600.,
+                      acquire_shape='box', release_px=2400., scan_s=.4,
+                      speed=118000., attack_px=150.),
+    'sc.monk': dict(wake_px=1600., acquire_px=1000., release_px=1500., scan_s=.65, speed=70000., attack_px=900.),
+    # Solo dive-start contexts reach 807px. A committed attempt and its
+    # blocked retries continue independently of this new-attack range.
+    'sc.scout': dict(wake_px=1500., acquire_px=900., release_px=1500., scan_s=.5, speed=30000., attack_px=900.),
 }
 DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # OBS: one skeleton rises 640px. FIT: choose height from reachable landing
     # surfaces, with a small landing margin; ordinary jumps keep the low speed.
     skeleton_jump_max_v=265000., skeleton_jump_clearance_px=32.,
     titan_jump_v=125000., golem_jump_v=90000., golem_gravity=200000.,
-    # FIT: a later same-body jump has ~599px reception geometry. This loose
-    # allowance does not establish the native jump/throw cutoff or probability.
-    golem_close_px=640., golem_jump_weight=.5, golem_restitution=.8,
+    # FIT within the separately calibrated 475px total range. Keep an outer
+    # throw-only band; this is not a recovered native jump cutoff.
+    golem_close_px=450., golem_jump_weight=.5, golem_restitution=.8,
     # OBS: a fresh room starts surn production before any player subworld is
     # present. Local production therefore starts independently of creature
     # wake/acquisition. Native births use the moving urn's top-left plus
     # (1, -18)px, not body centres.
     # FIT: a .2s minimum plus frame scheduling covers the observed 200-255ms
     # between births; the native scheduler itself is not reconstructed.
-    hunter_manifest_px=160., urn_step_s=.2, urn_birth_offset_px=(1., -18.),
+    hunter_manifest_px=160., hunter_acceleration=80000., urn_step_s=.2, urn_birth_offset_px=(1., -18.),
     urn_emit_s=.105, manifest_s=.83, titan_manifest_s=1.62,
     skeleton_thrust_cooldown=.605, skeleton_cleave_cooldown=.8,
     skeleton_variant_policy='object_id_fit', patrol_px=240., patrol_leg_s=1.1, steer_leg_s=(.45, 1.0),
@@ -59,8 +72,10 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # from the number of movement legs seen in a recording.
     assassin_visible_s=1.5, assassin_initial_wait_s=.1,
     assassin_ghost_wait_s=.325, assassin_pause_s=.78,
-    assassin_ghost_speed=180000., assassin_ghost_step_px=480.,
-    assassin_ghost_min_step_s=.1, assassin_manifest_px=160.,
+    # FIT to 65 checked new-recording legs: distance ~= 400px + 1284px/s*t.
+    # The instantaneous spatial component is not a constant-speed movement.
+    assassin_ghost_speed=1284.4*256, assassin_ghost_instant_px=400.,
+    assassin_ghost_min_step_s=.008, assassin_manifest_px=160.,
     # FIT selection policy. Capture frequencies do not establish spawn odds.
     ghost_form_weights={'sc.titan': 15., 'sc.scout': 33.5, 'sc.bomber': 33.5,
                         'sc.sniper': 33.5, 'sc.assassin': 33.5},
@@ -69,14 +84,19 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # neither an eight-direction ring nor the native RNG was established.
     burst_axis_mp_s=(-16000, 15000), shard_gravity=156000.,
     monk_interval_s=16., monk_refill_s=1.92, monk_orb_interval_s=.25,
+    # Three long tracks remain in a translated ~413x417px area. The authored
+    # local birth point anchors this 420px box; it is not a recovered home
+    # from an arbitrary already-active capture snapshot.
+    monk_patrol_span_px=210., monk_acceleration=160000., monk_patrol_leg_s=2.5,
     monk_mode_choices=('sequential', 'radial', 'focused'),
     # OBS: a captured warning line is 13 segments of 64px (~832px).
-    laser_segment_px=32., laser_range_px=1600., laser_max_segments=50,
-    fly_acceleration=50000., scout_dive_acceleration=160000.,
-    scout_dive_s=.8, scout_cooldown_s=(2.2, 3.4),
-    # OBS: floor-blocked scout cues repeat after 559-605ms. FIT: permit a
-    # retry .55s from that dive's start; airborne cooldown remains separate.
-    scout_blocked_retry_s=.55, skeleton_melee_vertical_px=110.,
+    laser_segment_px=32., laser_range_px=1600., laser_max_segments=50, laser_draw_z=-128,
+    fly_acceleration=50000., scout_dive_acceleration=350000., scout_dive_speed=175000.,
+    scout_dive_s=2., scout_cooldown_s=(2.2, 3.4),
+    scout_min_drop_px=32., scout_recover_s=1., scout_recover_speed=50000.,
+    # Blocked cues can repeat within one attempt. They do not reset the
+    # independent attack cooldown; successful floor contact starts recovery.
+    scout_blocked_retry_s=.55, scout_max_retries=2, skeleton_melee_vertical_px=110.,
     flytank_hover_span_px=180., golem_stand_px=520., golem_stand_scale=.25, golem_wave_gravity=180000.,
     wraith_interval_s=(.5, .85), wraith_initial_delay_s=.1,
     # OBS: 3796 same-owner dynamic wraiths leave at 4994-7474ms even though the
@@ -257,12 +277,19 @@ class ScEnemies:
             prop(self.host, oid, 'blocktype', 1)
         u.update(phase='patrol', next=self.now+self.fit['assassin_initial_wait_s'], busy=0.)
 
+    @staticmethod
+    def _inside_range(policy, kind, origin, point):
+        radius = policy[kind+'_px']*256
+        if policy.get(kind+'_shape') == 'box':
+            return max(abs(point[0]-origin[0]), abs(point[1]-origin[1])) <= radius
+        return math.dist(origin, point) <= radius
+
     def _scan(self, oid, u, live):
         row = self.host.actors[oid]
         policy = self.policy(u['vid'])
         c = center(row)
         if not u['active']:
-            if not any(math.dist(center(p), c) <= policy['wake_px']*256 for p in live.values()):
+            if not any(self._inside_range(policy, 'wake', c, center(p)) for p in live.values()):
                 return None
             u.update(active=True, phase='patrol')
             self.counts['activations'] += 1
@@ -282,13 +309,14 @@ class ScEnemies:
         if old is not None and (locked_ghost or math.dist(center(old), c) <= policy['release_px']*256):
             target = old
         else:
-            eligible = [(key, p) for key, p in live.items() if math.dist(center(p), c) <= policy['acquire_px']*256]
+            eligible = [(key, p) for key, p in live.items() if self._inside_range(policy, 'acquire', c, center(p))]
             selected = min(eligible, key=lambda kv: math.dist(center(kv[1]), c)) if eligible else (None, None)
             u['target'], target = selected
         if target is not None:
             u['target_point'] = center(target)
             dx = u['target_point'][0]-c[0]
-            if abs(dx) > 8*256 and u['vid'] != 'sc.flytank':
+            if (abs(dx) > 8*256 and u['vid'] not in ('sc.flytank', 'sc.tank', 'sc.monk')
+                    and not (u['vid'] == 'sc.scout' and u.get('scout_phase'))):
                 u['direction'] = 1 if dx >= 0 else -1
             if u['phase'] in ('patrol', 'chase'):
                 u['phase'] = 'chase'
@@ -322,7 +350,7 @@ class ScEnemies:
         if target is None or self.now < u['ready']:
             return
         # Hunter keeps its chosen player until that player leaves the room.
-        point = center(target)
+        point = u.get('target_point') or center(target)
         c = center(row)
         delta = (point[0]-c[0], point[1]-c[1])
         distance = math.hypot(*delta)
@@ -350,9 +378,15 @@ class ScEnemies:
                 self.counts['manifests'] += 1
                 return
         speed = min(self.policy(u['vid'])['speed'], distance/max(dt, 1e-9))
-        move(self.host, oid, (row['pos'][0]+delta[0]/max(1., distance)*speed*dt,
-                             row['pos'][1]+delta[1]/max(1., distance)*speed*dt), dt,
-             2 if delta[1] < 0 else 3, 0 if delta[0] >= 0 else 180)
+        desired = tuple(d/max(1., distance)*speed for d in delta)
+        change = (desired[0]-u['vx'], desired[1]-u['vy'])
+        scale = min(1., self.fit['hunter_acceleration']*dt/max(1., math.hypot(*change)))
+        u['vx'] += change[0]*scale
+        u['vy'] += change[1]*scale
+        # The chosen target is sampled on the search clock. Inertia prevents
+        # instant reversals; ethereal movement itself still passes walls.
+        move(self.host, oid, (row['pos'][0]+u['vx']*dt, row['pos'][1]+u['vy']*dt), dt,
+             2 if u['vy'] < 0 else 3, 0 if u['vx'] >= 0 else 180)
 
     def _urn_step(self, dt, live):
         for oid, urn in list(self.urns.items()):
@@ -442,13 +476,64 @@ class ScEnemies:
         self.host.presentation.sound(oid, 'sc.skeletonjump', self.now)
         return True
 
+    def _tank_velocity(self, oid, u, dt, busy):
+        """Patrol the same connected surface, independently from gun aiming."""
+        if not u.get('grounded'):
+            return 0.
+        row = self.host.actors[oid]
+        terrain = [t for t in self.terrain if t[0] != oid
+                   and self.host.actors.get(t[0], {}).get('vid') not in BODIES | SHOTS | {'sc.tshot'}]
+        anchor = next((t for t in terrain if t[0] == u.get('patrol_support')), None)
+        if anchor is None:
+            anchor = next((t for t in terrain if t[0] == u.get('support')), None)
+            if anchor is not None:
+                u['patrol_support'] = anchor[0]
+        if anchor is None or busy or dt <= 0:
+            return 0.
+        _sid, bounds, _kind, shape = anchor
+        left, right, top = bounds[0], bounds[0]+bounds[2], bounds[1]
+        if shape == 0:
+            # Split tiles at the same height form one platform. A nearby lower
+            # ledge, or a transient solid creature/ball, never extends this lane.
+            remaining = [t for t in terrain if t[3] == 0 and abs(t[1][1]-top) <= 1]
+            changed = True
+            while changed:
+                changed = False
+                for item in remaining[:]:
+                    r = item[1]
+                    if r[0] <= right+1 and r[0]+r[2] >= left-1:
+                        new_left, new_right = min(left, r[0]), max(right, r[0]+r[2])
+                        changed = changed or new_left != left or new_right != right
+                        left, right = new_left, new_right
+                        remaining.remove(item)
+        width = row['props'].get('wmp', 0)
+        if right-left <= width:
+            return 0.
+        x = row['pos'][0]
+        # Preserve a captured initial overhang, but never increase it.
+        low, high = min(left, x), max(right-width, x)
+        vx = self._ground_speed('sc.tank', u['direction'])
+        predicted = x+vx*dt
+        if predicted < low or predicted > high:
+            predicted = max(low, min(high, predicted))
+            u['direction'] *= -1
+        return (predicted-x)/dt
+
+    def _ground_speed(self, vid, direction):
+        # Native steady walking uses signed fixed-point truncation. In both
+        # new captures +10000/-10000 wire units give +39/-40 MP per ms.
+        wire = round(self.policy(vid)['speed']*256/1000)
+        return (direction*wire >> 8)*1000.
+
     def _ground(self, oid, u, dt, target):
         row = self.host.actors[oid]
         vid = 'sc.golem' if u['vid'] == 'sc.egolem' else u['vid']
         point = u['target_point'] if target is not None else None
         c = center(row)
         busy = self.now < u['busy']
-        vx = 0. if busy else u['direction']*self.policy(vid)['speed']
+        vx = 0. if busy else self._ground_speed(vid, u['direction'])
+        if vid == 'sc.tank':
+            vx = self._tank_velocity(oid, u, dt, busy)
         if vid == 'sc.golem' and point is not None:
             # USER: the golem mostly holds its ground between attacks. A slow
             # perpetual chase is still a chase; close targets need no walking.
@@ -472,7 +557,7 @@ class ScEnemies:
                 drop = True
         if not busy and not u.get('grounded') and 'jump_vx' in u:
             vx = u['jump_vx']
-        if not busy and u.get('grounded') and edge_ahead(self.terrain, row, u, u['direction'], 8*256):
+        if vid != 'sc.tank' and not busy and u.get('grounded') and edge_ahead(self.terrain, row, u, u['direction'], 8*256):
             # Patrol respects edges; pursuit can leave a platform for a lower
             # target, while upward pursuit uses its independent jump.
             if vid in ('sc.tank', 'sc.golem') or point is None or point[1] <= c[1]+96*256:
@@ -481,7 +566,7 @@ class ScEnemies:
         previous = u.get('grounded', False)
         pos = ground(self.terrain, row, u, dt, vx, self.fit['golem_gravity'] if vid == 'sc.golem' else self.fit['gravity'], drop=drop)
         if u.get('blocked') and not busy:
-            if target is None:
+            if target is None or vid == 'sc.tank':
                 u['direction'] *= -1
             elif vid == 'sc.skeleton' and u.get('grounded'):
                 if not self._begin_skeleton_jump(oid, u, point, allow_level=True):
@@ -514,6 +599,17 @@ class ScEnemies:
             return
         if vid == 'sc.assassin' and u['phase'] == 'ghost':
             self._assassin_ghost_step(oid, u, dt)
+            return
+        if vid == 'sc.assassin' and point is not None:
+            # The corporeal burst body waits at its manifestation point.
+            # Pursuit through geometry belongs to the ethereal phase.
+            u['vx'] = u['vy'] = 0.
+            stop_motion(self.host, oid)
+            return
+        if vid == 'sc.scout' and self._scout_fly(oid, u, dt):
+            return
+        if vid == 'sc.monk':
+            self._monk_fly(oid, u, dt)
             return
         if vid == 'sc.flytank':
             # USER: the flying tank hovers at its birth height and only drifts a
@@ -566,9 +662,6 @@ class ScEnemies:
         acceleration = self.fit['fly_acceleration']*dt
         for axis, wanted in zip(('vx', 'vy'), desired):
             u[axis] += max(-acceleration, min(acceleration, wanted-u[axis]))
-        scout_dive = vid == 'sc.scout' and self.now < u.get('dive_until', 0.)
-        if scout_dive:
-            u['vy'] += self.fit['scout_dive_acceleration']*dt
         end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
         size = (row['props'].get('wmp', 0), row['props'].get('hmp', 0))
         if sweep(self.terrain, end, end, size, (oid,)):
@@ -578,13 +671,6 @@ class ScEnemies:
             u['vx'] = -u['vx']*.3
             u['vy'] = -abs(u['vy'])*.3
         if hit:
-            if scout_dive and u['vy'] > 0 and 'dive_started' in u:
-                terrain = next((t for t in self.terrain if t[0] == hit[1]), None)
-                top = surface(terrain[1], terrain[3], end[0], size[0]) if terrain else None
-                if top is not None and row['pos'][1]+size[1] <= top+1 and abs(end[1]+size[1]-top) <= 1:
-                    # Only the floor-blocked retry is observed. Neither side
-                    # walls nor a successful airborne dive inherit this wait.
-                    u['next'] = min(u['next'], u['dive_started']+self.fit['scout_blocked_retry_s'])
             u['vx'] = -u['vx']*.3
             u['vy'] = -abs(u['vy'])*.3
             if target is None:
@@ -592,6 +678,89 @@ class ScEnemies:
             u['dive_until'] = 0.
         facing = None if self.now < u['lock'] else 0 if u['direction'] > 0 else 180
         move(self.host, oid, end, dt, 3 if u['vy'] > 0 else 2, facing)
+
+    def _scout_fly(self, oid, u, dt):
+        phase = u.get('scout_phase')
+        if phase is None:
+            return False
+        row = self.host.actors[oid]
+        if phase == 'retry':
+            if self.now < u['retry_at']:
+                stop_motion(self.host, oid)
+                return True
+            u.update(scout_phase='dive', dive_cue=self.now,
+                     dive_until=self.now+self.fit['scout_dive_s'])
+            self.host.presentation.sound(oid, 'sc.scoutattack', self.now)
+            phase = 'dive'
+        if phase == 'dive' and self.now >= u['dive_until']:
+            self._scout_recover(u)
+            phase = 'recover'
+        if phase == 'recover':
+            if self.now >= u['recover_until']:
+                u.pop('scout_phase', None)
+                u.pop('steer', None)
+                return False
+            desired = (0., -self.fit['scout_recover_speed'])
+            acceleration = self.fit['fly_acceleration']*dt
+        else:
+            desired = tuple(v*self.fit['scout_dive_speed'] for v in u['dive_heading'])
+            acceleration = self.fit['scout_dive_acceleration']*dt
+        delta = (desired[0]-u['vx'], desired[1]-u['vy'])
+        length = math.hypot(*delta)
+        scale = min(1., acceleration/max(1., length))
+        u['vx'] += delta[0]*scale
+        u['vy'] += delta[1]*scale
+        end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
+        if hit:
+            terrain = next((t for t in self.terrain if t[0] == hit[1]), None)
+            size = (row['props'].get('wmp', 0), row['props'].get('hmp', 0))
+            top = surface(terrain[1], terrain[3], end[0], size[0]) if terrain else None
+            floor = top is not None and u['vy'] > 0 and abs(end[1]+size[1]-top) <= 1
+            blocked_early = end[1]+size[1]/2 < u['dive_target'][1]-64*256
+            if phase == 'dive' and floor and blocked_early and u.get('dive_retries', 0) < self.fit['scout_max_retries']:
+                u.update(scout_phase='retry', retry_at=max(self.now+.05,
+                         u['dive_cue']+self.fit['scout_blocked_retry_s']),
+                         dive_retries=u.get('dive_retries', 0)+1, vx=0., vy=0.)
+            else:
+                if phase == 'dive':
+                    self._scout_recover(u)
+                u['vx'] = 0.
+                u['vy'] = 0.
+        move(self.host, oid, end, dt, 3 if u['vy'] > 0 else 2,
+             None if self.now < u['lock'] else 0 if u['direction'] > 0 else 180)
+        return True
+
+    def _scout_recover(self, u):
+        u.update(scout_phase='recover', recover_until=self.now+self.fit['scout_recover_s'],
+                 dive_until=0., vx=0., vy=min(0., u['vy']))
+
+    def _monk_fly(self, oid, u, dt):
+        row = self.host.actors[oid]
+        span = self.fit['monk_patrol_span_px']*256
+        goal = u.get('patrol_goal')
+        if goal is None or self.now >= u.get('patrol_goal_until', 0.) or math.dist(row['pos'], goal) < 20*256:
+            goal = tuple(v+self.host.rng.uniform(-span, span) for v in u['home'])
+            u.update(patrol_goal=goal, patrol_goal_until=self.now+self.fit['monk_patrol_leg_s'])
+        delta = tuple(goal[i]-row['pos'][i] for i in (0, 1))
+        distance = math.hypot(*delta)
+        speed = min(self.policy('sc.monk')['speed'], distance*3.)
+        desired = tuple(v/max(1., distance)*speed for v in delta)
+        change = (desired[0]-u['vx'], desired[1]-u['vy'])
+        scale = min(1., self.fit['monk_acceleration']*dt/max(1., math.hypot(*change)))
+        u['vx'] += change[0]*scale
+        u['vy'] += change[1]*scale
+        end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
+        end = list(end)
+        for i, axis in enumerate(('vx', 'vy')):
+            bound = max(u['home'][i]-span, min(u['home'][i]+span, end[i]))
+            if bound != end[i] or hit:
+                u[axis] *= -.3
+                u.pop('patrol_goal', None)
+            end[i] = bound
+        if abs(u['vx']) > 1000.:
+            u['direction'] = 1 if u['vx'] > 0 else -1
+        move(self.host, oid, end, dt, 2 if u['vy'] < 0 else 3,
+             0 if u['direction'] > 0 else 180)
 
     def _weapons(self, oid, u, target):
         if u['phase'] in ('manifest', 'ghost') or target is None or self.now < u['next'] or self.now < u['busy']:
@@ -602,7 +771,13 @@ class ScEnemies:
             return
         dx, dy = point[0]-c[0], point[1]-c[1]
         aim = math.degrees(math.atan2(dy, dx)) % 360.
-        if math.hypot(dx, dy) > self.policy(u['vid'])['attack_px']*256:
+        distance = math.hypot(dx, dy)
+        policy = self.policy(u['vid'])
+        if policy.get('attack_metric') == 'body':
+            x, y, w, h = rect(row)
+            distance = math.hypot(max(x-point[0], point[0]-x-w, 0.),
+                                  max(y-point[1], point[1]-y-h, 0.))
+        if distance > policy['attack_px']*256:
             return
         vid = 'sc.golem' if u['vid'] == 'sc.egolem' else u['vid']
         if vid == 'sc.skeleton':
@@ -615,7 +790,7 @@ class ScEnemies:
         elif vid == 'sc.golem':
             if not u.get('grounded'):
                 return
-            if math.hypot(dx, dy) < self.fit['golem_close_px']*256 and self.host.rng.random() < self.fit['golem_jump_weight']:
+            if distance < self.fit['golem_close_px']*256 and self.host.rng.random() < self.fit['golem_jump_weight']:
                 self._attack(oid, u, 4, 1320, window=.92, cooldown=1.18)
                 u.update(vy=-self.fit['golem_jump_v'], grounded=False, slam=True)
             else:
@@ -645,11 +820,17 @@ class ScEnemies:
             for delay in (.305, .679, .9545):
                 self._queue(oid, delay, 'shard')
         elif vid == 'sc.scout':
+            if u.get('scout_phase') or dy < self.fit['scout_min_drop_px']*256:
+                return
             self.host.presentation.sound(oid, 'sc.scoutattack', self.now)
             cooldown = self.fit['scout_cooldown_s']
             if isinstance(cooldown, (tuple, list)):
                 cooldown = self.host.rng.uniform(*cooldown)
-            u.update(dive_started=self.now, dive_until=self.now+self.fit['scout_dive_s'],
+            length = max(1., math.hypot(dx, dy))
+            u.update(scout_phase='dive', dive_heading=(dx/length, dy/length),
+                     dive_target=point, dive_retries=0, dive_started=self.now,
+                     direction=1 if dx >= 0 else -1,
+                     dive_cue=self.now, dive_until=self.now+self.fit['scout_dive_s'],
                      next=self.now+cooldown)
             self.counts['attacks'] += 1
         elif vid == 'sc.assassin':
@@ -685,10 +866,10 @@ class ScEnemies:
             p = self.host.pack.props(vid)
             d = min(length, index*step)
             pos = (c[0]+math.cos(angle)*d-p['wmp']/2, c[1]+math.sin(angle)*d-p['hmp']/2)
-            # OBS: the captured terminal segment carries z=61 while the plain
-            # segments omit z, which made the beam render behind platforms.
+            # WorldView draws z in descending order: lower values appear in
+            # front. Keep the warning and beam above terrain and foreground art.
             child = self.host._create(vid, pos, 0, dict(facing=round(math.degrees(angle)),
-                                                       lifetime=2000, z=61))
+                                                       lifetime=2000, z=self.fit['laser_draw_z']))
             # The birth entry point is idempotent with ActorSession._create;
             # the terminal sc.aimend has no extra animation.
             self.host.presentation.laser_segment_created(child)
@@ -769,10 +950,9 @@ class ScEnemies:
             if candidates:
                 desired = min(candidates, key=lambda p: math.dist(c, p))
         distance = math.dist(c, desired)
-        length = min(distance, self.fit['assassin_ghost_step_px']*256)
-        desired = tuple(c[i]+(desired[i]-c[i])*length/max(1., distance) for i in (0, 1))
         pos = (desired[0]-(c[0]-row['pos'][0]), desired[1]-(c[1]-row['pos'][1]))
-        duration = max(self.fit['assassin_ghost_min_step_s'], length/self.fit['assassin_ghost_speed'])
+        duration = max(self.fit['assassin_ghost_min_step_s'],
+                       (distance-self.fit['assassin_ghost_instant_px']*256)/self.fit['assassin_ghost_speed'])
         u['ghost_motion'] = dict(start=self.now, duration=duration,
                                   origin=tuple(row['pos']), end=pos)
         u['ghost_moves'] = u.get('ghost_moves', 0)+1
@@ -979,7 +1159,7 @@ class ScEnemies:
             if target is None and self.now >= u['patrol_until'] and self.now >= u['lock']:
                 u['patrol_until'] = self.now+self.fit['patrol_leg_s']
                 row = self.host.actors[oid]
-                if abs(row['pos'][0]-u['home'][0]) > self.fit['patrol_px']*256:
+                if u['vid'] != 'sc.tank' and abs(row['pos'][0]-u['home'][0]) > self.fit['patrol_px']*256:
                     u['direction'] = 1 if row['pos'][0] < u['home'][0] else -1
             if u['vid'] == 'sc.hunter':
                 self._hunter(oid, u, dt, target)
@@ -1165,6 +1345,8 @@ class ScEnemies:
                     self._assassin_burst(oid, u, attack=False)
             u.pop('slam', None)
             u.pop('dive_until', None)
+            u.pop('scout_phase', None)
+            u.pop('steer', None)
             u.pop('jump_vx', None)
             u.pop('jump_surface', None)
             # Clear native animation hitboxes and the old attack stance in the

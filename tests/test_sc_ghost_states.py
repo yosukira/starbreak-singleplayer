@@ -9,7 +9,7 @@ class GhostStateTests(unittest.TestCase):
     def scout_host():
         h = Host()
         h.add(1, 'sc.scout', (0, 0))
-        h.player_at(400, 0, key=7)
+        h.player_at(400, 300, key=7)
         h.enemies.prepare()
         return h
 
@@ -18,13 +18,16 @@ class GhostStateTests(unittest.TestCase):
         h.floor(64)
         h.advance(.2)
         self.assertEqual(h.enemies.counts['attacks'], 1)
-        self.assertEqual(h.enemies.units[1]['dive_until'], 0.)
+        self.assertEqual(h.enemies.units[1]['scout_phase'], 'retry')
+        deadline = h.enemies.units[1]['next']
         h.advance(.3)
         self.assertEqual(h.enemies.counts['attacks'], 1,
                          'Floor contact must not create an immediate attack loop')
         h.advance(.2)
-        self.assertEqual(h.enemies.counts['attacks'], 2,
-                         'A floor-blocked dive can retry in the short observed interval')
+        self.assertEqual(h.enemies.counts['attacks'], 1,
+                         'A blocked cue retries the same attempt, not a fresh attack')
+        self.assertGreater(h.enemies.units[1]['dive_retries'], 1)
+        self.assertEqual(h.enemies.units[1]['next'], deadline)
         self.assertEqual(h.actors[1]['vid'], 'sc.scout')
         self.assertEqual(h.actors[1]['hp'], 750)
 

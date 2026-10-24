@@ -217,7 +217,7 @@
   "sc.enginefireub": {
     "wmp": 8192,
     "hmp": 8192,
-    "lifetime": 509,
+    "lifetime": 4500,
     "ownertype": 2,
     "damage": 15,
     "removetype": 0,

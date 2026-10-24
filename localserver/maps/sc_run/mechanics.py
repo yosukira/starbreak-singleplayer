@@ -13,6 +13,7 @@ from ..efb_run.physics import TriangleTerrain
 from .physics import clear as geometry_clear, geometry, surface, sweep as solid_sweep
 from .mechanic_helpers import (MechanismTrack, animate, clear, distance_to_rect,
                                legal_book_sites, place, set_motion, stop)
+from .engine import ScEngine
 
 DEFAULTS = {
     # D native bodies and attack lanes; these are independent from Gen HP.
@@ -22,7 +23,7 @@ DEFAULTS = {
     'engine_spawner_birth_s': .416, 'engine_spawner_hp': 300,
     'engine_spawner_orbit_ms': 32000, 'engine_fire_lifetime_s': 4.5,
     'engine_ring_count': 10, 'engine_ring_wire_speed': 20000,
-    'engine_ring_period_ms': 400, 'engine_ring_amplitude': 20480,
+    'engine_wave_period_px': 400, 'engine_ring_amplitude': 20480,
     'tshooter_windup_s': .416,
     # FIT: observed stop-to-removetype range 7.000..7.050s. USER requires
     # both damage and this existence gate. The local damage ledger is a
@@ -31,10 +32,16 @@ DEFAULTS = {
     'wall_trigger_x_px': 160, 'wall_trigger_y_px': 640,
     'wall_fallback_drop_px': 512,
     # FIT decision/range/cadence; not a replay of either captured encounter.
-    'engine_active_radius_px': 1800, 'engine_first_action_s': 1.,
-    'engine_summon_cooldown_s': (5.10, 5.14),
-    'engine_shoot_cooldown_s': (1.02, 1.05),
-    'engine_cycle_pause_s': 3., 'engine_ring_bursts': 3,
+    # A newer recording starts with chains before its first summon. Summon
+    # participates in the same decision window, without an opening quota,
+    # HP gate or automatic five-second summon clock. Equal choice is FIT.
+    'engine_attack_modes': ('summon', 'spiral', 'wave', 'chains', 'straight'),
+    'engine_round_pause_s': (5.10, 5.14),
+    'engine_burst_interval_s': (1.02, 1.05), 'engine_ring_bursts': 3,
+    # At least five 10-shot bursts are visible before death truncates the
+    # recording. Five is the configurable local round-length fit.
+    'engine_straight_bursts': 5, 'engine_straight_interval_s': (.77, .79),
+    'engine_chain_phase_hp_fraction': .5,
     'engine_seed_flight_s': (2.35, 3.95),
     'engine_seed_radius_px': (900, 1400),
     'engine_spawner_fire_s': (1.0, 1.05),
@@ -79,7 +86,7 @@ DEFAULTS = {
 WORKERS = {'sc.libworker', 'sc.libworkerb', 'sc.libworkerr'}
 BOOKS = {'sc.book', 'sc.evilbook'}
 JUMP_HAZARDS = {'sc.peg32', 'sc.evilpeg32', 'sc.wheel128', 'sc.wheel256'}
-MECHANISMS = {'sc.enginecore', 'sc.denginecore', 'sc.engineball', 'sc.enginefireseed',
+MECHANISMS = {'sc.enginecore', 'sc.denginecore', 'sc.engineball', 'sc.enginefireseed', 'sc.enginefire', 'sc.enginefireub',
               'sc.enginespawner', 'sc.enginefire', 'sc.dropwall', 'sc.tshooter', 'sc.tshot',
               'sc.hive', 'sc.vermin', 'sc.switch', 'sc.switchdone', 'sc.core', 'sc.dcore'} | WORKERS | BOOKS | JUMP_HAZARDS
 
@@ -92,12 +99,15 @@ class ScMechanics(Ownership):
         self.config = copy.deepcopy(DEFAULTS)
         self.config.update(host.recipe.get('metadata', {}).get('mechanics', {}))
         self.config.update(getattr(host, 'mechanics_config', {}))
+        self.engine = ScEngine(self)
         self._physics_clock = None
         self.platform_deltas = {}
         self.guardian = int(host.recipe.get('metadata', {}).get('chest_guardian') or 0)
         self.guardian_row = None
         self.worker_sites = []
         self.mledge_bounds = host.recipe.get('metadata', {}).get('sc_mledge_bounds')
+        self.mledge_stream = copy.deepcopy(host.recipe.get('metadata', {}).get('sc_mledge_stream'))
+        self.mledge_stream_started = False
 
     def _range(self, key):
         value = self.config[key]
@@ -121,7 +131,17 @@ class ScMechanics(Ownership):
         # streaming their lanes once a player is inside. Park every authored
         # ledge just outside its own lane and release it on the first player.
         self.mledge_hold = {}
-        if self.mledge_bounds:
+        if self.mledge_stream:
+            # Authored stock came from an already running room. A fresh local
+            # instance starts generators at the actual two entry boundaries;
+            # it must not park that stock a full room-width away or replenish
+            # just one platform for each retirement.
+            for row in ledges:
+                oid = row['id']
+                self.retire(oid, 'INTERNAL')
+                self.tracks.pop(oid, None)
+                self.states.pop(oid, None)
+        elif self.mledge_bounds:
             stock = sorted((oid for oid, r in self.host.actors.items()
                             if r['vid'].startswith('sc.mledge')),
                            key=lambda oid: self.host.actors[oid]['pos'][0])
@@ -135,10 +155,9 @@ class ScMechanics(Ownership):
                 velocity = (movement.get('vel') or {}).get('xvel') or 0
                 if velocity:
                     direction = -1 if velocity < 0 else 1
-                # Shift the whole lane one room-width outward so it keeps its
-                # authored spacing and streams back in together.
-                span = self.mledge_bounds['right'] - self.mledge_bounds['left']
-                x = row['pos'][0] - span - width if direction > 0 else row['pos'][0] + span
+                # A custom lane without a stream profile starts at its own
+                # edge; no additional room-width delay is introduced.
+                x = self.mledge_bounds['left']-width if direction > 0 else self.mledge_bounds['right']
                 place(self.host, oid, (x, row['pos'][1]))
                 self.tracks.pop(oid, None)
                 row['props'].pop('move', None)
@@ -203,8 +222,8 @@ class ScMechanics(Ownership):
             hp = self.config['engine_hp' if vid == 'sc.enginecore' else 'gen_hp']
             row['hp'] = hp
             prop(self.host, oid, 'hitpoints', hp)
-            s.update(next=self.now+self.config['engine_first_action_s'], action=0)
             if vid == 'sc.enginecore':
+                self.engine.prepare(s)
                 # This body physically blocks passage until its own death.
                 prop(self.host, oid, 'terraintype', 1)
         elif vid == 'sc.dropwall':
@@ -268,6 +287,9 @@ class ScMechanics(Ownership):
 
     def _movement(self, oid, movement):
         set_motion(self.host, oid, movement)
+        if movement.get('relativeto'):
+            self.tracks.pop(oid, None)
+            return
         self.tracks[oid] = MechanismTrack(self.host.actors[oid]['pos'], movement, round(self.now*1000))
 
     def _bind_jump_turns(self):
@@ -302,6 +324,8 @@ class ScMechanics(Ownership):
         if clock == self._physics_clock:
             return
         self._physics_clock = clock
+        self.now = self.host.room_time
+        self._stream_ledges()
         self.platform_deltas = {}
         for oid, track in list(self.tracks.items()):
             row = self.host.actors.get(oid)
@@ -317,6 +341,7 @@ class ScMechanics(Ownership):
                 changed(self.host)
                 self.platform_deltas[oid] = (old, new, (row['props'].get('wmp', 0), row['props'].get('hmp', 0)))
         self._sync_relative_hazards(clock)
+        self._sync_engine_followers(dt)
         if not self.host.instance.flags.get('mid_cleared'):
             for oid, state in self.states.items():
                 if 'turn_rate' in state and oid in self.host.actors:
@@ -351,33 +376,36 @@ class ScMechanics(Ownership):
             return x+w/2, y+h/2
         return 0., 0.
 
-    def _engine_action(self, oid, s):
-        # FIT two summons then three radial bursts, with observed native lanes.
-        cx, cy = self._core_center(oid)
-        action = s['action']
-        if action < 2:
-            animate(self.host, oid, 2, 990, 'sc.enginesummon')
-            for _ in range(self.config['engine_seed_count']):
-                angle = self.host.rng.uniform(0, 2*math.pi)
-                speed = self.config['engine_seed_wire_speed']
-                movement = dict(vel=dict(xvel=round(math.cos(angle)*speed), yvel=round(math.sin(angle)*speed)))
-                child = self._spawn('sc.enginefireseed', (cx-8*256, cy-8*256), oid)
-                self._movement(child, movement)
-                self.states[child]['core'] = oid
-            s['next'] = self.now+self._range('engine_summon_cooldown_s')
-        else:
-            animate(self.host, oid, 1, 990, 'sc.engineshoot')
-            rotation = self.host.rng.uniform(0, 360)
-            for i in range(self.config['engine_ring_count']):
-                movement = {'sin': dict(xmp=round(cx), ymp=round(cy), vel=self.config['engine_ring_wire_speed'],
-                                        period=self.config['engine_ring_period_ms'], amp=self.config['engine_ring_amplitude'],
-                                        angle=round(rotation+i*360/self.config['engine_ring_count']))}
-                child = self._spawn('sc.enginefire', (cx-16*256, cy-16*256), oid)
-                self._movement(child, movement)
-            s['next'] = self.now+self._range('engine_shoot_cooldown_s')
-        s['action'] += 1
-        if s['action'] >= 2+self.config['engine_ring_bursts']:
-            s.update(action=0, next=self.now+self.config['engine_cycle_pause_s'])
+    def _sync_engine_followers(self, dt):
+        # Native follow uses pixel-quantized deltas and a fixed-point clamp.
+        # Resolve each chain from its moving head; preserve previous follower
+        # positions instead of resetting them to their creation point.
+        done = set()
+        def follow(oid, visiting):
+            row = self.host.actors.get(oid)
+            if row is None or oid in done or oid in visiting:
+                return
+            movement = row['props'].get('move') or {}
+            model = movement.get('follow')
+            if row['vid'] != 'sc.enginefire' or not model:
+                return
+            parent = (movement.get('relativeto') or {}).get('objid')
+            if parent not in self.host.actors:
+                return
+            follow(parent, visiting | {oid})
+            point, old = self.host.actors[parent]['pos'], row['pos']
+            dx, dy = ((int(old[i]) >> 8)-(int(point[i]) >> 8) for i in (0, 1))
+            maximum = max(0, model.get('maxdist', 0))
+            distance2 = dx*dx+dy*dy
+            if distance2 > maximum*maximum:
+                scale = (maximum << 10)//max(1, math.isqrt(distance2))
+                new = [point[0]+math.trunc(dx*scale/1024)*256,
+                       point[1]+math.trunc(dy*scale/1024)*256]
+                row['pos'] = new
+                row['vel'] = [(new[i]-old[i])/dt if dt else 0. for i in (0, 1)]
+            done.add(oid)
+        for oid in self.owned:
+            follow(oid, set())
 
     def _plant_seed(self, oid, s):
         row = self.host.actors.get(oid)
@@ -851,6 +879,47 @@ class ScMechanics(Ownership):
             self._movement(oid, movement or dict(vel=dict(xvel=round(direction*speed))))
         self.mledge_hold.clear()
 
+    def _stream_ledges(self):
+        if not self.mledge_stream or getattr(self, '_mledge_resuming', False):
+            return
+        streams = self.mledge_stream['streams']
+        if not self.mledge_stream_started:
+            if not players(self.host):
+                return
+            self.mledge_stream_started = True
+            for stream in streams:
+                stream['next'] = self.now
+        for stream in streams:
+            if self.now+1e-9 < stream['next']:
+                continue
+            self._stream_birth(stream, self.host.rng.choice(stream['joint_samples']))
+            stream['next'] = self.now+self.host.rng.choice(stream['interval_ms_pool'])/1000.
+            # Delayed frames never replay a backlog of births.
+
+    def _stream_birth(self, stream, sample, age=0.):
+        y, width, height, velocity, vid = sample
+        x = stream['spawn_xmp']-(width if stream['direction'] > 0 else 0)+velocity*age
+        edge = stream['retire_xmp']
+        if stream['direction'] > 0 and x > edge or stream['direction'] < 0 and x < edge:
+            return
+        # All sampled velocities are whole MP/ms. Re-encode them in the
+        # native fixed-point unit used by the platform's MOVE track.
+        movement = dict(vel=dict(xvel=round(velocity*256/1000)))
+        oid = self._spawn(vid, (x, y), 0, dict(wmp=width, hmp=height, z=62,
+                          facing=0 if velocity > 0 else 180, terraintype=2, move=movement))
+        self.states[oid]['stream_direction'] = stream['direction']
+
+    def _resume_ledges(self):
+        if not self.mledge_stream or not self.mledge_stream_started:
+            return
+        for stream in self.mledge_stream['streams']:
+            while stream['next'] < self.now:
+                born = stream['next']
+                self._stream_birth(stream, self.host.rng.choice(stream['joint_samples']), self.now-born)
+                stream['next'] += self.host.rng.choice(stream['interval_ms_pool'])/1000.
+        # Only surviving platforms are restored at their current positions;
+        # no old birth burst or already-retired platform is sent on re-entry.
+
     def _mledge(self, oid, s, dt):
         if oid in self.mledge_hold:
             return
@@ -862,11 +931,19 @@ class ScMechanics(Ownership):
             # No native lane supplied: explicit FIT streaming motion.
             velocity = round(direction*self.config['mledge_speed_px_s']*256*256/1000)
             self._movement(oid, dict(vel=dict(xvel=velocity)))
+        x = row['pos'][0]
+        width = row['props'].get('wmp', 0)
+        if self.mledge_stream:
+            stream = next(s for s in self.mledge_stream['streams'] if s['direction'] == direction)
+            edge = stream['retire_xmp']
+            if direction > 0 and x > edge or direction < 0 and x < edge:
+                self.retire(oid, 'INTERNAL')
+                self.tracks.pop(oid, None)
+                self.states.pop(oid, None)
+            return
         bounds = self.mledge_bounds
         if not bounds:
             return
-        x = row['pos'][0]
-        width = row['props'].get('wmp', 0)
         if direction > 0 and x > bounds['right'] or direction < 0 and x+width < bounds['left']:
             # Captured platforms stream in/out; they do not bounce. Replenish
             # the same native speed/height lane, with a new object identity.
@@ -889,7 +966,9 @@ class ScMechanics(Ownership):
         minimum existence deadlines age; there is no catch-up projectile burst.
         """
         self.now = self.host.room_time
+        self._mledge_resuming = True
         self.pre_physics(0.)
+        self._mledge_resuming = False
         for oid, s in list(self.states.items()):
             row = self.host.actors.get(oid)
             if row is None:
@@ -921,7 +1000,7 @@ class ScMechanics(Ownership):
                 if s['phase'] == 'settled':
                     self._wall(oid, s, 0., None)
             elif vid == 'sc.enginecore':
-                s['next'] = self.now+self._range('engine_summon_cooldown_s')
+                self.engine.resume(s)
             elif vid == 'sc.enginespawner':
                 s['next'] = self.now+self._range('engine_spawner_fire_s')
             elif vid == 'sc.tshooter':
@@ -946,6 +1025,8 @@ class ScMechanics(Ownership):
                 self._mledge(oid, s, 0.)
         self._sync_carried_books()
 
+        self._resume_ledges()
+
     def step(self, dt):
         self.now = self.host.room_time
         self.pre_physics(dt)
@@ -958,8 +1039,8 @@ class ScMechanics(Ownership):
             vid = s['vid']
             target = nearest(self.host, (row['pos'][0]+row['props'].get('wmp', 0)/2,
                                          row['pos'][1]+row['props'].get('hmp', 0)/2))
-            if vid == 'sc.enginecore' and row['vid'] == vid and self.now >= s['next'] and target and distance_to_rect(center(target), rect(row)) <= self.config['engine_active_radius_px']*256:
-                self._engine_action(oid, s)
+            if vid == 'sc.enginecore' and row['vid'] == vid:
+                self.engine.step(oid, s)
             elif vid == 'sc.enginefireseed' and self.now >= s['plant_at']:
                 self._plant_seed(oid, s)
             elif vid == 'sc.enginespawner':
@@ -1067,12 +1148,15 @@ class ScMechanics(Ownership):
             if row.get('hp') is None or row['props'].get('invulnerable'):
                 return True
             value = max(0, int(event.get('value', 0)))
+            before = row['hp']
             if row['vid'] == 'sc.dropwall':
                 row['hp'] -= value
                 self.states[oid]['damage'] += value
             else:
                 row['hp'] = max(0, row['hp']-value)
             prop(self.host, oid, 'hitpoints', row['hp'])
+            if row['vid'] == 'sc.enginecore':
+                self.engine.damage(self.states[oid], before, row['hp'])
             if row['hp'] <= 0:
                 self._killed(oid)
         elif kind == 'destroy':
@@ -1097,7 +1181,7 @@ class ScMechanics(Ownership):
         row = self.host.actors.get(oid)
         if row and row['vid'] == 'sc.enginefireseed':
             self._plant_seed(oid, self.states[oid])
-        elif row and row['vid'] == 'sc.enginefire':
+        elif row and row['vid'] in ('sc.enginefire', 'sc.enginefireub'):
             self.retire(oid, 'LIFETIME')
         else:
             # Native mechanism bodies have no local fabricated timeout.

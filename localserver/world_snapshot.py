@@ -288,6 +288,10 @@ class WorldSnapshot:
                     waypoint['points_']=remaining
             elif 'elliptical_' in movement:
                 e=movement['elliptical_'];e['pos_']=e.get('pos_',0)+elapsed
+                if e.get('ravel_',0) or e.get('rbvel_',0):
+                    a=e.get('radiusamp_',0);b=e.get('radiusbmp_',a)
+                    e['radiusamp_']=round(a+e.get('ravel_',0)*elapsed)
+                    e['radiusbmp_']=round(b+e.get('rbvel_',0)*elapsed)
             elif 'sin_' in movement:movement['sin_']['pos_']=movement['sin_'].get('pos_',0)+elapsed
         return props
 

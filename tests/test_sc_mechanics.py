@@ -37,6 +37,8 @@ class Host:
             'sc.enginespawner': body('sc.enginespawner', ownertype=2),
             'sc.enginefireseed': body('sc.enginefireseed', w=16, h=16, lifetime=5000),
             'sc.enginefire': body('sc.enginefire', w=32, h=32, lifetime=4500, damage=15),
+            'sc.enginefireub': body('sc.enginefireub', w=32, h=32, lifetime=4500,
+                                    ownertype=2, damage=15, removetype=0, rotate=True),
             'sc.tshot': body('sc.tshot', w=128, h=128, hitpoints=1000, damage=30, blocktype=2, terraintype=1),
             'sc.vermin': body('sc.vermin', w=48, h=48, hitpoints=100, damage=20),
             'sc.mledge64': body('sc.mledge64', w=64, h=96, terraintype=2),

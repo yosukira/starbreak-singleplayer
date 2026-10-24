@@ -16,9 +16,23 @@ class ScContent:
         self.dynamic_template_variants = (json.loads(path.read_text(encoding='utf8'))
                                           if path.exists() else {})
         self.dynamic_variants = self.dynamic_template_variants
+        streams = self._read('mledge-stream.json') if 'scmid01' in self.manifest['templates'] else None
         self.templates = {}
         for descriptor, files in self.manifest['templates'].items():
             self.templates[descriptor] = [self._recipe(self._read(file)) for file in files]
+            if descriptor == 'scmid01' and streams:
+                for recipe in self.templates[descriptor]:
+                    recipe.setdefault('metadata', {})['sc_mledge_stream'] = copy.deepcopy(streams)
+                    # The source snapshot was already streaming. Fresh entry
+                    # must be empty in CreateWorld itself, not show resident
+                    # platforms for one frame before a runtime destroy delta.
+                    resident = {oid for oid, props in recipe['objects'].items()
+                                if props.get('vid', '').startswith('sc.mledge')}
+                    for oid in resident:
+                        recipe['objects'].pop(oid)
+                        recipe['creators'].pop(oid, None)
+                    server = recipe['world']['worldstate_']['serverworld_']
+                    server['obj_'] = [row for row in server.get('obj_', []) if row['objid_'] not in resident]
         for alias, descriptor in self.manifest.get('aliases', {}).items():
             self.templates[alias] = self.templates[descriptor]
 

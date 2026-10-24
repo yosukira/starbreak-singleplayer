@@ -4766,37 +4766,7 @@
     {
       "wmp": 8192,
       "hmp": 8192,
-      "lifetime": 509,
-      "ownertype": 2,
-      "damage": 15,
-      "removetype": 0,
-      "vid": "sc.enginefireub",
-      "rotate": true
-    },
-    {
-      "wmp": 8192,
-      "hmp": 8192,
-      "lifetime": 1310,
-      "ownertype": 2,
-      "damage": 15,
-      "removetype": 0,
-      "vid": "sc.enginefireub",
-      "rotate": true
-    },
-    {
-      "wmp": 8192,
-      "hmp": 8192,
-      "lifetime": 2079,
-      "ownertype": 2,
-      "damage": 15,
-      "removetype": 0,
-      "vid": "sc.enginefireub",
-      "rotate": true
-    },
-    {
-      "wmp": 8192,
-      "hmp": 8192,
-      "lifetime": 2831,
+      "lifetime": 4500,
       "ownertype": 2,
       "damage": 15,
       "removetype": 0,

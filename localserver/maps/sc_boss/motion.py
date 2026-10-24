@@ -30,6 +30,8 @@ def translate(value, dx=0, dy=0):
                 else translate(v,dx,dy)) for k,v in value.items()}
 
 def axis(origin, velocity, accel, minimum, maximum, ms):
+    if not accel:
+        return origin+(int(velocity) >> 8)*ms
     end=velocity+accel*ms
     limit = minimum if end < minimum else maximum if end > maximum else None
     if limit is not None and accel:
@@ -55,10 +57,15 @@ class NativeMotion:
             e=m['elliptical']
             radians=(ms+e.get('pos',0))*2*math.pi/max(1,e.get('period',10000))
             angle=math.radians(e.get('angle',0))
-            a=e.get('radiusamp',0)*math.cos(radians)
+            radius_a=e.get('radiusamp',0)+e.get('ravel',0)*ms
+            a=radius_a*math.cos(radians)
             # The native evaluator defaults the second radius to the first;
             # an explicitly present zero still describes a straight segment.
-            b=e.get('radiusbmp',e.get('radiusamp',0))*math.sin(radians)
+            # Radius growth is MP/ms and starts at birth. Angular pos advances
+            # the phase only; including it in growth launches a new spiral
+            # thousands of pixels away from its original zero-radius socket.
+            radius_b=e.get('radiusbmp',e.get('radiusamp',0))+e.get('rbvel',0)*ms
+            b=radius_b*math.sin(radians)
             return (e.get('xmp',x)+a*math.cos(angle)-b*math.sin(angle),
                     e.get('ymp',y)+a*math.sin(angle)+b*math.cos(angle))
         waypoint=m.get('waypoint') or {}

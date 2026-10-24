@@ -83,6 +83,9 @@ def normalize_missile_delays(document):
     return result
 
 def missile_delay_ms(map_id, document=None):
+    # The full Graveyard run uses the same setting as its standalone rooms.
+    if map_id == 'egy_run':
+        map_id = 'hulk_normal'
     if map_id not in MISSILE_DELAY_MAPS:
         return 0
     data = document if isinstance(document, dict) else load()

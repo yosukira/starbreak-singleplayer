@@ -509,6 +509,7 @@ class ScRunTests(unittest.TestCase):
         run, clock = self.make_run()
         wrapper, server = self.open_room(run, 'engine')
         runtime = wrapper.current
+        runtime.mechanics.config['engine_attack_modes'] = ['summon']
         core = next(oid for oid, row in runtime.actors.items() if row['vid'] == 'sc.enginecore')
         row = runtime.actors[core]
         self.feedback(wrapper, (row['pos'][0]-100*256, row['pos'][1]))
@@ -593,7 +594,8 @@ class ScRunTests(unittest.TestCase):
         clock.advance(120.)
         revisit, _ = self.open_room(run, role, server)
         after = {oid for oid, row in runtime.actors.items() if row['vid'].startswith('sc.mledge')}
-        self.assertEqual(len(after), len(before))
+        self.assertGreater(len(after), len(before))
+        self.assertLess(len(after), 130, 'Independent generators restore surviving stock only')
         self.assertTrue(after-before, 'Exercise real stream-out replacement while the room is absent')
         self.assertIs(revisit.current, runtime)
         for oid in after-before:

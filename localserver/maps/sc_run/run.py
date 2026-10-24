@@ -6,10 +6,10 @@ from ..run_common.run import LevelRun
 class ScLevelRun(LevelRun):
     INITIAL_SECONDS=24*60
     GEN_BONUS_SECONDS=120
-    # The recorded ramp has 20 shakes (2..40), one per roughly one second.
-    # The exact announcement onset is not retained in that recorder's MT20
-    # stream; this small transition lead-in is a local timing fit.
-    COLLAPSE_SECONDS=22.
+    # Oct23 second recording: Gen4 Offline + Firing Sequence Cancelled at
+    # 595.640/595.643s; Boss CreateWorld at 619.573s (23.930s after notice).
+    # Round to 24s as a local transition fit, including network/load latency.
+    COLLAPSE_SECONDS=24.
 
     def __init__(self,pack,seed=None,clock=None):
         super().__init__(pack,seed)

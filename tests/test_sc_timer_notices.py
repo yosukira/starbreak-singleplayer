@@ -35,11 +35,12 @@ class ScTimerNoticeTests(unittest.TestCase):
         self.clock.advance(31.5)
         self.run.mark_gen(0)
         wrapper.step(.01)
-        self.assertEqual(len(self.notices(server)), 1)
+        self.assertEqual(self.notices(server)[-1]['message_'], 'Gen1 Offline')
         self.clock.advance(28.5)
         wrapper.step(.01)
         self.assertEqual([n['message_'] for n in self.notices(server)], [
             'Firing Sequence Completes in 23 Minutes',
+            'Gen1 Offline',
             'Firing Sequence Completes in 24 Minutes'])
 
     def test_room_handoff_keeps_notice_history_and_skips_missed_minutes(self):
@@ -78,6 +79,23 @@ class ScTimerNoticeTests(unittest.TestCase):
         self.clock.advance(1)
         self.assertIsNone(self.run.timer_notice())
         self.assertEqual(self.run._timer_notice_boundary, 1)
+
+    def test_gen4_uses_native_cancellation_notice_once_before_24_second_warp(self):
+        wrapper, server = self.fixture.open_room(self.run, 'entry')
+        for index in range(4):
+            self.run.mark_gen(index)
+            wrapper.step(.01)
+        notices = self.notices(server)
+        self.assertEqual([n['message_'] for n in notices],
+                         ['Gen1 Offline', 'Gen2 Offline', 'Gen3 Offline',
+                          'Gen4 Offline', 'Firing Sequence Cancelled'])
+        self.assertTrue(all(n['chattype_'] == 5 for n in notices))
+        wrapper.step(.01)
+        self.assertEqual(len(self.notices(server)), 5)
+        self.clock.advance(23.9)
+        self.assertFalse(self.run.boss_due())
+        self.clock.advance(.1)
+        self.assertTrue(self.run.boss_due())
 
 
 if __name__ == '__main__':

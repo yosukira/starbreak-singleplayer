@@ -29,7 +29,7 @@ class ScRunLiveSession(RunLiveSession):
     # its shots hanging in mid air for the next visit.
     TRANSIENT = ('sc.aim', 'sc.aimend', 'sc.sliver', 'sc.sliverx', 'sc.burst',
                  'sc.shard', 'sc.golemb', 'sc.golemw', 'sc.wraith', 'sc.enginefire',
-                 'sc.enginefireseed')
+                 'sc.enginefireseed', 'sc.enginefireub')
 
     @classmethod
     def _clear_transients(cls, instance):
@@ -186,6 +186,10 @@ class ScRunLiveSession(RunLiveSession):
         if not self._ready:return
         run=self.run
         run.observe(self.instance)
+        announced=getattr(run,'_announced_gen_count',0)
+        for count in range(announced+1,len(run.gens)+1):
+            self._notice('Gen%d Offline' % count,chattype=5)
+        run._announced_gen_count=len(run.gens)
         minutes=run.timer_notice()
         if minutes is not None:
             self._notice('Firing Sequence Completes in %d Minutes' % minutes,chattype=5)
@@ -201,8 +205,7 @@ class ScRunLiveSession(RunLiveSession):
         age=run.collapse_age()
         if age is not None and not run.boss_entered:
             if not getattr(run,'_announced',False):
-                self._notice('All four generators have been destroyed.')
-                self._notice('Star Cathedral is collapsing!',red=True)
+                self._notice('Firing Sequence Cancelled',chattype=5)
                 run._announced=True
             level=min(20,int(age))
             previous=getattr(run,'_shake_level',0)
