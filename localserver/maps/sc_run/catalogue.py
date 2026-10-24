@@ -36,6 +36,10 @@ class ScContent:
         for alias, descriptor in self.manifest.get('aliases', {}).items():
             self.templates[alias] = self.templates[descriptor]
         self.generator = None
+        self.monk_population = None
+        if generate and 'scmid04' in self.templates:
+            from .monks import MonkPopulation
+            self.monk_population = MonkPopulation(self.templates['scmid04'])
         if generate and (self.root/'modules/pool.json').is_file():
             from .generator import ScRoomGenerator
             self.generator = ScRoomGenerator(self.root)
@@ -70,7 +74,8 @@ class ScContent:
         recipe = copy.deepcopy(variants[int(seed) % len(variants)])
         # Room geometry is rolled before the level graph connects its doors.
         # A persistent run then caches this complete instance across visits.
-        return self.generator.generate(recipe, seed) if self.generator is not None else recipe
+        recipe = self.generator.generate(recipe, seed) if self.generator is not None else recipe
+        return self.monk_population.populate(recipe, seed) if self.monk_population is not None else recipe
 
     def props(self, vid):
         return copy.deepcopy(self.dynamic_templates[vid])

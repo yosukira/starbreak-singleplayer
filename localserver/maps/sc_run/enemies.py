@@ -79,10 +79,11 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # from the number of movement legs seen in a recording.
     assassin_visible_s=1.5, assassin_initial_wait_s=.1,
     assassin_ghost_wait_s=.325, assassin_pause_s=.78,
-    # FIT to 65 checked new-recording legs: distance ~= 400px + 1284px/s*t.
-    # The instantaneous spatial component is not a constant-speed movement.
-    assassin_ghost_speed=1284.4*256, assassin_ghost_instant_px=400.,
-    assassin_ghost_min_step_s=.008, assassin_manifest_px=160.,
+    # FIT: full-distance motion near the checked legs' ~2242px/s median.
+    # A 264ms minimum keeps short legs visible; the isolated native400px/8ms
+    # leg does not make every close-range displacement instantaneous.
+    assassin_ghost_speed=2200.*256, assassin_ghost_min_step_s=.264,
+    assassin_manifest_px=160.,
     # FIT selection policy. Capture frequencies do not establish spawn odds.
     ghost_form_weights={'sc.titan': 15., 'sc.scout': 33.5, 'sc.bomber': 33.5,
                         'sc.sniper': 33.5, 'sc.assassin': 33.5},
@@ -95,10 +96,10 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # Preparation starts only with an eligible target; it commits that aim.
     # Optional interval remains a minimum override, not the old 16s timer.
     monk_interval_s=0., monk_prepare_s=4., monk_refill_s=1.92, monk_orb_interval_s=.25,
-    # Three long tracks remain in a translated ~413x417px area. The authored
-    # local birth point anchors this 420px box; it is not a recovered home
-    # from an arbitrary already-active capture snapshot.
-    monk_patrol_span_px=210., monk_acceleration=160000., monk_patrol_leg_s=2.5,
+    # FIT: 14 long native tracks share this translated polar rose (~.4px
+    # endpoint RMSE). A moving CreateWorld point does not reveal its centre.
+    # Fresh local anchors start continuously at radius zero; heading is seeded.
+    monk_radius_bias_px=10., monk_radius_px=200., monk_radial_rate=1., monk_angular_rate=10./7.,
     monk_mode_choices=('sequential', 'radial', 'focused'),
     # OBS: a captured warning line is 13 segments of 64px (~832px).
     laser_segment_px=32., laser_range_px=1600., laser_max_segments=50, laser_draw_z=-128,
@@ -896,28 +897,21 @@ class ScEnemies:
                  dive_until=0., vy=min(0., u['vy']))
 
     def _monk_fly(self, oid, u, dt):
+        from .monks import position
         row = self.host.actors[oid]
-        span = self.fit['monk_patrol_span_px']*256
-        goal = u.get('patrol_goal')
-        if goal is None or self.now >= u.get('patrol_goal_until', 0.) or math.dist(row['pos'], goal) < 20*256:
-            goal = tuple(v+self.host.rng.uniform(-span, span) for v in u['home'])
-            u.update(patrol_goal=goal, patrol_goal_until=self.now+self.fit['monk_patrol_leg_s'])
-        delta = tuple(goal[i]-row['pos'][i] for i in (0, 1))
-        distance = math.hypot(*delta)
-        speed = min(self.policy('sc.monk')['speed'], distance*3.)
-        desired = tuple(v/max(1., distance)*speed for v in delta)
-        change = (desired[0]-u['vx'], desired[1]-u['vy'])
-        scale = min(1., self.fit['monk_acceleration']*dt/max(1., math.hypot(*change)))
-        u['vx'] += change[0]*scale
-        u['vy'] += change[1]*scale
-        end, hit = flight(self.terrain, row, (u['vx'], u['vy']), dt)
-        end = list(end)
-        for i, axis in enumerate(('vx', 'vy')):
-            bound = max(u['home'][i]-span, min(u['home'][i]+span, end[i]))
-            if bound != end[i] or hit:
-                u[axis] *= -.3
-                u.pop('patrol_goal', None)
-            end[i] = bound
+        if 'monk_motion_epoch' not in u:
+            u.update(monk_motion_epoch=self.now-max(0., dt),
+                     monk_motion_heading=self.host.rng.uniform(0., 2*math.pi))
+        end = position(u['home'], self.now-u['monk_motion_epoch'], u['monk_motion_heading'],
+                       bias=self.fit['monk_radius_bias_px'], radius=self.fit['monk_radius_px'],
+                       radial_rate=self.fit['monk_radial_rate'], angular_rate=self.fit['monk_angular_rate'])
+        if dt <= 0:
+            if clear(self.host, (*end, row['props'].get('wmp', 0), row['props'].get('hmp', 0)), (oid,)):
+                place(self.host, oid, end)
+            return
+        velocity = tuple((end[i]-row['pos'][i])/dt for i in (0, 1))
+        end, _ = flight(self.terrain, row, velocity, dt)
+        u['vx'], u['vy'] = ((end[i]-row['pos'][i])/dt for i in (0, 1))
         if abs(u['vx']) > 1000.:
             u['direction'] = 1 if u['vx'] > 0 else -1
         move(self.host, oid, end, dt, 2 if u['vy'] < 0 else 3,
@@ -1059,8 +1053,12 @@ class ScEnemies:
     def _assassin_ghost(self, oid, u):
         row = self.host.actors[oid]
         u['saved_hp'] = row['hp']
+        # The departure cue uses the wire frame's start, not its already
+        # advanced simulation end. Freeze any previous corporeal movement.
+        started = self.host._frame_start if getattr(self.host, '_in_step', False) else self.now
+        stop_motion(self.host, oid)
         u.update(active=True, phase='ghost', ghost_moves=0,
-                 ghost_at=self.now+self.fit['assassin_ghost_wait_s'], ghost_motion=None,
+                 ghost_at=started+self.fit['assassin_ghost_wait_s'], ghost_motion=None,
                  next=math.inf, busy=0., lock=0., vx=0., vy=0.)
         prop(self.host, oid, 'vid', 'sc.eassassin')
         prop(self.host, oid, 'damage', 0)
@@ -1085,9 +1083,15 @@ class ScEnemies:
         if motion:
             f = min(1., (self.now-motion['start'])/motion['duration'])
             point = tuple(motion['origin'][i]+(motion['end'][i]-motion['origin'][i])*f for i in (0, 1))
-            move(self.host, oid, point, dt, facing=0 if motion['end'][0] >= motion['origin'][0] else 180)
+            # One native MOVE_TO owns the whole visible leg. Per-frame
+            # endpoint corrections would replace that client interpolation.
+            old = row['pos']
+            row['pos'] = list(point)
+            row['vel'] = [(point[i]-old[i])/dt if dt else 0. for i in (0, 1)]
             if f >= 1:
-                u.update(ghost_motion=None, ghost_at=self.now+self.fit['assassin_pause_s'])
+                row['vel'] = [0., 0.]
+                u.update(ghost_motion=None,
+                         ghost_at=motion['start']+motion['duration']+self.fit['assassin_pause_s'])
             return
         if self.now < u['ghost_at']:
             return
@@ -1114,14 +1118,27 @@ class ScEnemies:
                 desired = min(candidates, key=lambda p: math.dist(c, p))
         distance = math.dist(c, desired)
         pos = (desired[0]-(c[0]-row['pos'][0]), desired[1]-(c[1]-row['pos'][1]))
-        duration = max(self.fit['assassin_ghost_min_step_s'],
-                       (distance-self.fit['assassin_ghost_instant_px']*256)/self.fit['assassin_ghost_speed'])
-        u['ghost_motion'] = dict(start=self.now, duration=duration,
+        duration_ms = max(1, round(1000*max(self.fit['assassin_ghost_min_step_s'],
+                                           distance/self.fit['assassin_ghost_speed'])))
+        pos = tuple(round(v) for v in pos)
+        u['ghost_motion'] = dict(start=self.now, duration=duration_ms/1000.,
                                   origin=tuple(row['pos']), end=pos)
+        row['props']['move'] = dict(to=dict(xmp=pos[0], ymp=pos[1], dt=duration_ms))
+        # This decision runs after the host advanced room_time. Start both
+        # mirrors on the end boundary, without giving the client an extra tick.
+        offset = self.host._slice_ms if getattr(self.host, '_in_step', False) else self.host._offset()
+        self.host.batch.modify(oid, 'MOVE_TO', message=('Linear', dict(
+            xmp_=pos[0], ymp_=pos[1], dt_=duration_ms)), offset=offset)
+        facing = 0 if pos[0] >= row['pos'][0] else 180
+        if row['props'].get('facing') != facing:
+            row['props']['facing'] = facing
+            self.host.batch.modify(oid, 'FACING', intval=facing, offset=offset)
         u['ghost_moves'] = u.get('ghost_moves', 0)+1
 
     def _assassin_burst(self, oid, u, *, attack=True):
         row = self.host.actors[oid]
+        stop_motion(self.host, oid)
+        u['ghost_motion'] = None
         prop(self.host, oid, 'vid', 'sc.assassin')
         row['hp'] = u['saved_hp']
         for name, value in (('damage', 35), ('hitpoints', row['hp']), ('ownertype', 2), ('blocktype', 1)):
@@ -1589,6 +1606,10 @@ class ScEnemies:
             prop(self.host, oid, 'animprops', None)
             pose = (5 if u.get('grounded') else 1) if u['vid'] in GROUND else 3 if u['vid'] == 'sc.flytank' else 2
             prop(self.host, oid, 'pose', pose)
+            if u['vid'] == 'sc.monk' and 'monk_motion_epoch' in u:
+                # Commit the parent's current room-clock phase before orbit
+                # children and the reconnect CreateWorld snapshot are rebuilt.
+                self._monk_fly(oid, u, 0.)
             stop_motion(self.host, oid)
         for oid, shot in list(self.projectiles.shots.items()):
             self.projectiles.expire_due(oid)

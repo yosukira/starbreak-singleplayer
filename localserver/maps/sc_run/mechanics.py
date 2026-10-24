@@ -5,6 +5,7 @@ are local policies where captures do not establish a retail decision rule.
 They are adjustable through recipe.metadata.mechanics / host.mechanics_config.
 """
 import copy
+import heapq
 import math
 from collections import Counter
 
@@ -86,8 +87,15 @@ DEFAULTS = {
     'vermin_aggro_px': 900, 'vermin_release_px': 1400,
     # USER: a vermin chases for a while, gives up, and only re-acquires later;
     # these windows/scan rules are not broadcast in the observed motion.
-    'vermin_chase_s': (2.5, 5.), 'vermin_reaggro_s': (3., 7.), 'vermin_aim_s': (.3, .7), 'vermin_hop_s': (2.5, 6.),
+    'vermin_chase_s': (2.5, 5.), 'vermin_reaggro_s': (3., 7.), 'vermin_hop_s': (2.5, 6.),
     'vermin_climb_px': 48, 'vermin_climb_jump_px_s': 750,
+    # OBS: a short airborne rush uses signed +/-40000 >> 8 and returns to
+    # ordinary walking after about .655s. AIR is the native presentation;
+    # there is no separate attack animation in the vermin resource.
+    # FIT: forward attack window and recovery, not a recovered target ID.
+    'vermin_lunge_speed_px_s': 40000*1000/256/256, 'vermin_lunge_s': .66,
+    'vermin_lunge_x_px': 320, 'vermin_lunge_y_px': 256,
+    'vermin_lunge_cooldown_s': (1.3, 2.5),
 }
 
 WORKERS = {'sc.libworker', 'sc.libworkerb', 'sc.libworkerr'}
@@ -183,17 +191,11 @@ class ScMechanics(Ownership):
             if row is None:
                 continue
             w, h = row['props'].get('wmp', 0), row['props'].get('hmp', 0)
-            if geometry_clear(self.host, (row['pos'][0], row['pos'][1], w, h), (oid,)):
-                continue
-            for dx in (0, -16*256, 16*256, -32*256, 32*256, 0, 0):
-                for dy in (0, 0, 0, 0, 0, -16*256, 16*256):
-                    if geometry_clear(self.host, (row['pos'][0]+dx, row['pos'][1]+dy, w, h), (oid,)):
-                        place(self.host, oid, (row['pos'][0]+dx, row['pos'][1]+dy))
-                        state['body'].update(x=row['pos'][0], y=row['pos'][1])
-                        break
-                else:
-                    continue
-                break
+            point = self._vermin_opening(tuple(row['pos']), (w, h), (oid,))
+            if point is not None and point != tuple(row['pos']):
+                place(self.host, oid, point)
+                state['body'].update(x=row['pos'][0], y=row['pos'][1],
+                                     vy=0., grounded=False, support=None)
         # A carried book is a separate terrain entity, with a real carrier ID.
         for oid, state in self.states.items():
             if state['vid'] not in BOOKS:
@@ -280,10 +282,12 @@ class ScMechanics(Ownership):
             s.update(next=self.now+self._range('hive_first_s'), children=set())
         elif vid == 'sc.vermin':
             x, y, w, h = rect(row)
-            # USER: a vermin walks its own ledge while idle; acquisition turns
-            # it toward the player and lets it cross ledges vertically.
+            # USER: direction changes only at a wall, including during chase.
+            self.tracks.pop(oid, None)
+            stop(self.host, oid)
             s.update(body=dict(x=x, y=y, w=w, h=h, vy=0., grounded=False),
                      next_jump=self.now+self._range('vermin_jump_cooldown_s'),
+                     next_attack=self.now,
                      aggro=False, direction=-1 if row['props'].get('facing') == 180 else 1,
                      next_hop=self.now+self._range('vermin_hop_s'))
         elif vid.startswith('sc.mledge') and not movement:
@@ -728,6 +732,31 @@ class ScMechanics(Ownership):
         set_motion(self.host, oid, dict(to=dict(xmp=round(s['destination'][0]), ymp=round(s['destination'][1]),
                                               dt=duration, start=dict(xmp=round(row['pos'][0]), ymp=round(row['pos'][1])))))
 
+    def _vermin_opening(self, point, size, ignore=(), limit=None):
+        """Nearest clear wall-face candidate, with optional hive-local bounds."""
+        terrain = geometry(self.host)
+        bounds = {sid: r for sid, r, kind, shape in terrain if kind == 1}
+        supported = any(sid not in ignore
+                        and (top := surface(r, shape, point[0], size[0])) is not None
+                        and abs(top-point[1]-size[1]) <= 1
+                        for sid, r, kind, shape in terrain)
+        queue, visited = [(0., *point)], {point}
+        while queue:
+            _, x, y = heapq.heappop(queue)
+            hit = solid_sweep(terrain, (x, y), (x, y), size, ignore)
+            if hit is None:
+                return x, y
+            bx, by, bw, bh = bounds[hit[1]]
+            for candidate in ((bx-size[0], y), (bx+bw, y),
+                              (x, by-size[1]), (x, by+bh)):
+                dx, dy = candidate[0]-point[0], candidate[1]-point[1]
+                if (candidate in visited or supported and dy > 1
+                        or limit and (abs(dx) > limit[0] or abs(dy) > limit[1])):
+                    continue
+                visited.add(candidate)
+                heapq.heappush(queue, (dx*dx+dy*dy, *candidate))
+        return None
+
     def _hive(self, oid, s, target):
         s['children'].intersection_update(self.host.actors)
         if self.now < s['next'] or len(s['children']) >= self.config['hive_max_children'] or target is None:
@@ -740,15 +769,7 @@ class ScMechanics(Ownership):
         # USER: a vermin must never be born inside a wall; try nearby openings
         # and wait for the next cycle when there is none.
         size = (48*256, 48*256)
-        point = None
-        for dx in (0, -32*256, 32*256, -64*256, 64*256):
-            for dy in (0, -32*256, 32*256):
-                candidate = (base[0]+dx, base[1]+dy)
-                if geometry_clear(self.host, (candidate[0], candidate[1], size[0], size[1]), (oid,)):
-                    point = candidate
-                    break
-            if point:
-                break
+        point = self._vermin_opening(base, size, (oid,), (64*256, 32*256))
         if point is None:
             s['next'] = self.now+self._range('hive_spawn_s')
             return
@@ -819,31 +840,23 @@ class ScMechanics(Ownership):
               and self.now >= s.get('reaggro_at', 0.)):
             s['aggro'] = True
             s['aggro_until'] = self.now+self._range('vermin_chase_s')
-            s['direction'] = -1 if px < cx else 1
-        if not s['aggro'] and b.get('blocked'):
-            s['direction'] *= -1
-        speed_key = 'vermin_speed_px_s' if s['aggro'] else 'vermin_patrol_speed_px_s'
+        rushing = self.now < s.get('attack_until', 0.)
+        speed_key = ('vermin_lunge_speed_px_s' if rushing else
+                     'vermin_speed_px_s' if s['aggro'] else 'vermin_patrol_speed_px_s')
         wire_speed = round(self.config[speed_key]*256*256/1000)
-        vx = 0.
-        if s['aggro'] and px is not None:
-            # USER: pick a direction, commit to it for a while, then re-aim.
-            if self.now >= s.get('aim_at', 0.):
-                s['direction'] = -1 if px < cx else 1
-                s['aim_at'] = self.now+self._range('vermin_aim_s')
-            if abs(px-cx) > 8*256:
-                vx = (s['direction']*wire_speed >> 8)*1000
-        elif not s['aggro']:
-            vx = (s['direction']*wire_speed >> 8)*1000
+        vx = (s['direction']*wire_speed >> 8)*1000
+        if s['aggro'] and px is not None and not rushing and abs(px-cx) <= 8*256:
+            vx = 0.
         climbing = bool(s['aggro'] and py is not None and py < b['y']-self.config['vermin_climb_px']*256)
         descending = bool(s['aggro'] and py is not None and py > cy+self.config['vermin_climb_px']*256)
         if b.get('grounded'):
             s.pop('air_vx', None)
             route = None
-            if s['aggro'] and self.now >= s['next_jump'] and (climbing or descending):
+            if not rushing and s['aggro'] and self.now >= s['next_jump'] and (climbing or descending):
                 desired = 'up' if climbing else 'down'
                 choices = [r for r in self._vermin_routes(oid, b) if r['action'] == desired]
                 route = choices[0] if choices else None
-            elif not s['aggro'] and self.now >= s['next_hop']:
+            elif not rushing and not s['aggro'] and self.now >= s['next_hop']:
                 choices = self._vermin_routes(oid, b)
                 route = self.host.rng.choice(choices) if choices else None
                 s['next_hop'] = self.now+self._range('vermin_hop_s')
@@ -855,6 +868,16 @@ class ScMechanics(Ownership):
                     b['y'] += 1
                     place(self.host, oid, (b['x'], b['y']))
                 s['next_jump'] = self.now+self._range('vermin_jump_cooldown_s')
+            elif (not rushing and s['aggro'] and px is not None
+                  and self.now >= s['next_attack']
+                  and 8*256 < (px-cx)*s['direction'] <= self.config['vermin_lunge_x_px']*256
+                  and abs(py-cy) <= self.config['vermin_lunge_y_px']*256):
+                speed = self.config['vermin_lunge_speed_px_s']*256*256/1000
+                s['air_vx'] = vx = (s['direction']*round(speed) >> 8)*1000
+                b.update(vy=-self.config['vermin_jump_px_s']*256, grounded=False)
+                s['attack_until'] = self.now+self.config['vermin_lunge_s']
+                s['next_attack'] = s['attack_until']+self._range('vermin_lunge_cooldown_s')
+                self.host.record('sc_vermin_lunge', actor=oid)
         elif 'air_vx' in s:
             vx = s['air_vx']
         drop_support = b.get('drop_support')
@@ -869,6 +892,12 @@ class ScMechanics(Ownership):
                 terrain.surfaces = [r for r in terrain.surfaces if r[0] != drop_support]
                 terrain.triangles = [r for r in terrain.triangles if r[0] != drop_support]
         terrain.step(b, dt, vx, self.config['vermin_gravity_px_s2']*256)
+        if b.get('blocked') and vx:
+            # React to this step's actual contact, once, for either AI state.
+            s['direction'] *= -1
+            if s.get('air_vx'):
+                speed = round(self.config['vermin_lunge_speed_px_s']*256*256/1000)
+                s['air_vx'] = (s['direction']*speed >> 8)*1000
         move(self.host, oid, (b['x'], b['y']), dt,
              pose=(5 if vx else 4) if b.get('grounded') else 3 if b['vy'] < 0 else 1,
              facing=180 if s['direction'] < 0 else 0)

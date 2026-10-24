@@ -51,6 +51,8 @@ class MonkOrbitTests(unittest.TestCase):
         old = [h.actors[oid]['pos'][0]-parent[0]-5120, h.actors[oid]['pos'][1]-parent[1]-9216]
         h.room_time += .5
         h.enemies.resume(.5)
+        # The parent follows its own room-clock curve while absent as well.
+        parent = list(h.actors[1]['pos'])
         point = h.actors[oid]['pos']
         self.assertAlmostEqual(point[0], parent[0]+5120-old[1], delta=1)
         self.assertAlmostEqual(point[1], parent[1]+9216+old[0], delta=1)

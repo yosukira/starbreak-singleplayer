@@ -88,7 +88,7 @@ class ScProjectileRegressionTests(unittest.TestCase):
         self.assertNotIn(shot, h.actors)
         self.assertEqual(h.retired[shot], 'INTERNAL')
 
-    def test_wraith_can_leave_source_wall_but_expires_at_the_next_wall(self):
+    def test_wraith_crosses_intervening_walls_until_its_cleanup_deadline(self):
         from test_sc_enemies import Host
         h = Host()
         h.add(91, 'sc.wall', (-64*256, -128*256), changes=dict(wmp=128*256, hmp=512*256, terraintype=1))
@@ -98,6 +98,9 @@ class ScProjectileRegressionTests(unittest.TestCase):
         h.advance(.1)
         self.assertIn(oid, h.actors)
         h.advance(3.)
+        self.assertIn(oid, h.actors)
+        self.assertGreater(h.actors[oid]['pos'][0], 284*256)
+        h.advance(4.5)
         self.assertNotIn(oid, h.actors)
         self.assertEqual(h.retired[oid], 'INTERNAL')
 

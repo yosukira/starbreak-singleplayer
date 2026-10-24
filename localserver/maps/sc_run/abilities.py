@@ -2,7 +2,7 @@
 import copy
 import math
 
-from .physics import clear, flight, ground, ground_wave, rect, sinusoid
+from .physics import flight, ground, ground_wave, rect, sinusoid
 
 
 def overlaps(a, b):
@@ -89,7 +89,8 @@ class ScProjectiles:
         vx, vy = velocity if velocity is not None else self.wire_velocity(
             (v.get('xvel', 0), v.get('yvel', 0)))
         born = self.host.room_time
-        if orbit is not None and '_wire_born_ms' in row:
+        native_wraith = row['vid'] == 'sc.wraith' and bool(m.get('sin'))
+        if (orbit is not None or native_wraith) and '_wire_born_ms' in row:
             # Native elliptical motion starts at the Create timestamp. Its
             # phase must not lag behind the birth animation by one host slice.
             born = row['_wire_born_ms']/1000.
@@ -99,7 +100,11 @@ class ScProjectiles:
             born=born, origin=tuple(row['pos']), native=m if m.get('sin') else None,
             expiry=math.inf if orbit is not None else self.host.room_time+(row['props'].get('lifetime') or 8000)/1000)
         row['_sc_projectile'] = True
-        stop_motion(self.host, oid)
+        # Wall-emitted wraiths already carry their complete native trajectory.
+        # Preserve it on the client instead of stopping it at birth and then
+        # replacing it with a succession of per-frame linear corrections.
+        if not native_wraith:
+            stop_motion(self.host, oid)
         return oid
 
     def orbit_point(self, oid):
@@ -240,17 +245,14 @@ class ScProjectiles:
             if s['native']:
                 point = sinusoid(s['native'], s['origin'], now-s['born'])
                 if s['vid'] == 'sc.wraith':
-                    # USER: born inside a wall, then disappear on reaching a
-                    # later wall. Do not mistake its source wall for an impact.
-                    s['left_source_wall'] = s.get('left_source_wall', False) or clear(self.host, rect(row), (oid,))
-                    if s['left_source_wall']:
-                        end, hit = flight(terrain, row, ((point[0]-row['pos'][0])/dt,
-                                                       (point[1]-row['pos'][1])/dt), dt)
-                        if hit:
-                            self.retire(oid, 'INTERNAL')
-                            continue
-                    else:
-                        end, hit = point, None
+                    # Native live snapshots contain wraith centres inside
+                    # intervening solid walls. Terrain contact is not a death
+                    # condition for this fixed environmental trajectory.
+                    # Keep authority's position on the same birth clock as
+                    # MOVE.sin; its client motion needs no new wire command.
+                    row['vel'] = [(point[i]-row['pos'][i])/dt if dt else 0. for i in (0, 1)]
+                    row['pos'] = list(point)
+                    continue
                 elif not row['props'].get('blocktype'):
                     end, hit = point, None
                 else:
