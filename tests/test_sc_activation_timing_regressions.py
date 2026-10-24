@@ -42,6 +42,9 @@ class ScActivationTimingRegressions(unittest.TestCase):
         self.assertEqual(h.enemies.counts['monk_volleys'], 0)
         prepared_aim = u['monk_aim']
         due = u['monk_prepare_until']
+        control = self.monk_host()
+        control.player_at(100, 0)
+        control.advance(2.)
         h.player_at(-400, 0)
         h.advance(due-h.room_time-.05)
         self.assertTrue(all(h.enemies.projectiles.shots[o]['orbit'] is not None for o in u['orbs']))
@@ -49,7 +52,15 @@ class ScActivationTimingRegressions(unittest.TestCase):
         h.advance(.1)
         fired = [s for s in h.enemies.projectiles.shots.values() if s['orbit'] is None]
         self.assertEqual(len(fired), 8)
-        self.assertTrue(all(s['vx'] > 0 for s in fired), 'Prepared aim does not follow a later target reversal')
+        # A moving monk can already be right of its target when preparation
+        # starts. Compare with an identical run that never reverses its target,
+        # rather than assuming every committed shot points right in the world.
+        control.advance(due-control.room_time+.05)
+        expected = [s for s in control.enemies.projectiles.shots.values() if s['orbit'] is None]
+        self.assertEqual(len(expected), 8)
+        self.assertEqual([(s['vx'], s['vy']) for s in fired],
+                         [(s['vx'], s['vy']) for s in expected],
+                         'Prepared aim does not follow a later target reversal')
         self.assertEqual(h.enemies.counts['monk_volleys'], 1)
 
     def test_full_orbits_wait_for_a_nearby_target_before_starting_preparation(self):
