@@ -27,13 +27,15 @@ def endpoint_pairs(plan):
 
 
 def original_port_geometry(room):
-    """Ignore arrival-name normalization and enabled/gated interaction flags."""
+    """Native door shape/orientation survives corridor translations."""
     result = {}
     for p in ports(room):
         obj = room['objects'][p['id']]
-        result[p['id']] = dict(side=p.get('side'), at=tuple(p['at']),
+        result[p['id']] = dict(side=p.get('side'),
+                               local_center=(p['at'][0]-obj.get('xmp',0),
+                                             p['at'][1]-obj.get('ymp',0)),
                                **{name: obj.get(name) for name in
-                                  ('vid', 'xmp', 'ymp', 'wmp', 'hmp',
+                                  ('vid', 'ymp', 'wmp', 'hmp',
                                    'facing', 'rotate', 'drawmods')})
     return result
 
@@ -92,7 +94,7 @@ class ScDirectionTests(unittest.TestCase):
                                             for r in originals), template)
                 self.assertEqual(checked, set(CHEST_ENTRY_SIDE))
 
-    def test_generated_room_door_geometry_matches_an_original_unmirrored_asset(self):
+    def test_generated_room_door_shape_and_orientation_match_an_unmirrored_asset(self):
         for budget, seed, plan in self.plans:
             with self.subTest(budget=budget, seed=seed):
                 for role, room in plan['rooms'].items():
@@ -100,7 +102,7 @@ class ScDirectionTests(unittest.TestCase):
                     actual = original_port_geometry(room)
                     originals = [original_port_geometry(r) for r in self.content.templates[template]]
                     self.assertIn(actual, originals,
-                                  role+' changed original door IDs, local coordinates, side or draw transform')
+                                  role+' changed original door IDs, shape, height, side or draw transform')
                 loop = next(r for r in plan['rooms'].values() if r['metadata']['template'] == 'scmid05')
                 self.assertEqual([p['side'] for p in ports(loop)], ['left', 'left'],
                                  'Loop must retain its two native left doors')

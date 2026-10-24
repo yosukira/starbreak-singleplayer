@@ -78,19 +78,21 @@ class ScRunLiveSession(RunLiveSession):
         last=run._room_seen.get(instance.role)
         if runtime is not None and last is not None and hasattr(runtime,'actors') and hasattr(runtime,'enemies'):
             elapsed=max(0.,run._clock()-last)
-            if elapsed>.1:
-                # Age only objects that already existed while absent. New
-                # respawns/platforms created by resume are born at arrival.
-                instance.snapshot.advance(elapsed)
-                runtime.room_time+=elapsed
-                runtime._wire_ms+=elapsed*1000
-                runtime.wire_end_ms=round(runtime._wire_ms)
-                runtime._sent_ms=runtime.wire_end_ms
-                runtime._slice_ms=0
-                for controller in (runtime.enemies,runtime.mechanics):
-                    resume=getattr(controller,'resume',None)
-                    if resume:resume(elapsed)
-                runtime._expire_lifetimes()
+            # Age only objects that already existed while absent. New
+            # respawns/platforms created by resume are born at arrival.
+            instance.snapshot.advance(elapsed)
+            runtime.room_time+=elapsed
+            runtime._wire_ms+=elapsed*1000
+            runtime.wire_end_ms=round(runtime._wire_ms)
+            runtime._sent_ms=runtime.wire_end_ms
+            runtime._slice_ms=0
+            # Reconcile even a zero/short revisit: its warning effects were
+            # cleared above, so their queued damage must also be cancelled.
+            # Resolve platform phases before carrying survivors/respawning.
+            for controller in (runtime.mechanics,runtime.enemies):
+                resume=getattr(controller,'resume',None)
+                if resume:resume(elapsed)
+            runtime._expire_lifetimes()
             # Cleanup must reach CreateWorld even on an immediate revisit;
             # natural lifetime expiry is not the room-exit projectile policy.
             if runtime.batch.general or runtime.batch.objects or runtime.batch.extra:
@@ -171,6 +173,12 @@ class ScRunLiveSession(RunLiveSession):
         self._inventory_handoff=None
         self._inventory_status=dict(status='cancelled',reason=pending.reason)
 
+    def after_room_step(self):
+        # USER: singleplayer/activity runs retain Chest rooms and guardian
+        # progress, but do not issue equipment chests, including after Mid.
+        # Ordinary creature supplies belong to their existing controllers.
+        return
+
     @tracked_tick
     def step(self,dt):
         # One commit boundary includes the SC-wide timer, rewards and collapse
@@ -195,12 +203,6 @@ class ScRunLiveSession(RunLiveSession):
             self._notice('Firing Sequence Completes in %d Minutes' % minutes,chattype=5)
         # Every task/Gen interaction is preserved by the existing shared
         # input handoff, including held movement and one consumed door press.
-        if self.instance.flags.get('chest_cleared'):
-            from .loot import ScChestLoot
-            if not hasattr(self,'_chest_loot'):self._chest_loot=ScChestLoot(self)
-            oid=self.instance.recipe['metadata'].get('chest_guardian')
-            body=self.instance.recipe['objects'].get(oid,{})
-            self._chest_loot.drop(self.instance.role,(body.get('xmp',0),body.get('ymp',0)))
         self.apply_progress(run,self.instance,emit=True)
         age=run.collapse_age()
         if age is not None and not run.boss_entered:

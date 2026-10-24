@@ -1,7 +1,7 @@
 """SC observed animation/sound pairs, shared by enemies and mechanisms."""
 
-# Original server birth updates; shard's two IDs belong to different native
-# image versions. A caller-supplied observed variant remains authoritative.
+# Original server birth updates. Shard anim1/anim2 alternate within each
+# native three-shot volley; the weapon queue supplies the selected phase.
 PROJECTILE_BIRTH = {
     'sc.shard': ((1, 2), 198),
     'sc.sliver': ((1,), 198),

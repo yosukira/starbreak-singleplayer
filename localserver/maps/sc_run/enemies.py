@@ -30,7 +30,7 @@ DEFAULT_SPECIES = {
     'sc.skeleton': dict(wake_px=1600., acquire_px=960., release_px=1500., scan_s=.45, speed=14000*1000/256, attack_px=170.),
     # USER range calibration against a 500px Soidal: distance to the large
     # body's near edge, not its centre (which adds its 80px half-width).
-    'sc.golem': dict(wake_px=1600., acquire_px=1200., release_px=1700., scan_s=.55,
+    'sc.golem': dict(wake_px=475., wake_metric='body', acquire_px=1200., release_px=1700., scan_s=.55,
                      speed=7000*1000/256, attack_px=475., attack_metric='body'),
     # Oct23 solo starts have 1059..1118px reception context. 1150/1200 are
     # local attack/search fits covering those cases, not native thresholds.
@@ -44,7 +44,10 @@ DEFAULT_SPECIES = {
     'sc.hunter': dict(wake_px=1600., wake_shape='box', acquire_px=1600.,
                       acquire_shape='box', release_px=2400., scan_s=.4,
                       speed=118000., attack_px=150.),
-    'sc.monk': dict(wake_px=1600., acquire_px=1000., release_px=1500., scan_s=.65, speed=70000., attack_px=900.),
+    # USER: monks activate locally, rather than the whole room waking on entry.
+    # Existing captured residents are already moving; 900px is a configurable
+    # fresh-activation FIT, not a threshold recovered from those snapshots.
+    'sc.monk': dict(wake_px=900., acquire_px=1000., release_px=1500., scan_s=.65, speed=70000., attack_px=900.),
     # Solo dive-start contexts reach 807px. A committed attempt and its
     # blocked retries continue independently of this new-attack range.
     'sc.scout': dict(wake_px=1500., acquire_px=900., release_px=1500., scan_s=.5, speed=30000., attack_px=900.),
@@ -52,7 +55,11 @@ DEFAULT_SPECIES = {
 DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # OBS: one skeleton rises 640px. FIT: choose height from reachable landing
     # surfaces, with a small landing margin; ordinary jumps keep the low speed.
-    skeleton_jump_max_v=265000., skeleton_jump_clearance_px=32.,
+    # OBS: native ascent fits are around 336k MP/s². Keeping the old 200k
+    # gravity made even a low jump hang for 1.81s. This separate FIT preserves
+    # the observed high-platform reach without changing other creatures.
+    skeleton_gravity=340000., skeleton_jump_max_v=350000.,
+    skeleton_jump_clearance_px=32., skeleton_platform_wait_s=.15,
     titan_jump_v=125000., golem_jump_v=90000., golem_gravity=200000.,
     # FIT within the separately calibrated 475px total range. Keep an outer
     # throw-only band; this is not a recovered native jump cutoff.
@@ -83,7 +90,11 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # [-16000, 15000]mp/s. Independent uniform selection is a local FIT;
     # neither an eight-direction ring nor the native RNG was established.
     burst_axis_mp_s=(-16000, 15000), shard_gravity=156000.,
-    monk_interval_s=16., monk_refill_s=1.92, monk_orb_interval_s=.25,
+    # OBS: two same-generation full volleys repeat in 7.762/7.764s: ~1.91s
+    # refill wait, staggered eight-orb refill, then ~4.1s full-orb preparation.
+    # Preparation starts only with an eligible target; it commits that aim.
+    # Optional interval remains a minimum override, not the old 16s timer.
+    monk_interval_s=0., monk_prepare_s=4., monk_refill_s=1.92, monk_orb_interval_s=.25,
     # Three long tracks remain in a translated ~413x417px area. The authored
     # local birth point anchors this 420px box; it is not a recovered home
     # from an arbitrary already-active capture snapshot.
@@ -92,8 +103,11 @@ DEFAULT_FIT = dict(respawn_s=120., gravity=200000., skeleton_jump_v=181000.,
     # OBS: a captured warning line is 13 segments of 64px (~832px).
     laser_segment_px=32., laser_range_px=1600., laser_max_segments=50, laser_draw_z=-128,
     fly_acceleration=50000., scout_dive_acceleration=350000., scout_dive_speed=175000.,
-    scout_dive_s=2., scout_cooldown_s=(2.2, 3.4),
-    scout_min_drop_px=32., scout_recover_s=1., scout_recover_speed=50000.,
+    # FIT safety limit, not a fixed action time: a native dive lands after 2.279s.
+    scout_dive_s=3., scout_cooldown_s=(2.2, 3.4),
+    scout_min_drop_px=32., scout_recover_s=1., scout_recover_speed=60000.,
+    # FIT to post-landing velocity changes, independently of ordinary flight.
+    scout_recover_acceleration=120000.,
     # Blocked cues can repeat within one attempt. They do not reset the
     # independent attack cooldown; successful floor contact starts recovery.
     scout_blocked_retry_s=.55, scout_max_retries=2, skeleton_melee_vertical_px=110.,
@@ -214,10 +228,16 @@ class ScEnemies:
             configured = self.host.recipe.get('metadata', {}).get('sc_skeleton_variants', {})
             variant = configured.get(str(oid), configured.get(oid, variant))
             if variant not in ('cleave', 'thrust'):
-                variant = 'cleave' if self.fit['skeleton_variant_policy'] == 'object_id_fit' and oid % 4 == 0 else 'thrust'
+                fit_id = oid
+                if self.fit['skeleton_variant_policy'] == 'object_id_fit':
+                    sources = self.host.recipe.get('metadata', {}).get('sc_skeleton_source_ids', {})
+                    fit_id = int(sources.get(str(oid), sources.get(oid, oid)))
+                variant = 'cleave' if self.fit['skeleton_variant_policy'] == 'object_id_fit' and fit_id % 4 == 0 else 'thrust'
             u['variant'] = variant
         if family == 'sc.hunter':
-            u['ready'] = self.now+1.32 if row.get('_sc_new_hunter') else self.now
+            # Birth anim1/1320ms is presentation, not an action lock. Native
+            # children can manifest 0..105ms after birth when already near.
+            u['ready'] = self.now
         if family in GHOSTS and row.get('hp') is None and vid != 'sc.eassassin':
             self._manifest_begin(oid, u)
         elif vid == 'sc.eassassin':
@@ -241,7 +261,36 @@ class ScEnemies:
                     u['home'] = spot
                     break
         stop_motion(self.host, oid)
+        if family in ('sc.skeleton', 'sc.tank', 'sc.golem', 'sc.egolem'):
+            support = self._supporting_surface(rect(row))
+            if support is not None:
+                # Bind before the first mechanism step. Otherwise a rising
+                # one-way floating ledge moves above unbound feet and the
+                # body falls through it on its first activation frame.
+                u.update(grounded=True, support=support[0], vy=0.)
+                platform = self.host.actors[support[0]]
+                u.update(home_support=support[0], home_offset=tuple(
+                    u['home'][axis]-platform['pos'][axis] for axis in (0, 1)))
+                if family == 'sc.tank':
+                    u['patrol_support'] = support[0]
+                    u['patrol_surfaces'] = (support[0],)
         return True
+
+    def _supporting_surface(self, bounds, *, terrain=None, tolerance=2.):
+        x, y, w, h = bounds
+        candidates = []
+        surfaces = geometry(self.host) if terrain is None else terrain
+        for oid, r, _kind, shape in surfaces:
+            if self.host.actors.get(oid, {}).get('vid') in BODIES | SHOTS:
+                continue
+            top = surface(r, shape, x, w)
+            if top is not None and abs(top-y-h) <= tolerance:
+                overlap = min(x+w, r[0]+r[2])-max(x, r[0])
+                candidates.append((-overlap, oid, top))
+        if not candidates:
+            return None
+        _overlap, support, top = min(candidates)
+        return support, top
 
     def _attach_explicit_lineage(self, oid, creator):
         if creator not in self.urns:
@@ -278,6 +327,12 @@ class ScEnemies:
         u.update(phase='patrol', next=self.now+self.fit['assassin_initial_wait_s'], busy=0.)
 
     @staticmethod
+    def _body_distance(row, point):
+        x, y, w, h = rect(row)
+        return math.hypot(max(x-point[0], point[0]-x-w, 0.),
+                          max(y-point[1], point[1]-y-h, 0.))
+
+    @staticmethod
     def _inside_range(policy, kind, origin, point):
         radius = policy[kind+'_px']*256
         if policy.get(kind+'_shape') == 'box':
@@ -289,7 +344,11 @@ class ScEnemies:
         policy = self.policy(u['vid'])
         c = center(row)
         if not u['active']:
-            if not any(self._inside_range(policy, 'wake', c, center(p)) for p in live.values()):
+            if policy.get('wake_metric') == 'body':
+                awake = any(self._body_distance(row, center(p)) <= policy['wake_px']*256 for p in live.values())
+            else:
+                awake = any(self._inside_range(policy, 'wake', c, center(p)) for p in live.values())
+            if not awake:
                 return None
             u.update(active=True, phase='patrol')
             self.counts['activations'] += 1
@@ -410,12 +469,15 @@ class ScEnemies:
                 break
 
     def _skeleton_jump_plan(self, oid, u, point, *, allow_level=False):
-        """FIT landing search using current terrain, not recorded positions."""
-        if not u['active'] or not u.get('grounded') or point is None:
+        """Reach the higher platform on which the player actually stands."""
+        if not u['active'] or not u.get('grounded') or point is None or allow_level:
+            return None
+        target_support = u.get('jump_target_support')
+        if target_support is None:
             return None
         row = self.host.actors[oid]
         x, y, w, h = rect(row)
-        gravity = self.fit['gravity']
+        gravity = self.fit['skeleton_gravity']
         if gravity <= 0:
             return None
         normal = self.fit['skeleton_jump_v']
@@ -424,7 +486,7 @@ class ScEnemies:
         margin = self.fit['skeleton_jump_clearance_px']*256
         candidates = []
         for platform, bounds, kind, shape in self.terrain:
-            if platform in (oid, u.get('support')):
+            if platform != target_support or platform in (oid, u.get('support')):
                 continue
             left, right = bounds[0], bounds[0]+bounds[2]-w
             landing_x = min(max(point[0]-w/2, left), right) if left <= right else (left+right)/2
@@ -432,7 +494,7 @@ class ScEnemies:
             if top is None or top < point[1]:
                 continue
             rise = y+h-top
-            if rise < (-1. if allow_level else 24*256):
+            if rise < 24*256:
                 continue
             velocity = max(normal, math.sqrt(2*gravity*(max(0., rise)+margin)))
             if velocity > maximum:
@@ -463,6 +525,36 @@ class ScEnemies:
                     break
         return None
 
+    def _skeleton_platform_target(self, oid, u, target):
+        if target is None:
+            u.pop('jump_candidate', None)
+            u.pop('jump_target_support', None)
+            return None
+        value = target if isinstance(target, dict) else getattr(target, 'raw', {})
+        # Position-only bridge frames still need a stable geometric contact;
+        # when a native airborne pose/ground flag exists, honour it too.
+        if value.get('grounded') is False or value.get('pose') in (1, 3):
+            u.pop('jump_candidate', None)
+            u.pop('jump_target_support', None)
+            return None
+        point = center(target)
+        w = target.get('wmp', 0) if isinstance(target, dict) else getattr(target, 'wmp', 0)
+        h = target.get('hmp', 0) if isinstance(target, dict) else getattr(target, 'hmp', 0)
+        support = self._supporting_surface((point[0]-w/2, point[1]-h/2, w, h),
+                                           terrain=self.terrain, tolerance=4*256)
+        row = self.host.actors[oid]
+        if support is None or support[1] >= row['pos'][1]+row['props'].get('hmp', 0)-24*256:
+            u.pop('jump_candidate', None)
+            u.pop('jump_target_support', None)
+            return None
+        candidate = (u.get('target'), support[0])
+        if u.get('jump_candidate') != candidate:
+            u.update(jump_candidate=candidate, jump_candidate_at=self.now)
+        if self.now-u['jump_candidate_at'] < self.fit['skeleton_platform_wait_s']:
+            return None
+        u['jump_target_support'] = support[0]
+        return point
+
     def _begin_skeleton_jump(self, oid, u, point, *, allow_level=False):
         if self.now < u.get('next_jump', 0.):
             return False
@@ -492,10 +584,16 @@ class ScEnemies:
             return 0.
         _sid, bounds, _kind, shape = anchor
         left, right, top = bounds[0], bounds[0]+bounds[2], bounds[1]
-        if shape == 0:
+        members = [anchor[0]]
+        tracks = getattr(getattr(self.host, 'mechanics', None), 'tracks', {})
+        def moving_surface(item):
+            return item[0] in tracks or bool(self.host.actors[item[0]]['props'].get('move'))
+        if shape == 0 and not moving_surface(anchor):
             # Split tiles at the same height form one platform. A nearby lower
-            # ledge, or a transient solid creature/ball, never extends this lane.
-            remaining = [t for t in terrain if t[3] == 0 and abs(t[1][1]-top) <= 1]
+            # ledge, independent moving surface, or transient solid body never
+            # extends it. Temporary alignment is not a shared patrol platform.
+            remaining = [t for t in terrain if t[3] == 0 and abs(t[1][1]-top) <= 1
+                         and not moving_surface(t)]
             changed = True
             while changed:
                 changed = False
@@ -505,7 +603,9 @@ class ScEnemies:
                         new_left, new_right = min(left, r[0]), max(right, r[0]+r[2])
                         changed = changed or new_left != left or new_right != right
                         left, right = new_left, new_right
+                        members.append(item[0])
                         remaining.remove(item)
+        u['patrol_surfaces'] = tuple(set(members))
         width = row['props'].get('wmp', 0)
         if right-left <= width:
             return 0.
@@ -530,10 +630,17 @@ class ScEnemies:
         vid = 'sc.golem' if u['vid'] == 'sc.egolem' else u['vid']
         point = u['target_point'] if target is not None else None
         c = center(row)
+        # Observe actual target contact even during a swing/action cooldown.
+        # Only executing the jump waits for this creature's movement gates.
+        # Otherwise leaving and returning during busy reuses an old dwell time.
+        jump_point = self._skeleton_platform_target(oid, u, target) if vid == 'sc.skeleton' else None
         busy = self.now < u['busy']
         vx = 0. if busy else self._ground_speed(vid, u['direction'])
+        tank_edge_turned = False
         if vid == 'sc.tank':
+            direction = u['direction']
             vx = self._tank_velocity(oid, u, dt, busy)
+            tank_edge_turned = u['direction'] != direction
         if vid == 'sc.golem' and point is not None:
             # USER: the golem mostly holds its ground between attacks. A slow
             # perpetual chase is still a chase; close targets need no walking.
@@ -548,7 +655,8 @@ class ScEnemies:
             downward = feet_delta > 96*256 if vid == 'sc.skeleton' else point[1] > c[1]+96*256
             if upward and self.now >= u.get('next_jump', 0):
                 if vid == 'sc.skeleton':
-                    self._begin_skeleton_jump(oid, u, point)
+                    if jump_point is not None:
+                        self._begin_skeleton_jump(oid, u, jump_point)
                 else:
                     u['vy'] = -self.fit['titan_jump_v']
                     u['next_jump'] = self.now+.8
@@ -564,13 +672,30 @@ class ScEnemies:
                 u['direction'] *= -1
                 vx *= -1
         previous = u.get('grounded', False)
-        pos = ground(self.terrain, row, u, dt, vx, self.fit['golem_gravity'] if vid == 'sc.golem' else self.fit['gravity'], drop=drop)
+        gravity = self.fit['golem_gravity'] if vid == 'sc.golem' else self.fit['skeleton_gravity'] if vid == 'sc.skeleton' else self.fit['gravity']
+        pos = ground(self.terrain, row, u, dt, vx, gravity, drop=drop)
+        if vid == 'sc.tank':
+            # A tank's lane is a support constraint, not just an edge hint.
+            # Carry, rounding or a large slice cannot send it through that
+            # still-existing platform into an unrelated lower one.
+            lane = [t for t in self.terrain if t[0] in u.get('patrol_surfaces', ())]
+            tops = [(top, t[0]) for t in lane
+                    if (top := surface(t[1], t[3], pos[0], row['props'].get('wmp', 0))) is not None]
+            if tops:
+                top, support = min(tops)
+                pos = (pos[0], top-row['props'].get('hmp', 0))
+                u.update(grounded=True, support=support, vy=0.)
         if u.get('blocked') and not busy:
             if target is None or vid == 'sc.tank':
-                u['direction'] *= -1
-            elif vid == 'sc.skeleton' and u.get('grounded'):
-                if not self._begin_skeleton_jump(oid, u, point, allow_level=True):
+                # The endpoint clamp may already have selected the way back.
+                # Reversing again when a wall lies just inside that endpoint
+                # would leave the tank pointing into the same wall forever.
+                if vid != 'sc.tank' or not tank_edge_turned:
                     u['direction'] *= -1
+            elif vid == 'sc.skeleton' and u.get('grounded'):
+                # Wall contact alone never requests a jump. A later stable
+                # higher-player-platform decision may choose a clear arc.
+                u['direction'] *= -1
             elif vid == 'sc.titan' and u.get('grounded'):
                 u['vy'] = -self.fit['titan_jump_v']
         if vid == 'sc.golem' and u.get('slam') and u.get('grounded') and not previous:
@@ -685,13 +810,36 @@ class ScEnemies:
             return False
         row = self.host.actors[oid]
         if phase == 'retry':
-            if self.now < u['retry_at']:
-                stop_motion(self.host, oid)
+            target = players(self.host).get(u.get('dive_target_key'))
+            if target is None:
+                self._scout_recover(u)
+                phase = 'recover'
+            elif self.now < u['retry_at']:
+                # The blocked descent stops, while tangential inertia remains.
+                end, hit = flight(self.terrain, row, (u['vx'], 0.), dt)
+                if hit:
+                    u['vx'] = 0.
+                move(self.host, oid, end, dt, 2,
+                     0 if u['direction'] > 0 else 180)
                 return True
-            u.update(scout_phase='dive', dive_cue=self.now,
-                     dive_until=self.now+self.fit['scout_dive_s'])
-            self.host.presentation.sound(oid, 'sc.scoutattack', self.now)
-            phase = 'dive'
+            else:
+                point = center(target)
+                origin = center(row)
+                dx, dy = point[0]-origin[0], point[1]-origin[1]
+                if dy <= 0:
+                    # FIT: do not turn a committed dive into an upward attack.
+                    self._scout_recover(u)
+                    phase = 'recover'
+                else:
+                    length = max(1., math.hypot(dx, dy))
+                    # FIT: retain the chosen player, refresh only at this cue,
+                    # and commit the new heading without replacing velocity.
+                    u.update(scout_phase='dive', dive_cue=self.now,
+                             dive_target=point, dive_heading=(dx/length, dy/length),
+                             direction=1 if dx >= 0 else -1,
+                             dive_until=self.now+self.fit['scout_dive_s'])
+                    self.host.presentation.sound(oid, 'sc.scoutattack', self.now)
+                    phase = 'dive'
         if phase == 'dive' and self.now >= u['dive_until']:
             self._scout_recover(u)
             phase = 'recover'
@@ -701,7 +849,7 @@ class ScEnemies:
                 u.pop('steer', None)
                 return False
             desired = (0., -self.fit['scout_recover_speed'])
-            acceleration = self.fit['fly_acceleration']*dt
+            acceleration = self.fit['scout_recover_acceleration']*dt
         else:
             desired = tuple(v*self.fit['scout_dive_speed'] for v in u['dive_heading'])
             acceleration = self.fit['scout_dive_acceleration']*dt
@@ -717,14 +865,27 @@ class ScEnemies:
             top = surface(terrain[1], terrain[3], end[0], size[0]) if terrain else None
             floor = top is not None and u['vy'] > 0 and abs(end[1]+size[1]-top) <= 1
             blocked_early = end[1]+size[1]/2 < u['dive_target'][1]-64*256
+            if phase == 'dive' and floor:
+                # flight consumed only the contact fraction of dt. Finish
+                # remaining tangential motion for both recovery and retry.
+                fraction = max(0., min(1., hit[0]-1e-7))
+                landing = dict(row, pos=[end[0], top-size[1]])
+                end, side_hit = flight(self.terrain, landing,
+                    (u['vx'], 0.), dt*(1.-fraction))
+                if side_hit:
+                    u['vx'] = 0.
             if phase == 'dive' and floor and blocked_early and u.get('dive_retries', 0) < self.fit['scout_max_retries']:
                 u.update(scout_phase='retry', retry_at=max(self.now+.05,
                          u['dive_cue']+self.fit['scout_blocked_retry_s']),
-                         dive_retries=u.get('dive_retries', 0)+1, vx=0., vy=0.)
+                         dive_retries=u.get('dive_retries', 0)+1, vy=0.)
+                end = (end[0], top-size[1])
             else:
                 if phase == 'dive':
                     self._scout_recover(u)
-                u['vx'] = 0.
+                # Native floor contact keeps tangential inertia. A side-wall
+                # collision still stops it instead of carrying through terrain.
+                if not floor:
+                    u['vx'] = 0.
                 u['vy'] = 0.
         move(self.host, oid, end, dt, 3 if u['vy'] > 0 else 2,
              None if self.now < u['lock'] else 0 if u['direction'] > 0 else 180)
@@ -732,7 +893,7 @@ class ScEnemies:
 
     def _scout_recover(self, u):
         u.update(scout_phase='recover', recover_until=self.now+self.fit['scout_recover_s'],
-                 dive_until=0., vx=0., vy=min(0., u['vy']))
+                 dive_until=0., vy=min(0., u['vy']))
 
     def _monk_fly(self, oid, u, dt):
         row = self.host.actors[oid]
@@ -774,9 +935,7 @@ class ScEnemies:
         distance = math.hypot(dx, dy)
         policy = self.policy(u['vid'])
         if policy.get('attack_metric') == 'body':
-            x, y, w, h = rect(row)
-            distance = math.hypot(max(x-point[0], point[0]-x-w, 0.),
-                                  max(y-point[1], point[1]-y-h, 0.))
+            distance = self._body_distance(row, point)
         if distance > policy['attack_px']*256:
             return
         vid = 'sc.golem' if u['vid'] == 'sc.egolem' else u['vid']
@@ -817,8 +976,11 @@ class ScEnemies:
         elif vid == 'sc.bomber':
             self._attack(oid, u, 4, 1320, cooldown=3.64, lock=False)
             # OBS general-create medians 305/679/954.5ms.
-            for delay in (.305, .679, .9545):
-                self._queue(oid, delay, 'shard')
+            # OBS: every complete native triple alternates anim1/anim2.
+            # FIT: choose the first phase per volley; its native policy is unknown.
+            first = self.host.rng.choice((1, 2))
+            for index, delay in enumerate((.305, .679, .9545)):
+                self._queue(oid, delay, 'shard', variant=first if index % 2 == 0 else 3-first)
         elif vid == 'sc.scout':
             if u.get('scout_phase') or dy < self.fit['scout_min_drop_px']*256:
                 return
@@ -828,7 +990,8 @@ class ScEnemies:
                 cooldown = self.host.rng.uniform(*cooldown)
             length = max(1., math.hypot(dx, dy))
             u.update(scout_phase='dive', dive_heading=(dx/length, dy/length),
-                     dive_target=point, dive_retries=0, dive_started=self.now,
+                     dive_target=point, dive_target_key=u['target'],
+                     dive_retries=0, dive_started=self.now,
                      direction=1 if dx >= 0 else -1,
                      dive_cue=self.now, dive_until=self.now+self.fit['scout_dive_s'],
                      next=self.now+cooldown)
@@ -836,7 +999,7 @@ class ScEnemies:
         elif vid == 'sc.assassin':
             self._assassin_ghost(oid, u)
         elif vid == 'sc.monk':
-            self._monk_attack(oid, u, point)
+            self._monk_attack(oid, u, point, delay=self.fit['monk_prepare_s'])
         # Titan has contact damage and height navigation, no invented attack.
 
     def _laser(self, oid, point):
@@ -1010,7 +1173,7 @@ class ScEnemies:
         u['orbs'].append(child)
         u['refill_at'] = self.now+self.fit['monk_orb_interval_s']
 
-    def _monk_attack(self, oid, u, point):
+    def _monk_attack(self, oid, u, point, *, delay=0.):
         orbs = list(u['orbs'])
         if len(orbs) < 8 or u.get('monk_firing'):
             return
@@ -1020,7 +1183,10 @@ class ScEnemies:
         # OBS: the full-ring volley's absolute directions have no fixed relation
         # to the player's bearing, so its phase must not be anchored to aim.
         phase = self.host.rng.uniform(0., 2*math.pi) if mode == 'radial' else 0.
-        u.update(monk_firing=True, next=self.now+self.fit['monk_interval_s'])
+        # The weapon state owns this preparation/release sequence independently
+        # of movement and later scans. Do not rebuild its aim every live tick.
+        u.update(monk_firing=True, monk_prepare_until=self.now+delay,
+                 monk_aim=tuple(point), next=self.now+max(delay, self.fit['monk_interval_s']))
         for index, child in enumerate(orbs):
             if mode == 'radial':
                 angle = phase+index*math.pi/4
@@ -1028,9 +1194,9 @@ class ScEnemies:
                 angle = aim-math.radians(40)+index*math.pi/16
             else:
                 angle = aim+math.radians(-15+index*30/7)
-            self._queue(oid, index*.25 if mode == 'sequential' else 0., 'monk_release',
-                        child=child, angle=angle, last=index == len(orbs)-1)
-        self.counts['monk_volleys'] += 1
+            self._queue(oid, delay+(index*.25 if mode == 'sequential' else 0.), 'monk_release',
+                        child=child, angle=angle, first=index == 0, last=index == len(orbs)-1)
+        self.counts['monk_preparations'] += 1
 
     def _emit(self, event):
         oid, kind = event['owner'], event['kind']
@@ -1083,7 +1249,8 @@ class ScEnemies:
             # OBS: all 541 native MOVE.vel vectors are integer truncations of
             # 25000*cos/sin(integer facing). 25000 is a wire amplitude, not
             # mp/second; native signed >>8 precedes millisecond integration.
-            angle = math.radians(round(math.degrees(event['angle'])))
+            facing = round(math.degrees(event['angle']))
+            angle = math.radians(facing)
             velocity = self.projectiles.wire_velocity((int(math.cos(angle)*25000),
                                                        int(math.sin(angle)*25000)))
             origin = list(self._origin(oid, 'sc.sliver'))
@@ -1097,7 +1264,10 @@ class ScEnemies:
                 end[axis] = target[axis]
                 hit = sweep(self.terrain, origin, end, (p['wmp'], p['hmp']), (oid,))
                 origin[axis] += (end[axis]-origin[axis])*(max(0., hit[0]-1e-7) if hit else 1.)
-            self.projectiles.spawn('sc.sliver', origin, velocity, oid)
+            # Keep the integer launch angle used for the wire components.
+            # Quantized velocity can point a degree away from that facing.
+            self.projectiles.spawn('sc.sliver', origin, velocity, oid,
+                                   changes=dict(facing=facing))
         elif kind == 'shard':
             velocity = self.host.actors[oid].get('vel', (0., 0.))
             # OBS: horizontal launch follows the bomber's current movement;
@@ -1113,12 +1283,15 @@ class ScEnemies:
             # is a local fit for that birth collision correction.
             hit = sweep(self.terrain, origin, end, (p['wmp'], p['hmp']), (oid,))
             origin[1] += (end[1]-origin[1])*(max(0., hit[0]-1e-7) if hit else 1.)
+            changes = dict(animprops=dict(animid=event['variant'], time=198)) if 'variant' in event else None
             self.projectiles.spawn('sc.shard', origin, (vx, 0.), oid,
-                                   gravity=self.fit['shard_gravity'])
+                                   gravity=self.fit['shard_gravity'], changes=changes)
         elif kind == 'monk_release':
             child, u = event['child'], self.units.get(oid)
             shot = self.projectiles.shots.get(child)
             if shot:
+                if event.get('first'):
+                    self.counts['monk_volleys'] += 1
                 vx, vy = self.projectiles.wire_velocity((round(math.cos(event['angle'])*20000),
                                                         round(math.sin(event['angle'])*20000)))
                 shot.update(orbit=None, vx=vx, vy=vy, expiry=self.now+8., born=self.now)
@@ -1139,7 +1312,7 @@ class ScEnemies:
         mechanics = getattr(self.host, 'mechanics', None)
         if mechanics and hasattr(mechanics, 'pre_physics'):
             mechanics.pre_physics(dt)
-            self._carry(getattr(mechanics, 'platform_deltas', {}))
+            self._carry(getattr(mechanics, 'platform_deltas', {}), dt)
         self.terrain = geometry(self.host)
         live = players(self.host)
         self._respawn()
@@ -1192,26 +1365,76 @@ class ScEnemies:
             # Never drain a backlog after a delayed frame or an empty room.
             emitter['next'] = self.now+self.host.rng.uniform(*emitter['interval'])
 
-    def _carry(self, deltas):
+    def _carry(self, deltas, dt=0., *, families=None):
         for oid, u in self.units.items():
+            if families is not None and u['vid'] not in families:
+                continue
             row = self.host.actors.get(oid)
             if row is None or not u.get('grounded'):
                 continue
             for platform, (old, new, size) in deltas.items():
                 x, y, w, h = rect(row)
                 if platform == u.get('support') or abs(y+h-old[1]) <= 2 and x < old[0]+size[0] and x+w > old[0]:
-                    row['pos'][0] += new[0]-old[0]
-                    row['pos'][1] += new[1]-old[1]
+                    point = (row['pos'][0]+new[0]-old[0], row['pos'][1]+new[1]-old[1])
+                    if u['vid'] in ('sc.skeleton', 'sc.tank', 'sc.golem', 'sc.egolem'):
+                        # Publish the carry even while dormant or holding an
+                        # attack. The subsequent ground step can be motionless;
+                        # changing only row.pos leaves the native snapshot behind.
+                        if dt > 0:
+                            move(self.host, oid, point, dt)
+                        else:
+                            place(self.host, oid, point)
+                    else:
+                        row['pos'] = list(point)
                     break
+
+    def _ground_respawn_point(self, event):
+        """Keep the birth point in its original support's moving frame."""
+        home = event['home']
+        support = event.get('home_support')
+        if support is None:
+            return home
+        w, h = event['props'].get('wmp', 0), event['props'].get('hmp', 0)
+        platform = self.host.actors.get(support)
+        if (platform is not None and not platform.get('dead')
+                and platform['props'].get('terraintype') in (1, 2)):
+            point = tuple(platform['pos'][axis]+event['home_offset'][axis] for axis in (0, 1))
+            top = surface(rect(platform), platform['props'].get('shapetype', 0), point[0], w)
+            if top is not None and abs(top-point[1]-h) <= 2 and clear(self.host, (*point, w, h)):
+                return point
+        # A streamed/deleted platform has no remaining phase to recover. FIT:
+        # prefer a legal floor below the old home column, then the nearest
+        # legal support. Do not let an unrelated creature become the anchor.
+        candidates = []
+        for oid, bounds, _kind, shape in geometry(self.host):
+            if self.host.actors[oid]['vid'] in BODIES | SHOTS:
+                continue
+            x, _y, width, _height = bounds
+            px = max(x, min(home[0], x+width-w)) if width >= w else x+(width-w)/2
+            top = surface(bounds, shape, px, w)
+            if top is None:
+                continue
+            point = (px, top-h)
+            if clear(self.host, (*point, w, h)):
+                below_home = abs(px-home[0]) <= 1 and top >= home[1]+h-2
+                candidates.append((0 if below_home else 1, math.dist(home, point), oid, point))
+        return min(candidates)[-1] if candidates else home
 
     def _respawn(self):
         for event in list(self.respawns):
             if self.now < event['at']:
                 continue
             self.respawns.remove(event)
-            oid = self.host._create(event['vid'], event['home'], 0, event['props'])
+            point = event['home']
+            if event['vid'] in ('sc.skeleton', 'sc.tank', 'sc.golem', 'sc.egolem'):
+                point = self._ground_respawn_point(event)
+            oid = self.host._create(event['vid'], point, 0, event['props'])
             self.add_actor(oid)
             self.units[oid]['guardian'] = event.get('guardian', False)
+            if (event['vid'] == 'sc.skeleton'
+                    and event.get('skeleton_variant') in ('cleave', 'thrust')):
+                # The new object ID still represents this same determined unit.
+                self.units[oid]['variant'] = event['skeleton_variant']
             if event['vid'] in GHOSTS:
                 self._manifest_begin(oid, self.units[oid])
             self.counts['respawns'] += 1
@@ -1247,8 +1470,14 @@ class ScEnemies:
                 p = copy.deepcopy(u['initial'])
                 p.update(vid=u['vid'], hitpoints=VITALS.get(u['vid'], p.get('hitpoints', 1)))
                 p.pop('animprops', None)
-                self.respawns.append(dict(at=self.now+self.fit['respawn_s'],
-                    vid=u['vid'], home=u['home'], props=p, guardian=u.get('guardian')))
+                event = dict(at=self.now+self.fit['respawn_s'],
+                    vid=u['vid'], home=u['home'], props=p, guardian=u.get('guardian'))
+                if u['vid'] == 'sc.skeleton':
+                    event['skeleton_variant'] = u['variant']
+                if (u['vid'] in ('sc.skeleton', 'sc.tank', 'sc.golem', 'sc.egolem')
+                        and u.get('home_support') is not None):
+                    event.update(home_support=u['home_support'], home_offset=u['home_offset'])
+                self.respawns.append(event)
             if getattr(self.host, 'supplies', None) and not guardian_repeat:
                 c = center(row)
                 self.host.supplies.killed(*c)
@@ -1318,6 +1547,12 @@ class ScEnemies:
         reconciles deaths/expiry once, leaving new decisions for normal step.
         """
         self.now = self.host.room_time
+        # The reconnect adapter advances mechanisms first. Carry only the
+        # existing grounded bodies before creating due respawns, whose birth
+        # points already use the platform's current phase.
+        mechanics = getattr(self.host, 'mechanics', None)
+        self._carry(getattr(mechanics, 'platform_deltas', {}), 0.,
+                    families=('sc.skeleton', 'sc.tank', 'sc.golem', 'sc.egolem'))
         for emitter in self.emitters:
             if emitter['next'] <= self.now:
                 emitter['next'] = self.now+self.host.rng.uniform(*emitter['interval'])

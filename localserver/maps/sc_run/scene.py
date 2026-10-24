@@ -4,8 +4,8 @@ from .catalogue import ScContent
 from .layout import generate, stable_seed
 
 class ScRunPack:
-    def __init__(self, root=None, *, exploration_rooms=None, layout_fit=None):
-        self.content=ScContent(root)
+    def __init__(self, root=None, *, exploration_rooms=None, layout_fit=None, generate=True):
+        self.content=ScContent(root, generate=generate)
         self.root=self.content.root
         self.dynamic_templates=self.content.dynamic_templates
         self.dynamic_template_variants=self.content.dynamic_template_variants

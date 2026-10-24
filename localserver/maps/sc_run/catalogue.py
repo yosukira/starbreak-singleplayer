@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[3] / 'maps/sc_run'
 
 
 class ScContent:
-    def __init__(self, root=None):
+    def __init__(self, root=None, *, generate=True):
         self.root = Path(root or ROOT)
         self.manifest = self._read('content.json')
         self.dynamic_templates = self._read('dynamic-templates.json')
@@ -35,6 +35,10 @@ class ScContent:
                     server['obj_'] = [row for row in server.get('obj_', []) if row['objid_'] not in resident]
         for alias, descriptor in self.manifest.get('aliases', {}).items():
             self.templates[alias] = self.templates[descriptor]
+        self.generator = None
+        if generate and (self.root/'modules/pool.json').is_file():
+            from .generator import ScRoomGenerator
+            self.generator = ScRoomGenerator(self.root)
 
     def _read(self, filename):
         return json.loads((self.root / filename).read_text(encoding='utf8'))
@@ -63,7 +67,10 @@ class ScContent:
 
     def recipe(self, descriptor, seed=0):
         variants = self.templates[descriptor]
-        return copy.deepcopy(variants[int(seed) % len(variants)])
+        recipe = copy.deepcopy(variants[int(seed) % len(variants)])
+        # Room geometry is rolled before the level graph connects its doors.
+        # A persistent run then caches this complete instance across visits.
+        return self.generator.generate(recipe, seed) if self.generator is not None else recipe
 
     def props(self, vid):
         return copy.deepcopy(self.dynamic_templates[vid])

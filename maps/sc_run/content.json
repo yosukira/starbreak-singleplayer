@@ -36,10 +36,16 @@
       "rooms/scmid03.json"
     ],
     "scmid04": [
-      "rooms/scmid04.json"
+      "rooms/scmid04.json",
+      "rooms/scmid04.native-3a479de004f9.json",
+      "rooms/scmid04.native-ddeea2c97637.json",
+      "rooms/scmid04.native-9fa7c739c8d4.json",
+      "rooms/scmid04.native-ce1d5d10da1b.json"
     ],
     "scmid05": [
-      "rooms/scmid05.json"
+      "rooms/scmid05.json",
+      "rooms/scmid05.native-9e6898019171.json",
+      "rooms/scmid05.native-b59fadc8995f.json"
     ],
     "scmid06": [
       "rooms/scmid06.json"
@@ -75,10 +81,18 @@
       "rooms/scmid16.json"
     ],
     "scmid17": [
-      "rooms/scmid17.json"
+      "rooms/scmid17.json",
+      "rooms/scmid17.native-f7c96b526f90.json",
+      "rooms/scmid17.native-18798adf1c20.json"
     ],
     "scmid18": [
-      "rooms/scmid18.json"
+      "rooms/scmid18.json",
+      "rooms/scmid18.native-4fff24962e8d.json",
+      "rooms/scmid18.native-77e95b190625.json",
+      "rooms/scmid18.native-bca17b97a478.json",
+      "rooms/scmid18.native-3c8145a11439.json",
+      "rooms/scmid18.native-14e6f2795fbc.json",
+      "rooms/scmid18.native-02984b51b1de.json"
     ],
     "scstart01": [
       "rooms/scstart01.json"

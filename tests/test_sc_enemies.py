@@ -431,6 +431,11 @@ class ScEnemyTests(unittest.TestCase):
             with self.subTest(rise=rise):
                 h, u = self.reaudit_platform_host(rise)
                 h.advance(.05)
+                self.assertTrue(u['grounded'], 'A higher player platform requires a delayed decision')
+                for _ in range(20):
+                    h.advance(.05)
+                    if not u['grounded']:
+                        break
                 self.assertFalse(u['grounded'])
                 launches[rise] = u['vy']
                 landed = False

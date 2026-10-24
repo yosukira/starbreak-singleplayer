@@ -29,7 +29,11 @@ DEFAULTS = {
     # both damage and this existence gate. The local damage ledger is a
     # policy, not a reconstruction of the retail server's private HP state.
     'wall_min_settled_s': 7.05,
-    'wall_trigger_x_px': 160, 'wall_trigger_y_px': 640,
+    # USER: approach triggers the column before standing directly beneath it.
+    # Oct23 native scmid18 starts a fall with the solo player centre 495px
+    # from the column centre, still 448px clear of its body. A 500px lateral
+    # window fits this approach; it is independent of the 7s damage gate.
+    'wall_trigger_x_px': 500, 'wall_trigger_y_px': 640,
     'wall_fallback_drop_px': 512,
     # FIT decision/range/cadence; not a replay of either captured encounter.
     # A newer recording starts with chains before its first summon. Summon
@@ -49,7 +53,10 @@ DEFAULTS = {
     # t=410ms, including nests over 4400px from the recorded player. Runtime
     # activation belongs to room entry, not an individual player's distance.
     'tshooter_initial_s': 0.,
-    'tshooter_respawn_s': (3., 6.),
+    # FIT death-to-next-windup delay. Four explicit native child destroys
+    # precede the next nest animation by 5.559..6.089s in recorder time;
+    # birth follows that animation by a separate observed .416s.
+    'tshooter_respawn_s': (5., 6.),
     # OBS native client position samples: sustained 79000mp/s, acceleration
     # close to 300px/s^2, and non-transient pose1 waits of 946..1000ms. The
     # pause range remains a local fit; rapid blocked pose changes also exist.
@@ -120,6 +127,11 @@ class ScMechanics(Ownership):
                    if row['vid'].startswith('sc.mledge')}
         for oid in list(self.host.actors):
             self.add_actor(oid)
+        # A resident child's creator can precede or follow its nest in the
+        # snapshot. Bind only explicit creation identities, never proximity.
+        for oid, state in self.states.items():
+            if state['vid'] == 'sc.tshooter':
+                self._tshooter_child(oid, state)
         self.guardian_row = self.host.actors.get(self.guardian)
         self.worker_sites = [tuple(r['pos']) for r in self.host.actors.values() if r['vid'] in WORKERS]
         ledges = [r for r in self.host.actors.values() if r['vid'].startswith('sc.mledge')]
@@ -460,11 +472,19 @@ class ScMechanics(Ownership):
     def _wall(self, oid, s, dt, target):
         row = self.host.actors[oid]
         if s['phase'] == 'waiting':
-            if target:
-                px, py = center(target)
-                x, y, w, h = rect(row)
-                if x-self.config['wall_trigger_x_px']*256 <= px <= x+w+self.config['wall_trigger_x_px']*256 and y-h <= py <= y+h+self.config['wall_trigger_y_px']*256:
+            x, y, w, h = rect(row)
+            # A player above/behind the socket must not hide another player
+            # approaching the passage. Test every live player's corridor box,
+            # rather than whichever one is nearest the tall sprite's centre.
+            for player in players(self.host):
+                px, py = center(player)
+                feet = (player.get('ymp', 0)+player.get('hmp', 0) if isinstance(player, dict)
+                        else player.ymp+player.hmp)
+                if (abs(px-x-w/2) <= self.config['wall_trigger_x_px']*256
+                        and feet >= y+h-16*256
+                        and py <= y+h+self.config['wall_trigger_y_px']*256):
                     self._start_wall(oid, s)
+                    break
         elif s['phase'] == 'falling':
             accel = self.config['wall_yaccel']*1000000/256
             maximum = self.config['wall_maxyvel']*1000/256
@@ -480,6 +500,27 @@ class ScMechanics(Ownership):
             prop(self.host, oid, 'removetype', 1)
             if row.get('hp') is not None and row['hp'] <= 0:
                 self._killed(oid)
+
+    def _tshooter_child(self, oid, s):
+        """Reconcile the single live child before advancing a nest's clock."""
+        child = s.get('child')
+        row = self.host.actors.get(child)
+        if row is not None and not row.get('dead') and row['vid'] == 'sc.tshot':
+            return child
+        for other, row in self.host.actors.items():
+            if (row['vid'] == 'sc.tshot' and not row.get('dead')
+                    and row.get('creator') == oid):
+                if other in self.states:
+                    self.states[other]['owner'] = oid
+                s.update(child=other, phase='idle', next=None)
+                return other
+        if child is not None:
+            # Retirement calls this at the actual death clock. If an external
+            # host removed the child, start conservatively at first observation
+            # instead of backdating a death that the controller did not see.
+            s.update(child=None, phase='idle', child_lost_at=self.now,
+                     next=self.now+self._range('tshooter_respawn_s'))
+        return None
 
     def _tshot_spawn(self, oid, s):
         row = self.host.actors[oid]
@@ -507,7 +548,9 @@ class ScMechanics(Ownership):
         child = self._spawn('sc.tshot', point, oid, dict(facing=heading, lifetime=0))
         self.states[child]['owner'] = oid
         self.states[child]['heading'] = None
-        s.update(child=child, phase='idle', next=self.now+self._range('tshooter_respawn_s'))
+        # A living child has no pending replacement deadline. The full wait
+        # starts when this child is retired, however long its life lasted.
+        s.update(child=child, phase='idle', next=None)
 
     def _tshot_heading(self, oid, s, terrain, point=None):
         """Pick a heading only while stopped, preferring a clear corridor.
@@ -864,6 +907,12 @@ class ScMechanics(Ownership):
 
     def guardian_defeated(self, oid):
         if int(oid) == self.guardian and self.guardian:
+            if not self.host.instance.flags.get('chest_cleared'):
+                row = self.host.actors.get(oid) or self.guardian_row
+                if row is not None:
+                    # Capture before retirement removes the moving body. A
+                    # later respawn must never relocate the original reward.
+                    self.host.instance.flags['chest_drop_position_mp'] = tuple(row['pos'])
             self.host.unlock('chest_cleared', guardian=self.guardian)
             return True
         return False
@@ -966,6 +1015,9 @@ class ScMechanics(Ownership):
         minimum existence deadlines age; there is no catch-up projectile burst.
         """
         self.now = self.host.room_time
+        # A zero-time return may hit pre_physics's same-clock guard. Never
+        # carry bodies again using the displacement from the last live tick.
+        self.platform_deltas = {}
         self._mledge_resuming = True
         self.pre_physics(0.)
         self._mledge_resuming = False
@@ -1006,7 +1058,10 @@ class ScMechanics(Ownership):
             elif vid == 'sc.tshooter':
                 if s['phase'] == 'windup':
                     clear(self.host, oid, 'animprops')
-                s.update(phase='idle', next=self.now+self._range('tshooter_respawn_s'))
+                    s.update(phase='idle', next=self.now+self._range('tshooter_respawn_s'))
+                # Keep an existing death deadline through an absence. A live
+                # resident child blocks replacement without aging a cooldown.
+                self._tshooter_child(oid, s)
             elif vid == 'sc.hive':
                 s['next'] = self.now+self._range('hive_spawn_s')
             elif vid == 'sc.enginefireseed' and self.now >= s['plant_at']:
@@ -1048,9 +1103,11 @@ class ScMechanics(Ownership):
             elif vid == 'sc.dropwall':
                 self._wall(oid, s, dt, target)
             elif vid == 'sc.tshooter':
+                if self._tshooter_child(oid, s) is not None:
+                    continue
                 if s['phase'] == 'windup' and self.now >= s['release_at']:
                     self._tshot_spawn(oid, s)
-                elif s['phase'] == 'idle' and self.now >= s['next'] and s.get('child') not in self.host.actors:
+                elif s['phase'] == 'idle' and self.now >= s['next']:
                     animate(self.host, oid, 1, 990)
                     s.update(phase='windup', release_at=self.now+self.config['tshooter_windup_s'])
             elif vid == 'sc.tshot':
@@ -1144,6 +1201,10 @@ class ScMechanics(Ownership):
             return self.interact(oid, event.get('player', getattr(self.host, 'player', None)))
         if row['vid'] in ('sc.dcore', 'sc.denginecore'):
             return True
+        if row['vid'] == 'sc.tshooter' and kind in ('damage', 'destroy'):
+            # The permanent device is not its destructible child. Native
+            # damage/destroy hints must not remove it or orphan its live ball.
+            return True
         if kind == 'damage':
             if row.get('hp') is None or row['props'].get('invulnerable'):
                 return True
@@ -1171,9 +1232,16 @@ class ScMechanics(Ownership):
         return True
 
     def retire(self, oid, reason='INTERNAL', native=False):
-        self.states.pop(oid, None)
+        state = self.states.pop(oid, None)
+        row = self.host.actors.get(oid)
+        parent = None
+        if state and state['vid'] == 'sc.tshot':
+            parent = state.get('owner', (row or {}).get('creator'))
         self.tracks.pop(oid, None)
         super().retire(oid, reason, native)
+        if parent in self.states and self.states[parent]['vid'] == 'sc.tshooter':
+            self.now = self.host.room_time
+            self._tshooter_child(parent, self.states[parent])
 
     def expire(self, oid):
         if oid not in self.owned:

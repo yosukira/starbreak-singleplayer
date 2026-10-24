@@ -135,7 +135,7 @@ class ScProjectiles:
         changes = dict(changes or {})
         changes['move'] = dict(vel=dict(xvel=0, yvel=0))
         if velocity != (0., 0.):
-            changes['facing'] = round(math.degrees(math.atan2(velocity[1], velocity[0]))) % 360
+            changes.setdefault('facing', round(math.degrees(math.atan2(velocity[1], velocity[0]))) % 360)
         oid = self.host._create(vid, point, owner if creator is None else creator, changes)
         self.adopt(oid, owner=owner, velocity=velocity, gravity=gravity, bounce=bounce)
         self.host.presentation.projectile_created(oid, vid)

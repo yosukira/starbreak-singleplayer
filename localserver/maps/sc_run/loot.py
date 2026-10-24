@@ -1,5 +1,8 @@
 """SC Chest equipment rolls and native CreateLoot emission.
 
+Retained for original-server research; singleplayer/activity SC does not call
+this equipment reward helper.
+
 USER affix-count weights are relative 10:8:6:5:1 for counts 0..4. Item
 selection and per-affix selection are uniform local FIT policies. The native
 sample's three ordinary tier5/build0 items plus one 5 EC pickup provide the

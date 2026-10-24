@@ -1,0 +1,7695 @@
+{
+  "role": "scmid18",
+  "world": {
+    "worldid_": 2,
+    "worldprops_": {
+      "zoneid_": 1,
+      "gameid_": 1,
+      "zone_": "sc",
+      "floor_": 10,
+      "gdv_": 0,
+      "seed_": 574528227,
+      "music_": "sc",
+      "decoration_": {
+        "name_": "scmid18",
+        "inherit_": [
+          "scmaster3"
+        ],
+        "backgroundcolor_": 0,
+        "externaltiles_": [
+          {
+            "vid_": "sc.external"
+          }
+        ],
+        "uniform_": [
+          {
+            "z_": 124,
+            "layer_": [
+              {
+                "tilewidth_": 500,
+                "tileheight_": 300,
+                "vid_": "sc.lightmist",
+                "blendmode_": 4
+              }
+            ]
+          }
+        ],
+        "scatter_": [
+          {
+            "type_": [
+              6
+            ],
+            "z_": 55,
+            "frequency_": 200,
+            "spacingwidth_": 50,
+            "spacingheight_": 50,
+            "vid_": "sc.ext",
+            "allowfliph_": true,
+            "widthoverride_": 350,
+            "heightoverride_": 350
+          },
+          {
+            "type_": [
+              1
+            ],
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5,
+              "right_": 0.5
+            },
+            "z_": 180,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.scbg1"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.800000011920929,
+              "top_": 0.5,
+              "right_": 0.800000011920929,
+              "bottom_": 0.5
+            },
+            "z_": 130,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar1"
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.20000000298023224,
+              "top_": 0.5,
+              "right_": 0.20000000298023224,
+              "bottom_": 0.5
+            },
+            "z_": 130,
+            "frequency_": 100,
+            "spacingwidth_": 30,
+            "spacingheight_": 30,
+            "vid_": "sc.pillar1"
+          },
+          {
+            "xps_": -6,
+            "xpsjitter_": 7,
+            "yps_": -5,
+            "ypsjitter_": 7,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 100,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty"
+          },
+          {
+            "xps_": 6,
+            "xpsjitter_": 5,
+            "yps_": -5,
+            "ypsjitter_": 6,
+            "z_": 40,
+            "zjitter_": 20,
+            "frequency_": 150,
+            "spacingwidth_": 10,
+            "spacingheight_": 7,
+            "vid_": "sc.floaty2"
+          },
+          {
+            "z_": 150,
+            "zjitter_": 20,
+            "frequency_": 10,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "vid_": "sc.pillar1",
+            "allowfliph_": true
+          },
+          {
+            "mingq_": [
+              0
+            ],
+            "bounds_": {
+              "left_": 0.5,
+              "top_": 0.800000011920929,
+              "right_": 0.5,
+              "bottom_": 0.800000011920929
+            },
+            "z_": 120,
+            "frequency_": 100,
+            "spacingwidth_": 300,
+            "spacingheight_": 300,
+            "vid_": "sc.tomb1"
+          },
+          {
+            "type_": [
+              1
+            ],
+            "z_": 150,
+            "frequency_": 25,
+            "spacingwidth_": 150,
+            "spacingheight_": 500,
+            "vid_": "sc.altar",
+            "allowfliph_": true
+          }
+        ],
+        "edge_": [
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 6,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 99,
+                "vid_": "sc.lamp2"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 200,
+            "widthoverride_": 300,
+            "spacingwidth_": 250,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": -22,
+                "vid_": "sc.floormist"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 15,
+            "spacingwidth_": 20,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 69,
+                "vid_": "sc.nub"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 15,
+            "spacingwidth_": 20,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 69,
+                "vid_": "sc.poo"
+              }
+            ]
+          },
+          {
+            "type_": [
+              0
+            ],
+            "frequency_": 25,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "allowfliph_": true,
+            "element_": [
+              {
+                "z_": 80,
+                "vid_": "sc.fire"
+              }
+            ]
+          },
+          {
+            "type_": [
+              1
+            ],
+            "frequency_": 78,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "element_": [
+              {
+                "z_": -20,
+                "vid_": "sc.torch"
+              }
+            ]
+          },
+          {
+            "type_": [
+              3
+            ],
+            "frequency_": 78,
+            "spacingwidth_": 100,
+            "spacingheight_": 100,
+            "element_": [
+              {
+                "z_": -20,
+                "vid_": "sc.torchb"
+              }
+            ]
+          }
+        ],
+        "fill_": [
+          {
+            "z_": 135,
+            "mingq_": 0,
+            "maxgq_": 4,
+            "color_": 222448977,
+            "blendmode_": 4
+          }
+        ]
+      }
+    },
+    "worldstate_": {
+      "serverworld_": {
+        "ownerid_": 1,
+        "obj_": [
+          {
+            "objid_": 109,
+            "props_": {
+              "xmp_": 1474560,
+              "ymp_": -16384,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 110,
+            "props_": {
+              "xmp_": 1477632,
+              "ymp_": 32768,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 111,
+            "props_": {
+              "xmp_": 1495040,
+              "ymp_": -16384,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 255,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 152,
+            "props_": {
+              "xmp_": -1392640,
+              "ymp_": 466944,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "facing_": 180,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 153,
+            "props_": {
+              "xmp_": -1354752,
+              "ymp_": 516096,
+              "draw_": false,
+              "spawn_": true
+            }
+          },
+          {
+            "objid_": 154,
+            "props_": {
+              "xmp_": -1392640,
+              "ymp_": 466944,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 255,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 197,
+            "props_": {
+              "xmp_": -1859584,
+              "ymp_": 57344,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "facing_": 180,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 198,
+            "props_": {
+              "xmp_": -1821696,
+              "ymp_": 106496,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 199,
+            "props_": {
+              "xmp_": -1859584,
+              "ymp_": 57344,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 255,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 271,
+            "props_": {
+              "xmp_": 1794048,
+              "ymp_": 327680,
+              "wmp_": 40960,
+              "hmp_": 49152,
+              "vid_": "sc.door",
+              "interact_": 0
+            }
+          },
+          {
+            "objid_": 272,
+            "props_": {
+              "xmp_": 1797120,
+              "ymp_": 376832,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 273,
+            "props_": {
+              "xmp_": 1814528,
+              "ymp_": 327680,
+              "wmp_": 20480,
+              "hmp_": 49152,
+              "trigger_": 255,
+              "draw_": false
+            }
+          },
+          {
+            "objid_": 1308,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -139264,
+              "wmp_": 278528,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1309,
+            "props_": {
+              "xmp_": 237568,
+              "ymp_": 278528,
+              "wmp_": 163840,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "decorate_": false,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1310,
+            "props_": {
+              "xmp_": 286720,
+              "ymp_": -155648,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1311,
+            "props_": {
+              "xmp_": 237568,
+              "ymp_": 278528,
+              "wmp_": 163840,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1312,
+            "props_": {
+              "xmp_": 106496,
+              "ymp_": 57344,
+              "wmp_": 24576,
+              "hmp_": 212992,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1313,
+            "props_": {
+              "xmp_": 532480,
+              "ymp_": 114688,
+              "wmp_": 16384,
+              "hmp_": 212992,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1314,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 57344,
+              "wmp_": 40960,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1315,
+            "props_": {
+              "xmp_": 122880,
+              "ymp_": 65536,
+              "wmp_": 8192,
+              "hmp_": 196608,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1316,
+            "props_": {
+              "xmp_": 532480,
+              "ymp_": 122880,
+              "wmp_": 8192,
+              "hmp_": 196608,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1317,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 262144,
+              "wmp_": 40960,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1318,
+            "props_": {
+              "xmp_": 532480,
+              "ymp_": 319488,
+              "wmp_": 32768,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1319,
+            "props_": {
+              "xmp_": 221184,
+              "ymp_": 303104,
+              "wmp_": 16384,
+              "hmp_": 8192,
+              "terraintype_": 2,
+              "vid_": "sc.ledge"
+            }
+          },
+          {
+            "objid_": 1320,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 163840,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 163840,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 233,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1321,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 204800,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 204800,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 297,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1322,
+            "props_": {
+              "xmp_": 147456,
+              "ymp_": 360448,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 147456,
+                  "ymp_": 360448,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 101,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1323,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 163840,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 163840,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 350,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1324,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 204800,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 204800,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 271,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1325,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 245760,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 245760,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 343,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1326,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 122880,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 122880,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 213,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1327,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 81920,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 81920,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 209,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1328,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 40960,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 409600,
+                  "ymp_": 40960,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 55,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1329,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 122880,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 122880,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 323,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1330,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 81920,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 81920,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 7,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1331,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 40960,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 40960,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 25,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1332,
+            "props_": {
+              "xmp_": 237568,
+              "ymp_": 286720,
+              "wmp_": 8192,
+              "hmp_": 49152,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1333,
+            "props_": {
+              "xmp_": 237568,
+              "ymp_": 303104,
+              "wmp_": 24576,
+              "hmp_": 32768,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1334,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": 335872,
+              "wmp_": 40960,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1335,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": 335872,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1336,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": 344064,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1337,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 393216,
+              "wmp_": 114688,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1338,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 393216,
+              "wmp_": 114688,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1339,
+            "props_": {
+              "xmp_": 204800,
+              "ymp_": 360448,
+              "wmp_": 24576,
+              "hmp_": 57344,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1340,
+            "props_": {
+              "xmp_": 393216,
+              "ymp_": 286720,
+              "wmp_": 8192,
+              "hmp_": 106496,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1341,
+            "props_": {
+              "xmp_": 376832,
+              "ymp_": 303104,
+              "wmp_": 24576,
+              "hmp_": 90112,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1342,
+            "props_": {
+              "xmp_": 393216,
+              "ymp_": 393216,
+              "wmp_": 40960,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1343,
+            "props_": {
+              "xmp_": 376832,
+              "ymp_": 393216,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1344,
+            "props_": {
+              "xmp_": 425984,
+              "ymp_": 401408,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1345,
+            "props_": {
+              "xmp_": 409600,
+              "ymp_": 417792,
+              "wmp_": 24576,
+              "hmp_": 57344,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1346,
+            "props_": {
+              "xmp_": 434176,
+              "ymp_": 450560,
+              "wmp_": 131072,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1347,
+            "props_": {
+              "xmp_": 434176,
+              "ymp_": 450560,
+              "wmp_": 131072,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1348,
+            "props_": {
+              "xmp_": 401408,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 8192,
+              "terraintype_": 2,
+              "vid_": "sc.ledge"
+            }
+          },
+          {
+            "objid_": 1349,
+            "props_": {
+              "xmp_": 401408,
+              "ymp_": 319488,
+              "wmp_": 16384,
+              "hmp_": 8192,
+              "terraintype_": 2,
+              "vid_": "sc.ledge"
+            }
+          },
+          {
+            "objid_": 1350,
+            "props_": {
+              "xmp_": 401408,
+              "ymp_": 286720,
+              "wmp_": 16384,
+              "hmp_": 8192,
+              "terraintype_": 2,
+              "vid_": "sc.ledge"
+            }
+          },
+          {
+            "objid_": 1351,
+            "props_": {
+              "xmp_": 188416,
+              "ymp_": 245760,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 188416,
+                  "ymp_": 245760,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 112,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1352,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 245760,
+              "wmp_": 16384,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1353,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": 57344,
+              "wmp_": 16384,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1354,
+            "props_": {
+              "xmp_": 548864,
+              "ymp_": 114688,
+              "wmp_": 16384,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1355,
+            "props_": {
+              "xmp_": 548864,
+              "ymp_": 303104,
+              "wmp_": 16384,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1356,
+            "props_": {
+              "xmp_": 532480,
+              "ymp_": 114688,
+              "wmp_": 32768,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1357,
+            "props_": {
+              "xmp_": 278528,
+              "ymp_": -139264,
+              "wmp_": 8192,
+              "hmp_": 40960,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1358,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -73728,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1359,
+            "props_": {
+              "xmp_": 172032,
+              "ymp_": -98304,
+              "wmp_": 114688,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1360,
+            "props_": {
+              "xmp_": 163840,
+              "ymp_": -98304,
+              "wmp_": 8192,
+              "hmp_": 24576,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1361,
+            "props_": {
+              "xmp_": 90112,
+              "ymp_": -90112,
+              "wmp_": 81920,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1362,
+            "props_": {
+              "xmp_": 147456,
+              "ymp_": -114688,
+              "wmp_": 139264,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1363,
+            "props_": {
+              "xmp_": 262144,
+              "ymp_": -155648,
+              "wmp_": 24576,
+              "hmp_": 40960,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1364,
+            "props_": {
+              "xmp_": 434176,
+              "ymp_": 417792,
+              "wmp_": 16384,
+              "hmp_": 8192,
+              "terraintype_": 2,
+              "vid_": "sc.ledge"
+            }
+          },
+          {
+            "objid_": 1365,
+            "props_": {
+              "xmp_": 270336,
+              "ymp_": 114688,
+              "wmp_": 98304,
+              "hmp_": 163840,
+              "vid_": "sc.fancy"
+            }
+          },
+          {
+            "objid_": 1366,
+            "props_": {
+              "xmp_": -327680,
+              "ymp_": 57344,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1367,
+            "props_": {
+              "xmp_": -327680,
+              "ymp_": -90112,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1368,
+            "props_": {
+              "xmp_": -327680,
+              "ymp_": -73728,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1369,
+            "props_": {
+              "xmp_": -327680,
+              "ymp_": 57344,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1370,
+            "props_": {
+              "xmp_": -270336,
+              "ymp_": 16384,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -270336,
+                  "ymp_": 16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 81,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1371,
+            "props_": {
+              "xmp_": -196608,
+              "ymp_": -16384,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -196608,
+                  "ymp_": -16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 126,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1372,
+            "props_": {
+              "xmp_": -57344,
+              "ymp_": 24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -57344,
+                  "ymp_": 24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 287,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1373,
+            "props_": {
+              "xmp_": -24576,
+              "ymp_": -16384,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -24576,
+                  "ymp_": -16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 49,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1374,
+            "props_": {
+              "xmp_": 40960,
+              "ymp_": 24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 40960,
+                  "ymp_": 24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 115,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1375,
+            "props_": {
+              "xmp_": -507904,
+              "ymp_": 57344,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1376,
+            "props_": {
+              "xmp_": -598016,
+              "ymp_": -163840,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1377,
+            "props_": {
+              "xmp_": -598016,
+              "ymp_": -147456,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1378,
+            "props_": {
+              "xmp_": -507904,
+              "ymp_": 57344,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1379,
+            "props_": {
+              "xmp_": -598016,
+              "ymp_": -16384,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1380,
+            "props_": {
+              "xmp_": -516096,
+              "ymp_": -16384,
+              "wmp_": 8192,
+              "hmp_": 81920,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1381,
+            "props_": {
+              "xmp_": -417792,
+              "ymp_": -147456,
+              "wmp_": 8192,
+              "hmp_": 73728,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1382,
+            "props_": {
+              "xmp_": -417792,
+              "ymp_": -163840,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1383,
+            "props_": {
+              "xmp_": -532480,
+              "ymp_": -16384,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1384,
+            "props_": {
+              "xmp_": -417792,
+              "ymp_": -73728,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1385,
+            "props_": {
+              "xmp_": -393216,
+              "ymp_": -90112,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1386,
+            "props_": {
+              "xmp_": -598016,
+              "ymp_": -16384,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1387,
+            "props_": {
+              "xmp_": -434176,
+              "ymp_": 16384,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -434176,
+                  "ymp_": 16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 261,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1388,
+            "props_": {
+              "xmp_": -491520,
+              "ymp_": -24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -491520,
+                  "ymp_": -24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 136,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1389,
+            "props_": {
+              "xmp_": -557056,
+              "ymp_": -65536,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -557056,
+                  "ymp_": -65536,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 339,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1390,
+            "props_": {
+              "xmp_": -368640,
+              "ymp_": -196608,
+              "wmp_": 16384,
+              "hmp_": 139264,
+              "z_": 61,
+              "ownertype_": 2,
+              "damage_": 30,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.dropwall",
+              "noleech_": true
+            }
+          },
+          {
+            "objid_": 1391,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": 57344,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1392,
+            "props_": {
+              "xmp_": -778240,
+              "ymp_": -163840,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1393,
+            "props_": {
+              "xmp_": -778240,
+              "ymp_": -147456,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1394,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": 57344,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1395,
+            "props_": {
+              "xmp_": -679936,
+              "ymp_": -16384,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1396,
+            "props_": {
+              "xmp_": -688128,
+              "ymp_": -16384,
+              "wmp_": 8192,
+              "hmp_": 81920,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1397,
+            "props_": {
+              "xmp_": -786432,
+              "ymp_": -147456,
+              "wmp_": 8192,
+              "hmp_": 73728,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1398,
+            "props_": {
+              "xmp_": -802816,
+              "ymp_": -163840,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1399,
+            "props_": {
+              "xmp_": -688128,
+              "ymp_": -16384,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1400,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": -73728,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1401,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": -90112,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1402,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": -16384,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1403,
+            "props_": {
+              "xmp_": -802816,
+              "ymp_": 16384,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -802816,
+                  "ymp_": 16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 350,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1404,
+            "props_": {
+              "xmp_": -745472,
+              "ymp_": -24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -745472,
+                  "ymp_": -24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 328,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1405,
+            "props_": {
+              "xmp_": -679936,
+              "ymp_": -65536,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -679936,
+                  "ymp_": -65536,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 114,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1406,
+            "props_": {
+              "xmp_": -1032192,
+              "ymp_": 57344,
+              "wmp_": 163840,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1407,
+            "props_": {
+              "xmp_": -1032192,
+              "ymp_": -90112,
+              "wmp_": 163840,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1408,
+            "props_": {
+              "xmp_": -1032192,
+              "ymp_": -73728,
+              "wmp_": 163840,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1409,
+            "props_": {
+              "xmp_": -1032192,
+              "ymp_": 57344,
+              "wmp_": 163840,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1410,
+            "props_": {
+              "xmp_": -958464,
+              "ymp_": -196608,
+              "wmp_": 16384,
+              "hmp_": 139264,
+              "z_": 61,
+              "ownertype_": 2,
+              "damage_": 30,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.dropwall",
+              "noleech_": true
+            }
+          },
+          {
+            "objid_": 1411,
+            "props_": {
+              "xmp_": -942080,
+              "ymp_": -196608,
+              "wmp_": 16384,
+              "hmp_": 139264,
+              "z_": 61,
+              "ownertype_": 2,
+              "damage_": 30,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.dropwall",
+              "noleech_": true
+            }
+          },
+          {
+            "objid_": 1412,
+            "props_": {
+              "xmp_": -1449984,
+              "ymp_": 57344,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1413,
+            "props_": {
+              "xmp_": -1449984,
+              "ymp_": -90112,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1414,
+            "props_": {
+              "xmp_": -1449984,
+              "ymp_": -73728,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1415,
+            "props_": {
+              "xmp_": -1449984,
+              "ymp_": 57344,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1416,
+            "props_": {
+              "xmp_": -1146880,
+              "ymp_": 16384,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1146880,
+                  "ymp_": 16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 116,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1417,
+            "props_": {
+              "xmp_": -1204224,
+              "ymp_": -16384,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1204224,
+                  "ymp_": -16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 179,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1418,
+            "props_": {
+              "xmp_": -1343488,
+              "ymp_": 24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1343488,
+                  "ymp_": 24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 136,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1419,
+            "props_": {
+              "xmp_": -1392640,
+              "ymp_": -16384,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1392640,
+                  "ymp_": -16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 27,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1420,
+            "props_": {
+              "xmp_": -1441792,
+              "ymp_": 24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1441792,
+                  "ymp_": 24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 163,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1421,
+            "props_": {
+              "xmp_": -1376256,
+              "ymp_": -49152,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1422,
+            "props_": {
+              "xmp_": -1638400,
+              "ymp_": 106496,
+              "wmp_": 147456,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1423,
+            "props_": {
+              "xmp_": -1548288,
+              "ymp_": -90112,
+              "wmp_": 98304,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1424,
+            "props_": {
+              "xmp_": -1548288,
+              "ymp_": -73728,
+              "wmp_": 98304,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1425,
+            "props_": {
+              "xmp_": -1638400,
+              "ymp_": 106496,
+              "wmp_": 147456,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1426,
+            "props_": {
+              "xmp_": -1482752,
+              "ymp_": 57344,
+              "wmp_": 32768,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1427,
+            "props_": {
+              "xmp_": -1490944,
+              "ymp_": 57344,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1428,
+            "props_": {
+              "xmp_": -1556480,
+              "ymp_": -73728,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1429,
+            "props_": {
+              "xmp_": -1490944,
+              "ymp_": 57344,
+              "wmp_": 24576,
+              "hmp_": 73728,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1430,
+            "props_": {
+              "xmp_": -1638400,
+              "ymp_": -40960,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1431,
+            "props_": {
+              "xmp_": -1466368,
+              "ymp_": 57344,
+              "wmp_": 16384,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1432,
+            "props_": {
+              "xmp_": -1638400,
+              "ymp_": -24576,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1433,
+            "props_": {
+              "xmp_": -1572864,
+              "ymp_": -90112,
+              "wmp_": 24576,
+              "hmp_": 73728,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1434,
+            "props_": {
+              "xmp_": -1507328,
+              "ymp_": -24576,
+              "wmp_": 24576,
+              "hmp_": 24576,
+              "vid_": "sc.surn",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1507328,
+                  "ymp_": -24576,
+                  "vel_": 0,
+                  "period_": 3000,
+                  "offset_": 312,
+                  "amp_": 1500
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1435,
+            "props_": {
+              "xmp_": -1622016,
+              "ymp_": 65536,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1622016,
+                  "ymp_": 65536,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 244,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1436,
+            "props_": {
+              "xmp_": -1564672,
+              "ymp_": 40960,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -1564672,
+                  "ymp_": 40960,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 243,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1437,
+            "props_": {
+              "xmp_": -1867776,
+              "ymp_": 106496,
+              "wmp_": 229376,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1438,
+            "props_": {
+              "xmp_": -1867776,
+              "ymp_": -16384,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1439,
+            "props_": {
+              "xmp_": -1884160,
+              "ymp_": -16384,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1440,
+            "props_": {
+              "xmp_": -1884160,
+              "ymp_": -40960,
+              "wmp_": 245760,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1441,
+            "props_": {
+              "xmp_": -1867776,
+              "ymp_": -24576,
+              "wmp_": 229376,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1442,
+            "props_": {
+              "xmp_": -1884160,
+              "ymp_": 106496,
+              "wmp_": 245760,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1443,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 114688,
+              "wmp_": 188416,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1444,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": -155648,
+              "wmp_": 188416,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1445,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": -139264,
+              "wmp_": 188416,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1446,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 114688,
+              "wmp_": 188416,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1447,
+            "props_": {
+              "xmp_": 581632,
+              "ymp_": 16384,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 581632,
+                  "ymp_": 16384,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 65,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1448,
+            "props_": {
+              "xmp_": 647168,
+              "ymp_": 49152,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 647168,
+                  "ymp_": 49152,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 24,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1449,
+            "props_": {
+              "xmp_": 696320,
+              "ymp_": 73728,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 696320,
+                  "ymp_": 73728,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 325,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1450,
+            "props_": {
+              "xmp_": 688128,
+              "ymp_": 8192,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 688128,
+                  "ymp_": 8192,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 191,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1451,
+            "props_": {
+              "xmp_": 704512,
+              "ymp_": -24576,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1452,
+            "props_": {
+              "xmp_": 589824,
+              "ymp_": -16384,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1453,
+            "props_": {
+              "xmp_": 630784,
+              "ymp_": -103936,
+              "wmp_": 56320,
+              "hmp_": 38400,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "hitboxdamage_": 35,
+              "hitpoints_": 2000,
+              "armor_": 50,
+              "vid_": "sc.flytank",
+              "soundprefix_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1454,
+            "props_": {
+              "xmp_": 610816,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1455,
+            "props_": {
+              "xmp_": 644608,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1456,
+            "props_": {
+              "xmp_": 649984,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1457,
+            "props_": {
+              "xmp_": 625664,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1458,
+            "props_": {
+              "xmp_": 592896,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1459,
+            "props_": {
+              "xmp_": 587776,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1460,
+            "props_": {
+              "xmp_": 633344,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1461,
+            "props_": {
+              "xmp_": 616192,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1462,
+            "props_": {
+              "xmp_": 600064,
+              "ymp_": 81920,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1463,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": 114688,
+              "wmp_": 188416,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1464,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": -155648,
+              "wmp_": 155648,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1465,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": -139264,
+              "wmp_": 155648,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1466,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": 114688,
+              "wmp_": 188416,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1467,
+            "props_": {
+              "xmp_": 868352,
+              "ymp_": 49152,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 868352,
+                  "ymp_": 49152,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 95,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1468,
+            "props_": {
+              "xmp_": 786432,
+              "ymp_": 73728,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 786432,
+                  "ymp_": 73728,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 197,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1469,
+            "props_": {
+              "xmp_": 761856,
+              "ymp_": 24576,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 761856,
+                  "ymp_": 24576,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 339,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1470,
+            "props_": {
+              "xmp_": 942080,
+              "ymp_": 32768,
+              "wmp_": 90112,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1471,
+            "props_": {
+              "xmp_": 942080,
+              "ymp_": 32768,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1472,
+            "props_": {
+              "xmp_": 942080,
+              "ymp_": 40960,
+              "wmp_": 8192,
+              "hmp_": 81920,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1473,
+            "props_": {
+              "xmp_": 942080,
+              "ymp_": 57344,
+              "wmp_": 24576,
+              "hmp_": 81920,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1474,
+            "props_": {
+              "xmp_": 909312,
+              "ymp_": -139264,
+              "wmp_": 8192,
+              "hmp_": 49152,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1475,
+            "props_": {
+              "xmp_": 933888,
+              "ymp_": -114688,
+              "wmp_": 98304,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1476,
+            "props_": {
+              "xmp_": 917504,
+              "ymp_": -98304,
+              "wmp_": 114688,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1477,
+            "props_": {
+              "xmp_": 909312,
+              "ymp_": -155648,
+              "wmp_": 24576,
+              "hmp_": 65536,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1478,
+            "props_": {
+              "xmp_": 966656,
+              "ymp_": -32768,
+              "wmp_": 40960,
+              "hmp_": 65536,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 5000,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "armor_": 50,
+              "vid_": "sc.golem"
+            }
+          },
+          {
+            "objid_": 1479,
+            "props_": {
+              "xmp_": 1032192,
+              "ymp_": 32768,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1480,
+            "props_": {
+              "xmp_": 1032192,
+              "ymp_": -114688,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1481,
+            "props_": {
+              "xmp_": 1032192,
+              "ymp_": -98304,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1482,
+            "props_": {
+              "xmp_": 1032192,
+              "ymp_": 32768,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1483,
+            "props_": {
+              "xmp_": 1204224,
+              "ymp_": 32768,
+              "wmp_": 319488,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1484,
+            "props_": {
+              "xmp_": 1515520,
+              "ymp_": -90112,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1485,
+            "props_": {
+              "xmp_": 1515520,
+              "ymp_": -90112,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1486,
+            "props_": {
+              "xmp_": 1204224,
+              "ymp_": -114688,
+              "wmp_": 335872,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1487,
+            "props_": {
+              "xmp_": 1204224,
+              "ymp_": -98304,
+              "wmp_": 319488,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1488,
+            "props_": {
+              "xmp_": 1204224,
+              "ymp_": 32768,
+              "wmp_": 335872,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1489,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 450560,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1490,
+            "props_": {
+              "xmp_": 655360,
+              "ymp_": 229376,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1491,
+            "props_": {
+              "xmp_": 655360,
+              "ymp_": 245760,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1492,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 450560,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1493,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": 376832,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1494,
+            "props_": {
+              "xmp_": 745472,
+              "ymp_": 376832,
+              "wmp_": 8192,
+              "hmp_": 81920,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1495,
+            "props_": {
+              "xmp_": 647168,
+              "ymp_": 245760,
+              "wmp_": 8192,
+              "hmp_": 73728,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1496,
+            "props_": {
+              "xmp_": 630784,
+              "ymp_": 229376,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1497,
+            "props_": {
+              "xmp_": 745472,
+              "ymp_": 376832,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1498,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 319488,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1499,
+            "props_": {
+              "xmp_": 565248,
+              "ymp_": 303104,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1500,
+            "props_": {
+              "xmp_": 770048,
+              "ymp_": 376832,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1501,
+            "props_": {
+              "xmp_": 630784,
+              "ymp_": 409600,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 630784,
+                  "ymp_": 409600,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 215,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1502,
+            "props_": {
+              "xmp_": 688128,
+              "ymp_": 368640,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 688128,
+                  "ymp_": 368640,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 87,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1503,
+            "props_": {
+              "xmp_": 753664,
+              "ymp_": 327680,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 753664,
+                  "ymp_": 327680,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 181,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1504,
+            "props_": {
+              "xmp_": 835584,
+              "ymp_": 376832,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1505,
+            "props_": {
+              "xmp_": 835584,
+              "ymp_": 229376,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1506,
+            "props_": {
+              "xmp_": 835584,
+              "ymp_": 245760,
+              "wmp_": 417792,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1507,
+            "props_": {
+              "xmp_": 835584,
+              "ymp_": 376832,
+              "wmp_": 417792,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1508,
+            "props_": {
+              "xmp_": 1138688,
+              "ymp_": 335872,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 1138688,
+                  "ymp_": 335872,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 86,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1509,
+            "props_": {
+              "xmp_": 1081344,
+              "ymp_": 303104,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 1081344,
+                  "ymp_": 303104,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 312,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1510,
+            "props_": {
+              "xmp_": 942080,
+              "ymp_": 344064,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 942080,
+                  "ymp_": 344064,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 294,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1511,
+            "props_": {
+              "xmp_": 892928,
+              "ymp_": 303104,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 892928,
+                  "ymp_": 303104,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 201,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1512,
+            "props_": {
+              "xmp_": 843776,
+              "ymp_": 344064,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": 843776,
+                  "ymp_": 344064,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 12,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1513,
+            "props_": {
+              "xmp_": 909312,
+              "ymp_": 270336,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1514,
+            "props_": {
+              "xmp_": 1253376,
+              "ymp_": 376832,
+              "wmp_": 278528,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1515,
+            "props_": {
+              "xmp_": 1253376,
+              "ymp_": 229376,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1516,
+            "props_": {
+              "xmp_": 1253376,
+              "ymp_": 245760,
+              "wmp_": 278528,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1517,
+            "props_": {
+              "xmp_": 1253376,
+              "ymp_": 376832,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1518,
+            "props_": {
+              "xmp_": 1441792,
+              "ymp_": 335872,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 1441792,
+                  "ymp_": 335872,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 251,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1519,
+            "props_": {
+              "xmp_": 1343488,
+              "ymp_": 303104,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 1343488,
+                  "ymp_": 303104,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 142,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1520,
+            "props_": {
+              "xmp_": 1261568,
+              "ymp_": 327680,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": 1261568,
+                  "ymp_": 327680,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 180,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1521,
+            "props_": {
+              "xmp_": 1269760,
+              "ymp_": 294912,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1522,
+            "props_": {
+              "xmp_": 1359872,
+              "ymp_": 270336,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1523,
+            "props_": {
+              "xmp_": 1458176,
+              "ymp_": 303104,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1524,
+            "props_": {
+              "xmp_": 1531904,
+              "ymp_": 376832,
+              "wmp_": 311296,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1525,
+            "props_": {
+              "xmp_": 1835008,
+              "ymp_": 253952,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1526,
+            "props_": {
+              "xmp_": 1835008,
+              "ymp_": 253952,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1527,
+            "props_": {
+              "xmp_": 1531904,
+              "ymp_": 229376,
+              "wmp_": 327680,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1528,
+            "props_": {
+              "xmp_": 1531904,
+              "ymp_": 245760,
+              "wmp_": 311296,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1529,
+            "props_": {
+              "xmp_": 1531904,
+              "ymp_": 376832,
+              "wmp_": 327680,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1530,
+            "props_": {
+              "xmp_": -188416,
+              "ymp_": 393216,
+              "wmp_": 278528,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1531,
+            "props_": {
+              "xmp_": -188416,
+              "ymp_": 245760,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1532,
+            "props_": {
+              "xmp_": -188416,
+              "ymp_": 262144,
+              "wmp_": 278528,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1533,
+            "props_": {
+              "xmp_": -188416,
+              "ymp_": 393216,
+              "wmp_": 278528,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1534,
+            "props_": {
+              "xmp_": -155648,
+              "ymp_": 352256,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -155648,
+                  "ymp_": 352256,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 135,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1535,
+            "props_": {
+              "xmp_": -90112,
+              "ymp_": 319488,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -90112,
+                  "ymp_": 319488,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 57,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1536,
+            "props_": {
+              "xmp_": -16384,
+              "ymp_": 311296,
+              "wmp_": 57344,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge224",
+              "move_": {
+                "sin_": {
+                  "xmp_": -16384,
+                  "ymp_": 311296,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 271,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1537,
+            "props_": {
+              "xmp_": -8192,
+              "ymp_": 278528,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1538,
+            "props_": {
+              "xmp_": -81920,
+              "ymp_": 286720,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1539,
+            "props_": {
+              "xmp_": -147456,
+              "ymp_": 319488,
+              "wmp_": 32768,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 3000,
+              "armor_": 50,
+              "vid_": "sc.tank"
+            }
+          },
+          {
+            "objid_": 1540,
+            "props_": {
+              "xmp_": -360448,
+              "ymp_": 393216,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1541,
+            "props_": {
+              "xmp_": -360448,
+              "ymp_": 245760,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1542,
+            "props_": {
+              "xmp_": -360448,
+              "ymp_": 262144,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1543,
+            "props_": {
+              "xmp_": -360448,
+              "ymp_": 393216,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1544,
+            "props_": {
+              "xmp_": -281344,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1545,
+            "props_": {
+              "xmp_": -273152,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1546,
+            "props_": {
+              "xmp_": -266240,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "facing_": 180,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1547,
+            "props_": {
+              "xmp_": -313856,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1548,
+            "props_": {
+              "xmp_": -258304,
+              "ymp_": 360448,
+              "wmp_": 16384,
+              "hmp_": 32768,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitboxdamage_": 35,
+              "hitpoints_": 1000,
+              "vid_": "sc.skeleton",
+              "animprops_": {
+                "animid_": 0,
+                "time_": 660
+              }
+            }
+          },
+          {
+            "objid_": 1549,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 442368,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1550,
+            "props_": {
+              "xmp_": -589824,
+              "ymp_": 245760,
+              "wmp_": 229376,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1551,
+            "props_": {
+              "xmp_": -589824,
+              "ymp_": 262144,
+              "wmp_": 229376,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1552,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 442368,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1553,
+            "props_": {
+              "xmp_": -475136,
+              "ymp_": 393216,
+              "wmp_": 114688,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1554,
+            "props_": {
+              "xmp_": -483328,
+              "ymp_": 393216,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1555,
+            "props_": {
+              "xmp_": -598016,
+              "ymp_": 262144,
+              "wmp_": 8192,
+              "hmp_": 57344,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1556,
+            "props_": {
+              "xmp_": -483328,
+              "ymp_": 393216,
+              "wmp_": 24576,
+              "hmp_": 73728,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1557,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 294912,
+              "wmp_": 49152,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1558,
+            "props_": {
+              "xmp_": -458752,
+              "ymp_": 393216,
+              "wmp_": 98304,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1559,
+            "props_": {
+              "xmp_": -548864,
+              "ymp_": 401408,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -548864,
+                  "ymp_": 401408,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 300,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1560,
+            "props_": {
+              "xmp_": -663552,
+              "ymp_": 311296,
+              "wmp_": 65536,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1561,
+            "props_": {
+              "xmp_": -614400,
+              "ymp_": 245760,
+              "wmp_": 24576,
+              "hmp_": 73728,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1562,
+            "props_": {
+              "xmp_": -442368,
+              "ymp_": 327680,
+              "wmp_": 40960,
+              "hmp_": 65536,
+              "blocktype_": 1,
+              "ownertype_": 2,
+              "damage_": 35,
+              "hitpoints_": 5000,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "armor_": 50,
+              "vid_": "sc.golem"
+            }
+          },
+          {
+            "objid_": 1563,
+            "props_": {
+              "xmp_": -933888,
+              "ymp_": 516096,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1564,
+            "props_": {
+              "xmp_": -843776,
+              "ymp_": 294912,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1565,
+            "props_": {
+              "xmp_": -843776,
+              "ymp_": 311296,
+              "wmp_": 180224,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1566,
+            "props_": {
+              "xmp_": -933888,
+              "ymp_": 516096,
+              "wmp_": 180224,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1567,
+            "props_": {
+              "xmp_": -745472,
+              "ymp_": 442368,
+              "wmp_": 81920,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1568,
+            "props_": {
+              "xmp_": -753664,
+              "ymp_": 442368,
+              "wmp_": 8192,
+              "hmp_": 81920,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1569,
+            "props_": {
+              "xmp_": -851968,
+              "ymp_": 311296,
+              "wmp_": 8192,
+              "hmp_": 73728,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1570,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": 294912,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1571,
+            "props_": {
+              "xmp_": -753664,
+              "ymp_": 442368,
+              "wmp_": 24576,
+              "hmp_": 98304,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1572,
+            "props_": {
+              "xmp_": -933888,
+              "ymp_": 385024,
+              "wmp_": 90112,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1573,
+            "props_": {
+              "xmp_": -933888,
+              "ymp_": 368640,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1574,
+            "props_": {
+              "xmp_": -729088,
+              "ymp_": 442368,
+              "wmp_": 65536,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1575,
+            "props_": {
+              "xmp_": -868352,
+              "ymp_": 475136,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -868352,
+                  "ymp_": 475136,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 197,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1576,
+            "props_": {
+              "xmp_": -811008,
+              "ymp_": 434176,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -811008,
+                  "ymp_": 434176,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 354,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1577,
+            "props_": {
+              "xmp_": -745472,
+              "ymp_": 393216,
+              "wmp_": 40960,
+              "hmp_": 24576,
+              "terraintype_": 2,
+              "vid_": "sc.fledge160",
+              "move_": {
+                "sin_": {
+                  "xmp_": -745472,
+                  "ymp_": 393216,
+                  "vel_": 0,
+                  "period_": 2000,
+                  "offset_": 171,
+                  "amp_": 1000
+                }
+              }
+            }
+          },
+          {
+            "objid_": 1578,
+            "props_": {
+              "xmp_": -909312,
+              "ymp_": 262144,
+              "wmp_": 16384,
+              "hmp_": 139264,
+              "z_": 61,
+              "ownertype_": 2,
+              "damage_": 30,
+              "removetype_": 0,
+              "terraintype_": 1,
+              "boundsworld_": false,
+              "vid_": "sc.dropwall",
+              "noleech_": true
+            }
+          },
+          {
+            "objid_": 1579,
+            "props_": {
+              "xmp_": -1105920,
+              "ymp_": 516096,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1580,
+            "props_": {
+              "xmp_": -1105920,
+              "ymp_": 368640,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1581,
+            "props_": {
+              "xmp_": -1105920,
+              "ymp_": 385024,
+              "wmp_": 172032,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1582,
+            "props_": {
+              "xmp_": -1105920,
+              "ymp_": 516096,
+              "wmp_": 172032,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1583,
+            "props_": {
+              "xmp_": -1400832,
+              "ymp_": 516096,
+              "wmp_": 294912,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1584,
+            "props_": {
+              "xmp_": -1400832,
+              "ymp_": 393216,
+              "wmp_": 8192,
+              "hmp_": 122880,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1585,
+            "props_": {
+              "xmp_": -1417216,
+              "ymp_": 393216,
+              "wmp_": 24576,
+              "hmp_": 122880,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1586,
+            "props_": {
+              "xmp_": -1417216,
+              "ymp_": 368640,
+              "wmp_": 311296,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1587,
+            "props_": {
+              "xmp_": -1400832,
+              "ymp_": 385024,
+              "wmp_": 294912,
+              "hmp_": 8192,
+              "terraintype_": 1,
+              "vid_": "sc.wall"
+            }
+          },
+          {
+            "objid_": 1588,
+            "props_": {
+              "xmp_": -1417216,
+              "ymp_": 516096,
+              "wmp_": 311296,
+              "hmp_": 24576,
+              "vid_": "sc.wall"
+            }
+          }
+        ]
+      }
+    },
+    "spawnobj_": {
+      "worldid_": 1,
+      "objid_": 153
+    }
+  },
+  "objects": {
+    "1308": {
+      "xmp": 286720,
+      "ymp": -139264,
+      "wmp": 278528,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1309": {
+      "xmp": 237568,
+      "ymp": 278528,
+      "wmp": 163840,
+      "hmp": 8192,
+      "terraintype": 1,
+      "decorate": false,
+      "vid": "sc.wall"
+    },
+    "1310": {
+      "xmp": 286720,
+      "ymp": -155648,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1311": {
+      "xmp": 237568,
+      "ymp": 278528,
+      "wmp": 163840,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1312": {
+      "xmp": 106496,
+      "ymp": 57344,
+      "wmp": 24576,
+      "hmp": 212992,
+      "vid": "sc.wall"
+    },
+    "1313": {
+      "xmp": 532480,
+      "ymp": 114688,
+      "wmp": 16384,
+      "hmp": 212992,
+      "vid": "sc.wall"
+    },
+    "1314": {
+      "xmp": 90112,
+      "ymp": 57344,
+      "wmp": 40960,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1315": {
+      "xmp": 122880,
+      "ymp": 65536,
+      "wmp": 8192,
+      "hmp": 196608,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1316": {
+      "xmp": 532480,
+      "ymp": 122880,
+      "wmp": 8192,
+      "hmp": 196608,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1317": {
+      "xmp": 90112,
+      "ymp": 262144,
+      "wmp": 40960,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1318": {
+      "xmp": 532480,
+      "ymp": 319488,
+      "wmp": 32768,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1319": {
+      "xmp": 221184,
+      "ymp": 303104,
+      "wmp": 16384,
+      "hmp": 8192,
+      "terraintype": 2,
+      "vid": "sc.ledge"
+    },
+    "1320": {
+      "xmp": 188416,
+      "ymp": 163840,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 163840,
+          "vel": 0,
+          "period": 2000,
+          "offset": 233,
+          "amp": 1000
+        }
+      }
+    },
+    "1321": {
+      "xmp": 188416,
+      "ymp": 204800,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 204800,
+          "vel": 0,
+          "period": 2000,
+          "offset": 297,
+          "amp": 1000
+        }
+      }
+    },
+    "1322": {
+      "xmp": 147456,
+      "ymp": 360448,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 147456,
+          "ymp": 360448,
+          "vel": 0,
+          "period": 2000,
+          "offset": 101,
+          "amp": 1000
+        }
+      }
+    },
+    "1323": {
+      "xmp": 409600,
+      "ymp": 163840,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 163840,
+          "vel": 0,
+          "period": 2000,
+          "offset": 350,
+          "amp": 1000
+        }
+      }
+    },
+    "1324": {
+      "xmp": 409600,
+      "ymp": 204800,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 204800,
+          "vel": 0,
+          "period": 2000,
+          "offset": 271,
+          "amp": 1000
+        }
+      }
+    },
+    "1325": {
+      "xmp": 409600,
+      "ymp": 245760,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 245760,
+          "vel": 0,
+          "period": 2000,
+          "offset": 343,
+          "amp": 1000
+        }
+      }
+    },
+    "1326": {
+      "xmp": 409600,
+      "ymp": 122880,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 122880,
+          "vel": 0,
+          "period": 2000,
+          "offset": 213,
+          "amp": 1000
+        }
+      }
+    },
+    "1327": {
+      "xmp": 409600,
+      "ymp": 81920,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 81920,
+          "vel": 0,
+          "period": 2000,
+          "offset": 209,
+          "amp": 1000
+        }
+      }
+    },
+    "1328": {
+      "xmp": 409600,
+      "ymp": 40960,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 409600,
+          "ymp": 40960,
+          "vel": 0,
+          "period": 2000,
+          "offset": 55,
+          "amp": 1000
+        }
+      }
+    },
+    "1329": {
+      "xmp": 188416,
+      "ymp": 122880,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 122880,
+          "vel": 0,
+          "period": 2000,
+          "offset": 323,
+          "amp": 1000
+        }
+      }
+    },
+    "1330": {
+      "xmp": 188416,
+      "ymp": 81920,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 81920,
+          "vel": 0,
+          "period": 2000,
+          "offset": 7,
+          "amp": 1000
+        }
+      }
+    },
+    "1331": {
+      "xmp": 188416,
+      "ymp": 40960,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 40960,
+          "vel": 0,
+          "period": 2000,
+          "offset": 25,
+          "amp": 1000
+        }
+      }
+    },
+    "1332": {
+      "xmp": 237568,
+      "ymp": 286720,
+      "wmp": 8192,
+      "hmp": 49152,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1333": {
+      "xmp": 237568,
+      "ymp": 303104,
+      "wmp": 24576,
+      "hmp": 32768,
+      "vid": "sc.wall"
+    },
+    "1334": {
+      "xmp": 204800,
+      "ymp": 335872,
+      "wmp": 40960,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1335": {
+      "xmp": 204800,
+      "ymp": 335872,
+      "wmp": 57344,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1336": {
+      "xmp": 204800,
+      "ymp": 344064,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1337": {
+      "xmp": 90112,
+      "ymp": 393216,
+      "wmp": 114688,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1338": {
+      "xmp": 90112,
+      "ymp": 393216,
+      "wmp": 114688,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1339": {
+      "xmp": 204800,
+      "ymp": 360448,
+      "wmp": 24576,
+      "hmp": 57344,
+      "vid": "sc.wall"
+    },
+    "1340": {
+      "xmp": 393216,
+      "ymp": 286720,
+      "wmp": 8192,
+      "hmp": 106496,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1341": {
+      "xmp": 376832,
+      "ymp": 303104,
+      "wmp": 24576,
+      "hmp": 90112,
+      "vid": "sc.wall"
+    },
+    "1342": {
+      "xmp": 393216,
+      "ymp": 393216,
+      "wmp": 40960,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1343": {
+      "xmp": 376832,
+      "ymp": 393216,
+      "wmp": 57344,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1344": {
+      "xmp": 425984,
+      "ymp": 401408,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1345": {
+      "xmp": 409600,
+      "ymp": 417792,
+      "wmp": 24576,
+      "hmp": 57344,
+      "vid": "sc.wall"
+    },
+    "1346": {
+      "xmp": 434176,
+      "ymp": 450560,
+      "wmp": 131072,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1347": {
+      "xmp": 434176,
+      "ymp": 450560,
+      "wmp": 131072,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1348": {
+      "xmp": 401408,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 8192,
+      "terraintype": 2,
+      "vid": "sc.ledge"
+    },
+    "1349": {
+      "xmp": 401408,
+      "ymp": 319488,
+      "wmp": 16384,
+      "hmp": 8192,
+      "terraintype": 2,
+      "vid": "sc.ledge"
+    },
+    "1350": {
+      "xmp": 401408,
+      "ymp": 286720,
+      "wmp": 16384,
+      "hmp": 8192,
+      "terraintype": 2,
+      "vid": "sc.ledge"
+    },
+    "1351": {
+      "xmp": 188416,
+      "ymp": 245760,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 188416,
+          "ymp": 245760,
+          "vel": 0,
+          "period": 2000,
+          "offset": 112,
+          "amp": 1000
+        }
+      }
+    },
+    "1352": {
+      "xmp": 90112,
+      "ymp": 245760,
+      "wmp": 16384,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1353": {
+      "xmp": 90112,
+      "ymp": 57344,
+      "wmp": 16384,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1354": {
+      "xmp": 548864,
+      "ymp": 114688,
+      "wmp": 16384,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1355": {
+      "xmp": 548864,
+      "ymp": 303104,
+      "wmp": 16384,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1356": {
+      "xmp": 532480,
+      "ymp": 114688,
+      "wmp": 32768,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1357": {
+      "xmp": 278528,
+      "ymp": -139264,
+      "wmp": 8192,
+      "hmp": 40960,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1358": {
+      "xmp": 90112,
+      "ymp": -73728,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1359": {
+      "xmp": 172032,
+      "ymp": -98304,
+      "wmp": 114688,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1360": {
+      "xmp": 163840,
+      "ymp": -98304,
+      "wmp": 8192,
+      "hmp": 24576,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1361": {
+      "xmp": 90112,
+      "ymp": -90112,
+      "wmp": 81920,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1362": {
+      "xmp": 147456,
+      "ymp": -114688,
+      "wmp": 139264,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1363": {
+      "xmp": 262144,
+      "ymp": -155648,
+      "wmp": 24576,
+      "hmp": 40960,
+      "vid": "sc.wall"
+    },
+    "1364": {
+      "xmp": 434176,
+      "ymp": 417792,
+      "wmp": 16384,
+      "hmp": 8192,
+      "terraintype": 2,
+      "vid": "sc.ledge"
+    },
+    "1365": {
+      "xmp": 270336,
+      "ymp": 114688,
+      "wmp": 98304,
+      "hmp": 163840,
+      "vid": "sc.fancy"
+    },
+    "1366": {
+      "xmp": -327680,
+      "ymp": 57344,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1367": {
+      "xmp": -327680,
+      "ymp": -90112,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1368": {
+      "xmp": -327680,
+      "ymp": -73728,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1369": {
+      "xmp": -327680,
+      "ymp": 57344,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1370": {
+      "xmp": -270336,
+      "ymp": 16384,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -270336,
+          "ymp": 16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 81,
+          "amp": 1000
+        }
+      }
+    },
+    "1371": {
+      "xmp": -196608,
+      "ymp": -16384,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -196608,
+          "ymp": -16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 126,
+          "amp": 1000
+        }
+      }
+    },
+    "1372": {
+      "xmp": -57344,
+      "ymp": 24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -57344,
+          "ymp": 24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 287,
+          "amp": 1000
+        }
+      }
+    },
+    "1373": {
+      "xmp": -24576,
+      "ymp": -16384,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -24576,
+          "ymp": -16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 49,
+          "amp": 1000
+        }
+      }
+    },
+    "1374": {
+      "xmp": 40960,
+      "ymp": 24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 40960,
+          "ymp": 24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 115,
+          "amp": 1000
+        }
+      }
+    },
+    "1375": {
+      "xmp": -507904,
+      "ymp": 57344,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1376": {
+      "xmp": -598016,
+      "ymp": -163840,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1377": {
+      "xmp": -598016,
+      "ymp": -147456,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1378": {
+      "xmp": -507904,
+      "ymp": 57344,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1379": {
+      "xmp": -598016,
+      "ymp": -16384,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1380": {
+      "xmp": -516096,
+      "ymp": -16384,
+      "wmp": 8192,
+      "hmp": 81920,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1381": {
+      "xmp": -417792,
+      "ymp": -147456,
+      "wmp": 8192,
+      "hmp": 73728,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1382": {
+      "xmp": -417792,
+      "ymp": -163840,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1383": {
+      "xmp": -532480,
+      "ymp": -16384,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1384": {
+      "xmp": -417792,
+      "ymp": -73728,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1385": {
+      "xmp": -393216,
+      "ymp": -90112,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1386": {
+      "xmp": -598016,
+      "ymp": -16384,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1387": {
+      "xmp": -434176,
+      "ymp": 16384,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -434176,
+          "ymp": 16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 261,
+          "amp": 1000
+        }
+      }
+    },
+    "1388": {
+      "xmp": -491520,
+      "ymp": -24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -491520,
+          "ymp": -24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 136,
+          "amp": 1000
+        }
+      }
+    },
+    "1389": {
+      "xmp": -557056,
+      "ymp": -65536,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -557056,
+          "ymp": -65536,
+          "vel": 0,
+          "period": 2000,
+          "offset": 339,
+          "amp": 1000
+        }
+      }
+    },
+    "1390": {
+      "xmp": -368640,
+      "ymp": -196608,
+      "wmp": 16384,
+      "hmp": 139264,
+      "z": 61,
+      "ownertype": 2,
+      "damage": 30,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.dropwall",
+      "noleech": true
+    },
+    "1391": {
+      "xmp": -868352,
+      "ymp": 57344,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1392": {
+      "xmp": -778240,
+      "ymp": -163840,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1393": {
+      "xmp": -778240,
+      "ymp": -147456,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1394": {
+      "xmp": -868352,
+      "ymp": 57344,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1395": {
+      "xmp": -679936,
+      "ymp": -16384,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1396": {
+      "xmp": -688128,
+      "ymp": -16384,
+      "wmp": 8192,
+      "hmp": 81920,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1397": {
+      "xmp": -786432,
+      "ymp": -147456,
+      "wmp": 8192,
+      "hmp": 73728,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1398": {
+      "xmp": -802816,
+      "ymp": -163840,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1399": {
+      "xmp": -688128,
+      "ymp": -16384,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1400": {
+      "xmp": -868352,
+      "ymp": -73728,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1401": {
+      "xmp": -868352,
+      "ymp": -90112,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1402": {
+      "xmp": -663552,
+      "ymp": -16384,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1403": {
+      "xmp": -802816,
+      "ymp": 16384,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -802816,
+          "ymp": 16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 350,
+          "amp": 1000
+        }
+      }
+    },
+    "1404": {
+      "xmp": -745472,
+      "ymp": -24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -745472,
+          "ymp": -24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 328,
+          "amp": 1000
+        }
+      }
+    },
+    "1405": {
+      "xmp": -679936,
+      "ymp": -65536,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -679936,
+          "ymp": -65536,
+          "vel": 0,
+          "period": 2000,
+          "offset": 114,
+          "amp": 1000
+        }
+      }
+    },
+    "1406": {
+      "xmp": -1032192,
+      "ymp": 57344,
+      "wmp": 163840,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1407": {
+      "xmp": -1032192,
+      "ymp": -90112,
+      "wmp": 163840,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1408": {
+      "xmp": -1032192,
+      "ymp": -73728,
+      "wmp": 163840,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1409": {
+      "xmp": -1032192,
+      "ymp": 57344,
+      "wmp": 163840,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1410": {
+      "xmp": -958464,
+      "ymp": -196608,
+      "wmp": 16384,
+      "hmp": 139264,
+      "z": 61,
+      "ownertype": 2,
+      "damage": 30,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.dropwall",
+      "noleech": true
+    },
+    "1411": {
+      "xmp": -942080,
+      "ymp": -196608,
+      "wmp": 16384,
+      "hmp": 139264,
+      "z": 61,
+      "ownertype": 2,
+      "damage": 30,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.dropwall",
+      "noleech": true
+    },
+    "1412": {
+      "xmp": -1449984,
+      "ymp": 57344,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1413": {
+      "xmp": -1449984,
+      "ymp": -90112,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1414": {
+      "xmp": -1449984,
+      "ymp": -73728,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1415": {
+      "xmp": -1449984,
+      "ymp": 57344,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1416": {
+      "xmp": -1146880,
+      "ymp": 16384,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -1146880,
+          "ymp": 16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 116,
+          "amp": 1000
+        }
+      }
+    },
+    "1417": {
+      "xmp": -1204224,
+      "ymp": -16384,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -1204224,
+          "ymp": -16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 179,
+          "amp": 1000
+        }
+      }
+    },
+    "1418": {
+      "xmp": -1343488,
+      "ymp": 24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -1343488,
+          "ymp": 24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 136,
+          "amp": 1000
+        }
+      }
+    },
+    "1419": {
+      "xmp": -1392640,
+      "ymp": -16384,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -1392640,
+          "ymp": -16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 27,
+          "amp": 1000
+        }
+      }
+    },
+    "1420": {
+      "xmp": -1441792,
+      "ymp": 24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -1441792,
+          "ymp": 24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 163,
+          "amp": 1000
+        }
+      }
+    },
+    "1421": {
+      "xmp": -1376256,
+      "ymp": -49152,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1422": {
+      "xmp": -1638400,
+      "ymp": 106496,
+      "wmp": 147456,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1423": {
+      "xmp": -1548288,
+      "ymp": -90112,
+      "wmp": 98304,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1424": {
+      "xmp": -1548288,
+      "ymp": -73728,
+      "wmp": 98304,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1425": {
+      "xmp": -1638400,
+      "ymp": 106496,
+      "wmp": 147456,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1426": {
+      "xmp": -1482752,
+      "ymp": 57344,
+      "wmp": 32768,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1427": {
+      "xmp": -1490944,
+      "ymp": 57344,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1428": {
+      "xmp": -1556480,
+      "ymp": -73728,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1429": {
+      "xmp": -1490944,
+      "ymp": 57344,
+      "wmp": 24576,
+      "hmp": 73728,
+      "vid": "sc.wall"
+    },
+    "1430": {
+      "xmp": -1638400,
+      "ymp": -40960,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1431": {
+      "xmp": -1466368,
+      "ymp": 57344,
+      "wmp": 16384,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1432": {
+      "xmp": -1638400,
+      "ymp": -24576,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1433": {
+      "xmp": -1572864,
+      "ymp": -90112,
+      "wmp": 24576,
+      "hmp": 73728,
+      "vid": "sc.wall"
+    },
+    "1434": {
+      "xmp": -1507328,
+      "ymp": -24576,
+      "wmp": 24576,
+      "hmp": 24576,
+      "vid": "sc.surn",
+      "move": {
+        "sin": {
+          "xmp": -1507328,
+          "ymp": -24576,
+          "vel": 0,
+          "period": 3000,
+          "offset": 312,
+          "amp": 1500
+        }
+      }
+    },
+    "1435": {
+      "xmp": -1622016,
+      "ymp": 65536,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -1622016,
+          "ymp": 65536,
+          "vel": 0,
+          "period": 2000,
+          "offset": 244,
+          "amp": 1000
+        }
+      }
+    },
+    "1436": {
+      "xmp": -1564672,
+      "ymp": 40960,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -1564672,
+          "ymp": 40960,
+          "vel": 0,
+          "period": 2000,
+          "offset": 243,
+          "amp": 1000
+        }
+      }
+    },
+    "197": {
+      "xmp": -1859584,
+      "ymp": 57344,
+      "wmp": 40960,
+      "hmp": 49152,
+      "facing": 180,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "198": {
+      "xmp": -1821696,
+      "ymp": 106496,
+      "draw": false
+    },
+    "199": {
+      "xmp": -1859584,
+      "ymp": 57344,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 255,
+      "draw": false
+    },
+    "1437": {
+      "xmp": -1867776,
+      "ymp": 106496,
+      "wmp": 229376,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1438": {
+      "xmp": -1867776,
+      "ymp": -16384,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1439": {
+      "xmp": -1884160,
+      "ymp": -16384,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "1440": {
+      "xmp": -1884160,
+      "ymp": -40960,
+      "wmp": 245760,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1441": {
+      "xmp": -1867776,
+      "ymp": -24576,
+      "wmp": 229376,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1442": {
+      "xmp": -1884160,
+      "ymp": 106496,
+      "wmp": 245760,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1443": {
+      "xmp": 565248,
+      "ymp": 114688,
+      "wmp": 188416,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1444": {
+      "xmp": 565248,
+      "ymp": -155648,
+      "wmp": 188416,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1445": {
+      "xmp": 565248,
+      "ymp": -139264,
+      "wmp": 188416,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1446": {
+      "xmp": 565248,
+      "ymp": 114688,
+      "wmp": 188416,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1447": {
+      "xmp": 581632,
+      "ymp": 16384,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 581632,
+          "ymp": 16384,
+          "vel": 0,
+          "period": 2000,
+          "offset": 65,
+          "amp": 1000
+        }
+      }
+    },
+    "1448": {
+      "xmp": 647168,
+      "ymp": 49152,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 647168,
+          "ymp": 49152,
+          "vel": 0,
+          "period": 2000,
+          "offset": 24,
+          "amp": 1000
+        }
+      }
+    },
+    "1449": {
+      "xmp": 696320,
+      "ymp": 73728,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 696320,
+          "ymp": 73728,
+          "vel": 0,
+          "period": 2000,
+          "offset": 325,
+          "amp": 1000
+        }
+      }
+    },
+    "1450": {
+      "xmp": 688128,
+      "ymp": 8192,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 688128,
+          "ymp": 8192,
+          "vel": 0,
+          "period": 2000,
+          "offset": 191,
+          "amp": 1000
+        }
+      }
+    },
+    "1451": {
+      "xmp": 704512,
+      "ymp": -24576,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1452": {
+      "xmp": 589824,
+      "ymp": -16384,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1453": {
+      "xmp": 630784,
+      "ymp": -103936,
+      "wmp": 56320,
+      "hmp": 38400,
+      "blocktype": 1,
+      "ownertype": 2,
+      "hitboxdamage": 35,
+      "hitpoints": 2000,
+      "armor": 50,
+      "vid": "sc.flytank",
+      "soundprefix": "sc.tank"
+    },
+    "1454": {
+      "xmp": 610816,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1455": {
+      "xmp": 644608,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1456": {
+      "xmp": 649984,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1457": {
+      "xmp": 625664,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1458": {
+      "xmp": 592896,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1459": {
+      "xmp": 587776,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1460": {
+      "xmp": 633344,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1461": {
+      "xmp": 616192,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1462": {
+      "xmp": 600064,
+      "ymp": 81920,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1463": {
+      "xmp": 753664,
+      "ymp": 114688,
+      "wmp": 188416,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1464": {
+      "xmp": 753664,
+      "ymp": -155648,
+      "wmp": 155648,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1465": {
+      "xmp": 753664,
+      "ymp": -139264,
+      "wmp": 155648,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1466": {
+      "xmp": 753664,
+      "ymp": 114688,
+      "wmp": 188416,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1467": {
+      "xmp": 868352,
+      "ymp": 49152,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 868352,
+          "ymp": 49152,
+          "vel": 0,
+          "period": 2000,
+          "offset": 95,
+          "amp": 1000
+        }
+      }
+    },
+    "1468": {
+      "xmp": 786432,
+      "ymp": 73728,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 786432,
+          "ymp": 73728,
+          "vel": 0,
+          "period": 2000,
+          "offset": 197,
+          "amp": 1000
+        }
+      }
+    },
+    "1469": {
+      "xmp": 761856,
+      "ymp": 24576,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 761856,
+          "ymp": 24576,
+          "vel": 0,
+          "period": 2000,
+          "offset": 339,
+          "amp": 1000
+        }
+      }
+    },
+    "1470": {
+      "xmp": 942080,
+      "ymp": 32768,
+      "wmp": 90112,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1471": {
+      "xmp": 942080,
+      "ymp": 32768,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1472": {
+      "xmp": 942080,
+      "ymp": 40960,
+      "wmp": 8192,
+      "hmp": 81920,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1473": {
+      "xmp": 942080,
+      "ymp": 57344,
+      "wmp": 24576,
+      "hmp": 81920,
+      "vid": "sc.wall"
+    },
+    "1474": {
+      "xmp": 909312,
+      "ymp": -139264,
+      "wmp": 8192,
+      "hmp": 49152,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1475": {
+      "xmp": 933888,
+      "ymp": -114688,
+      "wmp": 98304,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1476": {
+      "xmp": 917504,
+      "ymp": -98304,
+      "wmp": 114688,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1477": {
+      "xmp": 909312,
+      "ymp": -155648,
+      "wmp": 24576,
+      "hmp": 65536,
+      "vid": "sc.wall"
+    },
+    "1478": {
+      "xmp": 966656,
+      "ymp": -32768,
+      "wmp": 40960,
+      "hmp": 65536,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 5000,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "armor": 50,
+      "vid": "sc.golem"
+    },
+    "1479": {
+      "xmp": 1032192,
+      "ymp": 32768,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1480": {
+      "xmp": 1032192,
+      "ymp": -114688,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1481": {
+      "xmp": 1032192,
+      "ymp": -98304,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1482": {
+      "xmp": 1032192,
+      "ymp": 32768,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "109": {
+      "xmp": 1474560,
+      "ymp": -16384,
+      "wmp": 40960,
+      "hmp": 49152,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "110": {
+      "xmp": 1477632,
+      "ymp": 32768,
+      "draw": false
+    },
+    "111": {
+      "xmp": 1495040,
+      "ymp": -16384,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 255,
+      "draw": false
+    },
+    "1483": {
+      "xmp": 1204224,
+      "ymp": 32768,
+      "wmp": 319488,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1484": {
+      "xmp": 1515520,
+      "ymp": -90112,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1485": {
+      "xmp": 1515520,
+      "ymp": -90112,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "1486": {
+      "xmp": 1204224,
+      "ymp": -114688,
+      "wmp": 335872,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1487": {
+      "xmp": 1204224,
+      "ymp": -98304,
+      "wmp": 319488,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1488": {
+      "xmp": 1204224,
+      "ymp": 32768,
+      "wmp": 335872,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1489": {
+      "xmp": 565248,
+      "ymp": 450560,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1490": {
+      "xmp": 655360,
+      "ymp": 229376,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1491": {
+      "xmp": 655360,
+      "ymp": 245760,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1492": {
+      "xmp": 565248,
+      "ymp": 450560,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1493": {
+      "xmp": 753664,
+      "ymp": 376832,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1494": {
+      "xmp": 745472,
+      "ymp": 376832,
+      "wmp": 8192,
+      "hmp": 81920,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1495": {
+      "xmp": 647168,
+      "ymp": 245760,
+      "wmp": 8192,
+      "hmp": 73728,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1496": {
+      "xmp": 630784,
+      "ymp": 229376,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1497": {
+      "xmp": 745472,
+      "ymp": 376832,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1498": {
+      "xmp": 565248,
+      "ymp": 319488,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1499": {
+      "xmp": 565248,
+      "ymp": 303104,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1500": {
+      "xmp": 770048,
+      "ymp": 376832,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1501": {
+      "xmp": 630784,
+      "ymp": 409600,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 630784,
+          "ymp": 409600,
+          "vel": 0,
+          "period": 2000,
+          "offset": 215,
+          "amp": 1000
+        }
+      }
+    },
+    "1502": {
+      "xmp": 688128,
+      "ymp": 368640,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 688128,
+          "ymp": 368640,
+          "vel": 0,
+          "period": 2000,
+          "offset": 87,
+          "amp": 1000
+        }
+      }
+    },
+    "1503": {
+      "xmp": 753664,
+      "ymp": 327680,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 753664,
+          "ymp": 327680,
+          "vel": 0,
+          "period": 2000,
+          "offset": 181,
+          "amp": 1000
+        }
+      }
+    },
+    "1504": {
+      "xmp": 835584,
+      "ymp": 376832,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1505": {
+      "xmp": 835584,
+      "ymp": 229376,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1506": {
+      "xmp": 835584,
+      "ymp": 245760,
+      "wmp": 417792,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1507": {
+      "xmp": 835584,
+      "ymp": 376832,
+      "wmp": 417792,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1508": {
+      "xmp": 1138688,
+      "ymp": 335872,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 1138688,
+          "ymp": 335872,
+          "vel": 0,
+          "period": 2000,
+          "offset": 86,
+          "amp": 1000
+        }
+      }
+    },
+    "1509": {
+      "xmp": 1081344,
+      "ymp": 303104,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 1081344,
+          "ymp": 303104,
+          "vel": 0,
+          "period": 2000,
+          "offset": 312,
+          "amp": 1000
+        }
+      }
+    },
+    "1510": {
+      "xmp": 942080,
+      "ymp": 344064,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 942080,
+          "ymp": 344064,
+          "vel": 0,
+          "period": 2000,
+          "offset": 294,
+          "amp": 1000
+        }
+      }
+    },
+    "1511": {
+      "xmp": 892928,
+      "ymp": 303104,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 892928,
+          "ymp": 303104,
+          "vel": 0,
+          "period": 2000,
+          "offset": 201,
+          "amp": 1000
+        }
+      }
+    },
+    "1512": {
+      "xmp": 843776,
+      "ymp": 344064,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": 843776,
+          "ymp": 344064,
+          "vel": 0,
+          "period": 2000,
+          "offset": 12,
+          "amp": 1000
+        }
+      }
+    },
+    "1513": {
+      "xmp": 909312,
+      "ymp": 270336,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1514": {
+      "xmp": 1253376,
+      "ymp": 376832,
+      "wmp": 278528,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1515": {
+      "xmp": 1253376,
+      "ymp": 229376,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1516": {
+      "xmp": 1253376,
+      "ymp": 245760,
+      "wmp": 278528,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1517": {
+      "xmp": 1253376,
+      "ymp": 376832,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1518": {
+      "xmp": 1441792,
+      "ymp": 335872,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 1441792,
+          "ymp": 335872,
+          "vel": 0,
+          "period": 2000,
+          "offset": 251,
+          "amp": 1000
+        }
+      }
+    },
+    "1519": {
+      "xmp": 1343488,
+      "ymp": 303104,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 1343488,
+          "ymp": 303104,
+          "vel": 0,
+          "period": 2000,
+          "offset": 142,
+          "amp": 1000
+        }
+      }
+    },
+    "1520": {
+      "xmp": 1261568,
+      "ymp": 327680,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": 1261568,
+          "ymp": 327680,
+          "vel": 0,
+          "period": 2000,
+          "offset": 180,
+          "amp": 1000
+        }
+      }
+    },
+    "1521": {
+      "xmp": 1269760,
+      "ymp": 294912,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1522": {
+      "xmp": 1359872,
+      "ymp": 270336,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1523": {
+      "xmp": 1458176,
+      "ymp": 303104,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "271": {
+      "xmp": 1794048,
+      "ymp": 327680,
+      "wmp": 40960,
+      "hmp": 49152,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "272": {
+      "xmp": 1797120,
+      "ymp": 376832,
+      "draw": false
+    },
+    "273": {
+      "xmp": 1814528,
+      "ymp": 327680,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 255,
+      "draw": false
+    },
+    "1524": {
+      "xmp": 1531904,
+      "ymp": 376832,
+      "wmp": 311296,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1525": {
+      "xmp": 1835008,
+      "ymp": 253952,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1526": {
+      "xmp": 1835008,
+      "ymp": 253952,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "1527": {
+      "xmp": 1531904,
+      "ymp": 229376,
+      "wmp": 327680,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1528": {
+      "xmp": 1531904,
+      "ymp": 245760,
+      "wmp": 311296,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1529": {
+      "xmp": 1531904,
+      "ymp": 376832,
+      "wmp": 327680,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1530": {
+      "xmp": -188416,
+      "ymp": 393216,
+      "wmp": 278528,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1531": {
+      "xmp": -188416,
+      "ymp": 245760,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1532": {
+      "xmp": -188416,
+      "ymp": 262144,
+      "wmp": 278528,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1533": {
+      "xmp": -188416,
+      "ymp": 393216,
+      "wmp": 278528,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1534": {
+      "xmp": -155648,
+      "ymp": 352256,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -155648,
+          "ymp": 352256,
+          "vel": 0,
+          "period": 2000,
+          "offset": 135,
+          "amp": 1000
+        }
+      }
+    },
+    "1535": {
+      "xmp": -90112,
+      "ymp": 319488,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -90112,
+          "ymp": 319488,
+          "vel": 0,
+          "period": 2000,
+          "offset": 57,
+          "amp": 1000
+        }
+      }
+    },
+    "1536": {
+      "xmp": -16384,
+      "ymp": 311296,
+      "wmp": 57344,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge224",
+      "move": {
+        "sin": {
+          "xmp": -16384,
+          "ymp": 311296,
+          "vel": 0,
+          "period": 2000,
+          "offset": 271,
+          "amp": 1000
+        }
+      }
+    },
+    "1537": {
+      "xmp": -8192,
+      "ymp": 278528,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1538": {
+      "xmp": -81920,
+      "ymp": 286720,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1539": {
+      "xmp": -147456,
+      "ymp": 319488,
+      "wmp": 32768,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 3000,
+      "armor": 50,
+      "vid": "sc.tank"
+    },
+    "1540": {
+      "xmp": -360448,
+      "ymp": 393216,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1541": {
+      "xmp": -360448,
+      "ymp": 245760,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1542": {
+      "xmp": -360448,
+      "ymp": 262144,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1543": {
+      "xmp": -360448,
+      "ymp": 393216,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1544": {
+      "xmp": -281344,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1545": {
+      "xmp": -273152,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1546": {
+      "xmp": -266240,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 32768,
+      "facing": 180,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1547": {
+      "xmp": -313856,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1548": {
+      "xmp": -258304,
+      "ymp": 360448,
+      "wmp": 16384,
+      "hmp": 32768,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitboxdamage": 35,
+      "hitpoints": 1000,
+      "vid": "sc.skeleton",
+      "animprops": {
+        "animid": 0,
+        "time": 660
+      }
+    },
+    "1549": {
+      "xmp": -663552,
+      "ymp": 442368,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1550": {
+      "xmp": -589824,
+      "ymp": 245760,
+      "wmp": 229376,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1551": {
+      "xmp": -589824,
+      "ymp": 262144,
+      "wmp": 229376,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1552": {
+      "xmp": -663552,
+      "ymp": 442368,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1553": {
+      "xmp": -475136,
+      "ymp": 393216,
+      "wmp": 114688,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1554": {
+      "xmp": -483328,
+      "ymp": 393216,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1555": {
+      "xmp": -598016,
+      "ymp": 262144,
+      "wmp": 8192,
+      "hmp": 57344,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1556": {
+      "xmp": -483328,
+      "ymp": 393216,
+      "wmp": 24576,
+      "hmp": 73728,
+      "vid": "sc.wall"
+    },
+    "1557": {
+      "xmp": -663552,
+      "ymp": 294912,
+      "wmp": 49152,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1558": {
+      "xmp": -458752,
+      "ymp": 393216,
+      "wmp": 98304,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1559": {
+      "xmp": -548864,
+      "ymp": 401408,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -548864,
+          "ymp": 401408,
+          "vel": 0,
+          "period": 2000,
+          "offset": 300,
+          "amp": 1000
+        }
+      }
+    },
+    "1560": {
+      "xmp": -663552,
+      "ymp": 311296,
+      "wmp": 65536,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1561": {
+      "xmp": -614400,
+      "ymp": 245760,
+      "wmp": 24576,
+      "hmp": 73728,
+      "vid": "sc.wall"
+    },
+    "1562": {
+      "xmp": -442368,
+      "ymp": 327680,
+      "wmp": 40960,
+      "hmp": 65536,
+      "blocktype": 1,
+      "ownertype": 2,
+      "damage": 35,
+      "hitpoints": 5000,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "armor": 50,
+      "vid": "sc.golem"
+    },
+    "1563": {
+      "xmp": -933888,
+      "ymp": 516096,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1564": {
+      "xmp": -843776,
+      "ymp": 294912,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1565": {
+      "xmp": -843776,
+      "ymp": 311296,
+      "wmp": 180224,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1566": {
+      "xmp": -933888,
+      "ymp": 516096,
+      "wmp": 180224,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1567": {
+      "xmp": -745472,
+      "ymp": 442368,
+      "wmp": 81920,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1568": {
+      "xmp": -753664,
+      "ymp": 442368,
+      "wmp": 8192,
+      "hmp": 81920,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1569": {
+      "xmp": -851968,
+      "ymp": 311296,
+      "wmp": 8192,
+      "hmp": 73728,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1570": {
+      "xmp": -868352,
+      "ymp": 294912,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1571": {
+      "xmp": -753664,
+      "ymp": 442368,
+      "wmp": 24576,
+      "hmp": 98304,
+      "vid": "sc.wall"
+    },
+    "1572": {
+      "xmp": -933888,
+      "ymp": 385024,
+      "wmp": 90112,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1573": {
+      "xmp": -933888,
+      "ymp": 368640,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1574": {
+      "xmp": -729088,
+      "ymp": 442368,
+      "wmp": 65536,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1575": {
+      "xmp": -868352,
+      "ymp": 475136,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -868352,
+          "ymp": 475136,
+          "vel": 0,
+          "period": 2000,
+          "offset": 197,
+          "amp": 1000
+        }
+      }
+    },
+    "1576": {
+      "xmp": -811008,
+      "ymp": 434176,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -811008,
+          "ymp": 434176,
+          "vel": 0,
+          "period": 2000,
+          "offset": 354,
+          "amp": 1000
+        }
+      }
+    },
+    "1577": {
+      "xmp": -745472,
+      "ymp": 393216,
+      "wmp": 40960,
+      "hmp": 24576,
+      "terraintype": 2,
+      "vid": "sc.fledge160",
+      "move": {
+        "sin": {
+          "xmp": -745472,
+          "ymp": 393216,
+          "vel": 0,
+          "period": 2000,
+          "offset": 171,
+          "amp": 1000
+        }
+      }
+    },
+    "1578": {
+      "xmp": -909312,
+      "ymp": 262144,
+      "wmp": 16384,
+      "hmp": 139264,
+      "z": 61,
+      "ownertype": 2,
+      "damage": 30,
+      "removetype": 0,
+      "terraintype": 1,
+      "boundsworld": false,
+      "vid": "sc.dropwall",
+      "noleech": true
+    },
+    "1579": {
+      "xmp": -1105920,
+      "ymp": 516096,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1580": {
+      "xmp": -1105920,
+      "ymp": 368640,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1581": {
+      "xmp": -1105920,
+      "ymp": 385024,
+      "wmp": 172032,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1582": {
+      "xmp": -1105920,
+      "ymp": 516096,
+      "wmp": 172032,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "152": {
+      "xmp": -1392640,
+      "ymp": 466944,
+      "wmp": 40960,
+      "hmp": 49152,
+      "facing": 180,
+      "vid": "sc.door",
+      "interact": 0
+    },
+    "153": {
+      "xmp": -1354752,
+      "ymp": 516096,
+      "draw": false,
+      "spawn": true
+    },
+    "154": {
+      "xmp": -1392640,
+      "ymp": 466944,
+      "wmp": 20480,
+      "hmp": 49152,
+      "trigger": 255,
+      "draw": false
+    },
+    "1583": {
+      "xmp": -1400832,
+      "ymp": 516096,
+      "wmp": 294912,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1584": {
+      "xmp": -1400832,
+      "ymp": 393216,
+      "wmp": 8192,
+      "hmp": 122880,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1585": {
+      "xmp": -1417216,
+      "ymp": 393216,
+      "wmp": 24576,
+      "hmp": 122880,
+      "vid": "sc.wall"
+    },
+    "1586": {
+      "xmp": -1417216,
+      "ymp": 368640,
+      "wmp": 311296,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    },
+    "1587": {
+      "xmp": -1400832,
+      "ymp": 385024,
+      "wmp": 294912,
+      "hmp": 8192,
+      "terraintype": 1,
+      "vid": "sc.wall"
+    },
+    "1588": {
+      "xmp": -1417216,
+      "ymp": 516096,
+      "wmp": 311296,
+      "hmp": 24576,
+      "vid": "sc.wall"
+    }
+  },
+  "creators": {},
+  "links": {},
+  "switches": {},
+  "spawn": [
+    -1358592,
+    498176
+  ],
+  "entries": {
+    "door:197": [
+      -1825536,
+      88576
+    ],
+    "door:109": [
+      1473792,
+      14848
+    ],
+    "door:271": [
+      1793280,
+      358912
+    ],
+    "door:152": [
+      -1358592,
+      498176
+    ],
+    "default": [
+      -1358592,
+      498176
+    ]
+  },
+  "metadata": {
+    "template": "scmid18",
+    "spawn_marker_id": 153,
+    "spawn_footprint_mp": [
+      7680,
+      17920
+    ],
+    "ports": [
+      {
+        "id": 197,
+        "at": [
+          -1839104,
+          81920
+        ],
+        "side": "left",
+        "entry": "door:197",
+        "bounds": [
+          -1859584,
+          57344,
+          -1818624,
+          106496
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door",
+        "trigger_id": 199
+      },
+      {
+        "id": 109,
+        "at": [
+          1495040,
+          8192
+        ],
+        "side": "right",
+        "entry": "door:109",
+        "bounds": [
+          1474560,
+          -16384,
+          1515520,
+          32768
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door",
+        "trigger_id": 111
+      },
+      {
+        "id": 271,
+        "at": [
+          1814528,
+          352256
+        ],
+        "side": "right",
+        "entry": "door:271",
+        "bounds": [
+          1794048,
+          327680,
+          1835008,
+          376832
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door",
+        "trigger_id": 273
+      },
+      {
+        "id": 152,
+        "at": [
+          -1372160,
+          491520
+        ],
+        "side": "left",
+        "entry": "door:152",
+        "bounds": [
+          -1392640,
+          466944,
+          -1351680,
+          516096
+        ],
+        "width": 40960,
+        "height": 49152,
+        "kind": "door",
+        "vid": "sc.door",
+        "trigger_id": 154
+      }
+    ],
+    "bounds": [
+      -1867776,
+      -147456,
+      1843200,
+      524288
+    ],
+    "door_trigger_ids": [
+      199,
+      111,
+      273,
+      154
+    ],
+    "sc_surn_counts": {},
+    "sc_wraith_emitters": [
+      {
+        "angle": 141,
+        "births": [
+          {
+            "pos_mp": [
+              -383232,
+              -105472
+            ],
+            "offset": 33
+          },
+          {
+            "pos_mp": [
+              -390656,
+              -130048
+            ],
+            "offset": 310
+          },
+          {
+            "pos_mp": [
+              -380672,
+              -119296
+            ],
+            "offset": 52
+          },
+          {
+            "pos_mp": [
+              -397568,
+              -106752
+            ],
+            "offset": 249
+          },
+          {
+            "pos_mp": [
+              -372224,
+              -113664
+            ],
+            "offset": 351
+          },
+          {
+            "pos_mp": [
+              -396032,
+              -137472
+            ],
+            "offset": 293
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      },
+      {
+        "angle": 38,
+        "births": [
+          {
+            "pos_mp": [
+              -828416,
+              -114176
+            ],
+            "offset": 97
+          },
+          {
+            "pos_mp": [
+              -852224,
+              -116992
+            ],
+            "offset": 221
+          },
+          {
+            "pos_mp": [
+              -839424,
+              -118784
+            ],
+            "offset": 8
+          },
+          {
+            "pos_mp": [
+              -844288,
+              -140800
+            ],
+            "offset": 211
+          },
+          {
+            "pos_mp": [
+              -830720,
+              -126976
+            ],
+            "offset": 85
+          },
+          {
+            "pos_mp": [
+              -853504,
+              -122368
+            ],
+            "offset": 96
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      },
+      {
+        "angle": 69,
+        "births": [
+          {
+            "pos_mp": [
+              1067520,
+              -136704
+            ],
+            "offset": 48
+          },
+          {
+            "pos_mp": [
+              1086976,
+              -169984
+            ],
+            "offset": 250
+          },
+          {
+            "pos_mp": [
+              1071872,
+              -126976
+            ],
+            "offset": 108
+          },
+          {
+            "pos_mp": [
+              1089024,
+              -164096
+            ],
+            "offset": 201
+          },
+          {
+            "pos_mp": [
+              1083136,
+              -123904
+            ],
+            "offset": 355
+          },
+          {
+            "pos_mp": [
+              1092096,
+              -144128
+            ],
+            "offset": 108
+          },
+          {
+            "pos_mp": [
+              1096192,
+              -150016
+            ],
+            "offset": 108
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      },
+      {
+        "angle": 38,
+        "births": [
+          {
+            "pos_mp": [
+              613888,
+              248064
+            ],
+            "offset": 122
+          },
+          {
+            "pos_mp": [
+              576512,
+              261888
+            ],
+            "offset": 19
+          },
+          {
+            "pos_mp": [
+              595200,
+              249856
+            ],
+            "offset": 106
+          },
+          {
+            "pos_mp": [
+              608512,
+              278528
+            ],
+            "offset": 225
+          },
+          {
+            "pos_mp": [
+              587264,
+              277504
+            ],
+            "offset": 8
+          },
+          {
+            "pos_mp": [
+              606208,
+              288512
+            ],
+            "offset": 231
+          },
+          {
+            "pos_mp": [
+              615936,
+              291328
+            ],
+            "offset": 75
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      },
+      {
+        "angle": 38,
+        "births": [
+          {
+            "pos_mp": [
+              -880384,
+              321792
+            ],
+            "offset": 253
+          },
+          {
+            "pos_mp": [
+              -915712,
+              354304
+            ],
+            "offset": 8
+          },
+          {
+            "pos_mp": [
+              -883200,
+              333824
+            ],
+            "offset": 49
+          },
+          {
+            "pos_mp": [
+              -892928,
+              345600
+            ],
+            "offset": 239
+          },
+          {
+            "pos_mp": [
+              -890880,
+              324352
+            ],
+            "offset": 106
+          },
+          {
+            "pos_mp": [
+              -886784,
+              329216
+            ],
+            "offset": 41
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      },
+      {
+        "angle": 69,
+        "births": [
+          {
+            "pos_mp": [
+              -1061120,
+              345856
+            ],
+            "offset": 219
+          },
+          {
+            "pos_mp": [
+              -1089536,
+              331776
+            ],
+            "offset": 156
+          },
+          {
+            "pos_mp": [
+              -1042432,
+              312832
+            ],
+            "offset": 345
+          },
+          {
+            "pos_mp": [
+              -1047296,
+              316672
+            ],
+            "offset": 193
+          },
+          {
+            "pos_mp": [
+              -1062912,
+              338688
+            ],
+            "offset": 314
+          },
+          {
+            "pos_mp": [
+              -1051136,
+              342272
+            ],
+            "offset": 224
+          }
+        ],
+        "sin": {
+          "vel": 8000,
+          "period": 750,
+          "amp": 10000
+        },
+        "interval_s": [
+          0.5,
+          0.85
+        ],
+        "birth_selection": "sample_fit",
+        "interval_selection": "uniform_fit"
+      }
+    ]
+  }
+}

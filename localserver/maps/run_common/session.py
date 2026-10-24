@@ -314,6 +314,9 @@ class RunLiveSession:
     def boundary_properties(self, oid, link):
         return self.instance.snapshot.properties_at((1, int(oid)))
 
+    def after_room_step(self):
+        """Commit map-specific effects before inventory or door handoff."""
+
     @tracked_tick
     def step(self, dt):
         if not math.isfinite(dt) or not 0<=dt<=1:
@@ -360,6 +363,7 @@ class RunLiveSession:
                 if self.interact(oid,player):break
             if self.suppress_send:return
         self.current.step(dt)
+        self.after_room_step()
         if self.encounter_finished() or self.instance.flags.get('encounter:'+self.instance.role):
             self.run.mark_defeated(self.instance.role)
         self.apply_progress(self.run,self.instance,emit=True)

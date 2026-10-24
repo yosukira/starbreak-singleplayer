@@ -426,7 +426,7 @@ class ScRunTests(unittest.TestCase):
         self.assertIs(revisit.current, wrapper.current)
         self.assertEqual(revisit.current.actors[switch]['vid'], 'sc.switchdone')
 
-    def test_chest_reward_is_emitted_once_through_new_wrappers(self):
+    def test_chest_clear_does_not_issue_equipment_through_new_wrappers(self):
         run, _ = self.make_run()
         role = next(role for role in run.pack.room_names if role.startswith('chest_') and
                     run.pack.plan['rooms'][role]['metadata'].get('chest_guardian'))
@@ -438,10 +438,9 @@ class ScRunTests(unittest.TestCase):
         again, _ = self.open_room(run, role, server)
         again.step(.02)
         chest = [d['createloot_'] for d in server.deltas() if 'createloot_' in d]
-        self.assertEqual(len(chest), 1)
-        self.assertEqual(len(chest[0]['itemprops_']), 4)
-        self.assertEqual(chest[0]['itemprops_'][-1]['type_'], 96)
-        self.assertEqual(run.chests_rewarded, {role})
+        self.assertEqual(chest, [])
+        self.assertTrue(again.instance.flags['chest_cleared'])
+        self.assertFalse(run.chests_rewarded)
         self.assertTrue(again.commit_status()['local_committed'], again.commit_status())
 
     def test_boss_victory_opens_original_hidden_portal_and_requires_manual_home_interaction(self):
@@ -485,7 +484,7 @@ class ScRunTests(unittest.TestCase):
         self.assertEqual(len(server.exits), 1)
         self.assertEqual(server.exits[0]['destination'], 'home')
 
-    def test_tank_tower_drops_chest_on_highest_tank_with_lower_tanks_still_alive(self):
+    def test_tank_tower_clears_on_highest_tank_without_equipment_chest(self):
         run, _ = self.make_run()
         role = next(name for name, room in run.pack.plan['rooms'].items()
                     if room['metadata']['template'] == 'scend02')
@@ -498,12 +497,14 @@ class ScRunTests(unittest.TestCase):
         runtime.feedback(dict(kind='damage', victim=lower, value=tanks[lower]['hp'], seq=100))
         wrapper.step(.02)
         self.assertFalse(any('createloot_' in d for d in server.deltas()))
+        self.assertFalse(wrapper.instance.flags.get('chest_cleared'))
         runtime.feedback(dict(kind='damage', victim=top, value=tanks[top]['hp'], seq=101))
         wrapper.step(.02)
         rewards = [d['createloot_'] for d in server.deltas() if 'createloot_' in d]
-        self.assertEqual(len(rewards), 1)
+        self.assertEqual(rewards, [])
+        self.assertTrue(wrapper.instance.flags['chest_cleared'])
         self.assertEqual(len([r for r in runtime.actors.values() if r['vid'] == 'sc.tank']), 25)
-        self.assertEqual(run.chests_rewarded, {role})
+        self.assertFalse(run.chests_rewarded)
 
     def test_revisit_preserves_damage_ages_deadlines_and_does_not_replay_engine_attacks(self):
         run, clock = self.make_run()
