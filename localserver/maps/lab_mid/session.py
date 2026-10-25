@@ -8,7 +8,7 @@ import time
 from ... import pb_layout
 from ...live.bridge import PlayerBridge, PlayerState
 from ...live.wire import DeltaBatch
-from ...supply import SupplyDrops
+from ...supply import SupplyDrops, is_hp_death
 from ..etl_motion import NativeMotion, Terrain
 from .controller import LabMidController
 from .scene import LabMidPack
@@ -308,10 +308,17 @@ class LabMidLiveSession(object):
         if state is not None:
             self.player = state
         for event in self.bridge.poll_events():
-            if isinstance(event,dict) and event.get('kind')=='destroy':
-                self._retire_native_bullet(event)
+            if not isinstance(event, dict):
                 continue
-            if not isinstance(event, dict) or event.get('kind') != 'damage':
+            if 'ownerid' in event and int(event['ownerid'] or 0) != self.worldid:
+                continue
+            if event.get('kind') == 'destroy':
+                self._retire_native_bullet(event)
+                victim = int(event.get('victim') or 0)
+                if is_hp_death(event.get('reason')) and victim in self.zombies:
+                    self._damage_zombie(victim, self.zombies[victim]['hp'])
+                continue
+            if event.get('kind') != 'damage':
                 continue
             victim = int(event.get('victim') or 0)
             value = int(event.get('value') or 0)

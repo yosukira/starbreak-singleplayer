@@ -1180,23 +1180,24 @@ class LiveSession(object):
             if kind == 'destroy' and int(item.get('ownerid') or 0) == self.worldid:
                 victim = int(item.get('victim') or 0)
                 if item.get('reason') in (2,'HITPOINTS'):
-                    # The client owns the mech's final HP death, as in full
-                    # rooms. Delayed/lost damage feedback must not leave a
-                    # removed mech attacking or occupying a portal slot.
+                    # The client owns every enemy's final HP death, as in full
+                    # rooms. A missing damage event must not leave a removed
+                    # shooter attacking or an invisible engineer summoning.
                     intro=self.intro_units.get(victim)
                     unit=self.enemies.find_unit(victim,alive_only=True) if self.enemies.units else None
                     retired=False
                     if (intro is not None and victim not in self.intro_destroyed
                             and intro['vid'] in self.rules.BIG_ROBOT_VIDS):
                         retired=bool(self._damage_intro_unit(victim,max(1,intro['hp']),native=True))
-                    elif unit is not None and unit.emitted and unit.vid in self.rules.BIG_ROBOT_VIDS:
+                    elif unit is not None and unit.emitted:
                         result=self.enemies.apply_damage(victim,max(1,unit.hp))
                         if result and result.get('destroyed'):
                             self._finish_enemy_death(unit,native=True);retired=True
                     if retired:
                         recorder=getattr(self,'battle_recorder',None)
                         if recorder is not None:recorder.damage(0,killed=True)
-                        self.event('client-mech-destroyed',objid=victim)
+                        self.event('client-mech-destroyed' if intro is not None or unit.vid in self.rules.BIG_ROBOT_VIDS
+                                   else 'client-enemy-destroyed',objid=victim)
                         continue
                 if victim in self.destructible_terrain_hp:
                     self._retire_destructible_terrain(victim)
