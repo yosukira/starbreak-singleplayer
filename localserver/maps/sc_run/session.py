@@ -15,6 +15,15 @@ class ScRunLiveSession(RunLiveSession):
     ARM_ON_CREATE=True
     DOOR_TELEMETRY_S=.5
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.recipe['metadata'].get('encounter_kind') == 'patriarch':
+            # The run keeps ticking while the next native world loads. Its
+            # reused bridge can still hold the previous room's character.
+            self.current.duel_entry = (self._ready_after, self.instance.seed)
+            self.current.duel_entry_seen = False
+            self.current.viewer_platform.clear()
+
     @classmethod
     def entry_position(cls, run, role, entry, wmp, hmp):
         from .doors import arrival

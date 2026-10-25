@@ -165,6 +165,18 @@ class PatriarchLiveSession:
                 name=(self.server.room.peers.get(p.raw.get('player_id'),{}).get('name','Player')
                       if hasattr(self.server,'room') else p.raw.get('name') or 'Player'))
                 for p in participants.from_bridge(self.bridge)}
+        entry = getattr(self, 'duel_entry', None)
+        if entry is not None and not getattr(self.bridge, 'shared_room', False):
+            boundary, seed = entry
+            ready = (state is not None and state.received_since(boundary)
+                     and state.raw.get('room_seed') == seed)
+            if not ready:
+                self.players = {}
+            elif not self.duel_entry_seen:
+                # A new CreateWorld must receive its own view, even when a
+                # persistent encounter selected this player on an earlier visit.
+                self.duel_entry_seen = True
+                self.viewer_platform.clear()
         self.controller.set_players(self.players)
         if not self.bootstrapped and self.players:
             self.bootstrapped=True;self.controller.start();self.phase='fighting'
@@ -173,6 +185,16 @@ class PatriarchLiveSession:
         self.room_time=self.controller.time
         self._wire_ms+=dt*1000;ms=round(self._wire_ms);self.batch.dt=ms-self._sent_ms;self._sent_ms=ms
         message=self.batch.message()
+        if (entry is not None and self.duel_entry_seen and state is not None
+                and self.controller.selected == participants.identity(state)
+                and self.terrain_for_viewer(state.worldid) == 0):
+            platform = self.pack.templates['18']
+            if (state.ymp < platform['ymp'] + platform['hmp']
+                    and self.room_time >= getattr(self, '_platform_retry_at', 0.)):
+                # The first change may have been consumed during native room
+                # construction. Reconcile until telemetry confirms the fall.
+                self.viewer_platform.pop(state.worldid, None)
+                self._platform_retry_at = self.room_time + .5
         if not hasattr(self.server,'room') and state is not None:message=self.personalize_delta(message,state.worldid)
         self.server._send_raw(self.channel,12,self.layouts.encode('Delta',message),'patriarch-live',record=False)
         self.batch.clear();self.frames+=1
