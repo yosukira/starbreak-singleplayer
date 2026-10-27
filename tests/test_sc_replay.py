@@ -56,7 +56,9 @@ class ScReplayTests(unittest.TestCase):
                 remaining = replay.session.run.remaining()
                 with mock.patch('localserver.run_replay.time.monotonic', return_value=5000.) as clock:
                     live = replay.continue_live(source.bridge, SimpleNamespace(send_frame=lambda *_: None))
-                    self.assertEqual(live.run.remaining(), remaining)
+                    # Re-anchoring to another monotonic-clock magnitude can
+                    # round the last binary float bit on Windows runners.
+                    self.assertAlmostEqual(live.run.remaining(), remaining, places=9)
                     clock.return_value = 5001.
                     self.assertAlmostEqual(live.run.remaining(), remaining - 1., places=6)
                 missing = copy.deepcopy(document)
