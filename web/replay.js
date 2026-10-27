@@ -492,6 +492,7 @@
   }
 
   if(typeof module!=='undefined'&&module.exports){module.exports={ClientReplay,hash,prepareTakeover,gameplayKeys,takeoverKey,installPlatformDrop,applyPlayerProtection,installPlayerProtection};return;}
+  globalThis.StarBreakGameplayKeys=gameplayKeys;
   globalThis.StarBreakClientReplay=ClientReplay;
   const drop=installPlatformDrop(Module);
   const protection=installPlayerProtection(Module);

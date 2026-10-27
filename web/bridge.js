@@ -6,7 +6,16 @@
   const keys = new Set();
   let practiceKeys=STARBREAK_WEB_BOOT.keybindings;
   Module.webZoom?.setStep(practiceKeys.zoom_percent??10);
-  const shortcuts=new PracticeShortcuts(window,practiceKeys,action=>{if(action.startsWith('zoom_'))Module.webZoom?.step(action==='zoom_in'?1:-1);else parent.postMessage({type:'practice-shortcut',action},location.origin);});
+  let controlsContent,controlsKeys;
+  Module.isPracticeGameplayKey=event=>{
+    if(!globalThis.StarBreakGameplayKeys||!Module.replayTranslateKey)return false;
+    const raw=Module.gamePreferences?.load('LocalStorage.pb')??null;
+    if(!controlsKeys||raw!==controlsContent){controlsContent=raw;controlsKeys=StarBreakGameplayKeys(raw===null?null:btoa(raw));}
+    const pad=/^Numpad([0-9])$/.exec(event.code||'');
+    const physical=pad?(0x40000000|(pad[1]==='0'?98:88+Number(pad[1]))):null;
+    return (physical!==null&&controlsKeys.has(physical))||controlsKeys.has(Module.replayTranslateKey(event.keyCode||event.which||0));
+  };
+  const shortcuts=new PracticeShortcuts(window,practiceKeys,action=>{if(action.startsWith('zoom_'))Module.webZoom?.step(action==='zoom_in'?1:-1);else parent.postMessage({type:'practice-shortcut',action},location.origin);},()=>false,event=>Module.isPracticeGameplayKey(event));
   addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data.type==='practice-keys'){practiceKeys=event.data.keys;shortcuts.update(practiceKeys);Module.webZoom?.setStep(practiceKeys.zoom_percent??10);}});
   let maximumDependencies=0;
   Module.monitorRunDependencies=count=>{maximumDependencies=Math.max(maximumDependencies,count);parent.postMessage({type:'loading-progress',percent:75+(maximumDependencies?15*(1-count/maximumDependencies):0),step:'engine'},location.origin);};
@@ -74,7 +83,10 @@
         (practiceKeys.interact!=='Auto' && keys.has(shortcuts.code(practiceKeys.interact)));
       if(valid(pointer)&&valid(subworld)&&read(pointer,64)>0&&interact&&!wasInteract){pendingInteract=true;genPress=sampleGenPress(world,pointer,subworld);}
       wasInteract=interact;
-      if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 60000) return;
+      // Keep the newest position instead of queuing old frames behind the
+      // device Worker. Damage events and short interact presses remain held
+      // until this outstanding send completes.
+      if (now - last < 16 || socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 0) return;
       last = now;
       if ((!valid(pointer) || !valid(subworld)) && !lastPlayer) return;
       const player = valid(pointer) && valid(subworld) ? {objid:read(pointer,8),worldid:read(subworld,4),

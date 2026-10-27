@@ -7,6 +7,29 @@ from plugins import hardlab_live
 
 
 class LiveBridgeLifecycleTests(unittest.TestCase):
+    def test_character_holds_do_not_override_original_gameplay_bindings(self):
+        from plugins._hardlab_livebridge import LiveBridge
+        bridge=object.__new__(LiveBridge)
+        bridge.ffi=NS(NULL=None);bridge._hold_since={};bridge._hold_fired=set()
+        states=bytearray(512);states[95]=1
+        bridge.key_states=lambda:(states,len(states))
+        rows=[NS(primary=0,secondary=0,tertiary=0) for _ in range(14)]
+        rows[5].secondary=95  # KP7 attack, conflicting with the WF alias
+        bridge.input_mapping=lambda:NS(cik=rows)
+        bridge._keyboard_scancode=lambda code:code
+        with mock.patch('plugins._hardlab_livebridge.time.time',return_value=100.) as clock:
+            self.assertEqual(bridge.character_holds(),[])
+            clock.return_value=110.
+            self.assertEqual(bridge.character_holds(),[])
+            states[95]=0;states[36]=1
+            self.assertEqual(bridge.character_holds(),[])
+            clock.return_value=113.
+            self.assertEqual(bridge.character_holds()[0]['type'],1)
+            rows[5].secondary=0;states[36]=0
+            bridge.character_holds();states[95]=1;bridge.character_holds()
+            clock.return_value=116.
+            self.assertEqual(bridge.character_holds()[0]['type'],1)
+
     def plugin(self):
         plugin=object.__new__(hardlab_live.Plugin)
         plugin.session=True;plugin.active=True;plugin.native_capture=None

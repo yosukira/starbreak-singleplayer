@@ -244,7 +244,7 @@
     renderLoading();
   }
   let shortcutFingerprint='';
-  const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy||!!loading);
+  const shortcuts=new PracticeShortcuts(window,{},shortcut,()=>busy||!!loading,event=>document.querySelector('iframe')?.contentWindow.Module?.isPracticeGameplayKey?.(event)===true);
   function shortcut(action){
     if(desktop)return; // Native shortcuts are owned by the shared host/game.
     if(action.startsWith('zoom_')){if(activeTab==='battle'&&!$('equipment-dialog').open)document.querySelector('iframe')?.contentWindow.Module?.webZoom?.step(action==='zoom_in'?1:-1);return;}
@@ -291,7 +291,7 @@
       return;
     }
     if(busy)return;stopNativePolling();
-    $('equipment-dialog').close();void battleView.enter();
+    $('equipment-dialog').close();if(saveDraft)void battleView.enter();
     battleEnded=false;setTab(false);setBusy(true);$('error').hidden=true;$('editor-error').hidden=true;$('status').textContent=t('正在启动…','Starting…');
     showLoading('starting');
     try{

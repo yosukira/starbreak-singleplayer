@@ -5,9 +5,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
  const pendingNativeStatuses=[],commands=[];
  const element=()=>({hidden:false,disabled:false,value:'',dataset:{},style:{},attributes:{},classList:{add(){},toggle(){},remove(){}},setAttribute(key,value){this.attributes[key]=value;},replaceChildren(...children){if(this===elements.get('stage'))frame=children.find(c=>c.tagName==='IFRAME')||null;},prepend(){},show(){this.open=true;},close(){this.open=false;},focus(){}});
  for(const id of ids)elements.set(id,element());elements.get('map').value='egy_hulk';
- const layout=element(),events={};
- class Editor{constructor(){this.map='egy_hulk';this.shell=1;this.profile={settings:{map:'egy_hulk'}};this.preferences={keys:{}};this.data={stats:[],items:[]};}async load(){}render(){}remember(){}async save(){}async post(){return {assets_ready:true};}}
- const document={addEventListener(){},getElementById:id=>elements.get(id),documentElement:{},querySelectorAll:()=>[],querySelector:q=>q==='iframe'?frame:q==='.game-layout'?layout:element(),createElement:tag=>({...element(),tagName:tag.toUpperCase(),contentWindow:{focus(){},postMessage(){}}})};
+ const layout=element(),arena=element(),events={};let fullscreenRequests=0;
+ arena.requestFullscreen=()=>{fullscreenRequests++;document.fullscreenElement=arena;return Promise.resolve();};
+ class Editor{constructor(){this.map='egy_hulk';this.shell=1;this.profile={settings:{map:'egy_hulk'}};this.preferences={keys:{}};this.data={stats:[],items:[]};}async load(){}render(){}remember(){}selectClass(shell){this.shell=shell;}async save(){}async post(){return {assets_ready:true};}}
+ const document={addEventListener(){},getElementById:id=>elements.get(id),documentElement:{},querySelectorAll:()=>[],querySelector:q=>q==='iframe'?frame:q==='.game-layout'?layout:q==='.arena-panel'?arena:element(),createElement:tag=>({...element(),tagName:tag.toUpperCase(),contentWindow:{focus(){},postMessage(){}}})};
  const context={URLSearchParams,document,window:null,location:{origin:'https://test.local'},localStorage:{getItem:()=>null,setItem(){}},navigator:{language:'en'},WebEquipment:Editor,StarBreakVisuals:{Page:class{render(){}show(){}}},BattleRecords:class{constructor(root,language,catalogue,play){nativePlay=play;}show(){this.visible=true;}hide(){this.visible=false;}render(){}},PracticeShortcuts:class{constructor(_window,_keys,run){shortcut=run;}update(){}},Option:class{},setTimeout,clearTimeout,Promise,console,
   fetch:async (url,options)=>{if(url==='/api/native/command'){nativeWatch=true;commands.push(JSON.parse(options.body));return Response.json({accepted:true});}if(url==='/api/native/status')return new Promise(resolve=>pendingNativeStatuses.push(value=>resolve(Response.json(value))));return Response.json({maps:[{id:'egy_hulk',title:'Elite Graveyard Boss',ready:true}]});},addEventListener:(name,fn)=>events[name]=fn};context.window=context;
  context.StarBreakStorage=context.localStorage;
@@ -19,6 +20,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
  for(let n=0;n<35;n++){events.message({origin:context.location.origin,source:frame.contentWindow,data:{type:'player-state'}});await new Promise(r=>setTimeout(r,10));}
  assert.equal(elements.get('loading-overlay').hidden,true,'Continuous ready events must not postpone hiding the overlay');
  assert.equal(elements.get('tab-records').disabled,false);
+ assert.equal(fullscreenRequests,1,'An explicit initial start may enter fullscreen');
+ document.fullscreenElement=null;const oldFrame=frame;
+ shortcut('restart');await new Promise(r=>setTimeout(r,10));
+ assert.notEqual(frame,oldFrame);assert.equal(fullscreenRequests,1);assert.equal(document.fullscreenElement,null,'Restart preserves windowed mode');
+ events.message({origin:context.location.origin,source:frame.contentWindow,data:{type:'player-state'}});await new Promise(r=>setTimeout(r,240));
+ document.fullscreenElement=arena;
+ shortcut('ic');await new Promise(r=>setTimeout(r,10));
+ assert.equal(fullscreenRequests,1);assert.equal(document.fullscreenElement,arena,'Class changes preserve existing fullscreen');
+ events.message({origin:context.location.origin,source:frame.contentWindow,data:{type:'player-state'}});await new Promise(r=>setTimeout(r,240));
  const running=frame;elements.get('tab-guide').onclick();assert.equal(layout.hidden,true);assert.equal(elements.get('guide-page').hidden,false);
  assert.equal(elements.get('tab-guide').attributes['aria-pressed'],'true');assert.equal(elements.get('tab-battle').attributes['aria-pressed'],'false');
  shortcut('restart');assert.equal(frame,running,'Reading the guide cannot restart an active game');

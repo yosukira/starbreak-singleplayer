@@ -18,7 +18,7 @@
     dispatch(type,event){this['on'+type]?.(event);this.dispatchEvent(event);}
     opened(){if(this.readyState!==0)return;this.readyState=1;this.dispatch('open',new Event('open'));}
     receive(message){const data=message.binary?Uint8Array.from(atob(message.data),c=>c.charCodeAt(0)).buffer:message.data;this.dispatch('message',new MessageEvent('message',{data}));}
-    send(data){if(this.readyState!==1)throw Error('Game channel is not open');const binary=typeof data!=='string';const value=binary?host.to64(new Uint8Array(data.buffer||data,data.byteOffset||0,data.byteLength)):data;this.bufferedAmount+=binary?data.byteLength:data.length;this.chain=this.chain.then(()=>host.send(this,this.url,value,binary)).catch(error=>this.fail(error)).finally(()=>{this.bufferedAmount=0;});}
+    send(data){if(this.readyState!==1)throw Error('Game channel is not open');const binary=typeof data!=='string';const value=binary?host.to64(new Uint8Array(data.buffer||data,data.byteOffset||0,data.byteLength)):data;const size=binary?data.byteLength:data.length;this.bufferedAmount+=size;this.chain=this.chain.then(()=>host.send(this,this.url,value,binary)).catch(error=>this.fail(error)).finally(()=>{this.bufferedAmount-=size;});}
     close(){if(this.readyState===3)return;this.readyState=3;active.delete(this);host.detach(this,this.url);this.dispatch('close',new Event('close'));}
     fail(error){console.error(error);this.dispatch('error',new Event('error'));this.close();}
   }

@@ -61,7 +61,10 @@ class InventoryHandoff:
 
     def _advance(self,now):
         if now>=self.next_attempt_at:
-            if self.attempt>=self.max_attempts:return self.cancel('inventory attempts exhausted')
+            # The final request remains valid until its deadline. A client
+            # still applying the TCP boundary may answer after the last retry;
+            # exhausting retries must not discard that outstanding response.
+            if self.attempt>=self.max_attempts:return self._result()
 
             self.attempt+=1;self.attempt_started=now;self.next_attempt_at=now+self.retry_interval
         return self._result()

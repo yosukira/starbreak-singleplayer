@@ -806,9 +806,21 @@ class LiveBridge(object):
             (97, 'Num9', 5, 'switch_character'),
             (98, 'Num0', 3, 'switch_character'),
             )
+        protected = set()
+        if any(scan < count and bool(states[scan]) for scan, _, _, _ in shortcuts):
+            mapping = self.input_mapping()
+            if mapping != self.ffi.NULL:
+                for index in range(10):
+                    if not (1 << index) & 0x2ff:
+                        continue
+                    binding = mapping.cik[index]
+                    for name in ('primary', 'secondary', 'tertiary'):
+                        scan = self._keyboard_scancode(getattr(binding, name))
+                        if 0 < scan < count:
+                            protected.add(scan)
         for scancode, label, char_type, kind in shortcuts:
             down = scancode < count and bool(states[scancode])
-            if not down:
+            if not down or scancode in protected:
                 self._hold_since.pop(scancode, None)
                 self._hold_fired.discard(scancode)
                 continue

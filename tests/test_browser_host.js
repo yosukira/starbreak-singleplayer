@@ -37,5 +37,18 @@ const {webcrypto}=require('node:crypto');
   await context.fetch('/api/records');assert.equal(uploads,1,'History refresh never uploads');
   assert.equal((await context.fetch('/api/records/redeem',{method:'POST',body:JSON.stringify({code:'abcd-efgh-jkmn'})})).status,200);
   assert.equal(uploads,1,'Redeeming downloads but never uploads the local profile');
+  const sendQueue=[],completions=[];
+  const host={fetch(){},assetURL:x=>x,attach(socket){socket.opened();return Promise.resolve();},to64:x=>Buffer.from(x).toString('base64'),
+    send(_socket,_url,data){sendQueue.push(data);return new Promise(resolve=>completions.push(resolve));},detach(){}};
+  const client={parent:{StarBreakBrowser:host},navigator:{},XMLHttpRequest:class{open(){}},HTMLImageElement:class{},EventTarget,Event,MessageEvent,Uint8Array,console,addEventListener(){}};
+  vm.createContext(client);vm.runInContext(fs.readFileSync('web/browser/client.js','utf8'),client);
+  const socket=new client.WebSocket('ws://test/telemetry');
+  socket.send('a');socket.send('bbb');
+  assert.equal(socket.bufferedAmount,4);
+  await new Promise(setImmediate);assert.deepEqual(sendQueue,['a']);
+  completions.shift()();await new Promise(setImmediate);
+  assert.equal(socket.bufferedAmount,3,'Completing one send must retain the bytes still queued');
+  assert.deepEqual(sendQueue,['a','bbb']);
+  completions.shift()();await socket.chain;assert.equal(socket.bufferedAmount,0);
   console.log('Player-local API routing and explicit-only, deduplicated replay sharing passed.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

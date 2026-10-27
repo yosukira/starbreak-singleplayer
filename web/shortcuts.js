@@ -1,8 +1,8 @@
 /* Hold actions fire once per press; typing, blur and hidden tabs cancel timers. */
 (function(scope){
   class PracticeShortcuts {
-    constructor(target,bindings,action,blocked=()=>false){
-      this.target=target;this.action=action;this.blocked=blocked;this.held=new Map();this.update(bindings);
+    constructor(target,bindings,action,blocked=()=>false,gameplayKey=()=>false){
+      this.target=target;this.action=action;this.blocked=blocked;this.gameplayKey=gameplayKey;this.held=new Map();this.update(bindings);
       target.addEventListener('keydown',event=>this.down(event));
       target.addEventListener('keyup',event=>this.up(event.code));
       target.addEventListener('blur',()=>this.clear());
@@ -17,10 +17,13 @@
       for(const name of ['editor_toggle','editor_toggle_alt','restart','wf','dw','fab','ic','zoom_in','zoom_out']){
         const key=this.code(this.bindings[name]);
         if(!key||!(key===event.code||key.startsWith('Digit')&&event.code==='Numpad'+key.slice(5)||key==='Equal'&&event.code==='NumpadAdd'||key==='Minus'&&event.code==='NumpadSubtract'))continue;
+        // The original Controls bindings own gameplay keys. In particular,
+        // KP7/KP8/KP9 attacks must not alias the practice class-change holds.
+        if(this.gameplayKey(event))return;
         event.preventDefault();
         if(name.startsWith('zoom_')){this.held.set(event.code,null);this.action(name);}
         else if(name.startsWith('editor_toggle')){this.held.set(event.code,null);this.action('editor');}
-        else this.held.set(event.code,setTimeout(()=>{if(!this.blocked())this.action(name);this.held.set(event.code,null);},this.bindings.hold_seconds*1000));
+        else this.held.set(event.code,setTimeout(()=>{if(!this.blocked()&&!this.gameplayKey(event))this.action(name);this.held.set(event.code,null);},this.bindings.hold_seconds*1000));
         break;
       }
     }

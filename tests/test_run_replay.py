@@ -90,6 +90,30 @@ class WholeRun:
 
 
 class RunReplayTests(unittest.TestCase):
+    def test_last_inventory_request_can_complete_after_retry_budget(self):
+        with contextlib.redirect_stdout(io.StringIO()),game_settings.event_snapshot(game_settings.normalize(dict(map='egy_run'))):
+            source=WholeRun('egy_run');wall=time.time()
+            with mock.patch('localserver.server.time.time',side_effect=lambda:wall):
+                source.feedback()
+                oid=next(oid for oid,link in source.session.instance.recipe['links'].items() if link['destination']=='hall')
+                props=source.session.instance.snapshot.properties_at((1,oid));point=(props['xmp_'],props['ymp_'])
+                source.feedback(point,True,native_server_t=0)
+                for _ in range(5):
+                    wall+=.26;source.feedback(point,False,native_server_t=0)
+                self.assertEqual(source.session._inventory_status['status'],'pending')
+                self.assertEqual(source.bridge.native_context['inventory_request']['attempt'],4)
+                wall+=.02;source.feedback(point,False)
+                self.assertIsNone(source.server.live_session,'The final response is valid until its original deadline')
+
+    def test_exhausted_inventory_retries_still_expire_at_the_deadline(self):
+        from localserver.maps.run_common.inventory_handoff import InventoryHandoff
+        scope=dict(map='sc_run',room_token=1,room_seed=1,worldid=2,objid=1,charid=1,player_type=1)
+        pending=InventoryHandoff(1,dict(destination='mid_patriarch'),scope,100.)
+        issued=dict(charprops_=dict(charid_=1,type_=1))
+        for now in (100.3,100.6,100.9,101.2):
+            self.assertEqual(pending.poll(None,issued,now)['status'],'pending')
+        self.assertEqual(pending.poll(None,issued,101.5)['reason'],'inventory refresh timed out')
+
     def test_inventory_retry_does_not_outrun_a_client_300ms_behind(self):
         with contextlib.redirect_stdout(io.StringIO()),game_settings.event_snapshot(game_settings.normalize(dict(map='egy_run'))):
             source=WholeRun('egy_run')

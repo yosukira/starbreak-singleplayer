@@ -18,6 +18,16 @@ try{
   down('KeyR',{target:{closest:()=>true}});advance(2000);assert.equal(actions.at(-1),'dw');
   down('KeyR');blocked=true;advance(2000);assert.equal(actions.at(-1),'dw');listeners.keyup({code:'KeyR'});blocked=false;
   shortcuts.update({restart:'T',hold_seconds:.5});down('KeyR');advance(500);assert.equal(actions.at(-1),'dw');down('KeyT');advance(500);assert.equal(actions.at(-1),'restart');
+  let reserved=true;
+  shortcuts.gameplayKey=event=>reserved&&['Numpad7','KeyR'].includes(event.code);
+  shortcuts.update({restart:'R',wf:'7',hold_seconds:2});
+  const before=actions.length;
+  down('Numpad7',{preventDefault(){throw Error('Gameplay input must reach the engine');}});advance(3000);
+  down('KeyR',{preventDefault(){throw Error('A remapped gameplay key cannot restart');}});advance(3000);
+  assert.equal(actions.length,before);
+  down('Digit7');advance(2000);assert.equal(actions.at(-1),'wf','Unbound top-row shortcut still works');listeners.keyup({code:'Digit7'});
+  reserved=false;down('KeyR');advance(1000);reserved=true;advance(1000);
+  assert.equal(actions.at(-1),'wf','A Controls edit during a hold cancels the pending action');
   console.log('Browser shortcuts: hold threshold, one-shot, release/blur/input cancellation, numpad and rebinding passed.');
 }finally{global.setTimeout=originalSet;global.clearTimeout=originalClear;}
 const zoomActions=[],zoomListeners={};

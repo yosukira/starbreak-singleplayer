@@ -64,7 +64,7 @@ context.Module.webFrame(world);assert.equal(sent.at(-1).keys.interact_edge,false
 set(world,668,0);listeners.keydown({code:'KeyL',preventDefault(){}});context.Module.webFrame(world);
 assert.equal(sent.at(-1).keys.interact,false,'Hard-coded L cannot override original bindings');
 // A press and release during backpressure must survive until the next send.
-currentSocket.bufferedAmount=60001;const beforePress=sent.length;
+currentSocket.bufferedAmount=1;const beforePress=sent.length;
 set(world,668,128);context.Module.webFrame(world);
 set(world,668,0);context.Module.webFrame(world);
 assert.equal(sent.length,beforePress);
@@ -183,3 +183,12 @@ assert.equal(sent.at(-1).keys.interact_edge,true);
 context.performance.now=()=>100180;context.Module.webFrame(world);
 assert.equal(sent.at(-1).player.gen_press,undefined,'Consumed presses cannot leak into later telemetry');
 console.log('Moving Gen panel geometry survives a short tap and telemetry backpressure.');
+context.StarBreakGameplayKeys=require('../web/replay.js').gameplayKeys;
+context.btoa=btoa;
+context.Module.replayTranslateKey=code=>code===103?1073741919:code;
+const field=(id,value)=>Buffer.concat([Buffer.from([id*8+2,value.length]),value]);
+const binding=field(1,Buffer.from([8,5,16,223,128,128,128,4]));
+context.Module.gamePreferences={load:()=>btoa(field(1,Buffer.concat([field(1,Buffer.from('impbstr')),field(2,binding)])).toString('binary'))};
+assert.equal(context.Module.isPracticeGameplayKey({code:'Numpad7',keyCode:103}),true);
+assert.equal(context.Module.isPracticeGameplayKey({code:'Numpad7',keyCode:36}),true,'Num Lock does not turn a bound KP7 into a class switch');
+assert.equal(context.Module.isPracticeGameplayKey({code:'Digit7',keyCode:55}),false);
