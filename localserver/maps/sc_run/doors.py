@@ -43,13 +43,16 @@ def overlaps(player_box, trigger):
 def arrival(recipe, entry, wmp, hmp):
     """Keep the native feet anchor, adjusted for the actual shell footprint."""
     port = next((p for p in recipe['metadata'].get('ports', []) if p.get('entry') == entry), None)
-    if not port or port['kind'] == 'core':
+    if not port:
         return None
     x, y = recipe['entries'][entry]
     width, height = recipe['metadata'].get('spawn_footprint_mp', (7680, 17920))
     x, y = round(x+(width-wmp)/2), round(y+height-hmp)
-    trigger = recipe['objects'][port['trigger_id']]
-    if overlaps((x, y, wmp, hmp), trigger):
+    # Core doors use a fresh interaction press, not a boundary trigger. Their
+    # authored feet anchor may overlap the decorative door, and stays valid
+    # for wider/taller shells. Pushing outside that frame can enter the floor.
+    trigger = recipe['objects'][port['trigger_id']] if port['kind'] != 'core' else None
+    if trigger is not None and overlaps((x, y, wmp, hmp), trigger):
         # Wide shells still stay outside the purple area, without being
         # unnecessarily pushed beyond the entire decorative door frame.
         x = trigger['xmp']+trigger['wmp']+256 if port['side'] == 'left' else trigger['xmp']-wmp-256

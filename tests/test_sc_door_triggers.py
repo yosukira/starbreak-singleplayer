@@ -3,7 +3,7 @@ import copy
 import unittest
 from types import SimpleNamespace
 
-from localserver.maps.efb_run.physics import swept_shape
+from localserver.maps.efb_run.physics import swept_shape,surface
 from localserver.maps.sc_run.catalogue import ScContent
 from localserver.maps.sc_run.doors import arrival, bind_triggers, overlaps
 from localserver.maps.sc_run.layout import generate
@@ -124,6 +124,33 @@ class ScDoorTriggerTests(unittest.TestCase):
         point = arrival(room, 'door_1', 30*MP, 70*MP)
         self.assertEqual(point, (140*MP, 90*MP))
         self.assert_clear(room, point, (30*MP, 70*MP))
+
+    def test_every_gen_return_uses_core_marker_feet_for_all_four_shells(self):
+        from localserver.maps.sc_run.scene import ScRunPack
+        from localserver.maps.sc_run.run import ScLevelRun
+        from pathlib import Path
+        import json
+        characters=json.loads((Path(__file__).resolve().parents[1]/'data/catalogue/characters.json').read_text())
+        pack=ScRunPack()
+        for seed in (0,1,3,5,42,123,1234):
+            run=ScLevelRun(pack,seed)
+            for gen in range(4):
+                room=run.room('gen_'+str(gen)).recipe
+                for link in room['links'].values():
+                    destination=run.room(link['destination']).recipe
+                    for shell in ('1','2','3','5'):
+                        body=characters[shell]['data'];size=(body['w']*MP,body['h']*MP)
+                        with self.subTest(seed=seed,gen=gen,shell=shell):
+                            point=ScRunLiveSession.entry_position(run,link['destination'],link['entry'],*size)
+                            self.assert_clear(destination,point,size)
+                            marker=destination['entries'][link['entry']]
+                            width,height=destination['metadata']['spawn_footprint_mp']
+                            self.assertEqual(point[0]+size[0]/2,marker[0]+width/2)
+                            self.assertEqual(point[1]+size[1],marker[1]+height)
+                            floors=[surface(tuple(p.get(k,0) for k in ('xmp','ymp','wmp','hmp')),
+                                p.get('shapetype',0),point[0],size[0]) for p in destination['objects'].values()
+                                if p.get('terraintype')in(1,2) and p.get('boundsworld')is not False]
+                            self.assertTrue(any(top is not None and abs(top-point[1]-size[1])<=1 for top in floors))
 
 
 if __name__ == '__main__':

@@ -97,6 +97,11 @@ class PatriarchController(MapController):
 
         self.emit('sound',id=4,name='sc.patriarchdeath')
         self.emit('remove',id=4,reason='HITPOINTS');self.emit('boss_dying')
+        # Captured death updates move both return steps from behind the left
+        # wall to its inner edge over 2000 ms (objects 14/15).
+        for oid in (14,15):
+            step=self.pack.templates[str(oid)]
+            self.emit('actor_lerp',id=oid,pos=[self.pack.scene['left'],step['ymp']/256],duration=2.)
         self.emit('selection_reset',player=self.selected);self.selected=self.selected_life=None
 
     def native_destroy(self,objid,reason):

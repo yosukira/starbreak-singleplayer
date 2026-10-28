@@ -100,6 +100,42 @@ class PatriarchEntryTests(unittest.TestCase):
         self.assertEqual(runtime.controller.selected, (2, 1))
         self.assertIn(0, self.platform_changes(server))
 
+    def test_death_extends_return_steps_and_keeps_the_upper_gate_open(self):
+        helper,run,wrapper,server=self.open_pat()
+        self.tick(helper,wrapper,3.1)
+        runtime=wrapper.current;server.sent.clear()
+        wrapper.bridge.events.append(dict(kind='damage',ownerid=1,victim=4,value=runtime.controller.hp))
+        self.tick(helper,wrapper,.05,position=(64*256,656*256))
+        self.assertEqual(runtime.controller.state,'dying')
+        self.assertIsNone(runtime.controller.selected)
+        self.assertEqual(runtime.terrain_for_viewer(2),0)
+        self.assertEqual(runtime.terrain_for_viewer(3),0,'Everyone can leave after the boss dies')
+        self.assertNotIn(1,self.platform_changes(server))
+        for oid in (14,15):
+            updates=[row['modifyprops_'] for message in server.deltas()
+                for row in message.get('worldupdate_',{}).get('objectupdates_',[])
+                if row['objid_']==oid and row.get('modifyprops_',{}).get('property_')==41]
+            self.assertEqual(len(updates),1,'A return platform extends once')
+            import base64
+            move=wrapper.layouts.decode('Properties_Move',base64.b64decode(updates[0]['messageval_']['raw']))['to_']
+            self.assertEqual(move,dict(xmp_=32*256,ymp_=runtime.pack.templates[str(oid)]['ymp'],dt_=2000))
+        self.tick(helper,wrapper,3.,position=(64*256,656*256))
+        self.assertEqual(runtime.controller.state,'done')
+        for oid in (14,15):
+            props=wrapper.instance.snapshot.properties_at((1,oid))
+            self.assertEqual(props['xmp_'],32*256)
+        self.assertEqual(wrapper.instance.snapshot.properties_at((1,18))['terraintype_'],0)
+        revisited=ScRunLiveSession(server,None,SimpleNamespace(player_type=1,bridge_port=0),bridge=PlayerBridge(0))
+        self.tick(helper,revisited,.1)
+        self.assertEqual(revisited.current.terrain_for_viewer(2),0)
+        world=ScRunLiveSession.world_blob(server,run)
+        from tools.make_create_world import unwrap_decompress
+        document=server.layouts.decode('CreateWorld',unwrap_decompress(world))
+        rows={r['objid_']:r['props_'] for r in document['worldstate_']['serverworld_']['obj_']}
+        self.assertEqual(rows[18]['terraintype_'],0)
+        self.assertEqual(rows[14]['xmp_'],32*256)
+        self.assertEqual(rows[15]['xmp_'],32*256)
+
 
 if __name__ == '__main__':
     unittest.main()

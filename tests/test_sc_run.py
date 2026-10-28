@@ -121,7 +121,7 @@ class ScRunTests(unittest.TestCase):
                 door = recipe['objects'][port.get('trigger_id', int(entry.split('_')[-1]))]
                 dx, dy = door.get('xmp', 0), door.get('ymp', 0)
                 dw, dh = door.get('wmp', 0), door.get('hmp', 0)
-                if x < dx+dw and x+10240 > dx and y < dy+dh and y+20480 > dy:
+                if port['kind'] != 'core' and x < dx+dw and x+10240 > dx and y < dy+dh and y+20480 > dy:
                     overlaps.append((role, entry))
                 for other in recipe['objects'].values():
                     if other.get('terraintype') not in (1, 2):

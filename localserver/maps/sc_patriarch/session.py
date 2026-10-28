@@ -61,6 +61,8 @@ class PatriarchLiveSession:
         if len(self.events)>4000:self.events=self.events[-3000:]
 
     def terrain_for_viewer(self,worldid):
+        if self.controller.state in ('dying','done'):
+            return 0
         selected=self.controller.selected
         return 0 if isinstance(selected,tuple) and selected[0]==worldid else 1
 
