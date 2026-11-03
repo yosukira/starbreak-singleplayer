@@ -1020,6 +1020,7 @@ def session(argv=None,show_editor=True):
                 command.extend(['--live-demo-damage', '--live-auto-interact',
                                 '--live-force-demo'])
             server_env=dict(os.environ)
+            server_env['SB_BATTLE_BACKGROUND_WRITES']='1'
             if native_recording:
                 if native_recording.practice_path is not None:server_env['SB_NATIVE_PRACTICE_PATH']=str(native_recording.practice_path)
                 server_env['SB_NATIVE_CONTROL_PATH']=str(native_recording.registry)

@@ -4,6 +4,7 @@ Documents are JSON, never executable snapshots. SQLite owns the index and atomic
 writes, so the UI can read while the simulator records a battle in another process.
 """
 from datetime import datetime
+import copy
 import hashlib
 import errno
 import shutil
@@ -439,9 +440,70 @@ def snapshot(session):
         projectile_speeds=speeds))
 
 
+class RecordWriter:
+    """One disk writer, with at most one newer checkpoint waiting behind it.
+
+    The simulator owns its mutable document. The worker only sees copies and
+    never holds the condition while SQLite commits or checkpoints its WAL.
+    A final result replaces a pending active snapshot and seals the writer.
+    """
+    def __init__(self, store):
+        self.store = store
+        self.condition = threading.Condition()
+        self.pending = None
+        self.closed = False
+        self.error = None
+        self.thread = None
+
+    def check(self):
+        with self.condition:
+            if self.error is not None:
+                raise self.error
+
+    def submit(self, document, final=False):
+        snapshot = copy.deepcopy(document)
+        with self.condition:
+            if self.error is not None:
+                raise self.error
+            if self.closed:
+                raise RuntimeError('Battle record writer is closed')
+            self.pending = snapshot
+            self.closed = final
+            if self.thread is None:
+                # Normal process shutdown must wait for the last durable result.
+                self.thread = threading.Thread(target=self._run, name='battle-record-writer', daemon=False)
+                self.thread.start()
+            self.condition.notify()
+
+    def _run(self):
+        try:
+            while True:
+                with self.condition:
+                    self.condition.wait_for(lambda: self.pending is not None or self.closed)
+                    if self.pending is None:
+                        return
+                    document, self.pending = self.pending, None
+                self.store.save(document)
+        except Exception as error:
+            with self.condition:
+                self.error = error
+                self.pending = None
+                self.closed = True
+                self.condition.notify_all()
+
+    def close(self):
+        with self.condition:
+            self.closed = True
+            self.condition.notify()
+        if self.thread is not None:
+            self.thread.join()
+        self.check()
+
+
 class BattleRecorder:
-    def __init__(self, session, store):
+    def __init__(self, session, store, *, background_writes=False):
         self.session, self.store = session, store
+        self.writer = RecordWriter(store) if background_writes else None
         self.identifier = str(uuid.uuid4())
         self.document = None
         self.elapsed = 0.
@@ -468,6 +530,8 @@ class BattleRecorder:
     def tick(self, dt):
         if self.closed:
             return
+        if self.writer is not None:
+            self.writer.check()
         session = self.session
         run = getattr(session, 'run', None)
         player = (session.bridge.snapshot()[0] if getattr(session, '_ready', False) else None) if run is not None else getattr(session, 'player', None)
@@ -577,7 +641,7 @@ class BattleRecorder:
             if current != previous and len(self.document['changes']) < 1000:
                 self.document['changes'].append(dict(at=round(self.elapsed, 3), parameters=current))
             if self.player_acted:
-                self.store.save(self.document)
+                self.save()
                 self.saved = True
             self.last_saved = self.elapsed
 
@@ -604,8 +668,19 @@ class BattleRecorder:
                         announce(self.session,self.document['map_title'])
                     except (OSError,ValueError,AttributeError):pass
                 if self.player_acted:
-                    self.store.save(self.document)
+                    self.save(final=True)
             self.closed = True
+
+    def save(self, final=False):
+        if self.writer is None:
+            self.store.save(self.document)
+        else:
+            self.writer.submit(self.document, final=final)
+
+    def flush(self):
+        """Drain disk writes on shutdown, never on a simulation tick."""
+        if self.writer is not None:
+            self.writer.close()
 
 
 def recording_tail_pending(session):
@@ -616,16 +691,22 @@ def recording_tail_pending(session):
             not getattr(current,'_legacy_victory_presentation',False))
 
 
-def attach(session):
+def attach(session, *, background_writes=None):
     """Observe public session boundaries without changing any AI or timestep."""
     if getattr(session.options, 'map', None) in NON_BATTLE_MAPS:
         return None
+    if background_writes is None:
+        # The native launcher opts in for its server process only. Browser and
+        # manually driven replay runtimes keep their synchronous storage API.
+        background_writes = (os.environ.get('SB_BATTLE_BACKGROUND_WRITES') == '1'
+            and not getattr(session.options, 'web_client', False)
+            and not getattr(getattr(session, 'server', None), 'manual_ticks', False))
     directory = os.environ.get('SB_BATTLE_RECORDS_PATH')
     store = RecordStore(directory)
     run = getattr(session, 'run', None)
     recorder = getattr(run, 'battle_recorder', None) if run is not None else None
     if recorder is None:
-        recorder = BattleRecorder(session, store)
+        recorder = BattleRecorder(session, store, background_writes=background_writes)
         if run is not None:
             run.battle_recorder = recorder
     with recorder.boundary:
@@ -699,6 +780,7 @@ def attach(session):
             session._battle_room_transition = False
             if not (run is not None and room_transition):
                 safely(recorder.finish)
+                safely(recorder.flush)
             close_capture(force=True)
             return result
 

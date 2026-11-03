@@ -280,7 +280,9 @@ class RunRecording:
             with recorder.boundary:
                 transition=getattr(session,'_battle_room_transition',False)
                 session._battle_room_transition=False
-                if not transition and recorder.session is session:safely(recorder.finish)
+                if not transition and recorder.session is session:
+                    safely(recorder.finish)
+                    safely(recorder.flush)
                 self.seal(force=True)
             return result
         session.step,session.stop=step,stop
