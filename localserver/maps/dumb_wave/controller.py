@@ -19,7 +19,8 @@ class DumbWaveController:
     def take_events(self):events,self.events=self.events,[];return events
 
     def begin(self):
-        self._countdown(1,self.config['waves'][0]['countdown_s'])
+        wave=int(game_settings.balance('dumb_wave').get('start_wave',1)) if self.pack.map['id']=='dumb_wave' else 1
+        self._countdown(wave,self.config['waves'][self.pattern_wave(wave)-1]['countdown_s'])
         return self.take_events()
 
     def pattern_wave(self,wave=None):

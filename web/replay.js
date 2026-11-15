@@ -292,7 +292,7 @@
       if(this.mode==='play')return;
       if(kind==='key')values[0]?this.heldKeys.add(values[1]):this.heldKeys.delete(values[1]);
       if(kind==='reset')this.heldKeys.clear();
-      this.write(['control',kind,kind==='protection'?values.slice():values.map(value=>value|0)]);
+      this.write(['control',kind,['protection','teleport'].includes(kind)?values.slice():values.map(value=>value|0)]);
       try{this.module.webDropControl?.(kind,values);callback();}finally{this.stopIfLeaving();}
     }
     preferences(content) {

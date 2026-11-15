@@ -80,9 +80,9 @@ def patch_client(source):
 
     # Add narrow, typed imports to the asm.js module; preserve the game logic.
     replace('"use asm";var a=new global.Int8Array(buffer);',
-            '"use asm";var webVisualContext=env.webVisualContext;var webFrame=env.webFrame;var webUpdates=env.webUpdates;var webLoot=env.webLoot;var webHealth=env.webHealth;var webReplayFrame=env.webReplayFrame;var webReplayEnd=env.webReplayEnd;var webReplayInput=env.webReplayInput;var webBinding=env.webBinding;var webBattleExit=env.webBattleExit;var a=new global.Int8Array(buffer);')
+            '"use asm";var webPracticeInteract=env.webPracticeInteract;var webVisualContext=env.webVisualContext;var webFrame=env.webFrame;var webUpdates=env.webUpdates;var webLoot=env.webLoot;var webHealth=env.webHealth;var webReplayFrame=env.webReplayFrame;var webReplayEnd=env.webReplayEnd;var webReplayInput=env.webReplayInput;var webBinding=env.webBinding;var webBattleExit=env.webBattleExit;var a=new global.Int8Array(buffer);')
     replace('Module.asmLibraryArg={"abort":abort,',
-            'Module.asmLibraryArg={"webBattleExit":function(){if(Module.clientReplay)Module.clientReplay.requestQuit()},'
+            'Module.asmLibraryArg={"webPracticeInteract":function(p){if(Module.webInteract)Module.webInteract(p)},"webBattleExit":function(){if(Module.clientReplay)Module.clientReplay.requestQuit()},'
             '"webBinding":function(p,kind,a,b,c,d){var rows=Module.replayBindings||(Module.replayBindings=new Map());if(kind)rows.set(p,[kind,a,b,c,d]);else rows.delete(p)},'
             '"webVisualContext":function(p){if(Module.visualContext)Module.visualContext(p)},'
             '"webFrame":function(p){if(Module.webFrame)Module.webFrame(p)},'
@@ -96,6 +96,8 @@ def patch_client(source):
     for name,call in (('zfa','webVisualContext(b|0);'),('ufa','webVisualContext(0);')):
         signature=re.search(r'function '+name+r'\([^)]*\)\{[^{}]*?var [^;]+;',text).group(0)
         replace(signature,signature+call)
+    signature=re.search(r'function Al\(b\)\{b=b\|0;var [^;]+;',text).group(0)
+    replace(signature,signature+'webPracticeInteract(b|0);')
     # CM serializes CONNECT without RSA, matching make_local_client.py. Both
     # directions still use the existing client's RC4 streams after CONNECT.
     replace('if((d|0)==3){c[i>>2]=0;c[i+4>>2]=0;c[i+8>>2]=0;EUa(e,i)|0;',
@@ -213,7 +215,7 @@ def patch_client(source):
         fallback='(Module.webDropControl?Module.webDropControl("%s",[%s]):0,%s)' % (kind,observed,original)
         replace(original, '(Module.clientReplay?Module.clientReplay.control("%s",[%s],function(){%s}):%s)' % (kind, observed, original, fallback))
     replace('function __Z12XDL_DoEventsv(){',
-        'Module.replayTranslateKey=function(code){return code>=65&&code<=90?code+32:(XDL.keyCodes[code]||code)};Module.replayControl=function(kind,values){if(kind==="protection"){Module.applyPlayerProtection(values);return}if(kind==="resize"){XDL.onWindowResize();return}if(kind==="reset"){var w=Module.clientReplay.world;var p=Module._malloc(24);Module.HEAP32.fill(0,p>>2,(p+24)>>2);Module.HEAP32[(p+12)>>2]=Module.HEAP32[(w+668)>>2];Module.HEAP32[(p+20)>>2]=1;Module.asm.replaySetInput(w,p);Module._free(p);return}var table={key:["viii","keyboardCallback"],button:["viiiii","mouseButtonCallback"],mouse:["viii","mouseMoveCallback"],window:["vii","windowEventCallback"]};var row=table[kind];if(!row)throw Error("Invalid replay control");var args=values.slice();if(kind==="window"){XDL.canvas.width=args[1];XDL.canvas.height=args[2];args=args.slice(0,1)}Runtime.dynCall(row[0],XDL[row[1]],args.concat([XDL.userData]))};function __Z12XDL_DoEventsv(){')
+        'Module.replayTranslateKey=function(code){return code>=65&&code<=90?code+32:(XDL.keyCodes[code]||code)};Module.replayControl=function(kind,values){if(kind==="protection"){Module.applyPlayerProtection(values);return}if(kind==="teleport"){Module.applyPlayerPlacement(values);return}if(kind==="resize"){XDL.onWindowResize();return}if(kind==="reset"){var w=Module.clientReplay.world;var p=Module._malloc(24);Module.HEAP32.fill(0,p>>2,(p+24)>>2);Module.HEAP32[(p+12)>>2]=Module.HEAP32[(w+668)>>2];Module.HEAP32[(p+20)>>2]=1;Module.asm.replaySetInput(w,p);Module._free(p);return}var table={key:["viii","keyboardCallback"],button:["viiiii","mouseButtonCallback"],mouse:["viii","mouseMoveCallback"],window:["vii","windowEventCallback"]};var row=table[kind];if(!row)throw Error("Invalid replay control");var args=values.slice();if(kind==="window"){XDL.canvas.width=args[1];XDL.canvas.height=args[2];args=args.slice(0,1)}Runtime.dynCall(row[0],XDL[row[1]],args.concat([XDL.userData]))};function __Z12XDL_DoEventsv(){')
     replace('function JB(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0;d=a+328|0;',
             'function JB(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0;webUpdates(a|0,b|0);d=a+328|0;')
     # Observe a successful boost pickup immediately around its effects. The

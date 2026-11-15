@@ -228,9 +228,9 @@ class WebEquipment {
     const drops=this.profile.settings.drops[this.map]||meta.drops;
     const dropLabels={health_percent:['血包 %','Health %'],ammo_percent:['弹药 %','Ammo %'],ec_percent:['EC %','EC %']};
     for(const [key,names]of Object.entries(dropLabels))field(this.t(...names),drops[key],0,100,value=>{this.profile.settings.drops[this.map]={...drops,...this.profile.settings.drops[this.map],[key]:Number(value)};});
-    const labels={enemy_hp:['敌人血量倍率','Enemy HP multiplier'],enemy_damage:['敌人伤害倍率','Enemy damage multiplier'],enemy_speed:['敌人速度倍率','Enemy speed multiplier'],spawn_rate:['刷怪速率倍率','Spawn rate multiplier'],spawn_cap:['刷怪上限','Spawn limit'],boss_attack_rate:['首领攻击速率','Boss attack rate'],turret_attack_rate:['炮台攻击速率','Turret attack rate'],laser_rate:['激光速率','Laser rate'],bullet_rate:['子弹速率','Bullet rate'],saw_speed:['锯刃速度','Saw speed']};
+    const labels={start_wave:['起始波次（新一局生效）','Starting wave (next attempt)'],enemy_hp:['敌人血量倍率','Enemy HP multiplier'],enemy_damage:['敌人伤害倍率','Enemy damage multiplier'],enemy_speed:['敌人速度倍率','Enemy speed multiplier'],spawn_rate:['刷怪速率倍率','Spawn rate multiplier'],spawn_cap:['刷怪上限','Spawn limit'],boss_attack_rate:['首领攻击速率','Boss attack rate'],turret_attack_rate:['炮台攻击速率','Turret attack rate'],laser_rate:['激光速率','Laser rate'],bullet_rate:['子弹速率','Bullet rate'],saw_speed:['锯刃速度','Saw speed']};
     const balance=this.profile.settings.balance[this.map]||meta.balance_defaults;
-    for(const [key,limits]of Object.entries(meta.balance_limits))field(this.t(...(labels[key]||[key,key])),balance[key]??meta.balance_defaults[key],...limits,value=>{this.profile.settings.balance[this.map]={...balance,...this.profile.settings.balance[this.map],[key]:Number(value)};},key==='spawn_cap'?'1':'any');
+    for(const [key,limits]of Object.entries(meta.balance_limits))field(this.t(...(labels[key]||[key,key])),balance[key]??meta.balance_defaults[key],...limits,value=>{this.profile.settings.balance[this.map]={...balance,...this.profile.settings.balance[this.map],[key]:Number(value)};},['spawn_cap','start_wave'].includes(key)?'1':'any');
     if(['egy_hulk','hulk_normal'].includes(this.map)){
       const toggle=document.createElement('label'),check=document.createElement('input'),caption=document.createElement('span');
       toggle.className='checkbox';check.type='checkbox';check.id='skip-intro';

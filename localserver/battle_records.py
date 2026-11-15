@@ -91,7 +91,7 @@ def parameters(value):
         row = value.get(group) or {}
         if not isinstance(row, dict):
             raise ValueError('Invalid battle parameter group')
-        allowed = {'balance': ('enemy_hp', 'enemy_damage', 'enemy_speed', 'spawn_rate', 'spawn_cap', 'boss_attack_rate'),
+        allowed = {'balance': ('enemy_hp', 'enemy_damage', 'enemy_speed', 'spawn_rate', 'spawn_cap', 'boss_attack_rate', 'start_wave'),
                    'drops': ('health_percent', 'ammo_percent', 'ec_percent'),
                    'turrets': ('front', 'upper', 'lower'), 'missiles': ('upper', 'lower')}[group]
         result[group] = {k: None if row[k] is None else number(row[k]) for k in allowed if k in row}

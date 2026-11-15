@@ -9,6 +9,8 @@ PREFERENCE = Path(__file__).resolve().parents[1] / 'userdata' / 'ui.json'
 LANGUAGES = {'auto': 'System / 跟随系统', 'zh': '简体中文', 'en': 'English'}
 
 EN = {
+    '起始波次': 'Starting wave',
+    '新一局生效': 'Applies to next attempt',
     '打开完整战斗记录': 'Open full battle records',
     '准备战斗记录窗口': 'Preparing battle records',
     '暂时无法打开战斗记录': 'Could not open battle records',

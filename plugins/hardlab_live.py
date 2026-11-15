@@ -317,8 +317,8 @@ class Plugin(PluginBase):
                 interact_edge = False
             jumps = []
             if interact_edge and not self._teleport_latched:
-                self._teleport_latched = True
                 jump = self._dumb_boss_teleport()
+                self._teleport_latched = jump is not None
                 if jump:
                     jumps.append(jump)
             if not down and not fixture_edge:
@@ -394,8 +394,11 @@ class Plugin(PluginBase):
         if music not in ('dumb_boss','dumb'):
             return None
         zone=util.getstr(cw.asWorld.props.zone)
+        selected=os.environ.get('HARDLAB_PRACTICE_MAP')
+        capture=getattr(self,'native_capture',None)
+        if selected in ('dumb_wave','dumb_normal_wave','dumb_boss','dumb_mid') and (capture is None or capture.player is None):zone=selected
         if zone=='dumb_mid':return None
-        table=wave_teleports if music=='dumb'else teleports
+        table=wave_teleports if zone in ('dumb_wave','dumb_normal_wave') or (not zone and music=='dumb') else teleports
         player = cw.player.asClientObject.asNativeObject.asWorldObject
         props = player.props
         x, y = int(props.xmp), int(props.ymp)

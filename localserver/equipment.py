@@ -102,6 +102,8 @@ def build_affix_priority(catalogue, path=AFFIX_GUIDE):
             document = {}
     items = {int(key): value for key, value in (document.get('items') or {}).items()
              if int(key) in catalogue}
+    if 192 in items and 257 in items:
+        items[192] = dict(items[192], pool=items[257]['pool'])
     return dict(exact={key: [int(row['stat']) for row in item['pool']]
                        for key, item in items.items()},
                 defaults={key: {int(row['stat']): int(row['defaultValue'])

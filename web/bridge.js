@@ -23,7 +23,50 @@
   let frame = 0, seq = 0, last = 0, wasInteract = false, pendingInteract = false, events = [], lastPlayer = null, context = {}, worldKey = '', gameplay = false, playerEpoch=0;
   const read = (pointer, offset = 0) => Module.HEAP32[(pointer + offset) >> 2] | 0;
   const valid = p => p > 0 && p + 744 < Module.HEAP32.byteLength && !(p & 3);
-  let genPress=null;
+  let genPress=null, activeWorld=0, teleportReceipt=null, padPress=null;
+  const fixedPads={"dumb_wave":[[49152,89344,24576,58368,16,19,40960,262144,24576],[40960,204032,24576,58368,19,16,49152,147456,24576],[319488,204032,24576,58368,22,25,311296,147456,24576],[311296,89344,24576,58368,25,22,319488,262144,24576],[106496,203776,24576,58368,50,53,106496,188416,24576],[106496,130304,24576,58368,53,50,106496,262144,24576],[253952,130048,24576,58368,56,59,253952,262144,24576],[253952,204032,24576,58368,59,56,253952,188416,24576]],"dumb_normal_wave":[[49152,89344,24576,58368,20,23,40960,262144,24576],[40960,204032,24576,58368,23,20,49152,147456,24576],[319488,204032,24576,58368,26,29,311296,147456,24576],[311296,89344,24576,58368,29,26,319488,262144,24576]],"dumb_boss":[[40960,204032,24576,58368,62,58,49152,106496,24576],[319488,204032,24576,58368,65,67,303104,106496,24576],[49152,48384,24576,58368,59,61,40960,262144,24576],[303104,48384,24576,58368,68,64,319488,262144,24576]]};
+  function placePlayer(x,y){
+    const sub=read(activeWorld,664),player=read(activeWorld,672);
+    if(!valid(player)||!valid(sub)||read(player,64)<=0)return false;
+    const values=[read(activeWorld,200)>>>0,read(sub,4),read(player,8),x,y];
+    const apply=()=>Module.applyPlayerPlacement(values);
+    if(Module.clientReplay)Module.clientReplay.control('teleport',values,apply);else apply();
+    return true;
+  }
+  Module.applyPlayerPlacement=values=>{
+    const world=Module.clientReplay?.world||activeWorld,player=read(world,672),sub=read(world,664);
+    if(!valid(world)||!valid(player)||!valid(sub)||!Array.isArray(values)||values.length!==5||!values.every(Number.isInteger)||Math.abs(values[3])>2147483647||Math.abs(values[4])>2147483647||
+       (read(world,200)>>>0)!==values[0]||read(sub,4)!==values[1]||read(player,8)!==values[2])throw Error('Teleport target changed');
+    const [,,,nx,ny]=values,heap=Module.HEAP32;
+    heap[(player+16)>>2]=heap[(player+196)>>2]=nx;heap[(player+20)>>2]=heap[(player+200)>>2]=ny;
+    heap[(player+220)>>2]=heap[(player+224)>>2]=0;Module.HEAPU8[player+5]=1;
+  };
+  function roomTeleport(ack){
+    const command=ack.player_teleport;
+    if(!command||ack.map!=='eub_run'||!ack.room_ready||!valid(activeWorld)||read(activeWorld,200)>>>0!==ack.room_seed)return;
+    if(['map','room_token','room_seed'].some(k=>command[k]!==ack[k]))return;
+    const player=read(activeWorld,672),sub=read(activeWorld,664);
+    if(!valid(player)||!valid(sub)||command.player_id!==read(player,8)||command.player_owner!==read(sub,4)||
+       !Number.isInteger(command.command_id)||!Array.isArray(command.to)||command.to.length!==2||!command.to.every(v=>Number.isInteger(v)&&Math.abs(v)<=2147483647))return;
+    const roomId=[ack.room_token,ack.room_seed].join('/');
+    if(teleportReceipt?.roomId===roomId&&command.command_id<teleportReceipt.serial)return;
+    const key=[ack.room_token,ack.room_seed,command.command_id].join('/');
+    if(teleportReceipt?.key!==key)teleportReceipt={key,roomId,serial:command.command_id,result:{kind:'player_teleport_result',command_id:command.command_id,source_oid:command.source_oid,
+      applied:Date.now()/1000<=command.expires_at&&placePlayer(...command.to)}};
+    events.push(teleportReceipt.result);
+  }
+  Module.webInteract=player=>{if(valid(activeWorld)&&valid(player))padPress={player,seed:read(activeWorld,200)>>>0};};
+  function useFixedPad(player){
+    if(STARBREAK_WEB_BOOT.replay?.mode==='play'||!valid(player)||read(player,64)<=0)return;
+    const rows=fixedPads[STARBREAK_WEB_BOOT.map];if(!rows)return;
+    const x=read(player,16),y=read(player,20),w=read(player,24),h=read(player,28);
+    if(w<=0||h<=0)return;
+    const row=rows.find(([px,py,pw,ph])=>x+w>px&&x<px+pw&&y+h>py&&y<py+ph);if(!row)return;
+    const nx=Math.round(row[6]+(row[8]-w)/2),ny=row[7]-h;
+    placePlayer(nx,ny);
+    events.push({kind:'teleport',from:[x,y],to:[nx,ny],source:row[4],destination:row[5]});
+  }
+
   function sampleGenPress(world,player,subworld){
     const server=read(world,628);if(!valid(server))return null;
     const first=read(server,60),end=read(server,64),panels=[];
@@ -42,7 +85,7 @@
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => {keys.clear();wasInteract=false;pendingInteract=false;genPress=null;});
   const acknowledge = e => {
-    try { const ack = JSON.parse(e.data); if(ack.map)context=ack;if(ack.player_protection?.epoch===playerEpoch)Module.pendingPlayerProtection=ack.player_protection; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
+    try { const ack = JSON.parse(e.data); if(ack.map)context=ack;roomTeleport(ack);if(ack.player_protection?.epoch===playerEpoch)Module.pendingPlayerProtection=ack.player_protection; parent.postMessage({type:'bridge-ack',ack}, location.origin); }
     catch (_) {}
   };
   const connectTelemetry = () => {
@@ -65,11 +108,12 @@
   };
   Module.webFrame = world => {
     try {
-      frame++;
+      frame++;activeWorld=world;
       const pointer = read(world, 672), subworld = read(world, 664);
       const key=world+'/'+(read(world,200)>>>0);
       if(key!==worldKey){worldKey=key;playerEpoch++;Module.pendingPlayerProtection=null;lastPlayer=null;wasInteract=false;pendingInteract=false;genPress=null;events=[];pickups.clear();healthBefore.clear();activePlayer=0;gameplay=false;pickupTotals={health_packs:0,ammo_packs:0,healing:0,damage_taken:0};}
       activePlayer=valid(pointer)?pointer:0;
+      if(padPress){const press=padPress;padPress=null;if(press.player===pointer&&press.seed===(read(world,200)>>>0))useFixedPad(pointer);}
       // Engine input uses the game's own remapped keyboard/controller binds.
       // Sample every frame, before rate limiting; menu clicks do not set it.
       if(reconnectTelemetry||socket.readyState===WebSocket.OPEN){

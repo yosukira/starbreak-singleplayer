@@ -547,6 +547,7 @@ class GearEditor(object):
         self.turret_counts = normalize_turret_counts(
             (self.overrides or {}).get('_turret_counts'))
         self.game_settings = game_settings.load()
+        self.start_wave_var = tk.StringVar(value=str(game_settings.balance('dumb_wave',self.game_settings).get('start_wave',1)))
         self.skip_intro_var = tk.BooleanVar(value=game_settings.skip_intro(
             self.game_settings.get('map'), self.game_settings))
         self.missile_delay_var = tk.StringVar(value=str(game_settings.missile_delay_ms(
@@ -797,6 +798,10 @@ class GearEditor(object):
         self.turret_scope = ttk.Label(turrets, text='', style='Hint.TLabel')
         self.turret_scope.pack(side='left', padx=(12, 0))
 
+        self.wave_row = ttk.Frame(content, padding=(12, 0, 12, 8))
+        ttk.Label(self.wave_row,text=self.tr('起始波次')).pack(side='left')
+        ttk.Spinbox(self.wave_row,from_=1,to=1000000,textvariable=self.start_wave_var,width=9).pack(side='left',padx=8)
+        ttk.Label(self.wave_row,text=self.tr('新一局生效')).pack(side='left')
         self.intro_row = ttk.Frame(content, padding=(12, 0, 12, 8))
         self.intro_row.pack(fill='x')
         ttk.Checkbutton(self.intro_row, text=self.tr('跳过开局'), variable=self.skip_intro_var,
@@ -909,7 +914,7 @@ class GearEditor(object):
             return
         values = {name: getattr(self, name).get() for name in (
             'mk_var', 'implant_var', 'map_var', 'drop_health_var',
-            'drop_ammo_var', 'drop_ec_var', 'spawn_cap_var')}
+            'drop_ammo_var', 'drop_ec_var', 'spawn_cap_var', 'start_wave_var')}
         values['skip_intro_var'] = self.skip_intro_var.get()
         values['missile_delay_var'] = self.missile_delay_var.get()
         multipliers = {key: var.get() for key, var in self.balance_entry_vars.items()}
@@ -1163,6 +1168,10 @@ class GearEditor(object):
             display.set(self._map_choice_titles.get(
                 self.map_var.get(), self.map_var.get()))
         self.skip_intro_var.set(game_settings.skip_intro(self.map_var.get(), self.game_settings))
+        if self.map_var.get()=='dumb_wave':
+            self.start_wave_var.set(str(game_settings.balance('dumb_wave',self.game_settings).get('start_wave',1)))
+            self.wave_row.pack(fill='x',before=self.body_frame)
+        else:self.wave_row.pack_forget()
         intro = self.intro_row
         if self.map_var.get() in game_settings.SKIP_INTRO_MAPS:
             if not intro.winfo_manager():
@@ -1272,6 +1281,7 @@ class GearEditor(object):
             entry[key] = self._balance_multiplier(key)
         cap = int(round(float(self.spawn_cap_var.get())))
         entry['spawn_cap'] = max(SPAWN_CAP_MIN, min(SPAWN_CAP_MAX, cap))
+        if self.map_var.get()=='dumb_wave':entry['start_wave']=max(1,min(1000000,int(self.start_wave_var.get())))
         return entry
 
     def _set_balance_controls(self, map_id):

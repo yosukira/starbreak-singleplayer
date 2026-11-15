@@ -1043,6 +1043,7 @@ def session(argv=None,show_editor=True):
             print('Practice server ready. Close the game to stop. Logs: ' + str(logs), flush=True)
 
             client_env = dict(os.environ)
+            client_env['HARDLAB_PRACTICE_MAP']=args.map
             if native_recording:client_env['HARDLAB_NATIVE_REPLAY']=json.dumps(native_recording.config,separators=(',',':'))
             client_env['HARDLAB_KEYBINDINGS'] = str(LAB / 'userdata' / 'keybindings.json')
             client_env['HARDLAB_BRIDGE_STATUS'] = str(logs / 'bridge-status.json')

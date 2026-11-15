@@ -257,7 +257,7 @@ class BrowserRuntime:
                     replay['takeover'] = compatible_engine(header['engine'],header.get('map'))
                 except (ValueError,OSError):pass
             prefs = dict(key='LocalStorage.pb',revision=0,content=document['preferences'])
-        return dict(wsPort=0,keybindings=self.workspace.preferences()['keys'],gamePreferences=prefs,replay=replay)
+        return dict(map=self.map,wsPort=0,keybindings=self.workspace.preferences()['keys'],gamePreferences=prefs,replay=replay)
 
     def api(self, method, url, document=None):
         path = urlsplit(url).path

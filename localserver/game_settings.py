@@ -132,7 +132,7 @@ BALANCE_LIMITS = {
 MAP_BALANCE_LIMITS = {
     'sc_patriarch': {'enemy_hp': (1., 100.), 'boss_attack_rate': (1., 2.),
                      'turret_attack_rate': (1., 2.)},
-    'dumb_wave': {'enemy_hp': (1., 10.), 'spawn_rate': (1., 2.)},
+    'dumb_wave': {'enemy_hp': (1., 10.), 'spawn_rate': (1., 2.), 'start_wave': (1, 1000000)},
     'sc_bonesaw': {'laser_rate': (1., 10.), 'bullet_rate': (1., 10.),
                    'saw_speed': (1., 3.)},
 }
@@ -326,7 +326,7 @@ def normalize_balance(document):
                 value = float(default)
             low, high = limits[key]
             value = max(low, min(high, value))
-            entry[key] = int(round(value)) if key == 'spawn_cap' else value
+            entry[key] = int(round(value)) if key in ('spawn_cap','start_wave') else value
         result[map_id.strip()] = entry
     return result
 

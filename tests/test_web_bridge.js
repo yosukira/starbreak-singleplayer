@@ -192,3 +192,24 @@ context.Module.gamePreferences={load:()=>btoa(field(1,Buffer.concat([field(1,Buf
 assert.equal(context.Module.isPracticeGameplayKey({code:'Numpad7',keyCode:103}),true);
 assert.equal(context.Module.isPracticeGameplayKey({code:'Numpad7',keyCode:36}),true,'Num Lock does not turn a bound KP7 into a class switch');
 assert.equal(context.Module.isPracticeGameplayKey({code:'Digit7',keyCode:55}),false);
+
+// Fixed Underground pads share the desktop geometry, including normal UB IDs.
+let padTime=200000;
+listeners.blur();
+for(const [map,x,y,source,destination]of [['dumb_wave',49152,120000,16,19],['dumb_normal_wave',49152,120000,20,23],['dumb_boss',40960,230000,62,58]]){
+ padTime+=100;context.STARBREAK_WEB_BOOT.map=map;
+ set(world,668,0);set(player,64,150);context.performance.now=()=>padTime;context.Module.webFrame(world);
+ for(const [offset,value]of [[16,x],[20,y],[24,7680],[28,17920]])set(player,offset,value);
+ set(world,668,128);context.Module.webInteract(player);context.performance.now=()=>padTime+20;context.Module.webFrame(world);
+ const event=sent.at(-1).events.find(e=>e.kind==='teleport');assert.equal(event.source,source);assert.equal(event.destination,destination);
+ assert.equal(i32[(player+196)>>2],sent.at(-1).player.xmp);assert.equal(i32[(player+200)>>2],sent.at(-1).player.ymp);
+ context.performance.now=()=>padTime+40;context.Module.webFrame(world);assert.equal(sent.at(-1).events.some(e=>e.kind==='teleport'),false,'Held interact must not bounce back');
+}
+
+const teleportScope={map:'eub_run',room_token:44,room_seed:i32[(world+200)>>2]>>>0,room_ready:true};
+const command={...teleportScope,command_id:3,source_oid:40,player_id:1,player_owner:2,to:[10000,20000],expires_at:Date.now()/1000+30};
+branchSocket.onmessage({data:JSON.stringify({...teleportScope,player_teleport:command})});
+assert.equal(i32[(player+16)>>2],10000);assert.equal(i32[(player+20)>>2],20000);
+set(player,16,12000);branchSocket.onmessage({data:JSON.stringify({...teleportScope,player_teleport:command})});assert.equal(i32[(player+16)>>2],12000,'Duplicate ACK must not teleport again');
+branchSocket.onmessage({data:JSON.stringify({...teleportScope,player_teleport:{...command,command_id:2}})});assert.equal(i32[(player+16)>>2],12000,'Late old ACK must not teleport again');
+branchSocket.onmessage({data:JSON.stringify({...teleportScope,player_teleport:{...command,command_id:4,room_seed:1}})});assert.equal(i32[(player+16)>>2],12000,'Stale room must not teleport');
